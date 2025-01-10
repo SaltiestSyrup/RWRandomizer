@@ -1,0 +1,535 @@
+﻿using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MoreSlugcats;
+
+//using MoreSlugcats;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace RainWorldRandomizer
+{
+    public static class IteratorHooks
+    {
+        public static void ApplyHooks()
+        {
+            On.OracleSwarmer.BitByPlayer += OnEatNeuron;
+            On.SLOracleSwarmer.BitByPlayer += OnEatNeuron;
+            On.SLOracleBehavior.ConvertingSSSwarmer += OnGiftNeuron;
+            On.SSOracleBehavior.Update += PebblesUpdate;
+            On.SLOracleBehaviorHasMark.Update += MoonMarkUpdate;
+            On.SLOracleWakeUpProcedure.Update += MoonWakeUpUpdate;
+            On.HUD.DialogBox.NewMessage_string_float_float_int += DialogueAddMessage;
+
+            try
+            {
+                IL.SSOracleBehavior.SSOracleMeetWhite.Update += PebblesMeetWhiteUpdateIL;
+                IL.SSOracleBehavior.SSOracleMeetYellow.Update += PebblesMeetYellowUpdateIL;
+                IL.SSOracleBehavior.SSOracleMeetGourmand.Update += PebblesMeetYellowUpdateIL;
+                IL.SSOracleBehavior.SSOracleMeetArty.Update += PebblesMeetArtiUpdateIL;
+                IL.SSOracleBehavior.ThrowOutBehavior.Update += IteratorThrowOutBehaviorIL;
+                IL.SLOracleWakeUpProcedure.Update += ILMoonWakeUpUpdate;
+                IL.MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.Update += RotCoreRoomUpdateIL;
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError(e);
+            }
+        }
+
+        public static void RemoveHooks()
+        {
+            On.OracleSwarmer.BitByPlayer -= OnEatNeuron;
+            On.SLOracleSwarmer.BitByPlayer -= OnEatNeuron;
+            On.SLOracleBehavior.ConvertingSSSwarmer -= OnGiftNeuron;
+            On.SSOracleBehavior.Update -= PebblesUpdate;
+            On.SLOracleBehaviorHasMark.Update -= MoonMarkUpdate;
+            On.SLOracleWakeUpProcedure.Update -= MoonWakeUpUpdate;
+            On.HUD.DialogBox.NewMessage_string_float_float_int -= DialogueAddMessage;
+
+            IL.SSOracleBehavior.SSOracleMeetWhite.Update -= PebblesMeetWhiteUpdateIL;
+            IL.SSOracleBehavior.SSOracleMeetYellow.Update -= PebblesMeetYellowUpdateIL;
+            IL.SSOracleBehavior.SSOracleMeetGourmand.Update -= PebblesMeetYellowUpdateIL;
+            IL.SSOracleBehavior.SSOracleMeetArty.Update -= PebblesMeetArtiUpdateIL;
+            IL.SSOracleBehavior.ThrowOutBehavior.Update -= IteratorThrowOutBehaviorIL;
+            IL.SLOracleWakeUpProcedure.Update -= ILMoonWakeUpUpdate;
+            IL.MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.Update -= RotCoreRoomUpdateIL;
+        }
+
+        static void OnEatNeuron(On.OracleSwarmer.orig_BitByPlayer orig, OracleSwarmer self, Creature.Grasp grasp, bool eu)
+        {
+            orig(self, grasp, eu);
+            if (!Plugin.isRandomizerActive) return;
+
+            if (self.bites < 1)
+            {
+                EatenNeuron(grasp.grabber as Player);
+            }
+        }
+
+        static void OnEatNeuron(On.SLOracleSwarmer.orig_BitByPlayer orig, SLOracleSwarmer self, Creature.Grasp grasp, bool eu)
+        {
+            orig(self, grasp, eu);
+            if (!Plugin.isRandomizerActive) return;
+
+            if (self.bites < 1)
+            {
+                EatenNeuron(grasp.grabber as Player);
+            }
+        }
+
+        static void EatenNeuron(Player player)
+        {
+            // Remove unearned glowing effect
+            if (!Plugin.Singleton.givenNeuronGlow)
+            {
+                (Plugin.Singleton.game.session as StoryGameSession).saveState.theGlow = false;
+                player.glowing = false;
+            }
+
+            if (!Plugin.Singleton.IsCheckGiven("Eat_Neuron"))
+            {
+                Plugin.Singleton.GiveCheck("Eat_Neuron");
+            }
+        }
+
+        static void OnGiftNeuron(On.SLOracleBehavior.orig_ConvertingSSSwarmer orig, SLOracleBehavior self)
+        {
+            orig(self);
+            if (!Plugin.isRandomizerActive) return;
+
+            if (!Plugin.Singleton.IsCheckGiven("Gift_Neuron"))
+            {
+                Plugin.Singleton.GiveCheck("Gift_Neuron");
+            }
+        }
+
+        static void PebblesUpdate(On.SSOracleBehavior.orig_Update orig, SSOracleBehavior self, bool eu)
+        {
+            if (!Plugin.isRandomizerActive)
+            {
+                orig(self, eu);
+                return;
+            }
+
+            orig(self, eu);
+
+            // Pebbles gives the mark
+            if (self.action == SSOracleBehavior.Action.General_GiveMark && self.inActionCounter == 300)
+            {
+                //Logger.LogDebug($"Gave the mark! Iterator ID: {self.oracle.ID}");
+                // No karma increases >:(
+                Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.Singleton.currentMaxKarma;
+                Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.karma = Plugin.Singleton.currentMaxKarma;
+                for (int num2 = 0; num2 < Plugin.Singleton.game.cameras.Length; num2++)
+                {
+                    Plugin.Singleton.game.cameras[num2].hud.karmaMeter?.UpdateGraphic();
+                }
+
+                // Reset the mark if not unlocked yet
+                if (!Plugin.Singleton.givenMark)
+                {
+                    Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.theMark = false;
+                    //self.afterGiveMarkAction = SSOracleBehavior.Action.ThrowOut_ThrowOut;
+                }
+
+                if (self.oracle.ID == Oracle.OracleID.SS
+                    && !Plugin.Singleton.IsCheckGiven("Meet_FP"))
+                {
+                    Plugin.Singleton.GiveCheck("Meet_FP");
+                }
+
+                if (ModManager.MSC && self.oracle.ID == MoreSlugcatsEnums.OracleID.DM
+                    && !Plugin.Singleton.IsCheckGiven("Meet_LttM"))
+                {
+                    Plugin.Singleton.GiveCheck("Meet_LttM");
+                }
+            }
+        }
+
+        static void PebblesMeetWhiteUpdateIL(ILContext il)
+        {
+            try
+            {
+                ILCursor c = new ILCursor(il);
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
+                    x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.deathPersistentSaveData))),
+                    x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.theMark))),
+                    x => x.MatchBrfalse(out _),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchCallOrCallvirt(out _),
+                    x => x.MatchLdcI4(40),
+                    x => x.MatchBle(out _),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner))),
+                    x => x.MatchLdsfld(typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk)))
+                    );
+
+                c.MoveAfterLabels();
+
+                // Force pebbles to 'give the mark' to the player regardless of them already having it
+                c.Emit(OpCodes.Pop);
+                //c.Emit(OpCodes.Ldarg_0);
+                //c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner)));
+                c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_GiveMark)));
+
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchCallOrCallvirt(typeof(SSOracleBehavior).GetMethod(nameof(SSOracleBehavior.NewAction)))
+                    );
+
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner)));
+                c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk)));
+                c.Emit(OpCodes.Stfld, typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)));
+
+                //RandomizerMain.Log.LogDebug(il);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed Hooking for PebblesUpdateWhite");
+                Plugin.Log.LogError(e);
+            }
+        }
+
+        // Also applies to Gourmand
+        static void PebblesMeetYellowUpdateIL(ILContext il)
+        {
+            try
+            {
+                ILCursor c = new ILCursor(il);
+                c.GotoNext(
+                    x => x.MatchLdfld<SSOracleBehavior.SubBehavior>(nameof(SSOracleBehavior.SubBehavior.owner)),
+                    x => x.MatchLdfld<SSOracleBehavior>(nameof(SSOracleBehavior.playerEnteredWithMark))
+                    );
+
+                c.MoveAfterLabels();
+
+                // Force this check to always return false
+                c.Index += 2;
+                c.Emit(OpCodes.Pop);
+                c.EmitDelegate<Func<bool>>(() => false);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed Hooking for PebblesUpdateYellow");
+                Plugin.Log.LogError(e);
+            }
+        }
+
+        static void PebblesMeetArtiUpdateIL(ILContext il)
+        {
+            try
+            {
+                ILCursor c = new ILCursor(il);
+                c.GotoNext(
+                    MoveType.Before,
+                    x => x.MatchStfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
+                    );
+
+                c.Emit(OpCodes.Pop); // Only set robo if it has been given
+                c.EmitDelegate<Func<bool>>(() => { return Plugin.Singleton.givenRobo; });
+
+                // ------
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner))),
+                    x => x.MatchLdsfld(typeof(MoreSlugcats.MoreSlugcatsEnums.SSOracleBehaviorAction).GetField(nameof(MoreSlugcats.MoreSlugcatsEnums.SSOracleBehaviorAction.MeetArty_Talking))),
+                    x => x.MatchStfld(typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)))
+                    );
+
+                // Throw Arty out after trying to give mark if no robot
+                c.Index--;
+                c.Emit(OpCodes.Pop);
+                c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.ThrowOut_ThrowOut)));
+
+                c.Index++;
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Callvirt, typeof(SSOracleBehavior.SubBehavior).GetMethod(nameof(SSOracleBehavior.SubBehavior.Deactivate)));
+
+                // ------
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance)),
+                    x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.myRobot))),
+                    x => x.MatchLdflda(out _),
+                    x => x.MatchInitobj(out _)
+                    );
+
+                ILLabel jump = c.MarkLabel();
+
+                // Add a null check for this.player.myRobot
+                c.Index -= 5;
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance));
+                c.Emit(OpCodes.Ldfld, typeof(Player).GetField(nameof(Player.myRobot)));
+                c.EmitDelegate<Func<MoreSlugcats.AncientBot, bool>>(r => { return r == null; });
+                c.Emit(OpCodes.Brfalse, jump);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed Hooking for PebblesMeetArtiUpdateIL");
+                Plugin.Log.LogError(e);
+            }
+        }
+
+        static void RotCoreRoomUpdateIL(ILContext il)
+        {
+            try
+            {
+                ILCursor c = new ILCursor(il);
+
+                
+                //c.GotoNext(
+                //    MoveType.Before,
+                //    x => x.MatchLdarg(0),
+                //    x => x.MatchCallOrCallvirt(typeof(MSCRoomSpecificScript.RM_CORE_EnergyCell).GetMethod(nameof(MSCRoomSpecificScript.RM_CORE_EnergyCell.ReloadRooms)))
+                //    );
+
+                // Make the game think the power is still on if we turned it off
+                while(c.TryGotoNext(
+                    MoveType.After,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(typeof(UpdatableAndDeletable).GetField(nameof(UpdatableAndDeletable.room))),
+                    x => x.MatchLdfld(typeof(Room).GetField(nameof(Room.game))),
+                    x => x.MatchLdfld(typeof(RainWorldGame).GetField(nameof(RainWorldGame.session))),
+                    x => x.MatchIsinst(typeof(StoryGameSession)),
+                    x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
+                    x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.miscWorldSaveData))),
+                    x => x.MatchLdfld(typeof(MiscWorldSaveData).GetField(nameof(MiscWorldSaveData.pebblesEnergyTaken))),
+                    x => x.MatchBrtrue(out _)
+                    ))
+                {
+                    c.Index--;
+                    c.EmitDelegate<Func<bool, bool>>((energyTaken) =>
+                    {
+                        if (Plugin.useEnergyCell.Value)
+                        {
+                            return Plugin.Singleton.IsCheckGiven("Kill_FP");
+                        }
+                        return energyTaken;
+                    });
+                }
+
+                // Skip over code for giving player the Mass Rarefaction cell
+                c.GotoNext(
+                    MoveType.Before,
+                    x => x.MatchCallOrCallvirt(typeof(HUD.TextPrompt).GetMethod(nameof(HUD.TextPrompt.AddMessage), 
+                        new Type[] { typeof(string), typeof(int), typeof(int), typeof(bool), typeof(bool) }))
+                    );
+
+                ILLabel jump = c.MarkLabel();
+
+                c.GotoPrev(
+                    MoveType.After,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(typeof(MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell).GetField(nameof(MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.myEnergyCell), BindingFlags.NonPublic | BindingFlags.Instance)),
+                    x => x.MatchCallOrCallvirt(typeof(Room).GetMethod(nameof(Room.RemoveObject)))
+                    );
+                c.MoveAfterLabels();
+
+                c.Emit(OpCodes.Ldarg_0);
+                c.EmitDelegate<Func<MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell, bool>>(self =>
+                {
+                    if (Plugin.useEnergyCell.Value)
+                    {
+                        if (!Plugin.Singleton.IsCheckGiven("Kill_FP"))
+                        {
+                            Plugin.Singleton.GiveCheck("Kill_FP");
+                        }
+
+                        // If power is not supposed to be off yet, turn it back on
+                        if (!Plugin.Singleton.givenPebblesOff)
+                        {
+                            (self.room.game.session as StoryGameSession).saveState.miscWorldSaveData.pebblesEnergyTaken = false;
+                        }
+
+                        self.ReloadRooms();
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                });
+                c.Emit(OpCodes.Brtrue, jump);
+
+                //RandomizerMain.Log.LogDebug(il);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed Hooking for RotCoreRoomUpdateIL");
+                //RandomizerMain.Log.LogDebug(il);
+                Plugin.Log.LogError(e);
+            }
+        }
+
+        static void MoonMarkUpdate(On.SLOracleBehaviorHasMark.orig_Update orig, SLOracleBehaviorHasMark self, bool eu)
+        {
+            orig(self, eu);
+            if (!Plugin.isRandomizerActive) return;
+
+            // Meeting for the first time
+            if (!Plugin.Singleton.IsCheckGiven("Meet_LttM")
+                && (Plugin.Singleton.game.session as StoryGameSession).saveState.miscWorldSaveData.SLOracleState.playerEncountersWithMark > 0)
+            {
+                Plugin.Singleton.GiveCheck("Meet_LttM");
+            }
+        }
+
+        static void ILMoonWakeUpUpdate(ILContext il)
+        {
+            try
+            {
+                ILCursor c = new ILCursor(il);
+
+                // Replace every instance of casting to SLOracleBehaviorHasMark with the base class
+                while (c.TryGotoNext(
+                    MoveType.Before,
+                    x => x.MatchIsinst(typeof(SLOracleBehaviorHasMark))
+                    ))
+                {
+                    Instruction jump = c.Next.Next;
+                    c.Emit(OpCodes.Isinst, typeof(SLOracleBehavior));
+                    c.Emit(OpCodes.Br, jump);
+                    c.Index++;
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError(e);
+            }
+        }
+
+        // Hunter revives LttM
+        static void MoonWakeUpUpdate(On.SLOracleWakeUpProcedure.orig_Update orig, SLOracleWakeUpProcedure self, bool eu)
+        {
+            if (self.phase == SLOracleWakeUpProcedure.Phase.Done)
+            {
+                if (!Plugin.Singleton.IsCheckGiven("Save_LttM"))
+                {
+                    Plugin.Singleton.GiveCheck("Save_LttM");
+                }
+            }
+
+            orig(self, eu);
+        }
+
+        static void IteratorThrowOutBehaviorIL(ILContext il)
+        {
+            try
+            {
+                ILCursor c = new ILCursor(il);
+
+                // Add an extra condition for Artificer actually having the Citizen ID drone to not be killed by Pebbles
+                ILLabel jump = null;
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveStateNumber))),
+                    x => x.MatchLdsfld(typeof(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer))),
+                    x => x.MatchCallOrCallvirt(out _),
+                    x => x.MatchBrfalse(out jump)
+                    );
+
+                c.EmitDelegate<Func<bool>>(() => { return Plugin.Singleton.givenRobo; });
+                c.Emit(OpCodes.Brfalse, jump);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed Hooking for IteratorThrowOutBehaviorIL");
+                Plugin.Log.LogError(e);
+            }
+        }
+
+        static void DialogueAddMessage(On.HUD.DialogBox.orig_NewMessage_string_float_float_int orig, HUD.DialogBox self, string text, float xOrientation, float yPos, int extraLinger)
+        {
+            // Swap Pebbles dialogue for gibberish if mark not obtained
+            if (Plugin.Singleton.givenMark
+                || (ModManager.MSC && Plugin.Singleton.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint))
+            {
+                orig(self, text, xOrientation, yPos, extraLinger);
+                return;
+            }
+
+            Room room = Plugin.Singleton.game.session.Players[0].realizedCreature.room;
+            for (int i = 0; i < room.physicalObjects.Length; i++)
+            {
+                for (int j = 0; j < room.physicalObjects[i].Count; j++)
+                {
+                    // If this object is Five Pebbles and he is talking
+                    if (room.physicalObjects[i][j] is Oracle
+                        && ((Oracle)room.physicalObjects[i][j]).oracleBehavior is SSOracleBehavior oracle
+                        && oracle.currSubBehavior is SSOracleBehavior.TalkBehavior)
+                    {
+                        SoundID sound;
+                        int pause = 0;
+
+                        if (ModManager.MSC && oracle.oracle.ID == MoreSlugcatsEnums.OracleID.DM)
+                        {
+                            switch (UnityEngine.Random.Range(0, 4))
+                            {
+                                case 0:
+                                    sound = SoundID.SL_AI_Talk_1;
+                                    pause = 100;
+                                    break;
+                                case 1:
+                                    sound = SoundID.SL_AI_Talk_2;
+                                    pause = 200;
+                                    break;
+                                case 2:
+                                    sound = SoundID.SL_AI_Talk_3;
+                                    pause = 200;
+                                    break;
+                                case 3:
+                                default:
+                                    sound = SoundID.SL_AI_Talk_4;
+                                    pause = 100;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            switch (UnityEngine.Random.Range(0, 4))
+                            {
+                                case 0:
+                                    sound = SoundID.SS_AI_Talk_1;
+                                    pause = 100;
+                                    break;
+                                case 1:
+                                    sound = SoundID.SS_AI_Talk_2;
+                                    pause = 200;
+                                    break;
+                                case 2:
+                                    sound = SoundID.SS_AI_Talk_3;
+                                    pause = 200;
+                                    break;
+                                case 3:
+                                default:
+                                    sound = SoundID.SS_AI_Talk_4;
+                                    pause = 100;
+                                    break;
+                            }
+                        }
+                        
+
+                        oracle.voice = oracle.oracle.room.PlaySound(sound, oracle.oracle.firstChunk);
+                        oracle.voice.requireActiveUpkeep = true;
+                        if (oracle.conversation != null)
+                        {
+                            oracle.conversation.waitForStill = true;
+                        }
+                        ((SSOracleBehavior.TalkBehavior)oracle.currSubBehavior).communicationPause = pause;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
