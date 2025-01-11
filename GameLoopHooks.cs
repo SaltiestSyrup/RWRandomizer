@@ -78,12 +78,15 @@ namespace RainWorldRandomizer
                 {
                     WinState.EndgameID id = new WinState.EndgameID(check, false);
 
+                    SaveState saveState = self.rainWorld.progression.currentSaveState == null
+                        ? self.rainWorld.progression.starvedSaveState
+                        : self.rainWorld.progression.currentSaveState;
                     if (Generation.CheckBlacklists.ContainsKey(Plugin.Singleton.currentSlugcat)
                         && !Generation.CheckBlacklists[Plugin.Singleton.currentSlugcat].Contains($"Passage-{check}")
                         && !Plugin.Singleton.IsCheckGiven($"Passage-{check}")
-                        && self.rainWorld.progression.currentSaveState.deathPersistentSaveData.winState.GetTracker(id, false) != null)
+                        && saveState.deathPersistentSaveData.winState.GetTracker(id, false) != null)
                     {
-                        WinState.EndgameTracker tracker = self.rainWorld.progression.currentSaveState.deathPersistentSaveData.winState.GetTracker(id, false);
+                        WinState.EndgameTracker tracker = saveState.deathPersistentSaveData.winState.GetTracker(id, false);
 
                         // Normal Passages
                         if (tracker.GoalFullfilled)
