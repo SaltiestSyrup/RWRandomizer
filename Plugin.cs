@@ -49,6 +49,13 @@ namespace RainWorldRandomizer
         public static Configurable<bool> useFoodQuestChecks;
         public static Configurable<bool> useEnergyCell;
         public static Configurable<bool> useSMTokens;
+
+        // Archipelago
+        public static Configurable<bool> archipelago;
+        public static Configurable<string> archipelagoHostName;
+        public static Configurable<int> archipelagoPort;
+        public static Configurable<string> archipelagoSlotName;
+        public static Configurable<string> archipelagoPassword;
         #endregion
 
         public bool ItemShelterDelivery

@@ -72,6 +72,7 @@ namespace RainWorldRandomizer
                 "Gates will have their karma requirements decreased to match", null, "", 
                     new object[] { "Start with low karma" }));
 
+            // ----- MSC -----
             Plugin.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
                 new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (Where applicable)", null, "", 
                 new object[] { "Open Metropolis" }));
@@ -91,6 +92,27 @@ namespace RainWorldRandomizer
             Plugin.useSMTokens = config.Bind<bool>("UseSMTokens", true,
                 new ConfigurableInfo("Include Spearmaster's broadcast tokens as checks", null, "",
                 new object[] { "Use Broadcasts" }));
+
+            // ----- Archipelago -----
+            Plugin.archipelago = config.Bind<bool>("Archipelago", false,
+                new ConfigurableInfo("Enable Archipelago mode. Other tabs' settings will be ignored in favor of .yaml settings", null, "",
+                new object[] { "Enable Archipelago" }));
+
+            Plugin.archipelagoHostName = config.Bind<string>("ArchipelagoHostName", "archipelago.gg",
+                new ConfigurableInfo("Host name for server connection. Leave as archipelago.gg if using the website", null, "",
+                new object[] { "Host Name" }));
+
+            Plugin.archipelagoPort = config.Bind<int>("ArchipelagoPort", 38281,
+                new ConfigurableInfo("Port for server connection", null, "",
+                new object[] { "Port" }));
+
+            Plugin.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
+                new ConfigurableInfo("Your player name for server connection", null, "",
+                new object[] { "Player Name" }));
+
+            Plugin.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
+                new ConfigurableInfo("Password for server connection (Optional)", null, "",
+                new object[] { "Password" }));
         }
 
         public override void Initialize()
@@ -105,86 +127,12 @@ namespace RainWorldRandomizer
             {
                 _tabs.Add(new OpTab(this, Translate("Downpour")));
             }
+            _tabs.Add(new OpTab(this, Translate("Archipelago")));
             Tabs = _tabs.ToArray();
 
-            float runningY = 550f;
-
-            // Seed options
-            OpCheckBox useSeedCheckbox = new OpCheckBox(Plugin.useSeed, 20f, runningY)
-            {
-                description = Translate(Plugin.useSeed.info.description)
-            };
-            OpLabel useSeedLabel = new OpLabel(60f, runningY, Translate(Plugin.useSeed.info.Tags[0] as string))
-            {
-                bumpBehav = useSeedCheckbox.bumpBehav,
-                description = useSeedCheckbox.description
-            };
-            runningY -= 35;
-            
-            OpTextBox seedText = new OpTextBox(Plugin.seed, new UnityEngine.Vector2(25f, runningY), 100f)
-            {
-                description = Translate(Plugin.seed.info.description)
-            };
-            // Make the seed field be active only when useSeed is selected
-            seedText.OnUpdate += () => { seedText.greyedOut = !useSeedCheckbox.GetValueBool(); };
-            runningY -= 35;
-
-            Tabs[0].AddItems(new UIelement[]
-            {
-                useSeedCheckbox,
-                useSeedLabel,
-                seedText
-            });
-
-            if (boolConfigOrderGen == null)
-            {
-                PopulateConfigurableArrays();
-            }
-
-            // Add boolean configs
-            foreach (Configurable<bool> config in boolConfigOrderGen)
-            {
-                if(config == null)
-                {
-                    runningY -= 35;
-                    continue;
-                }
-
-                OpCheckBox opCheckBox = new OpCheckBox(config, new Vector2(20f, runningY))
-                {
-                    description = Translate(config.info.description)
-                };
-
-                Tabs[0].AddItems(new UIelement[]
-                {
-                    opCheckBox,
-                    new OpLabel(60f, runningY, Translate(config.info.Tags[0] as string))
-                    {
-                        bumpBehav = opCheckBox.bumpBehav,
-                        description = opCheckBox.description
-                    }
-                });
-
-                runningY -= 35;
-            }
-
-            OpUpdown hunterCyclesUpDown = new OpUpdown(Plugin.hunterCyclesDensity, new Vector2(20f, runningY), 100f)
-            {
-                description = Translate(Plugin.hunterCyclesDensity.info.description)
-            };
-            OpLabel hunterCyclesLabel = new OpLabel(140f, runningY, Translate(Plugin.hunterCyclesDensity.info.Tags[0] as string))
-            {
-                bumpBehav = hunterCyclesUpDown.bumpBehav,
-                description = hunterCyclesUpDown.description
-            };
-            Tabs[0].AddItems(new UIelement[]
-            {
-                hunterCyclesUpDown,
-                hunterCyclesLabel
-            });
-            runningY -= 35;
-
+            PopulateBaseTab();
             PopulateDownpourTab();
+            PopulateArchipelagoTab();
 
             /*OpCheckBox randomizeSpawnCheckbox = new OpCheckBox(RandomizerMain.randomizeSpawnLocation, 20f, runningY);
             OpLabel randomizeSpawnLabel = new OpLabel(60f, runningY, Translate("Randomize starting den"))
@@ -250,6 +198,87 @@ namespace RainWorldRandomizer
             Tabs[0].AddItems(generationOptions);*/
         }
 
+        public void PopulateBaseTab()
+        {
+            int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Base"));
+            float runningY = 550f;
+
+            // Seed options
+            OpCheckBox useSeedCheckbox = new OpCheckBox(Plugin.useSeed, 20f, runningY)
+            {
+                description = Translate(Plugin.useSeed.info.description)
+            };
+            OpLabel useSeedLabel = new OpLabel(60f, runningY, Translate(Plugin.useSeed.info.Tags[0] as string))
+            {
+                bumpBehav = useSeedCheckbox.bumpBehav,
+                description = useSeedCheckbox.description
+            };
+            runningY -= 35;
+
+            OpTextBox seedText = new OpTextBox(Plugin.seed, new Vector2(25f, runningY), 100f)
+            {
+                description = Translate(Plugin.seed.info.description)
+            };
+            // Make the seed field be active only when useSeed is selected
+            seedText.OnUpdate += () => { seedText.greyedOut = !useSeedCheckbox.GetValueBool(); };
+            runningY -= 35;
+
+            Tabs[tabIndex].AddItems(new UIelement[]
+            {
+                useSeedCheckbox,
+                useSeedLabel,
+                seedText
+            });
+
+            if (boolConfigOrderGen == null)
+            {
+                PopulateConfigurableArrays();
+            }
+
+            // Add boolean configs
+            foreach (Configurable<bool> config in boolConfigOrderGen)
+            {
+                if (config == null)
+                {
+                    runningY -= 35;
+                    continue;
+                }
+
+                OpCheckBox opCheckBox = new OpCheckBox(config, new Vector2(20f, runningY))
+                {
+                    description = Translate(config.info.description)
+                };
+
+                Tabs[tabIndex].AddItems(new UIelement[]
+                {
+                    opCheckBox,
+                    new OpLabel(60f, runningY, Translate(config.info.Tags[0] as string))
+                    {
+                        bumpBehav = opCheckBox.bumpBehav,
+                        description = opCheckBox.description
+                    }
+                });
+
+                runningY -= 35;
+            }
+
+            OpUpdown hunterCyclesUpDown = new OpUpdown(Plugin.hunterCyclesDensity, new Vector2(20f, runningY), 100f)
+            {
+                description = Translate(Plugin.hunterCyclesDensity.info.description)
+            };
+            OpLabel hunterCyclesLabel = new OpLabel(140f, runningY, Translate(Plugin.hunterCyclesDensity.info.Tags[0] as string))
+            {
+                bumpBehav = hunterCyclesUpDown.bumpBehav,
+                description = hunterCyclesUpDown.description
+            };
+            Tabs[tabIndex].AddItems(new UIelement[]
+            {
+                hunterCyclesUpDown,
+                hunterCyclesLabel
+            });
+            runningY -= 35;
+        }
+
         public void PopulateDownpourTab()
         {
             if (!ModManager.MSC) return;
@@ -283,6 +312,114 @@ namespace RainWorldRandomizer
 
                 runningY -= 35;
             }
+        }
+
+        public void PopulateArchipelagoTab()
+        {
+            int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Archipelago"));
+            float runningY = 550f;
+
+            OpCheckBox APCheckBox = new OpCheckBox(Plugin.archipelago, new Vector2(20f, runningY))
+            {
+                description = Translate(Plugin.archipelago.info.description)
+            };
+            OpLabel APLabel = new OpLabel(60f, runningY, Translate(Plugin.archipelago.info.Tags[0] as string))
+            {
+                bumpBehav = APCheckBox.bumpBehav,
+                description = APCheckBox.description
+            };
+            runningY -= 35;
+
+            OpTextBox hostNameTextBox = new OpTextBox(Plugin.archipelagoHostName, new Vector2(20f, runningY), 200f)
+            {
+                description = Translate(Plugin.archipelagoHostName.info.description)
+            };
+            OpLabel hostNameLabel = new OpLabel(240f, runningY, Translate(Plugin.archipelagoHostName.info.Tags[0] as string))
+            {
+                bumpBehav = hostNameTextBox.bumpBehav,
+                description = hostNameTextBox.description
+            };
+            runningY -= 35;
+
+            OpTextBox portTextBox = new OpTextBox(Plugin.archipelagoPort, new Vector2(20f, runningY), 55f)
+            {
+                description = Translate(Plugin.archipelagoPort.info.description)
+            };
+            OpLabel portLabel = new OpLabel(95f, runningY, Translate(Plugin.archipelagoPort.info.Tags[0] as string))
+            {
+                bumpBehav = portTextBox.bumpBehav,
+                description = portTextBox.description
+            };
+            runningY -= 35;
+
+            OpTextBox slotNameTextBox = new OpTextBox(Plugin.archipelagoSlotName, new Vector2(20f, runningY), 100f)
+            {
+                description = Translate(Plugin.archipelagoSlotName.info.description)
+            };
+            OpLabel slotNameLabel = new OpLabel(140f, runningY, Translate(Plugin.archipelagoSlotName.info.Tags[0] as string))
+            {
+                bumpBehav = slotNameTextBox.bumpBehav,
+                description = slotNameTextBox.description
+            };
+            runningY -= 35;
+
+            OpTextBox passwordTextBox = new OpTextBox(Plugin.archipelagoPassword, new Vector2(20f, runningY), 100f)
+            {
+                description = Translate(Plugin.archipelagoPassword.info.description)
+            };
+            OpLabel passwordLabel = new OpLabel(140f, runningY, Translate(Plugin.archipelagoPassword.info.Tags[0] as string))
+            {
+                bumpBehav = passwordTextBox.bumpBehav,
+                description = passwordTextBox.description
+            };
+            runningY -= 35;
+
+            OpSimpleButton connectButton = new OpSimpleButton(new Vector2(20f, runningY), new Vector2(60f, 20f), "Connect")
+            {
+                description = "Attempt to connect to the Archipelago server"
+            };
+            runningY -= 35;
+
+            OpLabelLong connectResultLabel = new OpLabelLong(new Vector2(20f, runningY - 100f), new Vector2(200f, 100f), "");
+
+            
+            APCheckBox.OnUpdate += () =>
+            {
+                bool APDisabled = !APCheckBox.GetValueBool();
+                // Forbid disabling AP after connection has been established
+                if (APDisabled && APConnection.HasConnected)
+                {
+                    APCheckBox.SetValueBool(true);
+                }
+                // Disable options while AP is off
+                hostNameTextBox.greyedOut = APDisabled;
+                portTextBox.greyedOut = APDisabled;
+                slotNameTextBox.greyedOut = APDisabled;
+                passwordTextBox.greyedOut = APDisabled;
+                connectButton.greyedOut = APDisabled;
+            };
+
+            // Attempt AP connection on click
+            connectButton.OnClick += (trigger) => 
+            {
+                connectResultLabel.text = APConnection.Connect(hostNameTextBox.value, portTextBox.valueInt, slotNameTextBox.value);
+            };
+
+            Tabs[tabIndex].AddItems(new UIelement[]
+            {
+                APCheckBox,
+                APLabel,
+                hostNameTextBox,
+                hostNameLabel,
+                portTextBox,
+                portLabel,
+                slotNameTextBox,
+                slotNameLabel,
+                passwordTextBox,
+                passwordLabel,
+                connectButton,
+                connectResultLabel,
+            });
         }
 
         public void PopulateConfigurableArrays()
