@@ -94,7 +94,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="APConnection.cs" />
+    <Compile Include="ArchipelagoConnection.cs" />
     <Compile Include="CollectTokenHandler.cs" />
     <Compile Include="CustomRegionCompatability.cs" />
     <Compile Include="ExtCollectibleTrackerComptability.cs" />

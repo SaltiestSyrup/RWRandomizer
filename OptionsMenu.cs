@@ -386,10 +386,10 @@ namespace RainWorldRandomizer
             APCheckBox.OnUpdate += () =>
             {
                 bool APDisabled = !APCheckBox.GetValueBool();
-                // Forbid disabling AP after connection has been established
-                if (APDisabled && APConnection.HasConnected)
+                // Disconnect connection when AP is turned off
+                if (APDisabled && ArchipelagoConnection.HasConnected)
                 {
-                    APCheckBox.SetValueBool(true);
+                    ArchipelagoConnection.Disconnect();
                 }
                 // Disable options while AP is off
                 hostNameTextBox.greyedOut = APDisabled;
@@ -402,7 +402,7 @@ namespace RainWorldRandomizer
             // Attempt AP connection on click
             connectButton.OnClick += (trigger) => 
             {
-                connectResultLabel.text = APConnection.Connect(hostNameTextBox.value, portTextBox.valueInt, slotNameTextBox.value);
+                connectResultLabel.text = ArchipelagoConnection.Connect(hostNameTextBox.value, portTextBox.valueInt, slotNameTextBox.value);
             };
 
             Tabs[tabIndex].AddItems(new UIelement[]
