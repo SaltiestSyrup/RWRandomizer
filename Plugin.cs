@@ -232,7 +232,14 @@ namespace RainWorldRandomizer
 
         public bool IsCheckGiven(string check)
         {
-            return Generation.randomizerKey.ContainsKey(check) && Generation.randomizerKey[check].IsGiven;
+            if (ArchipelagoConnection.HasConnected)
+            {
+                return true;
+            }
+            else
+            {
+                return Generation.randomizerKey.ContainsKey(check) && Generation.randomizerKey[check].IsGiven;
+            }
         }
 
         public bool GiveCheck(string check)

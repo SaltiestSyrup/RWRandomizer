@@ -27,7 +27,6 @@ namespace RainWorldRandomizer
             file.WriteLine(Generation.currentSeed);
             foreach (var item in game)
             {
-                string check = item.Key;
                 string serializedUnlock = $"{{{(int)item.Value.Type},{item.Value.ID},{item.Value.IsGiven}}}";
 
                 file.Write($"{item.Key}->{serializedUnlock}");
@@ -183,5 +182,77 @@ namespace RainWorldRandomizer
             Dictionary<string, Unlock> game = LoadSavedGame(SlugcatStats.Name.Red, saveSlot);
             return game.Values.Where(u => u.Type == Unlock.UnlockType.HunterCycles && u.IsGiven).Count();
         }
+
+        #region Archipelago datapackage
+        // Fetch locally saved checksum
+        public static string GetDataPackageChecksum()
+        {
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_checksum.txt");
+            if (!File.Exists(path))
+            {
+                return "";
+            }
+
+            string[] file = File.ReadAllLines(path);
+
+            return file.Length > 0 ? file[0] : "";
+        }
+        
+        public static void WriteDataPackageToFile(Dictionary<string, long> itemLookup, Dictionary<string, long> locationLookup, string checksum)
+        {
+            StreamWriter itemsFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_items.txt"));
+
+            foreach (var item in itemLookup)
+            {
+                itemsFile.Write($"{item.Key}->{item.Value}");
+                itemsFile.WriteLine();
+            }
+            itemsFile.Close();
+
+            StreamWriter locationsFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_locations.txt"));
+
+            foreach (var item in locationLookup)
+            {
+                locationsFile.Write($"{item.Key}->{item.Value}");
+                locationsFile.WriteLine();
+            }
+            locationsFile.Close();
+
+            StreamWriter checksumFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_checksum.txt"));
+            checksumFile.Write(checksum);
+            checksumFile.Close();
+        }
+
+        public static bool LoadDataPackage(out Dictionary<string, long> itemLookup, out Dictionary<string, long> locationLookup)
+        {
+            itemLookup = new Dictionary<string, long>();
+            locationLookup = new Dictionary<string, long>();
+
+            string itemsPath = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_items.txt");
+            string locationsPath = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_locations.txt");
+
+            if (!(File.Exists(itemsPath) && File.Exists(locationsPath)))
+            {
+                return false;
+            }
+
+            string[] itemsFile = File.ReadAllLines(itemsPath);
+            foreach (string line in itemsFile)
+            {
+                string[] keyValue = Regex.Split(line, "->");
+                itemLookup.Add(keyValue[0], long.Parse(keyValue[1]));
+            }
+
+            string[] locationsFile = File.ReadAllLines(locationsPath);
+            foreach (string line in locationsFile)
+            {
+                string[] keyValue = Regex.Split(line, "->");
+                locationLookup.Add(keyValue[0], long.Parse(keyValue[1]));
+            }
+
+            return true;
+        }
+
+        #endregion
     }
 }
