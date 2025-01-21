@@ -38,7 +38,7 @@ namespace RainWorldRandomizer
 
         public static void OnRegurgitate(On.Player.orig_Regurgitate orig, Player self)
         {
-            if (!Plugin.isRandomizerActive
+            if (!Plugin.RandoManager.isRandomizerActive
                 || Plugin.Singleton.ItemShelterDelivery
                 || Plugin.Singleton.itemDeliveryQueue.Count == 0)
             {
@@ -178,7 +178,7 @@ namespace RainWorldRandomizer
             int baseCycles = extracycles ? origResult - bonusCycles : origResult;
 
             // If the save hasn't been initialized, read the file to count cycles
-            if (!Plugin.isRandomizerActive)
+            if (!Plugin.RandoManager.isRandomizerActive)
             {
                 int countedCycles = SaveManager.CountRedsCycles(Plugin.Singleton.rainWorld.options.saveSlot);
                 if (countedCycles == -1)
@@ -189,23 +189,21 @@ namespace RainWorldRandomizer
                 return baseCycles + (countedCycles * bonusCycles);
             }
 
-            return baseCycles + (Plugin.Singleton.hunterBonusCyclesGiven * bonusCycles);
+            return baseCycles + (Plugin.RandoManager.HunterBonusCyclesGiven * bonusCycles);
         }
 
         public static void OnClassMechanicsSaint(On.Player.orig_ClassMechanicsSaint orig, Player self)
         {
             orig(self);
 
-            if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripPebbles
-                && !Plugin.Singleton.IsCheckGiven("Ascend_FP"))
+            if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripPebbles)
             {
-                Plugin.Singleton.GiveCheck("Ascend_FP");
+                Plugin.RandoManager.GiveLocation("Ascend_FP");
             }
 
-            if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripMoon
-                && !Plugin.Singleton.IsCheckGiven("Ascend_LttM"))
+            if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripMoon)
             {
-                Plugin.Singleton.GiveCheck("Ascend_LttM");
+                Plugin.RandoManager.GiveLocation("Ascend_LttM");
             }
         }
     }

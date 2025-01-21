@@ -20,7 +20,7 @@ namespace RainWorldRandomizer
         internal static ManualLogSource Log;
 
         public static Plugin Singleton = null;
-        public static ManagerBase Manager = null;
+        public static ManagerBase RandoManager = null;
         public CollectTokenHandler collectTokenHandler;
         public MenuExtension seedViewer;
 
@@ -63,14 +63,14 @@ namespace RainWorldRandomizer
         {
             get
             {
-                return (itemShelterDelivery.Value || (ModManager.MSC && currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear));
+                return (itemShelterDelivery.Value || (ModManager.MSC && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear));
             }
         }
 
-        public static bool isRandomizerActive = false; // -- Move to manager base
+        //public static bool isRandomizerActive = false; // -- Move to manager base
         public RainWorld rainWorld;
         public RainWorldGame game;
-        public SlugcatStats.Name currentSlugcat; // -- Move to manager base
+        //public SlugcatStats.Name currentSlugcat; // -- Move to manager base
 
         public Queue<string> notifQueue = new Queue<string>(); // Queue of pending notifications to be sent to the player in-game
         // Queue of items that the player has recieved and not claimed
@@ -78,12 +78,13 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
 
         // Values for currently unlocked features
-        public List<Unlock> AllUnlocks = new List<Unlock>(); // -- Move to Generation, only used there
-        public Dictionary<string, bool> gateUnlocks = new Dictionary<string, bool>(); // -- Move to manager base
-        public Dictionary<WinState.EndgameID, bool> passageTokenUnlocks = new Dictionary<WinState.EndgameID, bool>(); // -- Move to manager base
+        //public List<Unlock> AllUnlocks = new List<Unlock>(); // -- Move to Generation, only used there
+        //public Dictionary<string, bool> gateUnlocks = new Dictionary<string, bool>(); // -- Move to manager base
+        //public Dictionary<WinState.EndgameID, bool> passageTokenUnlocks = new Dictionary<WinState.EndgameID, bool>(); // -- Move to manager base
         public List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>(); // Used for karma ladder screen. Maybe move to Misc hooks class?
 
         // -- Move to manager base
+        /*
         public int currentMaxKarma = 4;
         public int hunterBonusCyclesGiven = 0;
         public bool givenNeuronGlow = false;
@@ -92,6 +93,7 @@ namespace RainWorldRandomizer
         public bool givenPebblesOff = false;
         public bool givenSpearPearlRewrite = false;
         public string customStartDen = "SU_S01";
+        */
 
         // These are just for reference. Should they stay here or move to manager base?
         // A map of every region to it's display name
@@ -121,6 +123,8 @@ namespace RainWorldRandomizer
                 return;
             }
 
+            // Assign as vanilla until decided otherwise
+            RandoManager = new ManagerVanilla();
             collectTokenHandler = new CollectTokenHandler();
             seedViewer = new MenuExtension();
             Log = Logger;
@@ -207,16 +211,16 @@ namespace RainWorldRandomizer
                 Logger.LogError(e);
             }
 
-            Generation.LoadBlacklist(SlugcatStats.Name.White);
-            Generation.LoadBlacklist(SlugcatStats.Name.Yellow);
-            Generation.LoadBlacklist(SlugcatStats.Name.Red);
+            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.White);
+            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.Yellow);
+            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.Red);
             if (ModManager.MSC)
             {
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Artificer);
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Spear);
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Saint);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Artificer);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Spear);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Saint);
             }
 
             CustomRegionCompatability.Init();
@@ -231,8 +235,19 @@ namespace RainWorldRandomizer
             {
                 RegionNamesMap.Add(regionShort, Region.GetRegionFullName(regionShort, null));
             }
+
+            // Initialize a new manager
+            if (archipelago.Value)
+            {
+                //Manager = new ManagerBase();
+            }
+            else
+            {
+                RandoManager = new ManagerVanilla();
+            }
         }
 
+        /*
         public bool IsCheckGiven(string check)
         {
             if (ArchipelagoConnection.IsConnected)
@@ -241,19 +256,20 @@ namespace RainWorldRandomizer
             }
             else
             {
-                return Generation.randomizerKey.ContainsKey(check) && Generation.randomizerKey[check].IsGiven;
+                return ManagerVanilla.randomizerKey.ContainsKey(check) && ManagerVanilla.randomizerKey[check].IsGiven;
             }
         }
 
         public bool GiveCheck(string check)
         {
-            if (!Generation.randomizerKey.ContainsKey(check) || Generation.randomizerKey[check].IsGiven) return false;
+            if (!ManagerVanilla.randomizerKey.ContainsKey(check) || ManagerVanilla.randomizerKey[check].IsGiven) return false;
 
-            Generation.randomizerKey[check].GiveUnlock();
-            notifQueue.Enqueue(Generation.randomizerKey[check].UnlockCompleteMessage());
+            ManagerVanilla.randomizerKey[check].GiveUnlock();
+            notifQueue.Enqueue(ManagerVanilla.randomizerKey[check].UnlockCompleteMessage());
             Log.LogInfo($"Completed Check: {check}");
             return true;
         }
+        */
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom, int data = 0)
         {
@@ -370,21 +386,6 @@ namespace RainWorldRandomizer
             }
 
             return output;
-        }
-
-        public static void IncreaseKarma()
-        {
-            if (Singleton.currentMaxKarma == 4)
-            {
-                Singleton.currentMaxKarma = 6;
-            }
-            else if (Singleton.currentMaxKarma < 9)
-            {
-                Singleton.currentMaxKarma++;
-            }
-
-            try { (Singleton.game.session as StoryGameSession).saveState.deathPersistentSaveData.karmaCap = Singleton.currentMaxKarma; }
-            catch { };
         }
     }
 }

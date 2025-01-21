@@ -42,7 +42,7 @@ namespace RainWorldRandomizer
         {
             //menu = self;
             orig(self, manager, game);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             // Extra offset if using Warp Menu
             float xOffset = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("LeeMoriya.Warp") ? 190f : 20f;
@@ -68,7 +68,7 @@ namespace RainWorldRandomizer
         public void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
         {
             orig(self);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             spoilerButton = new SimpleButton(self, self.pages[0], self.Translate("SHOW SPOILERS"), "SHOW_SPOILERS",
                 new Vector2(
@@ -143,7 +143,7 @@ namespace RainWorldRandomizer
         public void OnMenuSignal(On.Menu.PauseMenu.orig_Singal orig, PauseMenu self, MenuObject sender, string message)
         {
             orig(self, sender, message);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             if (message != null)
             {
@@ -202,7 +202,7 @@ namespace RainWorldRandomizer
 
             public GatesDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
             {
-                List<string> openedGates = Plugin.Singleton.gateUnlocks.Where(g => g.Value == true).ToList().ConvertAll(g => g.Key);
+                List<string> openedGates = Plugin.RandoManager.GetGatesStatus().Where(g => g.Value == true).ToList().ConvertAll(g => g.Key);
                 menuLabels = new MenuLabel[openedGates.Count + 1];
                 size = new Vector2(250f, (menuLabels.Length * 15f) + 20f);
 
@@ -222,7 +222,7 @@ namespace RainWorldRandomizer
                 for (int i = 1; i < menuLabels.Length; i++)
                 {
                     menuLabels[i] = new MenuLabel(menu, this, 
-                        Plugin.GateToString(openedGates[i - 1], Plugin.Singleton.currentSlugcat),
+                        Plugin.GateToString(openedGates[i - 1], Plugin.RandoManager.currentSlugcat),
                         new Vector2(10f, -15f - (15f * i)), default, false, null);
                     menuLabels[i].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
                     menuLabels[i].label.alignment = FLabelAlignment.Left;
@@ -396,12 +396,12 @@ namespace RainWorldRandomizer
                 // Entries
                 floatScrollPos = ScrollPos;
                 int i = 1;
-                foreach (string key in Generation.randomizerKey.Keys)
+                foreach (string loc in Plugin.RandoManager.GetLocations())
                 {
                     entries.Add(new SpoilerEntry(menu, this,
                         new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(i - 1)),
                         new Vector2(entryWidth, entryHeight),
-                        key));
+                        loc));
                     subObjects.Add(entries[i - 1]);
 
                     i += 1;
@@ -489,13 +489,13 @@ namespace RainWorldRandomizer
                     case EntryFilterType.Given:
                         predicate = (e) =>
                         {
-                            return Generation.randomizerKey[e.entryKey].IsGiven;
+                            return (bool)Plugin.RandoManager.IsLocationGiven(e.entryKey);
                         };
                         break;
                     case EntryFilterType.NotGiven:
                         predicate = (e) =>
                         {
-                            return !Generation.randomizerKey[e.entryKey].IsGiven;
+                            return !(bool)Plugin.RandoManager.IsLocationGiven(e.entryKey);
                         };
                         break;
                     default:
@@ -645,7 +645,7 @@ namespace RainWorldRandomizer
                     roundedRect = new RoundedRect(menu, this, default, size, true)
                     {
                         fillAlpha = 0.0f,
-                        borderColor = Generation.randomizerKey[entryKey].IsGiven ? CollectToken.GreenColor : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey)
+                        borderColor = (bool)Plugin.RandoManager.IsLocationGiven(entryKey) ? CollectToken.GreenColor : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey)
                     };
                     subObjects.Add(roundedRect);
 
@@ -660,7 +660,7 @@ namespace RainWorldRandomizer
                     checkSprite = CheckToFSprite(checkType, checkName);
                     Container.AddChild(checkSprite);
 
-                    unlockSprite = UnlockToFSprite(Generation.randomizerKey[entryKey]);
+                    unlockSprite = UnlockToFSprite(Plugin.RandoManager.GetUnlockAtLocation(entryKey));
                     Container.AddChild(unlockSprite);
 
                     // Labels
@@ -672,7 +672,7 @@ namespace RainWorldRandomizer
                         subObjects.Add(checkLabel);
                     }
 
-                    unlockLabel = new MenuLabel(menu, this, Generation.randomizerKey[entryKey].ToString(), 
+                    unlockLabel = new MenuLabel(menu, this, Plugin.RandoManager.GetUnlockAtLocation(entryKey).ToString(), 
                         new Vector2(size.x / 2, 5f), 
                         new Vector2(size.x / 2, 20f), false, null);
                     
@@ -685,8 +685,8 @@ namespace RainWorldRandomizer
                     lastFade = fade;
                     lastSelectedBlink = selectedBlink;
 
-                    roundedRect.borderColor = Generation.randomizerKey[entryKey].IsGiven ? CollectToken.GreenColor : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey);
-                    holdButton.greyedOut = Generation.randomizerKey[entryKey].IsGiven;
+                    roundedRect.borderColor = (bool)Plugin.RandoManager.IsLocationGiven(entryKey) ? CollectToken.GreenColor : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey);
+                    holdButton.greyedOut = (bool)Plugin.RandoManager.IsLocationGiven(entryKey);
 
                     if (Selected)
                     {
@@ -797,7 +797,7 @@ namespace RainWorldRandomizer
                 
                 public void OnPressDone(UIfocusable trigger)
                 {
-                    Generation.randomizerKey[entryKey].GiveUnlock();
+                    Plugin.RandoManager.GiveLocation(entryKey);
                 }
 
                 public static FSprite CheckToFSprite(string type, string name)

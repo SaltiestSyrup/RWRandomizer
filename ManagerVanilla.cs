@@ -9,15 +9,20 @@ using UnityEngine;
 
 namespace RainWorldRandomizer
 {
-    public static class Generation
+    /// <summary>
+    /// The default randomizer mode.
+    /// Used when no other modes are active
+    /// </summary>
+    public class ManagerVanilla : ManagerBase
     {
         // Constant for the minimum amount of gates that should be locked to make a valid seed
         public const int MIN_LOCKED_GATES = 0;
         public const int MIN_PASSAGE_TOKENS = 5;
 
-        public static int currentSeed;
         // Values for completed checks
-        public static Dictionary<string, Unlock> randomizerKey = new Dictionary<string, Unlock>();
+        public Dictionary<string, Unlock> randomizerKey = new Dictionary<string, Unlock>();
+
+        public List<Unlock> AllUnlocks = new List<Unlock>();
 
         public static Dictionary<SlugcatStats.Name, List<string>> AllAccessibleRegions = new Dictionary<SlugcatStats.Name, List<string>>();
         // Certain regions either cannot or should not be accessed by some slugcats.
@@ -28,23 +33,20 @@ namespace RainWorldRandomizer
         // Same principle as regions. Auto-generated checks (passages, echoes, pearls) need to be filtered to match what is possible for each slugcat
         public static Dictionary<SlugcatStats.Name, List<string>> CheckBlacklists = new Dictionary<SlugcatStats.Name, List<string>>();
 
-
-
         public static List<string> LogicBlacklist = new List<string>()
         {
             "GATE_UW_SL",
             "Pearl-SU_filt"
         };
 
-
         // Called when player starts or continues a run
-        public static void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
+        public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
-            Plugin.Singleton.currentSlugcat = storyGameCharacter;
+            Plugin.RandoManager.currentSlugcat = storyGameCharacter;
             if (!Plugin.CompatibleSlugcats.Contains(storyGameCharacter))
             {
                 Plugin.Log.LogDebug("Selected incompatible save, disabling randomizer");
-                Plugin.isRandomizerActive = false;
+                isRandomizerActive = false;
                 Plugin.Singleton.notifQueue.Enqueue($"WARNING: This campaign is not currently supported by Check Randomizer. It will not be active for this session.");
                 return;
             }
@@ -55,7 +57,7 @@ namespace RainWorldRandomizer
             if (!InitializeSession(storyGameCharacter))
             {
                 Plugin.Log.LogError("Failed to initialize randomizer.");
-                Plugin.isRandomizerActive = false;
+                isRandomizerActive = false;
                 Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to initialize. Check logs for details.");
                 return;
             }
@@ -78,7 +80,7 @@ namespace RainWorldRandomizer
                 else
                 {
                     Plugin.Log.LogError("Failed to load saved game.");
-                    Plugin.isRandomizerActive = false;
+                    isRandomizerActive = false;
                     Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to find valid save for current file");
                     return;
                 }
@@ -95,7 +97,7 @@ namespace RainWorldRandomizer
                 else
                 {
                     Plugin.Log.LogError("Failed to generate randomizer. See above for details.");
-                    Plugin.isRandomizerActive = false;
+                    isRandomizerActive = false;
                     Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
                     return;
                 }
@@ -103,22 +105,22 @@ namespace RainWorldRandomizer
                 stopwatch.Stop();
             }
 
-            Plugin.isRandomizerActive = true;
+            isRandomizerActive = true;
         }
 
-        public static bool InitializeSession(SlugcatStats.Name slugcat)
+        public bool InitializeSession(SlugcatStats.Name slugcat)
         {
             Plugin.ProperRegionMap.Clear();
 
             // Reset tracking variables
-            Plugin.Singleton.currentMaxKarma = 4;
-            Plugin.Singleton.hunterBonusCyclesGiven = 0;
-            Plugin.Singleton.givenNeuronGlow = false;
-            Plugin.Singleton.givenMark = false;
-            Plugin.Singleton.givenRobo = false;
-            Plugin.Singleton.givenPebblesOff = false;
-            Plugin.Singleton.givenSpearPearlRewrite = false;
-            Plugin.Singleton.customStartDen = "SU_S01";
+            _currentMaxKarma = 4;
+            _hunterBonusCyclesGiven = 0;
+            _givenNeuronGlow = false;
+            _givenMark = false;
+            _givenRobo = false;
+            _givenPebblesOff = false;
+            _givenSpearPearlRewrite = false;
+            customStartDen = "SU_S01";
 
             if (!RegionBlacklists.ContainsKey(slugcat) || !CheckBlacklists.ContainsKey(slugcat))
             {
@@ -173,17 +175,17 @@ namespace RainWorldRandomizer
             }
 
             List<string> allAccessibleRegions = Region.GetFullRegionOrder().Except(RegionBlacklists[slugcat]).ToList();
-            Plugin.Singleton.currentMaxKarma = SlugcatStats.SlugcatStartingKarma(slugcat);
-            Plugin.Singleton.gateUnlocks.Clear();
-            Plugin.Singleton.AllUnlocks.Clear();
+            _currentMaxKarma = SlugcatStats.SlugcatStartingKarma(slugcat);
+            gatesStatus.Clear();
+            AllUnlocks.Clear();
             randomizerKey.Clear();
-            Plugin.Singleton.passageTokenUnlocks.Clear();
+            passageTokensStatus.Clear();
 
             // Populate gate unlocks
             foreach (string roomName in Plugin.Singleton.rainWorld.progression.karmaLocks)
             {
                 string gate = Regex.Split(roomName, " : ")[0];
-                if (Plugin.Singleton.gateUnlocks.ContainsKey(gate)) continue;
+                if (gatesStatus.ContainsKey(gate)) continue;
 
                 bool isBlacklisted = false;
                 // Check region blacklists
@@ -212,8 +214,8 @@ namespace RainWorldRandomizer
 
                 if (isBlacklisted) continue;
 
-                Plugin.Singleton.gateUnlocks.Add(gate, false);
-                Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Gate, gate));
+                gatesStatus.Add(gate, false);
+                AllUnlocks.Add(new Unlock(Unlock.UnlockType.Gate, gate));
 
             }
 
@@ -257,12 +259,12 @@ namespace RainWorldRandomizer
                     randomizerKey.Add($"Passage-{ID}", null);
                 }
                 if (Plugin.givePassageUnlocks.Value
-                    && (Plugin.Singleton.currentSlugcat != SlugcatStats.Name.Red
-                        && (!ModManager.MSC || Plugin.Singleton.currentSlugcat != MoreSlugcatsEnums.SlugcatStatsName.Saint)) // Hunter and Saint can't use passages
+                    && (currentSlugcat != SlugcatStats.Name.Red
+                        && (!ModManager.MSC || currentSlugcat != MoreSlugcatsEnums.SlugcatStatsName.Saint)) // Hunter and Saint can't use passages
                     && ID != "Gourmand")
                 {
-                    Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Token, ID));
-                    Plugin.Singleton.passageTokenUnlocks.Add(new WinState.EndgameID(ID), false);
+                    AllUnlocks.Add(new Unlock(Unlock.UnlockType.Token, ID));
+                    passageTokensStatus.Add(new WinState.EndgameID(ID), false);
                 }
             }
 
@@ -278,7 +280,7 @@ namespace RainWorldRandomizer
                         {
                             randomizerKey.Add($"Echo-{regionInitials}", null);
                         }
-                        Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Karma, "Karma")); // One karma increase per Echo
+                        AllUnlocks.Add(new Unlock(Unlock.UnlockType.Karma, "Karma")); // One karma increase per Echo
                     }
                 }
             }
@@ -295,18 +297,18 @@ namespace RainWorldRandomizer
                     {
                         randomizerKey.Add($"Echo-{ID}", null);
                     }
-                    Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Karma, "Karma")); // One karma increase per Echo
+                    AllUnlocks.Add(new Unlock(Unlock.UnlockType.Karma, "Karma")); // One karma increase per Echo
                 }
             }
             // 7 karma increases (6 Echoes + FP)
-            Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Karma, "Karma"));
+            AllUnlocks.Add(new Unlock(Unlock.UnlockType.Karma, "Karma"));
 
             // Reduce max karma if setting
             if (Plugin.startMinKarma.Value)
             {
-                int totalKarmaIncreases = Plugin.Singleton.AllUnlocks.Count(u => u.Type == Unlock.UnlockType.Karma);
+                int totalKarmaIncreases = AllUnlocks.Count(u => u.Type == Unlock.UnlockType.Karma);
                 int cap = Mathf.Max(0, 8 - totalKarmaIncreases);
-                Plugin.Singleton.currentMaxKarma = cap;
+                _currentMaxKarma = cap;
                 //rainWorld.progression.currentSaveState.deathPersistentSaveData.karma = cap;
             }
 
@@ -353,7 +355,7 @@ namespace RainWorldRandomizer
 
             // Populate Spearmaster Broadcast tokens
             if (ModManager.MSC
-                && Plugin.Singleton.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear
+                && currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear
                 && Plugin.useSMTokens.Value)
             {
                 foreach (string regionShort in allAccessibleRegions)
@@ -412,42 +414,42 @@ namespace RainWorldRandomizer
             // Misc Unlocks
             if (!ModManager.MSC || slugcat != MoreSlugcatsEnums.SlugcatStatsName.Saint)
             {
-                Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Glow, "Neuron_Glow"));
-                Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Mark, "The_Mark"));
+                AllUnlocks.Add(new Unlock(Unlock.UnlockType.Glow, "Neuron_Glow"));
+                AllUnlocks.Add(new Unlock(Unlock.UnlockType.Mark, "The_Mark"));
             }
 
             switch (slugcat.value)
             {
                 case "Red":
-                    Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Item, "NSHSwarmer"));
-                    Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.ItemPearl, "Red_stomach"));
+                    AllUnlocks.Add(new Unlock(Unlock.UnlockType.Item, "NSHSwarmer"));
+                    AllUnlocks.Add(new Unlock(Unlock.UnlockType.ItemPearl, "Red_stomach"));
                     break;
                 case "Artificer":
-                    Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.IdDrone, "IdDrone"));
+                    AllUnlocks.Add(new Unlock(Unlock.UnlockType.IdDrone, "IdDrone"));
                     break;
                 case "Rivulet":
                     if (Plugin.useEnergyCell.Value)
                     {
-                        Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.Item, new Unlock.Item("Mass Rarefaction Cell", MoreSlugcatsEnums.AbstractObjectType.EnergyCell)));
-                        Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.DisconnectFP, "FP_Disconnected"));
+                        AllUnlocks.Add(new Unlock(Unlock.UnlockType.Item, new Unlock.Item("Mass Rarefaction Cell", MoreSlugcatsEnums.AbstractObjectType.EnergyCell)));
+                        AllUnlocks.Add(new Unlock(Unlock.UnlockType.DisconnectFP, "FP_Disconnected"));
                     }
                     break;
                 case "Spear":
-                    Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.ItemPearl, "Spearmasterpearl"));
-                    Plugin.Singleton.AllUnlocks.Add(new Unlock(Unlock.UnlockType.RewriteSpearPearl, "Rewrite_Spear_Pearl"));
+                    AllUnlocks.Add(new Unlock(Unlock.UnlockType.ItemPearl, "Spearmasterpearl"));
+                    AllUnlocks.Add(new Unlock(Unlock.UnlockType.RewriteSpearPearl, "Rewrite_Spear_Pearl"));
                     break;
             }
 
             return true;
         }
 
-        public static bool GenerateRandomizer()
+        public bool GenerateRandomizer()
         {
-            Plugin.Log.LogInfo($"Playing as {Plugin.Singleton.currentSlugcat}");
+            Plugin.Log.LogInfo($"Playing as {currentSlugcat}");
             Plugin.Log.LogInfo($"Checks: {randomizerKey.Count}");
-            Plugin.Log.LogInfo($"Unlocks: {Plugin.Singleton.AllUnlocks.Count}");
+            Plugin.Log.LogInfo($"Unlocks: {AllUnlocks.Count}");
 
-            List<Unlock> remainingUnlocks = new List<Unlock>(Plugin.Singleton.AllUnlocks);
+            List<Unlock> remainingUnlocks = new List<Unlock>(AllUnlocks);
 
             // Set the seed for the rest of the generation to use
             try
@@ -478,7 +480,7 @@ namespace RainWorldRandomizer
             int hunterCounter = 0;
             while (randomizerKey.Count > remainingUnlocks.Count + unlocksToAdd.Count)
             {
-                if (Plugin.Singleton.currentSlugcat == SlugcatStats.Name.Red
+                if (currentSlugcat == SlugcatStats.Name.Red
                     && (int)(randomizerKey.Count * Plugin.hunterCyclesDensity.Value) > hunterCounter) // Hunter cycle increases can only occupy up to 20% of the total unlocks
                 {
                     unlocksToAdd.Add(new Unlock(Unlock.UnlockType.HunterCycles, "HunterCycles"));
@@ -519,7 +521,7 @@ namespace RainWorldRandomizer
                 {
                     Unlock unlock = unlocks.ElementAt(UnityEngine.Random.Range(0, unlocks.Count()));
                     remainingUnlocks.Remove(unlock);
-                    Plugin.Singleton.gateUnlocks[unlock.ID] = true;
+                    gatesStatus[unlock.ID] = true;
                     preOpenedGates.Add(unlock.ID);
                     Plugin.Log.LogInfo($"Removing lock for {unlock.ID}");
                     continue;
@@ -538,7 +540,7 @@ namespace RainWorldRandomizer
 
             Plugin.Log.LogInfo("Generating Seed...");
 
-            List<string> allRegions = SlugcatStats.SlugcatStoryRegions(Plugin.Singleton.currentSlugcat).Except(RegionBlacklists[Plugin.Singleton.currentSlugcat]).ToList(); // List of all non-blacklisted regions
+            List<string> allRegions = SlugcatStats.SlugcatStoryRegions(currentSlugcat).Except(RegionBlacklists[currentSlugcat]).ToList(); // List of all non-blacklisted regions
             //allRegions.ForEach(r => Logger.LogDebug(r));
 
             //allRegions = allRegions.Except(RegionBlacklists[currentSlugcat]).ToList(); 
@@ -548,13 +550,13 @@ namespace RainWorldRandomizer
             // If option selected, start from a random den
             if (Plugin.randomizeSpawnLocation.Value)
             {
-                Plugin.Singleton.customStartDen = FindRandomStart(Plugin.Singleton.currentSlugcat);
-                Plugin.Log.LogInfo($"Using randomized starting den: {Plugin.Singleton.customStartDen}");
-                regionsAvailable.Add(Region.GetVanillaEquivalentRegionAcronym(Regex.Split(Plugin.Singleton.customStartDen, "_")[0]));
+                customStartDen = FindRandomStart(currentSlugcat);
+                Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
+                regionsAvailable.Add(Region.GetVanillaEquivalentRegionAcronym(Regex.Split(customStartDen, "_")[0]));
             }
             else
             {
-                switch (Plugin.Singleton.currentSlugcat.value)
+                switch (currentSlugcat.value)
                 {
                     case "White":
                     case "Yellow":
@@ -599,7 +601,7 @@ namespace RainWorldRandomizer
                     int index = -1;
 
                     // Special logic cases
-                    switch (Plugin.Singleton.currentSlugcat.value)
+                    switch (currentSlugcat.value)
                     {
                         case "Red":
                             index = remainingUnlocks.FindIndex(u => u.ID.Equals("NSHSwarmer"));
@@ -633,7 +635,7 @@ namespace RainWorldRandomizer
                                             .Contains(new DataPearl.AbstractDataPearl.DataPearlType(k.Key.Substring(6)))
                                         && Plugin.Singleton.rainWorld.regionDataPearlsAccessibility["lc"]
                                             [Plugin.Singleton.rainWorld.regionDataPearls["lc"].IndexOf(new DataPearl.AbstractDataPearl.DataPearlType(k.Key.Substring(6)))]
-                                            .Contains(Plugin.Singleton.currentSlugcat)) return false;
+                                            .Contains(currentSlugcat)) return false;
                                     return true;
                                 }).ToList().ConvertAll(p => p.Key);
 
@@ -687,7 +689,7 @@ namespace RainWorldRandomizer
                             // If using Start Minimum Karma, don't consider echoes as always possible checks
                             if (Plugin.startMinKarma.Value && k.Key.StartsWith("Echo-")) return false;
                             // If this is a passage marked as 'easy', use it
-                            if (GetFeasiblePassages(regionsAvailable, Plugin.Singleton.currentSlugcat).Any(c => k.Key == $"Passage-{c.value}")) return true;
+                            if (GetFeasiblePassages(regionsAvailable, currentSlugcat).Any(c => k.Key == $"Passage-{c.value}")) return true;
                             foreach (string region in regionsAvailable)
                             {
                                 if (k.Key.StartsWith("Echo-")
@@ -701,7 +703,7 @@ namespace RainWorldRandomizer
                                         .Contains(new DataPearl.AbstractDataPearl.DataPearlType(k.Key.Substring(6)))
                                     && Plugin.Singleton.rainWorld.regionDataPearlsAccessibility[region.ToLowerInvariant()]
                                         [Plugin.Singleton.rainWorld.regionDataPearls[region.ToLowerInvariant()].IndexOf(new DataPearl.AbstractDataPearl.DataPearlType(k.Key.Substring(6)))]
-                                        .Contains(Plugin.Singleton.currentSlugcat)) return true;
+                                        .Contains(currentSlugcat)) return true;
                             }
                             return false;
                         }).ToList().ConvertAll(p => p.Key);
@@ -734,7 +736,7 @@ namespace RainWorldRandomizer
                             Plugin.Log.LogDebug($"Could not connect to:");
                             foreach (string region in allRegions.Except(regionsAvailable))
                             {
-                                Plugin.Log.LogDebug($"\t{Region.GetRegionFullName(region, Plugin.Singleton.currentSlugcat)} ({region})");
+                                Plugin.Log.LogDebug($"\t{Region.GetRegionFullName(region, currentSlugcat)} ({region})");
                             }
 
                             Plugin.Log.LogDebug("Final State:");
@@ -772,7 +774,7 @@ namespace RainWorldRandomizer
             return true;
         }
 
-        public static void DebugBulkGeneration(int howMany)
+        public void DebugBulkGeneration(int howMany)
         {
             Stopwatch sw = new Stopwatch();
             int numSucceeded = 0;
@@ -868,7 +870,7 @@ namespace RainWorldRandomizer
             return passages;
         }
 
-        public static void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
+        public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
             randomizerKey = SaveManager.LoadSavedGame(slugcat, saveSlot);
 
@@ -878,32 +880,31 @@ namespace RainWorldRandomizer
                 switch (item.Type)
                 {
                     case Unlock.UnlockType.Gate:
-                        if (Plugin.Singleton.gateUnlocks.ContainsKey(item.ID))
+                        if (gatesStatus.ContainsKey(item.ID))
                         {
-                            Plugin.Singleton.gateUnlocks[item.ID] = Plugin.Singleton.gateUnlocks[item.ID] || item.IsGiven; // If the gate was already opened by an identical unlock, keep it open
+                            gatesStatus[item.ID] = gatesStatus[item.ID] || item.IsGiven; // If the gate was already opened by an identical unlock, keep it open
                         }
                         break;
                     case Unlock.UnlockType.Token:
-                        if (Plugin.Singleton.passageTokenUnlocks.ContainsKey(new WinState.EndgameID(item.ID)))
+                        if (passageTokensStatus.ContainsKey(new WinState.EndgameID(item.ID)))
                         {
-                            Plugin.Singleton.passageTokenUnlocks[new WinState.EndgameID(item.ID)] = item.IsGiven;
+                            passageTokensStatus[new WinState.EndgameID(item.ID)] = item.IsGiven;
                         }
                         break;
                     case Unlock.UnlockType.Karma:
-                        if (item.IsGiven) Plugin.IncreaseKarma();
+                        if (item.IsGiven) IncreaseKarma();
                         break;
                     case Unlock.UnlockType.Glow:
-                        if (item.IsGiven) Plugin.Singleton.givenNeuronGlow = true;
+                        if (item.IsGiven) _givenNeuronGlow = true;
                         break;
                     case Unlock.UnlockType.Mark:
-                        if (item.IsGiven) Plugin.Singleton.givenMark = true;
+                        if (item.IsGiven) _givenMark = true;
                         break;
                     case Unlock.UnlockType.HunterCycles:
-                        if (item.IsGiven) Plugin.Singleton.hunterBonusCyclesGiven++;
-                        if (item.IsGiven) Plugin.Log.LogDebug($"Num = {Plugin.Singleton.hunterBonusCyclesGiven}");
+                        if (item.IsGiven) _hunterBonusCyclesGiven++;
                         break;
                     case Unlock.UnlockType.IdDrone:
-                        if (item.IsGiven) Plugin.Singleton.givenRobo = true;
+                        if (item.IsGiven) _givenRobo = true;
                         break;
                 }
             }
@@ -1036,6 +1037,40 @@ namespace RainWorldRandomizer
                 }
             }
             CheckBlacklists[slugcat] = CheckBlacklists[slugcat].Except(toRemove).ToList();
+        }
+
+        public override List<string> GetLocations()
+        {
+            return randomizerKey.Keys.ToList();
+        }
+
+        public override bool LocationExists(string location)
+        {
+            return randomizerKey.ContainsKey(location);
+        }
+
+        public override bool? IsLocationGiven(string location)
+        {
+            if (!LocationExists(location)) return null;
+
+            return randomizerKey[location].IsGiven;
+        }
+
+        public override bool GiveLocation(string location)
+        {
+            if (IsLocationGiven(location) ?? true) return false;
+
+            randomizerKey[location].GiveUnlock();
+            Plugin.Singleton.notifQueue.Enqueue(randomizerKey[location].UnlockCompleteMessage());
+            Plugin.Log.LogInfo($"Completed Check: {location}");
+            return true;
+        }
+
+        public override Unlock GetUnlockAtLocation(string location)
+        {
+            if (!LocationExists(location)) return null;
+
+            return randomizerKey[location];
         }
     }
 }

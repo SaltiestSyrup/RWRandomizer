@@ -21,11 +21,12 @@ namespace RainWorldRandomizer
         }
 
         //TODO: make this async if possible
+        // Meant for vanilla saves only
         public static void WriteSavedGameToFile(Dictionary<string, Unlock> game, SlugcatStats.Name slugcat, int saveSlot)
         {
             StreamWriter file = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
-            file.WriteLine(Generation.currentSeed);
+            file.WriteLine(Plugin.RandoManager.currentSeed);
             foreach (var item in game)
             {
                 string serializedUnlock = $"{{{(int)item.Value.Type},{item.Value.ID},{item.Value.IsGiven}}}";
@@ -43,6 +44,7 @@ namespace RainWorldRandomizer
             }
         }
 
+        // Meant for vanilla saves only
         public static Dictionary<string, Unlock> LoadSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
             Dictionary<string, Unlock> game = new Dictionary<string, Unlock>();
@@ -54,7 +56,7 @@ namespace RainWorldRandomizer
 
             string[] file = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
-            Generation.currentSeed = int.Parse(file[0]);
+            Plugin.RandoManager.currentSeed = int.Parse(file[0]);
             file = file.Skip(1).ToArray();
             foreach (string line in file)
             {

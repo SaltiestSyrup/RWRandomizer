@@ -228,19 +228,19 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogError("Selected campaign does not match archipelago options." +
                     $"\n Chosen campaign: {storyGameCharacter}" +
                     $"\n Chosen AP option: {Slugcat}");
-                Plugin.isRandomizerActive = false;
+                Plugin.RandoManager.isRandomizerActive = false;
                 Plugin.Singleton.notifQueue.Enqueue("Selected campaign does not match archipelago options.");
                 return;
             }
 
             // Attempt initialization
-            if (!InitializeSession(storyGameCharacter))
-            {
-                Plugin.Log.LogError("Failed to initialize randomizer.");
-                Plugin.isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to initialize. Check logs for details.");
-                return;
-            }
+            //if (!InitializeSession(storyGameCharacter))
+            //{
+            //    Plugin.Log.LogError("Failed to initialize randomizer.");
+            //    Plugin.RandoManager.isRandomizerActive = false;
+            //    Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to initialize. Check logs for details.");
+            //    return;
+            //}
 
             // Check that AP data and the client agree whether this is a new save game
 
@@ -253,21 +253,22 @@ namespace RainWorldRandomizer
             // Set flag to tell mod to send all location events to us
         }
 
+        /*
         public static bool InitializeSession(SlugcatStats.Name slugcat)
         {
             // Reset all tracking variables
-            Plugin.Singleton.currentMaxKarma = 4;
-            Plugin.Singleton.hunterBonusCyclesGiven = 0;
-            Plugin.Singleton.givenNeuronGlow = false;
-            Plugin.Singleton.givenMark = false;
-            Plugin.Singleton.givenRobo = false;
-            Plugin.Singleton.givenPebblesOff = false;
-            Plugin.Singleton.givenSpearPearlRewrite = false;
-            Plugin.Singleton.customStartDen = "SU_S01";
+            Plugin.RandoManager.currentMaxKarma = 4;
+            Plugin.RandoManager.hunterBonusCyclesGiven = 0;
+            Plugin.RandoManager.givenNeuronGlow = false;
+            Plugin.RandoManager.givenMark = false;
+            Plugin.RandoManager.givenRobo = false;
+            Plugin.RandoManager.givenPebblesOff = false;
+            Plugin.RandoManager.givenSpearPearlRewrite = false;
+            Plugin.RandoManager.customStartDen = "SU_S01";
 
             // Reset unlock lists
-            Plugin.Singleton.gateUnlocks.Clear();
-            Plugin.Singleton.passageTokenUnlocks.Clear();
+            Plugin.RandoManager.gateUnlocks.Clear();
+            Plugin.RandoManager.passageTokenUnlocks.Clear();
 
             // Populate gate unlocks
             // Loop through AP data gates and register them
@@ -300,6 +301,7 @@ namespace RainWorldRandomizer
 
             return true;
         }
+        */
 
         public static void SendCheck(string name)
         {

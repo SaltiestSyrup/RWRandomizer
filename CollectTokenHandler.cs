@@ -212,17 +212,13 @@ namespace RainWorldRandomizer
 
             if ((self.placedObj.data as CollectToken.CollectTokenData).isWhite
                 && (self.placedObj.data as CollectToken.CollectTokenData).ChatlogCollect != null
-                && Generation.randomizerKey.ContainsKey($"SMBroadcast-{tokenString}")
-                && !(Generation.randomizerKey[$"SMBroadcast-{tokenString}"]?.IsGiven ?? false))
+                && !(Plugin.RandoManager.IsLocationGiven($"SMBroadcast-{tokenString}") ?? true))
             {
-                Generation.randomizerKey[$"SMBroadcast-{tokenString}"].GiveUnlock();
-                Plugin.Singleton.notifQueue.Enqueue(Generation.randomizerKey[$"SMBroadcast-{tokenString}"].UnlockCompleteMessage());
+                Plugin.RandoManager.GiveLocation($"SMBroadcast-{tokenString}");
             }
-            else if (Generation.randomizerKey.ContainsKey($"Token-{tokenString}")
-                && !(Generation.randomizerKey[$"Token-{tokenString}"]?.IsGiven ?? false))
+            else if (!(Plugin.RandoManager.IsLocationGiven($"Token-{tokenString}") ?? true))
             {
-                Generation.randomizerKey[$"Token-{tokenString}"].GiveUnlock();
-                Plugin.Singleton.notifQueue.Enqueue(Generation.randomizerKey[$"Token-{tokenString}"].UnlockCompleteMessage());
+                Plugin.RandoManager.GiveLocation($"Token-{tokenString}");
             }
         }
 
@@ -245,8 +241,7 @@ namespace RainWorldRandomizer
                     tokenString = $"L-{tokenString}";
                 }
 
-                if (Generation.randomizerKey.ContainsKey($"Token-{tokenString}")
-                && !(Generation.randomizerKey[$"Token-{tokenString}"]?.IsGiven ?? false))
+                if (!(Plugin.RandoManager.IsLocationGiven($"Token-{tokenString}") ?? true))
                 {
                     return false;
                 }

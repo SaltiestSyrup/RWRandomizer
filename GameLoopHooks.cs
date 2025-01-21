@@ -46,7 +46,7 @@ namespace RainWorldRandomizer
 
         public static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
         {
-            if (ID == ProcessManager.ProcessID.Game && !Plugin.isRandomizerActive)
+            if (ID == ProcessManager.ProcessID.Game && !Plugin.RandoManager.isRandomizerActive)
             {
                 if (self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat == null)
                 {
@@ -56,7 +56,7 @@ namespace RainWorldRandomizer
                 {
                     try
                     {
-                        Generation.StartNewGameSession(self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat,
+                        Plugin.RandoManager.StartNewGameSession(self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat,
                             self.menuSetup.startGameCondition != ProcessManager.MenuSetup.StoryGameInitCondition.New);
                     }
                     catch (Exception e)
@@ -69,7 +69,7 @@ namespace RainWorldRandomizer
             if (ID == ProcessManager.ProcessID.MainMenu)
             {
                 // Turn off randomizer when quitting to menu
-                Plugin.isRandomizerActive = false;
+                Plugin.RandoManager.isRandomizerActive = false;
             }
 
             if (ID == ProcessManager.ProcessID.SleepScreen)
@@ -82,9 +82,10 @@ namespace RainWorldRandomizer
                     SaveState saveState = self.rainWorld.progression.currentSaveState == null
                         ? self.rainWorld.progression.starvedSaveState
                         : self.rainWorld.progression.currentSaveState;
-                    if (Generation.CheckBlacklists.ContainsKey(Plugin.Singleton.currentSlugcat)
-                        && !Generation.CheckBlacklists[Plugin.Singleton.currentSlugcat].Contains($"Passage-{check}")
-                        && !Plugin.Singleton.IsCheckGiven($"Passage-{check}")
+                    if (!(Plugin.RandoManager.IsLocationGiven($"Passage-{check}") ?? true) // if location exists and is not given
+                        //ManagerVanilla.CheckBlacklists.ContainsKey(Plugin.Singleton.currentSlugcat)
+                        //&& !ManagerVanilla.CheckBlacklists[Plugin.Singleton.currentSlugcat].Contains($"Passage-{check}")
+                        //&& !(Plugin.RandoManager.IsLocationGiven($"Passage-{check}") ?? false)
                         && saveState.deathPersistentSaveData.winState.GetTracker(id, false) != null)
                     {
                         WinState.EndgameTracker tracker = saveState.deathPersistentSaveData.winState.GetTracker(id, false);
@@ -92,7 +93,7 @@ namespace RainWorldRandomizer
                         // Normal Passages
                         if (tracker.GoalFullfilled)
                         {
-                            Plugin.Singleton.GiveCheck($"Passage-{check}");
+                            Plugin.RandoManager.GiveLocation($"Passage-{check}");
                         }
 
                         // Gourmand Food Quest
@@ -103,10 +104,9 @@ namespace RainWorldRandomizer
                                 string type = WinState.GourmandPassageTracker[i].type == AbstractPhysicalObject.AbstractObjectType.Creature
                                     ? WinState.GourmandPassageTracker[i].crits[0].value : WinState.GourmandPassageTracker[i].type.value;
 
-                                if (gourTracker.progress[i] > 0
-                                    && !Plugin.Singleton.IsCheckGiven($"FoodQuest-{type}"))
+                                if (gourTracker.progress[i] > 0)
                                 {
-                                    Plugin.Singleton.GiveCheck($"FoodQuest-{type}");
+                                    Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
                                 }
                             }
                         }
@@ -122,20 +122,20 @@ namespace RainWorldRandomizer
             orig(self, manager);
             Plugin.Singleton.game = self;
 
-            if (!Plugin.isRandomizerActive || !self.IsStorySession) return;
+            if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
 
             self.rainWorld.progression.ReloadLocksList();
-            self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.Singleton.currentMaxKarma;
+            self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
 
             // The glow is not death persistent, so I have to make sure it stays applied
-            self.GetStorySession.saveState.theGlow = Plugin.Singleton.givenNeuronGlow;
-            self.GetStorySession.saveState.deathPersistentSaveData.theMark = Plugin.Singleton.givenMark;
+            self.GetStorySession.saveState.theGlow = Plugin.RandoManager.GivenNeuronGlow;
+            self.GetStorySession.saveState.deathPersistentSaveData.theMark = Plugin.RandoManager.GivenMark;
         }
 
         // Remove Hunter's starting macguffins
         public static void OnHardmodeStart(On.HardmodeStart.orig_Update orig, HardmodeStart self, bool eu)
         {
-            if (!Plugin.isRandomizerActive
+            if (!Plugin.RandoManager.isRandomizerActive
                 || self.room.game.manager.fadeToBlack >= 1f
                 || self.phase != HardmodeStart.Phase.Init
                 || self.nshSwarmer == null)
@@ -213,7 +213,7 @@ namespace RainWorldRandomizer
             }
 
             // Active only
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             // Pearl Detection
             for (int i = 0; i < self.Players.Count; i++)
@@ -222,7 +222,7 @@ namespace RainWorldRandomizer
                     && self.Players[i].realizedCreature != null)
                 {
                     // Applying glow effect if unlock has been given
-                    if (Plugin.Singleton.givenNeuronGlow && !(self.Players[i].realizedCreature as Player).glowing)
+                    if (Plugin.RandoManager.GivenNeuronGlow && !(self.Players[i].realizedCreature as Player).glowing)
                     {
                         (self.Players[i].realizedCreature as Player).glowing = true;
                     }
@@ -235,8 +235,11 @@ namespace RainWorldRandomizer
                         {
                             if (self.Players[i].realizedCreature.room.updateList[j] is DataPearl pearl)
                             {
+                                Plugin.RandoManager.GiveLocation($"Pearl-{pearl.AbstractPearl.dataPearlType.value}");
+
                                 // Check if this pearl has either already been checked or is not a valid target
-                                string pearlID = (from x in Generation.randomizerKey
+                                /*
+                                string pearlID = (from x in ManagerVanilla.randomizerKey
                                                   where Regex.Split(x.Key, "-").Length > 1
                                                   && Regex.Split(x.Key, "-")[0] == "Pearl"
                                                   && Regex.Split(x.Key, "-")[1] == pearl.AbstractPearl.dataPearlType.value
@@ -246,6 +249,7 @@ namespace RainWorldRandomizer
                                 {
                                     Plugin.Singleton.GiveCheck(pearlID);
                                 }
+                                */
                             }
                         }
                     }
@@ -255,13 +259,14 @@ namespace RainWorldRandomizer
 
         public static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
-            if (Plugin.isRandomizerActive)
+            // TODO: Write alternatives for other managers
+            if (Plugin.RandoManager.isRandomizerActive && Plugin.RandoManager is ManagerVanilla vanillaManager)
             {
-                SaveManager.WriteSavedGameToFile(Generation.randomizerKey, Plugin.Singleton.currentSlugcat, Plugin.Singleton.rainWorld.options.saveSlot);
+                SaveManager.WriteSavedGameToFile(vanillaManager.randomizerKey, Plugin.RandoManager.currentSlugcat, Plugin.Singleton.rainWorld.options.saveSlot);
 
                 if (saveCurrentState)
                 {
-                    SaveManager.WriteItemQueueToFile(Plugin.Singleton.itemDeliveryQueue, Plugin.Singleton.currentSlugcat, Plugin.Singleton.rainWorld.options.saveSlot);
+                    SaveManager.WriteItemQueueToFile(Plugin.Singleton.itemDeliveryQueue, Plugin.RandoManager.currentSlugcat, Plugin.Singleton.rainWorld.options.saveSlot);
                 }
             }
 
@@ -271,7 +276,7 @@ namespace RainWorldRandomizer
         public static void OnSessionEnded(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished)
         {
             orig(self, game, survived, newMalnourished);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             // If we survived this cycle, paste current queue to saved backup
             // If we died, restore current queue from saved backup

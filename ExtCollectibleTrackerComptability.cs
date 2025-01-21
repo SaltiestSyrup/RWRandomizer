@@ -36,9 +36,9 @@ namespace RainWorldRandomizer
             bool origResult = orig(rainWorld, pearlType);
             string keyString = $"Pearl-{pearlType}";
 
-            if (Generation.randomizerKey.ContainsKey(keyString))
+            if (Plugin.RandoManager.LocationExists(keyString))
             {
-                return Generation.randomizerKey[keyString]?.IsGiven ?? false;
+                return Plugin.RandoManager.IsLocationGiven(keyString) ?? false;
             }
 
             return origResult;
