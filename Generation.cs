@@ -198,14 +198,21 @@ namespace RainWorldRandomizer
                     }
                 }
 
+                string[] split = Regex.Split(gate, "_");
                 // Check specific gate blacklists
                 if (GateBlackLists[slugcat].Contains(gate)
                     // Check that both connecting regions actually exist
-                    || !Region.GetFullRegionOrder().Contains(Regex.Split(gate, "_")[1])
-                    || !Region.GetFullRegionOrder().Contains(Regex.Split(gate, "_")[2])
-                    // Check if this gate room is not accessible to the current slugcat
-                    || (CollectTokenHandler.GetRoomAccessibility(Regex.Split(gate, "_")[1]).ContainsKey(gate)
-                        && !CollectTokenHandler.GetRoomAccessibility(Regex.Split(gate, "_")[1])[gate].Contains(slugcat)))
+                    || !Region.GetFullRegionOrder().Contains(split[1])
+                    || !Region.GetFullRegionOrder().Contains(split[2]))
+                {
+                    isBlacklisted = true;
+                }
+
+                // Check if this gate room is not accessible to the current slugcat)
+                if (CollectTokenHandler.GetRoomAccessibility(split[1]).ContainsKey(gate.ToLowerInvariant())
+                    && CollectTokenHandler.GetRoomAccessibility(split[2]).ContainsKey(gate.ToLowerInvariant())
+                    && !(CollectTokenHandler.GetRoomAccessibility(split[1])[gate.ToLowerInvariant()].Contains(slugcat)
+                        && CollectTokenHandler.GetRoomAccessibility(split[2])[gate.ToLowerInvariant()].Contains(slugcat)))
                 {
                     isBlacklisted = true;
                 }

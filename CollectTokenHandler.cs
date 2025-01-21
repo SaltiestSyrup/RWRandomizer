@@ -509,6 +509,7 @@ namespace RainWorldRandomizer
 
         public static Dictionary<string, List<SlugcatStats.Name>> GetRoomAccessibility(string regionName)
         {
+            regionName = regionName.ToLowerInvariant();
             if (!roomAccessibilities.ContainsKey(regionName))
             {
                 roomAccessibilities.Add(regionName, LoadRoomAccessibility(regionName));
