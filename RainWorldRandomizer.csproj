@@ -101,6 +101,7 @@
     <Compile Include="FakeEndgameToken.cs" />
     <Compile Include="GameLoopHooks.cs" />
     <Compile Include="Generation.cs" />
+    <Compile Include="ManagerBase.cs" />
     <Compile Include="PlayerHooks.cs" />
     <Compile Include="SpearmasterCutscenes.cs" />
     <Compile Include="IteratorHooks.cs" />

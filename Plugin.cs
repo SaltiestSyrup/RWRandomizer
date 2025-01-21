@@ -20,6 +20,7 @@ namespace RainWorldRandomizer
         internal static ManualLogSource Log;
 
         public static Plugin Singleton = null;
+        public static ManagerBase Manager = null;
         public CollectTokenHandler collectTokenHandler;
         public MenuExtension seedViewer;
 
@@ -66,10 +67,10 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static bool isRandomizerActive = false;
+        public static bool isRandomizerActive = false; // -- Move to manager base
         public RainWorld rainWorld;
         public RainWorldGame game;
-        public SlugcatStats.Name currentSlugcat;
+        public SlugcatStats.Name currentSlugcat; // -- Move to manager base
 
         public Queue<string> notifQueue = new Queue<string>(); // Queue of pending notifications to be sent to the player in-game
         // Queue of items that the player has recieved and not claimed
@@ -77,11 +78,12 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
 
         // Values for currently unlocked features
-        public List<Unlock> AllUnlocks = new List<Unlock>();
-        public Dictionary<string, bool> gateUnlocks = new Dictionary<string, bool>();
-        public Dictionary<WinState.EndgameID, bool> passageTokenUnlocks = new Dictionary<WinState.EndgameID, bool>();
-        public List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>();
+        public List<Unlock> AllUnlocks = new List<Unlock>(); // -- Move to Generation, only used there
+        public Dictionary<string, bool> gateUnlocks = new Dictionary<string, bool>(); // -- Move to manager base
+        public Dictionary<WinState.EndgameID, bool> passageTokenUnlocks = new Dictionary<WinState.EndgameID, bool>(); // -- Move to manager base
+        public List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>(); // Used for karma ladder screen. Maybe move to Misc hooks class?
 
+        // -- Move to manager base
         public int currentMaxKarma = 4;
         public int hunterBonusCyclesGiven = 0;
         public bool givenNeuronGlow = false;
@@ -91,6 +93,7 @@ namespace RainWorldRandomizer
         public bool givenSpearPearlRewrite = false;
         public string customStartDen = "SU_S01";
 
+        // These are just for reference. Should they stay here or move to manager base?
         // A map of every region to it's display name
         public static Dictionary<string, string> RegionNamesMap = new Dictionary<string, string>();
         // A map of the 'correct' region acronyms for each region depending on current slugcat
