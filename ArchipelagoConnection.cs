@@ -6,6 +6,7 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -17,7 +18,8 @@ namespace RainWorldRandomizer
         private const string APVersion = "0.6.0";
 
         public static bool Authenticated = false;
-        public static bool HasConnected = false;
+        public static bool CurrentlyConnecting = false;
+        public static bool IsConnected = false;
 
         public static bool IsMSC;
         public static SlugcatStats.Name Slugcat;
@@ -25,7 +27,15 @@ namespace RainWorldRandomizer
         public static ArchipelagoSession Session;
         public static bool RecievedSlotData = false;
         public static Dictionary<string, long> ItemNameToID = null;
+        public static Dictionary<long, string> IDToItemName = null;
         public static Dictionary<string, long> LocationNameToID = null;
+        public static Dictionary<long, string> IDToLocationName = null;
+
+        private static long lastItemIndex = 0;
+
+        private static Queue<string> recievedItemsQueue = new Queue<string>();
+        private static Queue<long> sendItemsQueue = new Queue<long>();
+        public static Dictionary<string, bool> LocationKey = new Dictionary<string, bool>();
 
         private static void CreateSession(string hostName, int port)
         {
@@ -79,13 +89,12 @@ namespace RainWorldRandomizer
                 }
 
                 Plugin.Log.LogError(errorMessage);
-                // TODO: tell the player connection failed
                 Authenticated = false;
                 return errorMessage;
             }
 
             Authenticated = true;
-            HasConnected = true;
+            IsConnected = true;
             LoginSuccessful loginSuccess = (LoginSuccessful)result;
             
             if (loginSuccess.SlotData != null)
@@ -107,7 +116,7 @@ namespace RainWorldRandomizer
             Session.Socket.DisconnectAsync();
             Session = null;
             Authenticated = false;
-            HasConnected = false;
+            IsConnected = false;
         }
 
         // Catch-all packet listener
@@ -125,7 +134,13 @@ namespace RainWorldRandomizer
 
                 ItemNameToID = data.ItemLookup;
                 LocationNameToID = data.LocationLookup;
+                ConstructIdDicts();
                 SaveManager.WriteDataPackageToFile(data.ItemLookup, data.LocationLookup, data.Checksum);
+            }
+
+            if (packet is ReceivedItemsPacket)
+            {
+
             }
         }
 
@@ -172,6 +187,7 @@ namespace RainWorldRandomizer
             if (checksum == SaveManager.GetDataPackageChecksum())
             {
                 loadResult = SaveManager.LoadDataPackage(out ItemNameToID, out LocationNameToID);
+                ConstructIdDicts();
             }
 
             // If datapackage could not be loaded from file, ask the server for it
@@ -179,6 +195,29 @@ namespace RainWorldRandomizer
             {
                 Session.Socket.SendPacket(new GetDataPackagePacket() { Games = new string[] { "Rain World" } });
             }
+        }
+
+        private static void ConstructIdDicts()
+        {
+            if (ItemNameToID == null || LocationNameToID == null) return;
+
+            foreach (var item in ItemNameToID)
+            {
+                IDToItemName.Add(item.Value, item.Key);
+            }
+
+            foreach (var loc in LocationNameToID)
+            {
+                IDToLocationName.Add(loc.Value, loc.Key);
+            }
+        }
+
+        private static void ConstructNewInventory(ReceivedItemsPacket newInventory)
+        {
+
+
+            // populate found locations
+            // set flags for recieved items items
         }
 
         public static void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
@@ -208,6 +247,8 @@ namespace RainWorldRandomizer
                 // Initialize game from AP data
                 // Basically code for fetching save game
 
+
+
             // All good, randomizer active
             // Set flag to tell mod to send all location events to us
         }
@@ -215,6 +256,14 @@ namespace RainWorldRandomizer
         public static bool InitializeSession(SlugcatStats.Name slugcat)
         {
             // Reset all tracking variables
+            Plugin.Singleton.currentMaxKarma = 4;
+            Plugin.Singleton.hunterBonusCyclesGiven = 0;
+            Plugin.Singleton.givenNeuronGlow = false;
+            Plugin.Singleton.givenMark = false;
+            Plugin.Singleton.givenRobo = false;
+            Plugin.Singleton.givenPebblesOff = false;
+            Plugin.Singleton.givenSpearPearlRewrite = false;
+            Plugin.Singleton.customStartDen = "SU_S01";
 
             // Reset unlock lists
             Plugin.Singleton.gateUnlocks.Clear();
@@ -222,6 +271,7 @@ namespace RainWorldRandomizer
 
             // Populate gate unlocks
             // Loop through AP data gates and register them
+
 
             // Populate passage token unlocks
             // Loop through AP data passages and register their unlocks
@@ -249,6 +299,16 @@ namespace RainWorldRandomizer
             Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
 
             return true;
+        }
+
+        public static void SendCheck(string name)
+        {
+
+        }
+
+        public static void SendCheck(List<string> names)
+        {
+
         }
     }
 }

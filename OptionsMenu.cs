@@ -387,7 +387,7 @@ namespace RainWorldRandomizer
             {
                 bool APDisabled = !APCheckBox.GetValueBool();
                 // Disconnect connection when AP is turned off
-                if (APDisabled && ArchipelagoConnection.HasConnected)
+                if (APDisabled && ArchipelagoConnection.IsConnected)
                 {
                     ArchipelagoConnection.Disconnect();
                 }

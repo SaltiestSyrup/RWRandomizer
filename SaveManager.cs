@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -251,6 +252,34 @@ namespace RainWorldRandomizer
             }
 
             return true;
+        }
+
+        public static void WriteLastItemIndexToFile(string saveId, long lastIndex)
+        {
+            Dictionary<string, long> origRegistry = LoadLastItemIndices();
+            if (origRegistry.ContainsKey(saveId))
+            {
+                origRegistry[saveId] = lastIndex;
+            }
+            else
+            {
+                origRegistry.Add(saveId, lastIndex);
+            }
+
+            StreamWriter indexFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_save_registry.txt"));
+
+            indexFile.Write(JsonConvert.SerializeObject(origRegistry));
+        }
+
+        public static Dictionary<string, long> LoadLastItemIndices()
+        {
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_save_registry.txt");
+            if (!File.Exists(path))
+            {
+                return new Dictionary<string, long>();
+            }
+
+            return JsonConvert.DeserializeObject<Dictionary<string, long>>(File.ReadAllText(path)) ?? new Dictionary<string, long>();
         }
 
         #endregion

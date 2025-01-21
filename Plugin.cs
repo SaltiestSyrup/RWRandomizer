@@ -232,7 +232,7 @@ namespace RainWorldRandomizer
 
         public bool IsCheckGiven(string check)
         {
-            if (ArchipelagoConnection.HasConnected)
+            if (ArchipelagoConnection.IsConnected)
             {
                 return true;
             }
