@@ -15,9 +15,14 @@ namespace RainWorldRandomizer
         public bool isRandomizerActive = false;
         public SlugcatStats.Name currentSlugcat;
 
+        /// <summary>
+        /// Matches gate strings to whether they have been opened.
+        /// Gate strings match pattern "GATE_[Region1]_[Region2]"
+        /// </summary>
         protected Dictionary<string, bool> gatesStatus = new Dictionary<string, bool>();
         protected Dictionary<WinState.EndgameID, bool> passageTokensStatus = new Dictionary<WinState.EndgameID, bool>();
 
+        // These are all properties so the get / set can be modified if needed
         public virtual int CurrentMaxKarma
         {
             get { return _currentMaxKarma; }
@@ -66,22 +71,78 @@ namespace RainWorldRandomizer
 
         public ManagerBase() { }
 
+        /// <summary>
+        /// Called when the player starts the game from slugcat select menu.
+        /// Use this to initialize values / generate the seed
+        /// </summary>
+        /// <param name="storyGameCharacter">The slugcat the player chose</param>
+        /// <param name="continueSaved">Whether this is a new save file</param>
         public abstract void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved);
 
+        /// <summary>
+        /// Used to find all possible locations the player could find
+        /// </summary>
+        /// <returns>A list of all locations in the seed</returns>
         public abstract List<string> GetLocations();
+        
+        /// <summary>
+        /// Check whether a given location exists in the current seed
+        /// </summary>
+        /// <param name="location">The string ID of the location</param>
+        /// <returns>True if the location is present in the seed</returns>
         public abstract bool LocationExists(string location);
+
+        /// <summary>
+        /// Check whether a location has been found yet
+        /// </summary>
+        /// <param name="location">The string ID of the location</param>
+        /// <returns>True if the location has been found, null if the location does not exist</returns>
         public abstract bool? IsLocationGiven(string location);
+
+        /// <summary>
+        /// Award the player the item assigned to the specified location
+        /// </summary>
+        /// <param name="location">The string ID of the location</param>
+        /// <returns>True if giving item successful</returns>
         public abstract bool GiveLocation(string location);
 
+        /// <summary>
+        /// Used to find what item is placed at a location
+        /// </summary>
+        /// <param name="location">The string ID of the location</param>
+        /// <returns>The Unlock assigned to the given location</returns>
         public abstract Unlock GetUnlockAtLocation(string location);
 
+
+        /// <summary>
+        /// Used to find all gates in the current seed and their status
+        /// </summary>
+        /// <returns>A Dictionary matching gate strings to whether they have been opened</returns>
         public virtual Dictionary<string, bool> GetGatesStatus() { return gatesStatus; }
+
+        /// <summary>
+        /// Check whether a gate exists in the current seed
+        /// </summary>
+        /// <param name="gate">Gate string matching pattern "GATE_[Region1]_[Region2]"</param>
+        /// <returns>True if the gate exists</returns>
         public virtual bool GateExists(string gate) { return gatesStatus.ContainsKey(gate); }
+
+        /// <summary>
+        /// Check whether a gate has been opened by an item
+        /// </summary>
+        /// <param name="gate">Gate string matching pattern "GATE_[Region1]_[Region2]"</param>
+        /// <returns>True if the gate has been opened, null if the gate does not exist</returns>
         public virtual bool? IsGateOpen(string gate)
         {
             if (!GateExists(gate)) return null;
             return gatesStatus[gate];
         }
+
+        /// <summary>
+        /// Mark a gate as opened
+        /// </summary>
+        /// <param name="gate">Gate string matching pattern "GATE_[Region1]_[Region2]"</param>
+        /// <returns>True if opening gate was successful</returns>
         public virtual bool OpenGate(string gate)
         {
             if (!GateExists(gate)) return false;
@@ -90,13 +151,36 @@ namespace RainWorldRandomizer
             return true;
         }
 
+
+        /// <summary>
+        /// Used to find all passage tokens in the current seed and their status
+        /// </summary>
+        /// <returns>A Dictionary matching passage IDs to whether they have been awarded</returns>
         public virtual Dictionary<WinState.EndgameID, bool> GetPassageTokensStatus() { return passageTokensStatus; }
+
+        /// <summary>
+        /// Check whether a passage token exists in the current seed
+        /// </summary>
+        /// <param name="passageToken">EndgameID for the token to check</param>
+        /// <returns>True if the passage token exists</returns>
         public virtual bool PassageTokenExists(WinState.EndgameID passageToken) { return passageTokensStatus.ContainsKey(passageToken); }
+
+        /// <summary>
+        /// Check whether a passage token has been given by an item
+        /// </summary>
+        /// <param name="passageToken">EndgameID for the token to check</param>
+        /// <returns>True if the passage token has been given, null if the passage token does not exist</returns>
         public virtual bool? HasPassageToken(WinState.EndgameID passageToken)
         {
             if (!PassageTokenExists(passageToken)) return null;
             return passageTokensStatus[passageToken];
         }
+
+        /// <summary>
+        /// Award the player a passage token
+        /// </summary>
+        /// <param name="passageToken">EndgameID for the token to give</param>
+        /// <returns>True if awarding token was successful</returns>
         public virtual bool AwardPassageToken(WinState.EndgameID passageToken)
         {
             if (!PassageTokenExists(passageToken)) return false;
@@ -105,6 +189,9 @@ namespace RainWorldRandomizer
             return true;
         }
 
+        /// <summary>
+        /// Increases the player's karma by one, following normal karma increase rules
+        /// </summary>
         public void IncreaseKarma()
         {
             if (CurrentMaxKarma == 4)
