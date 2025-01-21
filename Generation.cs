@@ -550,7 +550,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Singleton.customStartDen = FindRandomStart(Plugin.Singleton.currentSlugcat);
                 Plugin.Log.LogInfo($"Using randomized starting den: {Plugin.Singleton.customStartDen}");
-                regionsAvailable.Add(Region.GetVanillaEquivalentRegionAcronym(Regex.Split(Plugin.Singleton.customStartDen, "_")[0]));
+                regionsAvailable.Add(Plugin.ProperRegionMap[Regex.Split(Plugin.Singleton.customStartDen, "_")[0]]);
             }
             else
             {
@@ -717,7 +717,7 @@ namespace RainWorldRandomizer
                                 string[] split = Regex.Split(u.ID, "_");
 
                                 // If exactly one of this gate's region connection matches one available
-                                if (regionsAvailable.Contains(split[1]) ^ regionsAvailable.Contains(split[2]))
+                                if (regionsAvailable.Contains(Plugin.ProperRegionMap[split[1]]) ^ regionsAvailable.Contains(Plugin.ProperRegionMap[split[2]]))
                                 {
                                     return true;
                                 }
@@ -813,17 +813,17 @@ namespace RainWorldRandomizer
 
             foreach (string gate in preOpened)
             {
+                string[] split = Regex.Split(gate, "_");
+
                 string[] connected = (from r in availableRegions
-                                      where gate.Contains(r)
+                                      where r == Plugin.ProperRegionMap[split[1]] || r == Plugin.ProperRegionMap[split[2]]
                                       select r).ToArray();
 
                 if (connected.Length != 1)
                     continue;
 
-                string[] split = Regex.Split(gate, "_");
-
                 // Add whichever region is new
-                newRegions.Add(connected[0] != split[1] ? split[1] : split[2]);
+                newRegions.Add(connected[0] != Plugin.ProperRegionMap[split[1]] ? Plugin.ProperRegionMap[split[1]] : Plugin.ProperRegionMap[split[2]]);
             }
 
             if (newRegions.Count > 0)
