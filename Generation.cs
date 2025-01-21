@@ -606,6 +606,7 @@ namespace RainWorldRandomizer
                     int index = -1;
 
                     // Special logic cases
+                    #region Extra logic
                     switch (Plugin.Singleton.currentSlugcat.value)
                     {
                         case "Red":
@@ -662,9 +663,24 @@ namespace RainWorldRandomizer
                             }
                             break;
                     }
-                    // Save_LttM !> NSHSwarmer
-                    // Any LC !> IDDrone
-                    // Any Ascend !> +Karma
+
+                    // Make the mark not locked behind Scholar
+                    if (index == -1 && Plugin.usePassageChecks.Value)
+                    {
+                        index = remainingUnlocks.FindIndex(u => u.Type == Unlock.UnlockType.Mark);
+                        if (index > -1)
+                        {
+                            // Checks that aren't the Scholar
+                            List<string> possibleChecks = randomizerKey.Where(k =>
+                            {
+                                if (k.Value != null) return false;
+                                return !k.Key.Equals("Passage-Scholar");
+                            }).ToList().ConvertAll(p => p.Key);
+
+                            key = possibleChecks[UnityEngine.Random.Range(0, possibleChecks.Count)];
+                        }
+                    }
+                    #endregion
 
                     // Assign purely random check-unlock pair
                     if (key == "" || index == -1)
