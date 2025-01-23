@@ -20,6 +20,7 @@ namespace RainWorldRandomizer
         internal static ManualLogSource Log;
 
         public static Plugin Singleton = null;
+        public static ArchipelagoConnection APConnection = new ArchipelagoConnection();
         public static ManagerBase RandoManager = null;
         public CollectTokenHandler collectTokenHandler;
         public MenuExtension seedViewer;
@@ -234,16 +235,6 @@ namespace RainWorldRandomizer
             foreach (string regionShort in Region.GetFullRegionOrder())
             {
                 RegionNamesMap.Add(regionShort, Region.GetRegionFullName(regionShort, null));
-            }
-
-            // Initialize a new manager
-            if (archipelago.Value)
-            {
-                //Manager = new ManagerBase();
-            }
-            else
-            {
-                RandoManager = new ManagerVanilla();
             }
         }
 

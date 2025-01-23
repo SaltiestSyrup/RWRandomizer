@@ -13,29 +13,33 @@ using UnityEngine;
 
 namespace RainWorldRandomizer
 {
-    public static class ArchipelagoConnection
+    public class ArchipelagoConnection : MonoBehaviour
     {
         private const string APVersion = "0.6.0";
 
         public static bool Authenticated = false;
         public static bool CurrentlyConnecting = false;
         public static bool IsConnected = false;
+        public static bool ReceivedSlotData = false;
+        public static bool DataPackageReady = false;
 
+        // Ported configurables
         public static bool IsMSC;
         public static SlugcatStats.Name Slugcat;
 
         public static ArchipelagoSession Session;
-        public static bool RecievedSlotData = false;
         public static Dictionary<string, long> ItemNameToID = null;
         public static Dictionary<long, string> IDToItemName = null;
         public static Dictionary<string, long> LocationNameToID = null;
         public static Dictionary<long, string> IDToLocationName = null;
 
-        private static long lastItemIndex = 0;
+        public static long lastItemIndex = 0;
+        public static string playerName;
+        public static string generationSeed;
 
-        private static Queue<string> recievedItemsQueue = new Queue<string>();
+        private static Queue<string> receivedItemsQueue = new Queue<string>();
         private static Queue<long> sendItemsQueue = new Queue<long>();
-        public static Dictionary<string, bool> LocationKey = new Dictionary<string, bool>();
+        //public static Dictionary<string, bool> LocationKey = new Dictionary<string, bool>();
 
         private static void CreateSession(string hostName, int port)
         {
@@ -56,6 +60,13 @@ namespace RainWorldRandomizer
                 return $"Failed to create session.\nError log:\n{e}";
             }
 
+            // Create a new manager instance if there isn't one
+            if (Plugin.RandoManager == null || !(Plugin.RandoManager is ManagerArchipelago))
+            {
+                Plugin.RandoManager = new ManagerArchipelago();
+            }
+            playerName = slotName;
+
             Session.Socket.PacketReceived += PacketListener;
             LoginResult result;
 
@@ -67,7 +78,7 @@ namespace RainWorldRandomizer
                     ItemsHandlingFlags.AllItems,
                     new Version(APVersion),
                     password: password,
-                    requestSlotData: !RecievedSlotData);
+                    requestSlotData: !ReceivedSlotData);
             }
             catch (Exception e)
             {
@@ -89,6 +100,8 @@ namespace RainWorldRandomizer
                 }
 
                 Plugin.Log.LogError(errorMessage);
+                Plugin.RandoManager = null;
+                playerName = "";
                 Authenticated = false;
                 return errorMessage;
             }
@@ -100,7 +113,7 @@ namespace RainWorldRandomizer
             if (loginSuccess.SlotData != null)
             {
                 ParseSlotData(loginSuccess.SlotData);
-                RecievedSlotData = true;
+                ReceivedSlotData = true;
             }
 
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
@@ -122,25 +135,67 @@ namespace RainWorldRandomizer
         // Catch-all packet listener
         public static void PacketListener(ArchipelagoPacketBase packet)
         {
-            if (packet is RoomInfoPacket)
+            try
             {
-                Plugin.Log.LogDebug("Recieved RoomInfo packet");
-                LoadDataPackage((packet as RoomInfoPacket).DataPackageChecksums["Rain World"]);
+                if (packet is RoomInfoPacket)
+                {
+                    Plugin.Log.LogDebug($"Received RoomInfo packet. Rando manager: {Plugin.RandoManager}");
+                    LoadDataPackage((packet as RoomInfoPacket).DataPackageChecksums["Rain World"]);
+                    generationSeed = (packet as RoomInfoPacket).SeedName;
+
+                    InitializePlayer();
+                    return;
+                }
+
+                if (packet is DataPackagePacket)
+                {
+                    GameData data = (packet as DataPackagePacket).DataPackage.Games["Rain World"];
+                    Plugin.Log.LogDebug("Received DataPackage packet");
+
+                    ItemNameToID = data.ItemLookup;
+                    LocationNameToID = data.LocationLookup;
+                    PopulateDicts();
+                    SaveManager.WriteDataPackageToFile(data.ItemLookup, data.LocationLookup, data.Checksum);
+                    return;
+                }
+
+                if (packet is ReceivedItemsPacket)
+                {
+                    ReceivedItemsPacket receivedItemsPacket = packet as ReceivedItemsPacket;
+                    Plugin.Log.LogDebug($"Received items packet. Index: {(packet as ReceivedItemsPacket).Index} | Last index: {lastItemIndex} | Item count: {receivedItemsPacket.Items.Length}");
+
+                    //if (!(Plugin.RandoManager as ManagerArchipelago).locationsLoaded)
+
+                    // This is a fresh inventory, initialize it
+                    if (receivedItemsPacket.Index == 0)
+                    {
+                        ConstructNewInventory(receivedItemsPacket, lastItemIndex);
+                    }
+                    // Items are out of sync, start a resync
+                    else if (receivedItemsPacket.Index != lastItemIndex)
+                    {
+                        // Sync
+                        Plugin.Log.LogDebug("Item index out of sync");
+                    }
+                    else
+                    {
+                        for (long i = 0; i < receivedItemsPacket.Items.Length; i++)
+                        {
+                            (Plugin.RandoManager as ManagerArchipelago).AquireItem(IDToItemName[receivedItemsPacket.Items[i].Item]);
+                        }
+                    }
+
+                    Plugin.Log.LogDebug($"Items in this packet: {receivedItemsPacket.Items.Length}");
+                    lastItemIndex = receivedItemsPacket.Index + receivedItemsPacket.Items.Length;
+                    return;
+                }
             }
-            
-            if (packet is DataPackagePacket)
+            catch (Exception e)
             {
-                GameData data = (packet as DataPackagePacket).DataPackage.Games["Rain World"];
-
-                ItemNameToID = data.ItemLookup;
-                LocationNameToID = data.LocationLookup;
-                ConstructIdDicts();
-                SaveManager.WriteDataPackageToFile(data.ItemLookup, data.LocationLookup, data.Checksum);
-            }
-
-            if (packet is ReceivedItemsPacket)
-            {
-
+                // Log exceptions manually, will not be done for us in events from AP
+                Plugin.Log.LogError("Encountered Exception in a packet handler");
+                Plugin.Log.LogError(e);
+                Debug.LogException(e);
             }
         }
 
@@ -187,19 +242,24 @@ namespace RainWorldRandomizer
             if (checksum == SaveManager.GetDataPackageChecksum())
             {
                 loadResult = SaveManager.LoadDataPackage(out ItemNameToID, out LocationNameToID);
-                ConstructIdDicts();
+                PopulateDicts();
             }
 
             // If datapackage could not be loaded from file, ask the server for it
             if (!loadResult)
             {
+                Plugin.Log.LogDebug("Asking server for DataPackage...");
                 Session.Socket.SendPacket(new GetDataPackagePacket() { Games = new string[] { "Rain World" } });
             }
         }
 
-        private static void ConstructIdDicts()
+        private static void PopulateDicts()
         {
             if (ItemNameToID == null || LocationNameToID == null) return;
+            IDToItemName = new Dictionary<long, string>();
+            IDToLocationName = new Dictionary<long, string>();
+
+            Plugin.Log.LogDebug("Populating Datapackage info...");
 
             foreach (var item in ItemNameToID)
             {
@@ -210,107 +270,64 @@ namespace RainWorldRandomizer
             {
                 IDToLocationName.Add(loc.Value, loc.Key);
             }
+
+            Plugin.Log.LogDebug("Populated Datapackage info");
+            DataPackageReady = true;
+
+            (Plugin.RandoManager as ManagerArchipelago).Populate();
         }
 
-        private static void ConstructNewInventory(ReceivedItemsPacket newInventory)
+        // Need to wait until client is fully connected and ready
+        private static async Task InitializePlayer()
         {
+            string saveId = $"{generationSeed}_{playerName}";
 
-
-            // populate found locations
-            // set flags for recieved items items
-        }
-
-        public static void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
-        {
-            // Verify slugcat
-            if (storyGameCharacter != Slugcat)
+            try
             {
-                Plugin.Log.LogError("Selected campaign does not match archipelago options." +
-                    $"\n Chosen campaign: {storyGameCharacter}" +
-                    $"\n Chosen AP option: {Slugcat}");
-                Plugin.RandoManager.isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue("Selected campaign does not match archipelago options.");
-                return;
+                if (SaveManager.IsThereAnAPSave(saveId))
+                {
+                    (Plugin.RandoManager as ManagerArchipelago).LoadSave(saveId);
+                    return;
+                }
+
+                // Wait until datapackage is retrieved before creating a new save
+                int counter = 0;
+                while (!DataPackageReady)
+                {
+                    await Task.Delay(100);
+                    counter += 100;
+                    if (counter >= 5000)
+                    {
+                        Plugin.Log.LogError("Initialize player timed out waiting for DataPackage");
+                        return;
+                    }
+                }
+
+                (Plugin.RandoManager as ManagerArchipelago).CreateNewSave(saveId);
+            }   
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
+
+        private static void ConstructNewInventory(ReceivedItemsPacket newInventory, long currentIndex)
+        {
+            List<string> oldItems = new List<string>();
+
+            for (int i = 0; i < currentIndex && i < newInventory.Items.Length; i++)
+            {
+                oldItems.Add(IDToItemName[newInventory.Items[i].Item]);
             }
 
-            // Attempt initialization
-            //if (!InitializeSession(storyGameCharacter))
-            //{
-            //    Plugin.Log.LogError("Failed to initialize randomizer.");
-            //    Plugin.RandoManager.isRandomizerActive = false;
-            //    Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to initialize. Check logs for details.");
-            //    return;
-            //}
+            // Add all the items before index as an old inventory
+            (Plugin.RandoManager as ManagerArchipelago).InitNewInventory(oldItems);
 
-            // Check that AP data and the client agree whether this is a new save game
-
-                // Initialize game from AP data
-                // Basically code for fetching save game
-
-
-
-            // All good, randomizer active
-            // Set flag to tell mod to send all location events to us
-        }
-
-        /*
-        public static bool InitializeSession(SlugcatStats.Name slugcat)
-        {
-            // Reset all tracking variables
-            Plugin.RandoManager.currentMaxKarma = 4;
-            Plugin.RandoManager.hunterBonusCyclesGiven = 0;
-            Plugin.RandoManager.givenNeuronGlow = false;
-            Plugin.RandoManager.givenMark = false;
-            Plugin.RandoManager.givenRobo = false;
-            Plugin.RandoManager.givenPebblesOff = false;
-            Plugin.RandoManager.givenSpearPearlRewrite = false;
-            Plugin.RandoManager.customStartDen = "SU_S01";
-
-            // Reset unlock lists
-            Plugin.RandoManager.gateUnlocks.Clear();
-            Plugin.RandoManager.passageTokenUnlocks.Clear();
-
-            // Populate gate unlocks
-            // Loop through AP data gates and register them
-
-
-            // Populate passage token unlocks
-            // Loop through AP data passages and register their unlocks
-
-            // Set max karma depending on setting and current slugcat
-            // If starting min karma
-            if (false)
+            // Add the rest as new items
+            for (long i = currentIndex; i < newInventory.Items.Length; i++)
             {
-                int totalKarmaIncreases = 0; // Count karma increases from datapackage. Maybe not needed? Could just set based on slugcat
-                int cap = Mathf.Max(0, 8 - totalKarmaIncreases);
-                Plugin.Singleton.currentMaxKarma = cap;
+                (Plugin.RandoManager as ManagerArchipelago).AquireItem(IDToItemName[newInventory.Items[i].Item]);
             }
-            else
-            {
-                Plugin.Singleton.currentMaxKarma = SlugcatStats.SlugcatStartingKarma(slugcat);
-            }
-
-            // Init saved game
-            // Create dict for items and their given state
-            // Populate dict from datapackage
-            // Set plugin variables for items that have been given
-
-            // Load the item delivery queue from file as normal
-            Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
-            Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
-
-            return true;
-        }
-        */
-
-        public static void SendCheck(string name)
-        {
-
-        }
-
-        public static void SendCheck(List<string> names)
-        {
-
         }
     }
 }

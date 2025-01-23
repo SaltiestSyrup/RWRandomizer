@@ -77,7 +77,10 @@ namespace RainWorldRandomizer
         /// </summary>
         /// <param name="storyGameCharacter">The slugcat the player chose</param>
         /// <param name="continueSaved">Whether this is a new save file</param>
-        public abstract void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved);
+        public virtual void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
+        {
+            currentSlugcat = storyGameCharacter;
+        }
 
         /// <summary>
         /// Used to find all possible locations the player could find

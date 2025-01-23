@@ -374,6 +374,7 @@ namespace RainWorldRandomizer
             {
                 if (id == MoreSlugcats.MoreSlugcatsEnums.EndgameID.Gourmand) continue;
 
+                Plugin.Log.LogDebug($"token id: {id} | {(menu as KarmaLadderScreen).winState.GetTracker(id, true).consumed}");
                 if ((Plugin.RandoManager.HasPassageToken(id) ?? false)
                     && (menu as KarmaLadderScreen).winState.GetTracker(id, true).consumed == false)
                 {

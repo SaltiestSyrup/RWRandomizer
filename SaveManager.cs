@@ -186,7 +186,7 @@ namespace RainWorldRandomizer
             return game.Values.Where(u => u.Type == Unlock.UnlockType.HunterCycles && u.IsGiven).Count();
         }
 
-        #region Archipelago datapackage
+        #region Archipelago saved data
         // Fetch locally saved checksum
         public static string GetDataPackageChecksum()
         {
@@ -203,6 +203,7 @@ namespace RainWorldRandomizer
         
         public static void WriteDataPackageToFile(Dictionary<string, long> itemLookup, Dictionary<string, long> locationLookup, string checksum)
         {
+            Plugin.Log.LogDebug("Writing Data package files...");
             StreamWriter itemsFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_items.txt"));
 
             foreach (var item in itemLookup)
@@ -224,6 +225,8 @@ namespace RainWorldRandomizer
             StreamWriter checksumFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_checksum.txt"));
             checksumFile.Write(checksum);
             checksumFile.Close();
+
+            Plugin.Log.LogDebug("DataPackage file write complete");
         }
 
         public static bool LoadDataPackage(out Dictionary<string, long> itemLookup, out Dictionary<string, long> locationLookup)
@@ -256,6 +259,51 @@ namespace RainWorldRandomizer
             return true;
         }
 
+        public struct APSave
+        {
+            public APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
+            {
+                this.lastIndex = lastIndex;
+                this.locationsStatus = locationsStatus;
+            }
+
+            public long lastIndex;
+            public Dictionary<string, bool> locationsStatus;
+        }
+
+        // AP saves store the found locations under a save ID, which is a string of pattern "[Generation Seed]_[Player Name]"
+        public static bool IsThereAnAPSave(string saveId)
+        {
+            return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
+        }
+
+        public static void WriteAPSaveToFile(string saveId, long lastIndex, Dictionary<string, bool> locationsStatus)
+        {
+            if (locationsStatus == null || locationsStatus.Count == 0) return;
+
+            StreamWriter saveFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
+
+            APSave save = new APSave(lastIndex, locationsStatus);
+
+            string jsonSave = JsonConvert.SerializeObject(save, Formatting.Indented);
+            saveFile.Write(jsonSave);
+
+            saveFile.Close();
+        }
+
+        public static APSave LoadAPSave(string saveId)
+        {
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json");
+
+            if (!File.Exists(path))
+            {
+                Plugin.Log.LogError($"Failed to load save from file: ap_save_{saveId}.json");
+                return new APSave();
+            }
+
+            return JsonConvert.DeserializeObject<APSave>(File.ReadAllText(path));
+        }
+
         public static void WriteLastItemIndexToFile(string saveId, long lastIndex)
         {
             Dictionary<string, long> origRegistry = LoadLastItemIndices();
@@ -271,6 +319,7 @@ namespace RainWorldRandomizer
             StreamWriter indexFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_save_registry.txt"));
 
             indexFile.Write(JsonConvert.SerializeObject(origRegistry));
+            indexFile.Close();
         }
 
         public static Dictionary<string, long> LoadLastItemIndices()

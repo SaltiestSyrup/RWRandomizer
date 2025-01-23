@@ -46,8 +46,15 @@ namespace RainWorldRandomizer
 
         public static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
         {
-            if (ID == ProcessManager.ProcessID.Game && !Plugin.RandoManager.isRandomizerActive)
+            if (ID == ProcessManager.ProcessID.Game 
+                && (Plugin.RandoManager == null || !Plugin.RandoManager.isRandomizerActive))
             {
+                // If we don't have a manager yet, create one
+                if (Plugin.RandoManager == null)
+                {
+                    Plugin.RandoManager = new ManagerVanilla();
+                }
+
                 if (self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat == null)
                 {
                     Plugin.Log.LogError("No slugcat selected");
@@ -66,6 +73,7 @@ namespace RainWorldRandomizer
                     }
                 }
             }
+
             if (ID == ProcessManager.ProcessID.MainMenu)
             {
                 // Turn off randomizer when quitting to menu
@@ -189,7 +197,7 @@ namespace RainWorldRandomizer
             if (Plugin.Singleton.notifQueue.Count > 0)
             {
                 // If we have any pending messages and are in the actual game loop
-                if (self.session.Players[0]?.realizedCreature != null
+                if (self.session.Players[0]?.realizedCreature?.room != null
                     && self.cameras[0].hud?.textPrompt != null
                     && self.cameras[0].hud.textPrompt.messages.Count < 1
                     && self.manager.currentMainLoop.ID == ProcessManager.ProcessID.Game)
@@ -260,13 +268,34 @@ namespace RainWorldRandomizer
         public static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
             // TODO: Write alternatives for other managers
-            if (Plugin.RandoManager.isRandomizerActive && Plugin.RandoManager is ManagerVanilla vanillaManager)
+            if (Plugin.RandoManager.isRandomizerActive)
             {
-                SaveManager.WriteSavedGameToFile(vanillaManager.randomizerKey, Plugin.RandoManager.currentSlugcat, Plugin.Singleton.rainWorld.options.saveSlot);
-
-                if (saveCurrentState)
+                if (Plugin.RandoManager is ManagerVanilla vanillaManager)
                 {
-                    SaveManager.WriteItemQueueToFile(Plugin.Singleton.itemDeliveryQueue, Plugin.RandoManager.currentSlugcat, Plugin.Singleton.rainWorld.options.saveSlot);
+                    SaveManager.WriteSavedGameToFile(
+                        vanillaManager.randomizerKey,
+                        Plugin.RandoManager.currentSlugcat,
+                        Plugin.Singleton.rainWorld.options.saveSlot);
+
+                    if (saveCurrentState)
+                    {
+                        SaveManager.WriteItemQueueToFile(
+                            Plugin.Singleton.itemDeliveryQueue,
+                            Plugin.RandoManager.currentSlugcat,
+                            Plugin.Singleton.rainWorld.options.saveSlot);
+                    }
+                }
+                else if (Plugin.RandoManager is ManagerArchipelago archipelagoManager)
+                {
+                    archipelagoManager.SaveGame();
+
+                    if (saveCurrentState)
+                    {
+                        SaveManager.WriteItemQueueToFile(
+                            Plugin.Singleton.itemDeliveryQueue,
+                            Plugin.RandoManager.currentSlugcat,
+                            Plugin.Singleton.rainWorld.options.saveSlot);
+                    }
                 }
             }
 

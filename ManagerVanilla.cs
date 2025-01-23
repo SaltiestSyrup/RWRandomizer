@@ -42,7 +42,8 @@ namespace RainWorldRandomizer
         // Called when player starts or continues a run
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
-            Plugin.RandoManager.currentSlugcat = storyGameCharacter;
+            base.StartNewGameSession(storyGameCharacter, continueSaved);
+
             if (!Plugin.CompatibleSlugcats.Contains(storyGameCharacter))
             {
                 Plugin.Log.LogDebug("Selected incompatible save, disabling randomizer");
