@@ -72,7 +72,6 @@ namespace RainWorldRandomizer
 
         public void Populate()
         {
-            Plugin.Log.LogDebug($"Populating randomizer dicts...");
             if (isPopulated) return;
             Reset();
 
@@ -80,7 +79,6 @@ namespace RainWorldRandomizer
             {
                 if (item.StartsWith("GATE_") && !gatesStatus.ContainsKey(item))
                 {
-                    Plugin.Log.LogDebug($"Adding gate: {item}");
                     gatesStatus.Add(item, false);
                 }
 
@@ -89,15 +87,12 @@ namespace RainWorldRandomizer
                     passageTokensStatus.Add(new WinState.EndgameID(item.Substring(8)), false);
                 }
             }
-
-            Plugin.Log.LogDebug("Population complete!");
             isPopulated = true;
         }
 
         public void LoadSave(string saveId)
         {
             SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
-            Plugin.Log.LogDebug(save);
             ArchipelagoConnection.lastItemIndex = save.lastIndex;
             locationsStatus = save.locationsStatus;
             Plugin.Log.LogInfo($"Loaded save game {saveId}");
@@ -153,7 +148,6 @@ namespace RainWorldRandomizer
             {
                 unlock = new Unlock(Unlock.UnlockType.Gate, item, true);
                 gatesStatus[item] = true;
-                Plugin.Log.LogDebug(gatesStatus[item]);
             }
             else if (item.StartsWith("Passage-"))
             {
@@ -211,7 +205,7 @@ namespace RainWorldRandomizer
                     Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
             }
 
-            Plugin.Log.LogDebug($"Received item: {item}");
+            Plugin.Log.LogInfo($"Received item: {item}");
             if (printLog && unlock != null)
             {
                 Plugin.Singleton.notifQueue.Enqueue(unlock.UnlockCompleteMessage());
@@ -252,9 +246,7 @@ namespace RainWorldRandomizer
 
         public override bool? IsLocationGiven(string location)
         {
-            Plugin.Log.LogDebug($"Location {location} exists? {LocationExists(location)}");
             if (!LocationExists(location)) return null;
-            Plugin.Log.LogDebug($"Location is given? {locationsStatus[location]}");
 
             return locationsStatus[location];
         }
@@ -280,12 +272,6 @@ namespace RainWorldRandomizer
         public override Unlock GetUnlockAtLocation(string location)
         {
             return null;
-        }
-
-        public override bool? IsGateOpen(string gate)
-        {
-            Plugin.Log.LogDebug($"Gate {gate} Open? {base.IsGateOpen(gate)} : {(gatesStatus.ContainsKey(gate) ? gatesStatus[gate].ToString() : "")}");
-            return base.IsGateOpen(gate);
         }
 
         public void SaveGame()

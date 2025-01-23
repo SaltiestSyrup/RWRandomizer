@@ -139,7 +139,7 @@ namespace RainWorldRandomizer
             {
                 if (packet is RoomInfoPacket)
                 {
-                    Plugin.Log.LogDebug($"Received RoomInfo packet. Rando manager: {Plugin.RandoManager}");
+                    Plugin.Log.LogInfo($"Received RoomInfo packet");
                     LoadDataPackage((packet as RoomInfoPacket).DataPackageChecksums["Rain World"]);
                     generationSeed = (packet as RoomInfoPacket).SeedName;
 
@@ -150,7 +150,7 @@ namespace RainWorldRandomizer
                 if (packet is DataPackagePacket)
                 {
                     GameData data = (packet as DataPackagePacket).DataPackage.Games["Rain World"];
-                    Plugin.Log.LogDebug("Received DataPackage packet");
+                    Plugin.Log.LogInfo("Received DataPackage packet");
 
                     ItemNameToID = data.ItemLookup;
                     LocationNameToID = data.LocationLookup;
@@ -162,7 +162,7 @@ namespace RainWorldRandomizer
                 if (packet is ReceivedItemsPacket)
                 {
                     ReceivedItemsPacket receivedItemsPacket = packet as ReceivedItemsPacket;
-                    Plugin.Log.LogDebug($"Received items packet. Index: {(packet as ReceivedItemsPacket).Index} | Last index: {lastItemIndex} | Item count: {receivedItemsPacket.Items.Length}");
+                    Plugin.Log.LogInfo($"Received items packet. Index: {(packet as ReceivedItemsPacket).Index} | Last index: {lastItemIndex} | Item count: {receivedItemsPacket.Items.Length}");
 
                     //if (!(Plugin.RandoManager as ManagerArchipelago).locationsLoaded)
 
@@ -185,7 +185,6 @@ namespace RainWorldRandomizer
                         }
                     }
 
-                    Plugin.Log.LogDebug($"Items in this packet: {receivedItemsPacket.Items.Length}");
                     lastItemIndex = receivedItemsPacket.Index + receivedItemsPacket.Items.Length;
                     return;
                 }
@@ -259,7 +258,6 @@ namespace RainWorldRandomizer
             IDToItemName = new Dictionary<long, string>();
             IDToLocationName = new Dictionary<long, string>();
 
-            Plugin.Log.LogDebug("Populating Datapackage info...");
 
             foreach (var item in ItemNameToID)
             {
@@ -271,7 +269,6 @@ namespace RainWorldRandomizer
                 IDToLocationName.Add(loc.Value, loc.Key);
             }
 
-            Plugin.Log.LogDebug("Populated Datapackage info");
             DataPackageReady = true;
 
             (Plugin.RandoManager as ManagerArchipelago).Populate();

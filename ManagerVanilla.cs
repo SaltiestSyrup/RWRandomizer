@@ -46,7 +46,7 @@ namespace RainWorldRandomizer
 
             if (!Plugin.CompatibleSlugcats.Contains(storyGameCharacter))
             {
-                Plugin.Log.LogDebug("Selected incompatible save, disabling randomizer");
+                Plugin.Log.LogWarning("Selected incompatible save, disabling randomizer");
                 isRandomizerActive = false;
                 Plugin.Singleton.notifQueue.Enqueue($"WARNING: This campaign is not currently supported by Check Randomizer. It will not be active for this session.");
                 return;
