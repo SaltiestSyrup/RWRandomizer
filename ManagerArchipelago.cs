@@ -12,6 +12,9 @@ namespace RainWorldRandomizer
         // AP TODO:
         // Stop player from starting game without first connecting
         // Auto connect on startup??
+        // Console logging
+        // make objects actaully give to player
+        // remove Hunter time limit
 
         public bool isPopulated = false;
         public bool locationsLoaded = false;
@@ -206,10 +209,10 @@ namespace RainWorldRandomizer
             }
 
             Plugin.Log.LogInfo($"Received item: {item}");
-            if (printLog && unlock != null)
-            {
-                Plugin.Singleton.notifQueue.Enqueue(unlock.UnlockCompleteMessage());
-            }
+            //if (printLog && unlock != null)
+            //{
+            //    Plugin.Singleton.notifQueue.Enqueue(unlock.UnlockCompleteMessage());
+            //}
         }
 
         public bool InitializeSession(SlugcatStats.Name slugcat)

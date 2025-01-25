@@ -1,5 +1,6 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
+using Archipelago.MultiClient.Net.MessageLog.Messages;
 using Archipelago.MultiClient.Net.Models;
 using Archipelago.MultiClient.Net.Packets;
 using MoreSlugcats;
@@ -68,6 +69,7 @@ namespace RainWorldRandomizer
             playerName = slotName;
 
             Session.Socket.PacketReceived += PacketListener;
+            Session.MessageLog.OnMessageReceived += MessageReceived;
             LoginResult result;
 
             try
@@ -325,6 +327,12 @@ namespace RainWorldRandomizer
             {
                 (Plugin.RandoManager as ManagerArchipelago).AquireItem(IDToItemName[newInventory.Items[i].Item]);
             }
+        }
+
+        private static void MessageReceived(LogMessage message)
+        {
+            Plugin.Log.LogInfo($"From server: {message}");
+            Plugin.Singleton.notifQueue.Enqueue(message.ToString());
         }
     }
 }
