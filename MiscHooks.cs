@@ -191,6 +191,7 @@ namespace RainWorldRandomizer
                     );
 
                 // Pearl tracker
+                // TODO: Figure out why there's an extra pearl displayed in future GW
                 c.Emit(OpCodes.Ldarg_0);
                 c.Emit(OpCodes.Ldloc_0);
                 c.Emit(OpCodes.Ldloc, 5);
