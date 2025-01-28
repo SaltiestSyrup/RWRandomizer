@@ -294,6 +294,7 @@ namespace RainWorldRandomizer
             foreach (string ID in ExtEnumBase.GetNames(typeof(GhostWorldPresence.GhostID)))
             {
                 if (!ID.Equals("NoGhost")
+                    && World.CheckForRegionGhost(slugcat, ID)
                     && !CheckBlacklists[slugcat].Contains($"Echo-{ID}")
                     && !RegionBlacklists[slugcat].Contains(ID)
                     && !randomizerKey.ContainsKey($"Echo-{ID}"))
