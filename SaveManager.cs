@@ -188,6 +188,7 @@ namespace RainWorldRandomizer
 
         #region Archipelago saved data
         // Fetch locally saved checksum
+        /*
         public static string GetDataPackageChecksum()
         {
             string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_checksum.txt");
@@ -258,6 +259,7 @@ namespace RainWorldRandomizer
 
             return true;
         }
+        */
 
         public struct APSave
         {

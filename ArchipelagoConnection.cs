@@ -1,5 +1,6 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
+using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 using Archipelago.MultiClient.Net.Models;
 using Archipelago.MultiClient.Net.Packets;
@@ -7,6 +8,7 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,7 +18,8 @@ namespace RainWorldRandomizer
 {
     public class ArchipelagoConnection : MonoBehaviour
     {
-        private const string APVersion = "0.6.0";
+        private const string AP_VERSION = "0.6.0";
+        public const string GAME_NAME = "Rain World";
 
         public static bool Authenticated = false;
         public static bool CurrentlyConnecting = false;
@@ -29,10 +32,10 @@ namespace RainWorldRandomizer
         public static SlugcatStats.Name Slugcat;
 
         public static ArchipelagoSession Session;
-        public static Dictionary<string, long> ItemNameToID = null;
-        public static Dictionary<long, string> IDToItemName = null;
-        public static Dictionary<string, long> LocationNameToID = null;
-        public static Dictionary<long, string> IDToLocationName = null;
+        //public static Dictionary<string, long> ItemNameToID = null;
+        //public static Dictionary<long, string> IDToItemName = null;
+        //public static Dictionary<string, long> LocationNameToID = null;
+        //public static Dictionary<long, string> IDToLocationName = null;
 
         public static long lastItemIndex = 0;
         public static string playerName;
@@ -75,10 +78,10 @@ namespace RainWorldRandomizer
             try
             {
                 result = Session.TryConnectAndLogin(
-                    "Rain World",
+                    GAME_NAME,
                     slotName,
                     ItemsHandlingFlags.AllItems,
-                    new Version(APVersion),
+                    new Version(AP_VERSION),
                     password: password,
                     requestSlotData: !ReceivedSlotData);
             }
@@ -111,7 +114,7 @@ namespace RainWorldRandomizer
             Authenticated = true;
             IsConnected = true;
             LoginSuccessful loginSuccess = (LoginSuccessful)result;
-            
+
             if (loginSuccess.SlotData != null)
             {
                 ParseSlotData(loginSuccess.SlotData);
@@ -142,22 +145,9 @@ namespace RainWorldRandomizer
                 if (packet is RoomInfoPacket)
                 {
                     Plugin.Log.LogInfo($"Received RoomInfo packet");
-                    LoadDataPackage((packet as RoomInfoPacket).DataPackageChecksums["Rain World"]);
                     generationSeed = (packet as RoomInfoPacket).SeedName;
 
                     InitializePlayer();
-                    return;
-                }
-
-                if (packet is DataPackagePacket)
-                {
-                    GameData data = (packet as DataPackagePacket).DataPackage.Games["Rain World"];
-                    Plugin.Log.LogInfo("Received DataPackage packet");
-
-                    ItemNameToID = data.ItemLookup;
-                    LocationNameToID = data.LocationLookup;
-                    PopulateDicts();
-                    SaveManager.WriteDataPackageToFile(data.ItemLookup, data.LocationLookup, data.Checksum);
                     return;
                 }
 
@@ -165,8 +155,6 @@ namespace RainWorldRandomizer
                 {
                     ReceivedItemsPacket receivedItemsPacket = packet as ReceivedItemsPacket;
                     Plugin.Log.LogInfo($"Received items packet. Index: {(packet as ReceivedItemsPacket).Index} | Last index: {lastItemIndex} | Item count: {receivedItemsPacket.Items.Length}");
-
-                    //if (!(Plugin.RandoManager as ManagerArchipelago).locationsLoaded)
 
                     // This is a fresh inventory, initialize it
                     if (receivedItemsPacket.Index == 0)
@@ -183,7 +171,7 @@ namespace RainWorldRandomizer
                     {
                         for (long i = 0; i < receivedItemsPacket.Items.Length; i++)
                         {
-                            (Plugin.RandoManager as ManagerArchipelago).AquireItem(IDToItemName[receivedItemsPacket.Items[i].Item]);
+                            (Plugin.RandoManager as ManagerArchipelago).AquireItem(Session.Items.GetItemName(receivedItemsPacket.Items[i].Item));
                         }
                     }
 
@@ -207,77 +195,35 @@ namespace RainWorldRandomizer
 
             switch (slugcatIndex)
             {
-                case 0:
+                case 1:
                     Slugcat = SlugcatStats.Name.White;
                     break;
-                case 1:
+                case 2:
                     Slugcat = SlugcatStats.Name.Yellow;
                     break;
-                case 2:
+                case 4:
                     Slugcat = SlugcatStats.Name.Red;
                     break;
-                case 3:
+                case 8:
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Gourmand;
                     break;
-                case 4:
+                case 16:
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Artificer;
                     break;
-                case 5:
+                case 32:
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Rivulet;
                     break;
-                case 6:
+                case 64:
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Spear;
                     break;
-                case 7:
+                case 128:
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Saint;
                     break;
             }
         }
 
-        private static void LoadDataPackage(string checksum)
-        {
-            // check if data already initialized
-            if (ItemNameToID != null && LocationNameToID != null) return;
-
-            bool loadResult = false;
-            if (checksum == SaveManager.GetDataPackageChecksum())
-            {
-                loadResult = SaveManager.LoadDataPackage(out ItemNameToID, out LocationNameToID);
-                PopulateDicts();
-            }
-
-            // If datapackage could not be loaded from file, ask the server for it
-            if (!loadResult)
-            {
-                Plugin.Log.LogDebug("Asking server for DataPackage...");
-                Session.Socket.SendPacket(new GetDataPackagePacket() { Games = new string[] { "Rain World" } });
-            }
-        }
-
-        private static void PopulateDicts()
-        {
-            if (ItemNameToID == null || LocationNameToID == null) return;
-            IDToItemName = new Dictionary<long, string>();
-            IDToLocationName = new Dictionary<long, string>();
-
-
-            foreach (var item in ItemNameToID)
-            {
-                IDToItemName.Add(item.Value, item.Key);
-            }
-
-            foreach (var loc in LocationNameToID)
-            {
-                IDToLocationName.Add(loc.Value, loc.Key);
-            }
-
-            DataPackageReady = true;
-
-            (Plugin.RandoManager as ManagerArchipelago).Populate();
-        }
-
         // Need to wait until client is fully connected and ready
-        private static async Task InitializePlayer()
+        private static void InitializePlayer()
         {
             string saveId = $"{generationSeed}_{playerName}";
 
@@ -287,19 +233,6 @@ namespace RainWorldRandomizer
                 {
                     (Plugin.RandoManager as ManagerArchipelago).LoadSave(saveId);
                     return;
-                }
-
-                // Wait until datapackage is retrieved before creating a new save
-                int counter = 0;
-                while (!DataPackageReady)
-                {
-                    await Task.Delay(100);
-                    counter += 100;
-                    if (counter >= 5000)
-                    {
-                        Plugin.Log.LogError("Initialize player timed out waiting for DataPackage");
-                        return;
-                    }
                 }
 
                 (Plugin.RandoManager as ManagerArchipelago).CreateNewSave(saveId);
@@ -316,7 +249,7 @@ namespace RainWorldRandomizer
 
             for (int i = 0; i < currentIndex && i < newInventory.Items.Length; i++)
             {
-                oldItems.Add(IDToItemName[newInventory.Items[i].Item]);
+                oldItems.Add( Session.Items.GetItemName(newInventory.Items[i].Item));
             }
 
             // Add all the items before index as an old inventory
@@ -325,7 +258,7 @@ namespace RainWorldRandomizer
             // Add the rest as new items
             for (long i = currentIndex; i < newInventory.Items.Length; i++)
             {
-                (Plugin.RandoManager as ManagerArchipelago).AquireItem(IDToItemName[newInventory.Items[i].Item]);
+                (Plugin.RandoManager as ManagerArchipelago).AquireItem(Session.Items.GetItemName(newInventory.Items[i].Item));
             }
         }
 

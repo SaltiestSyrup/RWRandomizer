@@ -73,11 +73,14 @@ namespace RainWorldRandomizer
             passageTokensStatus.Clear();
         }
 
+        /*
         public void Populate()
         {
             if (isPopulated) return;
             Reset();
 
+            // TODO: hard code a list of items I guess? Why does MultiClient not have that list public
+            
             foreach (var item in ArchipelagoConnection.ItemNameToID.Keys)
             {
                 if (item.StartsWith("GATE_") && !gatesStatus.ContainsKey(item))
@@ -90,8 +93,10 @@ namespace RainWorldRandomizer
                     passageTokensStatus.Add(new WinState.EndgameID(item.Substring(8)), false);
                 }
             }
+            
             isPopulated = true;
         }
+        */
 
         public void LoadSave(string saveId)
         {
@@ -106,9 +111,9 @@ namespace RainWorldRandomizer
         public void CreateNewSave(string saveId)
         {
             locationsStatus.Clear();
-            foreach (var loc in ArchipelagoConnection.LocationNameToID.Keys)
+            foreach (long loc in ArchipelagoConnection.Session.Locations.AllLocations)
             {
-                locationsStatus.Add(loc, false);
+                locationsStatus.Add(ArchipelagoConnection.Session.Locations.GetLocationNameFromId(loc), false);
             }
             Plugin.Log.LogInfo($"Found no saved game, creating new save");
             SaveManager.WriteAPSaveToFile(saveId, ArchipelagoConnection.lastItemIndex, locationsStatus);
@@ -126,16 +131,16 @@ namespace RainWorldRandomizer
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
 
-            List<string> gates = gatesStatus.Keys.ToList();
-            foreach (string gate in gates)
-            {
-                gatesStatus[gate] = false;
-            }
-            List<WinState.EndgameID> tokens = passageTokensStatus.Keys.ToList();
-            foreach (WinState.EndgameID token in tokens)
-            {
-                passageTokensStatus[token] = false;
-            }
+            //List<string> gates = gatesStatus.Keys.ToList();
+            //foreach (string gate in gates)
+            //{
+            //    gatesStatus[gate] = false;
+            //}
+            //List<WinState.EndgameID> tokens = passageTokensStatus.Keys.ToList();
+            //foreach (WinState.EndgameID token in tokens)
+            //{
+            //    passageTokensStatus[token] = false;
+            //}
 
             foreach (string item in newItems)
             {
@@ -150,12 +155,19 @@ namespace RainWorldRandomizer
             if (item.StartsWith("GATE_"))
             {
                 unlock = new Unlock(Unlock.UnlockType.Gate, item, true);
-                gatesStatus[item] = true;
+                if (!gatesStatus.ContainsKey(item))
+                {
+                    gatesStatus.Add(item, true);
+                }
             }
             else if (item.StartsWith("Passage-"))
             {
                 unlock = new Unlock(Unlock.UnlockType.Token, item, true);
-                passageTokensStatus[new WinState.EndgameID(item.Substring(8))] = true;
+                WinState.EndgameID endgameId = new WinState.EndgameID(item.Substring(8));
+                if (!passageTokensStatus.ContainsKey(endgameId))
+                {
+                    passageTokensStatus.Add(endgameId, true);
+                }
             }
             else if (item.StartsWith("Object-"))
             {
@@ -258,12 +270,13 @@ namespace RainWorldRandomizer
         {
             if (!ArchipelagoConnection.IsConnected || (IsLocationGiven(location) ?? true)) return false;
 
-            if (!ArchipelagoConnection.LocationNameToID.ContainsKey(location))
+            long locId = ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, location);
+            if (locId == -1L)
             {
                 Plugin.Log.LogError($"Failed to find ID for location: {location}");
             }
 
-            ArchipelagoConnection.Session.Locations.CompleteLocationChecks(new long[] {ArchipelagoConnection.LocationNameToID[location]});
+            ArchipelagoConnection.Session.Locations.CompleteLocationChecks(new long[] { locId });
             locationsStatus[location] = true;
             // TODO: ask server what that item was for logging purposes
             Plugin.Log.LogInfo($"Found location: {location}!");
