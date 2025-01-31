@@ -13,7 +13,7 @@ namespace RainWorldRandomizer
         // First beta:
         //  Stop player from starting game without first connecting
         //  Auto connect on startup??
-        //  make objects actually give to player
+        //  Hunter neuron and pearl
         // After that:
         //  Console logging
         //  
@@ -73,6 +73,8 @@ namespace RainWorldRandomizer
             // Reset unlock lists
             gatesStatus.Clear();
             passageTokensStatus.Clear();
+            Plugin.Singleton.itemDeliveryQueue.Clear();
+            Plugin.Singleton.lastItemDeliveryQueue.Clear();
         }
 
         /*
@@ -106,6 +108,10 @@ namespace RainWorldRandomizer
             ArchipelagoConnection.lastItemIndex = save.lastIndex;
             locationsStatus = save.locationsStatus;
             Plugin.Log.LogInfo($"Loaded save game {saveId}");
+
+            // Load the item delivery queue from file as normal
+            Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
+            Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
 
             locationsLoaded = true;
         }
@@ -174,12 +180,16 @@ namespace RainWorldRandomizer
             }
             else if (item.StartsWith("Object-"))
             {
-                unlock = new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item), true);
+                if (!isNew) return; // Don't double gift items, unused ones will be read from file
+                var uitem = Unlock.IDToItem(item.Substring(7));
+                Plugin.Log.LogDebug($"give item {uitem.name}, {uitem.id}, {uitem.type.value}");
+                unlock = new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("PearlObject-"))
             {
-                unlock = new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item, true), true);
+                if (!isNew) return;
+                unlock = new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
                 unlock.GiveUnlock();
             }
             else if (item == "Karma")
@@ -249,10 +259,6 @@ namespace RainWorldRandomizer
             {
                 Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(slugcat, region));
             }
-
-            // Load the item delivery queue from file as normal
-            Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
-            Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
 
             return true;
         }

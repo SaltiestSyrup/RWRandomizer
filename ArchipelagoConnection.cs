@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
@@ -111,12 +112,7 @@ namespace RainWorldRandomizer
                 return errorMessage;
             }
 
-            Authenticated = true;
-            IsConnected = true;
             LoginSuccessful loginSuccess = (LoginSuccessful)result;
-
-            generationSeed = Session.RoomState.Seed;
-            InitializePlayer();
 
             if (loginSuccess.SlotData != null)
             {
@@ -124,6 +120,11 @@ namespace RainWorldRandomizer
                 ReceivedSlotData = true;
             }
 
+            generationSeed = Session.RoomState.Seed;
+            InitializePlayer();
+
+            Authenticated = true;
+            IsConnected = true;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
         }
@@ -138,6 +139,7 @@ namespace RainWorldRandomizer
             Session = null;
             Authenticated = false;
             IsConnected = false;
+            (Plugin.RandoManager as ManagerArchipelago).Reset();
         }
 
         // Catch-all packet listener
@@ -148,37 +150,12 @@ namespace RainWorldRandomizer
                 if (packet is RoomInfoPacket)
                 {
                     Plugin.Log.LogInfo($"Received RoomInfo packet");
-                    //generationSeed = (packet as RoomInfoPacket).SeedName;
-
-                    //InitializePlayer();
                     return;
                 }
 
-                if (packet is ReceivedItemsPacket)
+                if (packet is ReceivedItemsPacket itemPacket)
                 {
-                    ReceivedItemsPacket receivedItemsPacket = packet as ReceivedItemsPacket;
-                    Plugin.Log.LogInfo($"Received items packet. Index: {(packet as ReceivedItemsPacket).Index} | Last index: {lastItemIndex} | Item count: {receivedItemsPacket.Items.Length}");
-
-                    // This is a fresh inventory, initialize it
-                    if (receivedItemsPacket.Index == 0)
-                    {
-                        ConstructNewInventory(receivedItemsPacket, lastItemIndex);
-                    }
-                    // Items are out of sync, start a resync
-                    else if (receivedItemsPacket.Index != lastItemIndex)
-                    {
-                        // Sync
-                        Plugin.Log.LogDebug("Item index out of sync");
-                    }
-                    else
-                    {
-                        for (long i = 0; i < receivedItemsPacket.Items.Length; i++)
-                        {
-                            (Plugin.RandoManager as ManagerArchipelago).AquireItem(Session.Items.GetItemName(receivedItemsPacket.Items[i].Item));
-                        }
-                    }
-
-                    lastItemIndex = receivedItemsPacket.Index + receivedItemsPacket.Items.Length;
+                    HandleItemsPacket(itemPacket);
                     return;
                 }
             }
@@ -186,6 +163,44 @@ namespace RainWorldRandomizer
             {
                 // Log exceptions manually, will not be done for us in events from AP
                 Plugin.Log.LogError("Encountered Exception in a packet handler");
+                Plugin.Log.LogError(e);
+                Debug.LogException(e);
+            }
+        }
+
+        private static async Task HandleItemsPacket(ReceivedItemsPacket packet)
+        {
+            try
+            {
+                Plugin.Log.LogInfo($"Received items packet. Index: {packet.Index} | Last index: {lastItemIndex} | Item count: {packet.Items.Length}");
+
+                // Wait until session fully connected before receiving any items
+                while (!IsConnected) { await Task.Delay(50); }
+
+                // This is a fresh inventory, initialize it
+                if (packet.Index == 0)
+                {
+                    ConstructNewInventory(packet, lastItemIndex);
+                }
+                // Items are out of sync, start a resync
+                else if (packet.Index != lastItemIndex)
+                {
+                    // Sync
+                    Plugin.Log.LogDebug("Item index out of sync");
+                }
+                else
+                {
+                    for (long i = 0; i < packet.Items.Length; i++)
+                    {
+                        (Plugin.RandoManager as ManagerArchipelago).AquireItem(Session.Items.GetItemName(packet.Items[i].Item));
+                    }
+                }
+
+                lastItemIndex = packet.Index + packet.Items.Length;
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Encountered Exception handling a ReceivedItemsPacket");
                 Plugin.Log.LogError(e);
                 Debug.LogException(e);
             }
