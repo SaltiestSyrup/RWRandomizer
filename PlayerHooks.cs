@@ -13,6 +13,7 @@ namespace RainWorldRandomizer
         public static void ApplyHooks()
         {
             On.Player.Regurgitate += OnRegurgitate;
+            On.Player.Update += OnPlayerUpdate;
             On.RedsIllness.RedsCycles += OnRedsCycles;
             On.Player.ClassMechanicsSaint += OnClassMechanicsSaint;
 
@@ -30,6 +31,7 @@ namespace RainWorldRandomizer
         public static void RemoveHooks()
         {
             On.Player.Regurgitate -= OnRegurgitate;
+            On.Player.Update -= OnPlayerUpdate;
             On.RedsIllness.RedsCycles -= OnRedsCycles;
             On.Player.ClassMechanicsSaint -= OnClassMechanicsSaint;
             IL.Player.GrabUpdate -= ILPlayerGrabUpdate;
@@ -65,6 +67,20 @@ namespace RainWorldRandomizer
             if (tempObject != null)
             {
                 self.objectInStomach = tempObject;
+            }
+        }
+
+        public static void OnPlayerUpdate(On.Player.orig_Update orig, Player self, bool eu)
+        {
+            orig(self, eu);
+
+            // Check for completion via Void Sea
+            if (Plugin.RandoManager is ManagerArchipelago managerAP
+                && self.room is Room room
+                && room.abstractRoom.name == "SB_L01"
+                && self.firstChunk.pos.y < -500f)
+            {
+                managerAP.GiveCompletionCondition("Void Sea");
             }
         }
 

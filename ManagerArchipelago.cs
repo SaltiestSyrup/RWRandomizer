@@ -10,14 +10,17 @@ namespace RainWorldRandomizer
     public class ManagerArchipelago : ManagerBase
     {
         // AP TODO:
-        // Stop player from starting game without first connecting
-        // Auto connect on startup??
-        // Console logging
-        // make objects actaully give to player
-        // remove Hunter time limit
+        // First beta:
+        //  Stop player from starting game without first connecting
+        //  Auto connect on startup??
+        //  make objects actually give to player
+        //  remove Hunter time limit
+        // After that:
+        //  Console logging
+        //  
 
-        public bool isPopulated = false;
         public bool locationsLoaded = false;
+        public bool gameCompleted = false;
 
         private Dictionary<string, bool> locationsStatus = new Dictionary<string, bool>();
 
@@ -111,6 +114,7 @@ namespace RainWorldRandomizer
         public void CreateNewSave(string saveId)
         {
             locationsStatus.Clear();
+
             foreach (long loc in ArchipelagoConnection.Session.Locations.AllLocations)
             {
                 locationsStatus.Add(ArchipelagoConnection.Session.Locations.GetLocationNameFromId(loc), false);
@@ -184,14 +188,14 @@ namespace RainWorldRandomizer
                 unlock = new Unlock(Unlock.UnlockType.Karma, item, true);
                 IncreaseKarma();
             }
-            else if (item == "The_Glow")
+            else if (item == "The Glow")
             {
                 unlock = new Unlock(Unlock.UnlockType.Glow, item, true);
                 _givenNeuronGlow = true;
                 if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
                     Plugin.Singleton.game.GetStorySession.saveState.theGlow = true;
             }
-            else if (item == "The_Mark")
+            else if (item == "The Mark")
             {
                 unlock = new Unlock(Unlock.UnlockType.Mark, item, true);
                 _givenMark = true;
@@ -230,8 +234,7 @@ namespace RainWorldRandomizer
         public bool InitializeSession(SlugcatStats.Name slugcat)
         {
             // Set max karma depending on setting and current slugcat
-            // If starting min karma
-            if (false)
+            if (false)// If starting min karma
             {
                 int totalKarmaIncreases = 0; // Count karma increases from datapackage. Maybe not needed? Could just set based on slugcat
                 int cap = Mathf.Max(0, 8 - totalKarmaIncreases);
@@ -240,6 +243,12 @@ namespace RainWorldRandomizer
             else
             {
                 _currentMaxKarma = SlugcatStats.SlugcatStartingKarma(slugcat);
+            }
+
+            // Populate region mapping for display purposes
+            foreach (string region in Region.GetFullRegionOrder())
+            {
+                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(slugcat, region));
             }
 
             // Load the item delivery queue from file as normal
@@ -290,9 +299,19 @@ namespace RainWorldRandomizer
             return null;
         }
 
+        public void GiveCompletionCondition(string condition)
+        {
+            // TODO: Check that condition matches the seed's chosen condition
+            Plugin.Log.LogInfo($"Game completed via {condition}! Releasing items...");
+            Plugin.Singleton.notifQueue.Enqueue("Game Complete! Items released");
+
+            gameCompleted = true;
+            ArchipelagoConnection.SendCompletion();
+        }
+
         public void SaveGame()
         {
-            if (!ArchipelagoConnection.IsConnected || !isPopulated || !locationsLoaded) return;
+            if (!ArchipelagoConnection.IsConnected || !locationsLoaded) return;
 
             SaveManager.WriteAPSaveToFile(
                 $"{ArchipelagoConnection.generationSeed}_{ArchipelagoConnection.playerName}",

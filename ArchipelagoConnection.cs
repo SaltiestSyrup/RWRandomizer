@@ -115,6 +115,9 @@ namespace RainWorldRandomizer
             IsConnected = true;
             LoginSuccessful loginSuccess = (LoginSuccessful)result;
 
+            generationSeed = Session.RoomState.Seed;
+            InitializePlayer();
+
             if (loginSuccess.SlotData != null)
             {
                 ParseSlotData(loginSuccess.SlotData);
@@ -145,9 +148,9 @@ namespace RainWorldRandomizer
                 if (packet is RoomInfoPacket)
                 {
                     Plugin.Log.LogInfo($"Received RoomInfo packet");
-                    generationSeed = (packet as RoomInfoPacket).SeedName;
+                    //generationSeed = (packet as RoomInfoPacket).SeedName;
 
-                    InitializePlayer();
+                    //InitializePlayer();
                     return;
                 }
 
@@ -266,6 +269,16 @@ namespace RainWorldRandomizer
         {
             Plugin.Log.LogInfo($"From server: {message}");
             Plugin.Singleton.notifQueue.Enqueue(message.ToString());
+        }
+
+        public static void SendCompletion()
+        {
+            Session.Socket.SendPacket(
+                new StatusUpdatePacket
+                {
+                    Status = ArchipelagoClientState.ClientGoal
+                }
+            );
         }
     }
 }
