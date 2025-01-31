@@ -14,7 +14,6 @@ namespace RainWorldRandomizer
         //  Stop player from starting game without first connecting
         //  Auto connect on startup??
         //  make objects actually give to player
-        //  remove Hunter time limit
         // After that:
         //  Console logging
         //  
