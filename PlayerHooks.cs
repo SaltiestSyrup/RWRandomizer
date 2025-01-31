@@ -189,6 +189,18 @@ namespace RainWorldRandomizer
         {
             int origResult = orig(extracycles);
 
+            // Remove cycle limit completely for Archipelago
+            if (Plugin.RandoManager is ManagerArchipelago)
+            {
+                if (Plugin.Singleton.game != null)
+                {
+                    return Plugin.Singleton.game.GetStorySession.saveState.cycleNumber + 1;
+                }
+                // If this is isn't in game there's not an easy way to get the cycle count
+                // Will need to hook individual cases to fix this
+                return int.MaxValue;
+            }
+
             int bonusCycles = ModManager.MMF && MoreSlugcats.MMF.cfgHunterBonusCycles != null
                 ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : 5;
             int baseCycles = extracycles ? origResult - bonusCycles : origResult;
