@@ -27,6 +27,8 @@ namespace RainWorldRandomizer
             {
                 IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
                 IL.MoreSlugcats.CutsceneArtificerRobo.GetInput += ArtificerRoboIL;
+                IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
+                IL.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
             }
             catch (Exception e)
             {
@@ -46,6 +48,8 @@ namespace RainWorldRandomizer
             On.SaveState.GhostEncounter -= EchoEncounter;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
+            IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
+            IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -486,5 +490,47 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogError(e);
             }
         }
+
+        /// <summary>
+        /// Allow the food quest to appear on the HUD for any Slugcat.
+        /// </summary>
+        public static void HUD_InitSinglePlayerHud(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality")));
+            c.MoveAfterLabels();
+            c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
+        }
+
+        /// <summary>
+        /// All non-Gourmands to progress the food quest and collect the relevant checks.
+        /// </summary>
+        public static void PlayerSessionRecord_AddEat(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+            for (int i = 0; i < 2; i++)
+            {
+                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality")));
+                c.MoveAfterLabels();
+                c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
+            }
+
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(Room).GetMethod(nameof(Room.PlaySound), new Type[] { typeof(SoundID), typeof(float), typeof(float), typeof(float) })));
+            c.MoveAfterLabels();
+            c.Emit(OpCodes.Ldloc_2);
+            c.EmitDelegate<Action<int>>(CollectFoodQuestCreature);
+
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(Room).GetMethod(nameof(Room.PlaySound), new Type[] { typeof(SoundID), typeof(float), typeof(float), typeof(float) })));
+            c.MoveAfterLabels();
+            c.Emit(OpCodes.Ldloc_2);
+            c.EmitDelegate<Action<int>>(CollectFoodQuestNonCreature);
+        }
+
+        public static bool YesItIsMeGourmand(bool prev) => Plugin.RandoManager is ManagerArchipelago || prev;
+
+        public static void CollectFoodQuestCreature(int index) => 
+            (Plugin.RandoManager as ManagerArchipelago)?.GiveLocation($"FoodQuest-{WinState.GourmandPassageCreaturesAtIndex(index).First().value}");
+        public static void CollectFoodQuestNonCreature(int index) => 
+            (Plugin.RandoManager as ManagerArchipelago)?.GiveLocation($"FoodQuest-{WinState.GourmandPassageRequirementAtIndex(index).value}");
     }
 }
