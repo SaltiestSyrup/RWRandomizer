@@ -205,6 +205,7 @@ namespace RainWorldRandomizer
                     //game.manager.rainWorld.inGameTranslator.Translate(notifQueue.Dequeue())
 
                     string message = Plugin.Singleton.notifQueue.Dequeue();
+                    if (Plugin.disableNotificationQueue.Value) return;
                     if (message.Contains("//"))
                     {
                         string[] split = Regex.Split(message, "//");
