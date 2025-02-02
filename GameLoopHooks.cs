@@ -205,19 +205,21 @@ namespace RainWorldRandomizer
                     //game.manager.rainWorld.inGameTranslator.Translate(notifQueue.Dequeue())
 
                     string message = Plugin.Singleton.notifQueue.Dequeue();
-                    if (Plugin.disableNotificationQueue.Value) return;
-                    if (message.Contains("//"))
+                    if (!Plugin.disableNotificationQueue.Value)
                     {
-                        string[] split = Regex.Split(message, "//");
-                        self.cameras[0].hud.textPrompt.AddMessage(split[0], 0, 160, true, true, 100f,
-                            new List<MultiplayerUnlocks.SandboxUnlockID>() { new MultiplayerUnlocks.SandboxUnlockID(split[1]) });
-                    }
-                    else
-                    {
-                        self.cameras[0].hud.textPrompt.AddMessage(message, 0, 160, true, true);
-                    }
+                        if (message.Contains("//"))
+                        {
+                            string[] split = Regex.Split(message, "//");
+                            self.cameras[0].hud.textPrompt.AddMessage(split[0], 0, 160, true, true, 100f,
+                                new List<MultiplayerUnlocks.SandboxUnlockID>() { new MultiplayerUnlocks.SandboxUnlockID(split[1]) });
+                        }
+                        else
+                        {
+                            self.cameras[0].hud.textPrompt.AddMessage(message, 0, 160, true, true);
+                        }
 
-                    self.session.Players[0].realizedCreature.room.PlaySound(SoundID.MENU_Passage_Button, 0, 1f, 1f);
+                        self.session.Players[0].realizedCreature.room.PlaySound(SoundID.MENU_Passage_Button, 0, 1f, 1f);
+                    }
                 }
             }
 
