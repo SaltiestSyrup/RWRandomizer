@@ -11,7 +11,6 @@ namespace RainWorldRandomizer
     {
         // AP TODO:
         // First beta:
-        //  Stop player from starting game without first connecting
         //  Auto connect on startup??
         //  Hunter neuron and pearl
         // After that:
@@ -107,19 +106,21 @@ namespace RainWorldRandomizer
             SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
             ArchipelagoConnection.lastItemIndex = save.lastIndex;
             locationsStatus = save.locationsStatus;
-            Plugin.Log.LogInfo($"Loaded save game {saveId}");
+            currentSlugcat = ArchipelagoConnection.Slugcat;
 
             // Load the item delivery queue from file as normal
             Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
             Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
 
+            Plugin.Log.LogInfo($"Loaded save game {saveId}");
             locationsLoaded = true;
         }
 
         public void CreateNewSave(string saveId)
         {
-            locationsStatus.Clear();
+            currentSlugcat = ArchipelagoConnection.Slugcat;
 
+            locationsStatus.Clear();
             foreach (long loc in ArchipelagoConnection.Session.Locations.AllLocations)
             {
                 locationsStatus.Add(ArchipelagoConnection.Session.Locations.GetLocationNameFromId(loc), false);

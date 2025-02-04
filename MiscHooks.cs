@@ -25,6 +25,7 @@ namespace RainWorldRandomizer
 
             try
             {
+                IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
                 IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
                 IL.MoreSlugcats.CutsceneArtificerRobo.GetInput += ArtificerRoboIL;
             }
@@ -44,6 +45,7 @@ namespace RainWorldRandomizer
             On.Menu.EndgameTokens.Passage -= DoPassage;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
+            IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
         }
@@ -61,6 +63,52 @@ namespace RainWorldRandomizer
             else if (Plugin.randomizeSpawnLocation.Value)
             {
                 self.denPosition = Plugin.RandoManager.customStartDen;
+            }
+        }
+
+        // TODO: Need explanation text for when start game button is greyed out
+        public static void SlugcatSelectMenuUpdateIL(ILContext il)
+        {
+            try
+            {
+                ILCursor c1 = new ILCursor(il);
+
+                ILLabel resultJump = null;
+                c1.GotoNext(MoveType.Before,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.slugcatPageIndex))),
+                    x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.colorFromIndex))),
+                    x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.SlugcatUnlocked))),
+                    x => x.MatchLdcI4(0),
+                    x => x.MatchCeq(),
+                    x => x.MatchBr(out resultJump)
+                    );
+
+                // Move the label a step back, to ldc.i4.1
+                ILCursor c2 = new ILCursor(il);
+                c2.GotoLabel(resultJump, MoveType.Before);
+                c2.Index--;
+                resultJump = c2.MarkLabel();
+
+                c1.Emit(OpCodes.Ldarg_0);
+                // When AP is enabled, start game button should only be available if AP is connected and the correct slugcat is chosen
+                c1.EmitDelegate<Func<SlugcatSelectMenu, bool>>((self) =>
+                {
+                    if (Plugin.archipelago.Value)
+                        return Plugin.RandoManager is ManagerArchipelago manager 
+                            && manager.locationsLoaded 
+                            && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex);
+                    else
+                        return true;
+                });
+                c1.Emit(OpCodes.Brfalse, resultJump);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed Hooking for SlugcatSelectMenuUpdate");
+                Plugin.Log.LogError(e);
             }
         }
 
