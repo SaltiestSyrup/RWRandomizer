@@ -56,9 +56,10 @@ namespace RainWorldRandomizer
 
             if (Plugin.RandoManager is ManagerArchipelago managerAP)
             {
-                // TODO: Set den position with custom den setting
-                // Waiting on implementation in AP world
-                return;
+                if (ArchipelagoConnection.useRandomStartRegion)
+                {
+                    self.denPosition = Plugin.RandoManager.customStartDen;
+                }
             }
             else if (Plugin.randomizeSpawnLocation.Value)
             {

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -17,6 +19,7 @@ namespace RainWorldRandomizer
         //  Console logging
         //  
 
+        public bool isNewGame = true;
         public bool locationsLoaded = false;
         public bool gameCompleted = false;
 
@@ -103,6 +106,7 @@ namespace RainWorldRandomizer
 
         public void LoadSave(string saveId)
         {
+            isNewGame = false;
             SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
             ArchipelagoConnection.lastItemIndex = save.lastIndex;
             locationsStatus = save.locationsStatus;
@@ -118,6 +122,7 @@ namespace RainWorldRandomizer
 
         public void CreateNewSave(string saveId)
         {
+            isNewGame = true;
             currentSlugcat = ArchipelagoConnection.Slugcat;
 
             locationsStatus.Clear();
@@ -255,6 +260,12 @@ namespace RainWorldRandomizer
                 _currentMaxKarma = SlugcatStats.SlugcatStartingKarma(slugcat);
             }
 
+            if (isNewGame && ArchipelagoConnection.useRandomStartRegion)
+            {
+                customStartDen = FindRandomStart(ArchipelagoConnection.desiredStartRegion);
+                Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
+            }
+
             // Populate region mapping for display purposes
             foreach (string region in Region.GetFullRegionOrder())
             {
@@ -262,6 +273,36 @@ namespace RainWorldRandomizer
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Finds a random den in the given region
+        /// </summary>
+        public static string FindRandomStart(string selectedRegion)
+        {
+            Dictionary<string, List<string>> contenders = new Dictionary<string, List<string>>();
+            if (File.Exists(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt")))
+            {
+                string[] file = File.ReadAllLines(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt"));
+                foreach (string line in file)
+                {
+                    if (!line.StartsWith("//") && line.Length > 0)
+                    {
+                        string region = Regex.Split(line, "_")[0];
+                        if (Region.GetFullRegionOrder().Contains(region))
+                        {
+                            if (!contenders.ContainsKey(region))
+                            {
+                                contenders.Add(region, new List<string>());
+                            }
+                            contenders[region].Add(line);
+                        }
+                    }
+                }
+                return contenders[selectedRegion][UnityEngine.Random.Range(0, contenders[selectedRegion].Count)];
+            }
+
+            return "SU_S01";
         }
 
         public override List<string> GetLocations()

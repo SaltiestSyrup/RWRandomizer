@@ -28,23 +28,19 @@ namespace RainWorldRandomizer
         public static bool ReceivedSlotData = false;
         public static bool DataPackageReady = false;
 
-        // Ported configurables
+        // Ported settings from slot data
         public static bool IsMSC;
         public static SlugcatStats.Name Slugcat;
+        public static bool useRandomStartRegion;
+        public static string desiredStartRegion;
+        /// <summary> Passage Progress without Survivor </summary>
+        public static bool PPwS;
 
         public static ArchipelagoSession Session;
-        //public static Dictionary<string, long> ItemNameToID = null;
-        //public static Dictionary<long, string> IDToItemName = null;
-        //public static Dictionary<string, long> LocationNameToID = null;
-        //public static Dictionary<long, string> IDToLocationName = null;
 
         public static long lastItemIndex = 0;
         public static string playerName;
         public static string generationSeed;
-
-        private static Queue<string> receivedItemsQueue = new Queue<string>();
-        private static Queue<long> sendItemsQueue = new Queue<long>();
-        //public static Dictionary<string, bool> LocationKey = new Dictionary<string, bool>();
 
         private static void CreateSession(string hostName, int port)
         {
@@ -208,36 +204,130 @@ namespace RainWorldRandomizer
 
         private static void ParseSlotData(Dictionary<string, object> slotData)
         {
-            IsMSC = slotData.ContainsKey("MSC") && (bool)slotData["MSC"];
-            long slugcatIndex = slotData.ContainsKey("Slugcat") ? (long)slotData["Slugcat"] : 1;
+            long worldStateIndex = slotData.ContainsKey("which_gamestate") ? (long)slotData["which_gamestate"] : -1;
+            long startingRegion = slotData.ContainsKey("random_starting_region") ? (long)slotData["random_starting_region"] : -1;
+            long PPwS = slotData.ContainsKey("passage_progress_without_survivor") ? (long)slotData["passage_progress_without_survivor"] : -1;
 
-            switch (slugcatIndex)
+            Plugin.Log.LogDebug($"World state index: {worldStateIndex}");
+            Plugin.Log.LogDebug($"Starting region: {startingRegion}");
+            Plugin.Log.LogDebug($"Passage progress w/o Survivor?: {PPwS}");
+
+            //IsMSC = slotData.ContainsKey("MSC") && (bool)slotData["MSC"];
+            //long slugcatIndex = slotData.ContainsKey("Slugcat") ? (long)slotData["Slugcat"] : 1;
+
+            switch (worldStateIndex)
             {
+                case 0:
+                    IsMSC = false;
+                    Slugcat = SlugcatStats.Name.Yellow;
+                    break;
                 case 1:
+                    IsMSC = false;
                     Slugcat = SlugcatStats.Name.White;
                     break;
                 case 2:
-                    Slugcat = SlugcatStats.Name.Yellow;
-                    break;
-                case 4:
+                    IsMSC = false;
                     Slugcat = SlugcatStats.Name.Red;
                     break;
-                case 8:
+                case 10:
+                    IsMSC = true;
+                    Slugcat = SlugcatStats.Name.Yellow;
+                    break;
+                case 11:
+                    IsMSC = true;
+                    Slugcat = SlugcatStats.Name.White;
+                    break;
+                case 12:
+                    IsMSC = true;
+                    Slugcat = SlugcatStats.Name.Red;
+                    break;
+                case 13:
+                    IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Gourmand;
                     break;
-                case 16:
+                case 14:
+                    IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Artificer;
                     break;
-                case 32:
+                case 15:
+                    IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Rivulet;
                     break;
-                case 64:
+                case 16:
+                    IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Spear;
                     break;
-                case 128:
+                case 17:
+                    IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Saint;
                     break;
+                case 18:
+                    IsMSC = true;
+                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
+                    break;
             }
+
+            switch (startingRegion)
+            {
+                case 0:
+                    useRandomStartRegion = false;
+                    desiredStartRegion = "";
+                    break;
+                case 1:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "SU";
+                    break;
+                case 2:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "HI";
+                    break;
+                case 3:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "DS";
+                    break;
+                case 4:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "GW";
+                    break;
+                case 5:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "SL";
+                    break;
+                case 6:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "SH";
+                    break;
+                case 7:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "UW";
+                    break;
+                case 8:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "SS";
+                    break;
+                case 9:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "CC";
+                    break;
+                case 10:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "SI";
+                    break;
+                case 11:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "LF";
+                    break;
+                case 12:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "SB";
+                    break;
+                case 20:
+                    useRandomStartRegion = true;
+                    desiredStartRegion = "VS";
+                    break;
+            }
+
+            // TODO: Force value of PPwS in remix based on slot data
         }
 
         // Need to wait until client is fully connected and ready
