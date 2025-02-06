@@ -280,7 +280,7 @@ namespace RainWorldRandomizer
             if (isPearl)
                 return new Item(IDToString(id), new DataPearl.AbstractDataPearl.DataPearlType(id));
 
-            if (id == "FireSpear")
+            if (id == "FireSpear" || id == "ExplosiveSpear")
                 return new Item("Explosive Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
             if (id == "ElectricSpear")
                 return new Item("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
@@ -302,7 +302,7 @@ namespace RainWorldRandomizer
         {
             //RandomizerMain.Log.LogDebug(hasSeenItemTutorial);
 
-            if (hasSeenItemTutorial || Plugin.Singleton.ItemShelterDelivery) return;
+            if (hasSeenItemTutorial || Plugin.Singleton.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
             Plugin.Singleton.notifQueue.Enqueue("TIP: Unlocked items are stored in your stomach for safe keeping");
             hasSeenItemTutorial = true;
         }

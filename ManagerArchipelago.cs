@@ -182,8 +182,8 @@ namespace RainWorldRandomizer
             else if (item.StartsWith("Object-"))
             {
                 if (!isNew) return; // Don't double gift items, unused ones will be read from file
-                var uitem = Unlock.IDToItem(item.Substring(7));
-                Plugin.Log.LogDebug($"give item {uitem.name}, {uitem.id}, {uitem.type.value}");
+                //var uitem = Unlock.IDToItem(item.Substring(7));
+                //Plugin.Log.LogDebug($"give item {uitem.name}, {uitem.id}, {uitem.type.value}");
                 unlock = new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
                 unlock.GiveUnlock();
             }

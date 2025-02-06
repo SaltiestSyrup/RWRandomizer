@@ -19,7 +19,7 @@ namespace RainWorldRandomizer
 {
     public class ArchipelagoConnection : MonoBehaviour
     {
-        private const string AP_VERSION = "0.6.0";
+        private const string AP_VERSION = "0.5.1";
         public const string GAME_NAME = "Rain World";
 
         public static bool Authenticated = false;

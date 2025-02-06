@@ -77,7 +77,7 @@ namespace RainWorldRandomizer
             if (ID == ProcessManager.ProcessID.MainMenu)
             {
                 // Turn off randomizer when quitting to menu
-                Plugin.RandoManager.isRandomizerActive = false;
+                if (Plugin.RandoManager != null) Plugin.RandoManager.isRandomizerActive = false;
             }
 
             if (ID == ProcessManager.ProcessID.SleepScreen)

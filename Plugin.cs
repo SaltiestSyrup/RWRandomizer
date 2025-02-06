@@ -4,6 +4,7 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -281,33 +282,39 @@ namespace RainWorldRandomizer
                 else
                 {
                     return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null,
-                    new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
-                    itemPearlType);
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
+                        itemPearlType);
                 }
             }
             else if (item.type is AbstractPhysicalObject.AbstractObjectType itemObjectType)
             {
-                // Special cases here
+                // Normal objects that need special treatment
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DataPearl)
                 {
                     return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null,
-                    new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
-                    DataPearl.AbstractDataPearl.DataPearlType.Misc);
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
+                        DataPearl.AbstractDataPearl.DataPearlType.Misc);
                 }
+                // Various spear types are all still "Spear"
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.Spear)
                 {
                     return new AbstractSpear(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
-                        item.id == "FireSpear", item.id == "ElectricSpear");
+                        item.id == "FireSpear" || item.id == "ExplosiveSpear", item.id == "ElectricSpear");
                 }
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.KarmaFlower
-                    || itemObjectType == AbstractPhysicalObject.AbstractObjectType.Mushroom
-                    || itemObjectType == AbstractPhysicalObject.AbstractObjectType.PuffBall
-                    || itemObjectType == AbstractPhysicalObject.AbstractObjectType.Lantern)
+                // Lillypuck is a consumable, but still needs its own constructor
+                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.LillyPuck)
+                {
+                    return new LillyPuck.AbstractLillyPuck(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
+                }
+                // Handles all "Consumables"
+                if (AbstractConsumable.IsTypeConsumable(itemObjectType))
                 {
                     return new AbstractConsumable(world, itemObjectType, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
                 }
+                // Special object cases that need their own constructor
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.VultureMask)
                 {
                     EntityID newID = world.game.GetNewID();
@@ -319,6 +326,24 @@ namespace RainWorldRandomizer
                     return new BubbleGrass.AbstractBubbleGrass(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 1f, -1, -1, null)
                     { isConsumed = false };
+                }
+                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.EggBugEgg)
+                {
+                    return new EggBugEgg.AbstractBugEgg(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
+                        Mathf.Lerp(-0.15f, 0.1f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)));
+                }
+                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.FireEgg)
+                {
+                    return new FireEgg.AbstractBugEgg(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
+                        Mathf.Lerp(0.35f, 0.6f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)));
+                }
+                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.JokeRifle)
+                {
+                    return new JokeRifle.AbstractRifle(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
+                        JokeRifle.AbstractRifle.AmmoType.Rock);
                 }
 
                 // Default case
