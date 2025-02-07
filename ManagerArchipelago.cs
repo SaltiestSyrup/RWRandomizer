@@ -13,11 +13,10 @@ namespace RainWorldRandomizer
     {
         // AP TODO:
         // First beta:
-        //  Auto connect on startup??
         //  Hunter neuron and pearl
         // After that:
         //  Console logging
-        //  
+        //  Auto connect on startup?? (Should do after console, so there's feedback of it happening)
 
         public bool isNewGame = true;
         public bool locationsLoaded = false;
@@ -198,6 +197,11 @@ namespace RainWorldRandomizer
                 unlock = new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
                 unlock.GiveUnlock();
             }
+            else if (item.StartsWith("Trap-"))
+            {
+                if (!isNew) return;
+                TrapsHandler.EnqueueTrap(item);
+            }
             else if (item == "Karma")
             {
                 unlock = new Unlock(Unlock.UnlockType.Karma, item, true);
@@ -269,7 +273,8 @@ namespace RainWorldRandomizer
             // Populate region mapping for display purposes
             foreach (string region in Region.GetFullRegionOrder())
             {
-                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(slugcat, region));
+                if (!Plugin.ProperRegionMap.ContainsKey(region))
+                    Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(slugcat, region));
             }
 
             return true;

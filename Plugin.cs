@@ -147,6 +147,8 @@ namespace RainWorldRandomizer
                 IteratorHooks.ApplyHooks();
                 SpearmasterCutscenes.ApplyHooks();
 
+                TrapsHandler.ApplyHooks();
+
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
 
@@ -177,6 +179,8 @@ namespace RainWorldRandomizer
                 MiscHooks.RemoveHooks();
                 IteratorHooks.RemoveHooks();
                 SpearmasterCutscenes.RemoveHooks();
+
+                TrapsHandler.RemoveHooks();
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;

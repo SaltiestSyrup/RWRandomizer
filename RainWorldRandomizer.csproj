@@ -114,6 +114,7 @@
     <Compile Include="RegionKitCompatibility.cs" />
     <Compile Include="SaveManager.cs" />
     <Compile Include="MenuExtension.cs" />
+    <Compile Include="TrapsHandler.cs" />
     <Compile Include="Unlock.cs" />
   </ItemGroup>
   <ItemGroup>
