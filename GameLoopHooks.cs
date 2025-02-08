@@ -267,7 +267,7 @@ namespace RainWorldRandomizer
 
         public static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
-            // TODO: Write alternatives for other managers
+            // TODO: Make this a function of ManagerBase, passing in saveCurrentState
             if (Plugin.RandoManager.isRandomizerActive)
             {
                 if (Plugin.RandoManager is ManagerVanilla vanillaManager)

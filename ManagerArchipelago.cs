@@ -84,8 +84,6 @@ namespace RainWorldRandomizer
             if (isPopulated) return;
             Reset();
 
-            // TODO: hard code a list of items I guess? Why does MultiClient not have that list public
-            
             foreach (var item in ArchipelagoConnection.ItemNameToID.Keys)
             {
                 if (item.StartsWith("GATE_") && !gatesStatus.ContainsKey(item))
@@ -339,7 +337,6 @@ namespace RainWorldRandomizer
 
             ArchipelagoConnection.Session.Locations.CompleteLocationChecks(new long[] { locId });
             locationsStatus[location] = true;
-            // TODO: ask server what that item was for logging purposes
             Plugin.Log.LogInfo($"Found location: {location}!");
             return true;
         }

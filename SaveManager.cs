@@ -20,7 +20,6 @@ namespace RainWorldRandomizer
             return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.json"));
         }
 
-        //TODO: make this async if possible
         // Meant for vanilla saves only
         public static void WriteSavedGameToFile(Dictionary<string, Unlock> game, SlugcatStats.Name slugcat, int saveSlot)
         {
