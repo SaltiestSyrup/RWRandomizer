@@ -132,11 +132,17 @@ namespace RainWorldRandomizer
                     List<MultiplayerUnlocks.LevelUnlockID> output = new List<MultiplayerUnlocks.LevelUnlockID>();
                     foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (loc.StartsWith("Token-L-")
-                            && ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.LevelUnlockID), loc.Substring(8), false, out ExtEnumBase value)
-                            && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                        if (loc.StartsWith("Token-L-"))
                         {
-                            output.Add((MultiplayerUnlocks.LevelUnlockID)value);
+                            // Trim region suffix if present
+                            string[] split = Regex.Split(loc, "-");
+                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.LevelUnlockID), trimmedLoc.Substring(8), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                output.Add((MultiplayerUnlocks.LevelUnlockID)value);
+                            }
                         }
                     }
                     return output;
@@ -155,11 +161,17 @@ namespace RainWorldRandomizer
                     List<MultiplayerUnlocks.SandboxUnlockID> output = new List<MultiplayerUnlocks.SandboxUnlockID>();
                     foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (loc.StartsWith("Token-")
-                            && ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), loc.Substring(6), false, out ExtEnumBase value)
-                            && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                        if (loc.StartsWith("Token-"))
                         {
-                            output.Add((MultiplayerUnlocks.SandboxUnlockID)value);
+                            // Trim region suffix if present
+                            string[] split = Regex.Split(loc, "-");
+                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), trimmedLoc.Substring(6), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                output.Add((MultiplayerUnlocks.SandboxUnlockID)value);
+                            }
                         }
                     }
                     return output;
@@ -178,11 +190,17 @@ namespace RainWorldRandomizer
                     List<MultiplayerUnlocks.SlugcatUnlockID> output = new List<MultiplayerUnlocks.SlugcatUnlockID>();
                     foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (loc.StartsWith("Token-")
-                            && ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SlugcatUnlockID), loc.Substring(6), false, out ExtEnumBase value)
-                            && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                        if (loc.StartsWith("Token-"))
                         {
-                            output.Add((MultiplayerUnlocks.SlugcatUnlockID)value);
+                            // Trim region suffix if present
+                            string[] split = Regex.Split(loc, "-");
+                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SlugcatUnlockID), trimmedLoc.Substring(6), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                output.Add((MultiplayerUnlocks.SlugcatUnlockID)value);
+                            }
                         }
                     }
                     return output;
@@ -224,11 +242,17 @@ namespace RainWorldRandomizer
                     List<MultiplayerUnlocks.SafariUnlockID> output = new List<MultiplayerUnlocks.SafariUnlockID>();
                     foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (loc.StartsWith("Token-S-")
-                            && ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SafariUnlockID), loc.Substring(8), false, out ExtEnumBase value)
-                            && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                        if (loc.StartsWith("Token-S-"))
                         {
-                            output.Add((MultiplayerUnlocks.SafariUnlockID)value);
+                            // Trim region suffix if present
+                            string[] split = Regex.Split(loc, "-");
+                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SafariUnlockID), trimmedLoc.Substring(8), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                output.Add((MultiplayerUnlocks.SafariUnlockID)value);
+                            }
                         }
                     }
                     return output;

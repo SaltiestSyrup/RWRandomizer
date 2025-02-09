@@ -216,9 +216,16 @@ namespace RainWorldRandomizer
             {
                 Plugin.RandoManager.GiveLocation($"Broadcast-{tokenString}");
             }
-            else if (!(Plugin.RandoManager.IsLocationGiven($"Token-{tokenString}") ?? true))
+            else
             {
-                Plugin.RandoManager.GiveLocation($"Token-{tokenString}");
+                // Add region acronym to location name if using AP
+                string locationString = Plugin.RandoManager is ManagerArchipelago ? 
+                    $"Token-{tokenString}-{self.room.abstractRoom.name.Substring(0,2)}" : $"Token-{tokenString}";
+                
+                if (!(Plugin.RandoManager.IsLocationGiven(locationString) ?? true))
+                {
+                    Plugin.RandoManager.GiveLocation(locationString);
+                }
             }
         }
 
@@ -241,7 +248,11 @@ namespace RainWorldRandomizer
                     tokenString = $"L-{tokenString}";
                 }
 
-                if (!(Plugin.RandoManager.IsLocationGiven($"Token-{tokenString}") ?? true))
+                // Add region acronym to location name if using AP
+                string locationString = Plugin.RandoManager is ManagerArchipelago ?
+                    $"Token-{tokenString}-{room.abstractRoom.name.Substring(0, 2)}" : $"Token-{tokenString}";
+
+                if (!(Plugin.RandoManager.IsLocationGiven(locationString) ?? true))
                 {
                     return false;
                 }
