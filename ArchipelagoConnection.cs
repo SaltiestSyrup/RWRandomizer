@@ -33,6 +33,7 @@ namespace RainWorldRandomizer
         public static SlugcatStats.Name Slugcat;
         public static bool useRandomStartRegion;
         public static string desiredStartRegion;
+        public static CompletionCondition completionCondition;
         /// <summary> Passage Progress without Survivor </summary>
         public static bool PPwS;
 
@@ -41,6 +42,16 @@ namespace RainWorldRandomizer
         public static long lastItemIndex = 0;
         public static string playerName;
         public static string generationSeed;
+
+        public enum CompletionCondition
+        {
+            Ascension, // The basic void sea ending
+            SlugTree, // Survivor, Monk, and Gourmand reaching Outer Expanse
+            ScavKing, // Artificer killing the Chieftain scavenger
+            SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
+            Messenger, // Spearmaster delivering the encoded pearl to Comms array
+            Rubicon, // Saint Ascending in Rubicon
+        }
 
         private static void CreateSession(string hostName, int port)
         {
@@ -135,6 +146,8 @@ namespace RainWorldRandomizer
             Session = null;
             Authenticated = false;
             IsConnected = false;
+            ReceivedSlotData = false;
+
             (Plugin.RandoManager as ManagerArchipelago).Reset();
         }
 
@@ -207,10 +220,12 @@ namespace RainWorldRandomizer
             long worldStateIndex = slotData.ContainsKey("which_gamestate") ? (long)slotData["which_gamestate"] : -1;
             long startingRegion = slotData.ContainsKey("random_starting_region") ? (long)slotData["random_starting_region"] : -1;
             long PPwS = slotData.ContainsKey("passage_progress_without_survivor") ? (long)slotData["passage_progress_without_survivor"] : -1;
+            long completionType = slotData.ContainsKey("which_victory_condition") ? (long)slotData["which_victory_condition"] : -1;
 
             Plugin.Log.LogDebug($"World state index: {worldStateIndex}");
             Plugin.Log.LogDebug($"Starting region: {startingRegion}");
             Plugin.Log.LogDebug($"Passage progress w/o Survivor?: {PPwS}");
+            Plugin.Log.LogDebug($"Completion condition: {(completionType == 0 ? "Ascension" : "Alternate")}");
 
             //IsMSC = slotData.ContainsKey("MSC") && (bool)slotData["MSC"];
             //long slugcatIndex = slotData.ContainsKey("Slugcat") ? (long)slotData["Slugcat"] : 1;
@@ -220,50 +235,62 @@ namespace RainWorldRandomizer
                 case 0:
                     IsMSC = false;
                     Slugcat = SlugcatStats.Name.Yellow;
+                    completionCondition = CompletionCondition.Ascension;
                     break;
                 case 1:
                     IsMSC = false;
                     Slugcat = SlugcatStats.Name.White;
+                    completionCondition = CompletionCondition.Ascension;
                     break;
                 case 2:
                     IsMSC = false;
                     Slugcat = SlugcatStats.Name.Red;
+                    completionCondition = CompletionCondition.Ascension;
                     break;
                 case 10:
                     IsMSC = true;
                     Slugcat = SlugcatStats.Name.Yellow;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
                     break;
                 case 11:
                     IsMSC = true;
                     Slugcat = SlugcatStats.Name.White;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
                     break;
                 case 12:
                     IsMSC = true;
                     Slugcat = SlugcatStats.Name.Red;
+                    completionCondition = CompletionCondition.Ascension;
                     break;
                 case 13:
                     IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Gourmand;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
                     break;
                 case 14:
                     IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Artificer;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing;
                     break;
                 case 15:
                     IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Rivulet;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon;
                     break;
                 case 16:
                     IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Spear;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger;
                     break;
                 case 17:
                     IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Saint;
+                    completionCondition = CompletionCondition.Rubicon;
                     break;
                 case 18:
                     IsMSC = true;
                     Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
+                    completionCondition = CompletionCondition.Ascension;
                     break;
             }
 

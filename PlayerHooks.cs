@@ -75,12 +75,21 @@ namespace RainWorldRandomizer
             orig(self, eu);
 
             // Check for completion via Void Sea
+            // TODO: Currently if the player reaches here, but their completion condition isn't void sea, it will try to send every frame
             if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && self.room is Room room
-                && room.abstractRoom.name == "SB_L01"
-                && self.firstChunk.pos.y < -500f)
+                && !managerAP.gameCompleted
+                && self.room is Room room)
             {
-                managerAP.GiveCompletionCondition("Void Sea");
+                if (room.abstractRoom.name == "SB_L01"
+                    && self.firstChunk.pos.y < -500f)
+                {
+                    managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Ascension);
+                }
+                else if (room.abstractRoom.name == "HR_FINAL"
+                    && self.firstChunk.pos.y > room.PixelHeight + 500f)
+                {
+                    managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
+                }
             }
         }
 

@@ -22,6 +22,7 @@ namespace RainWorldRandomizer
             On.SSOracleBehavior.Update += PebblesUpdate;
             On.SLOracleBehaviorHasMark.Update += MoonMarkUpdate;
             On.SLOracleWakeUpProcedure.Update += MoonWakeUpUpdate;
+            On.SLOracleBehaviorHasMark.SpecialEvent += OnMoonSpecialEvent;
             On.HUD.DialogBox.NewMessage_string_float_float_int += DialogueAddMessage;
 
             try
@@ -48,6 +49,7 @@ namespace RainWorldRandomizer
             On.SSOracleBehavior.Update -= PebblesUpdate;
             On.SLOracleBehaviorHasMark.Update -= MoonMarkUpdate;
             On.SLOracleWakeUpProcedure.Update -= MoonWakeUpUpdate;
+            On.SLOracleBehaviorHasMark.SpecialEvent -= OnMoonSpecialEvent;
             On.HUD.DialogBox.NewMessage_string_float_float_int -= DialogueAddMessage;
 
             IL.SSOracleBehavior.SSOracleMeetWhite.Update -= PebblesMeetWhiteUpdateIL;
@@ -404,6 +406,19 @@ namespace RainWorldRandomizer
             }
 
             orig(self, eu);
+        }
+
+        static void OnMoonSpecialEvent(On.SLOracleBehaviorHasMark.orig_SpecialEvent orig, SLOracleBehaviorHasMark self, string eventName)
+        {
+            orig(self, eventName);
+
+            // Check for completion via visiting LttM after placing the Rarefaction cell
+            if (Plugin.RandoManager is ManagerArchipelago managerAP
+                && !managerAP.gameCompleted
+                && eventName == "RivEndingFade")
+            {
+                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SaveMoon);
+            }
         }
 
         static void IteratorThrowOutBehaviorIL(ILContext il)

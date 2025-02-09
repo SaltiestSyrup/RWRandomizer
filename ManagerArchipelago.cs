@@ -70,6 +70,8 @@ namespace RainWorldRandomizer
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
             customStartDen = "SU_S01";
+            gameCompleted = false;
+            locationsLoaded = false;
 
             // Reset unlock lists
             gatesStatus.Clear();
@@ -125,6 +127,11 @@ namespace RainWorldRandomizer
             locationsStatus.Clear();
             foreach (long loc in ArchipelagoConnection.Session.Locations.AllLocations)
             {
+                if (ArchipelagoConnection.Session.Locations.GetLocationNameFromId(loc) == null)
+                {
+                    Plugin.Log.LogError($"Location {loc} does not exist in DataPackage?");
+                    continue;
+                }
                 locationsStatus.Add(ArchipelagoConnection.Session.Locations.GetLocationNameFromId(loc), false);
             }
             Plugin.Log.LogInfo($"Found no saved game, creating new save");
@@ -348,14 +355,18 @@ namespace RainWorldRandomizer
             return null;
         }
 
-        public void GiveCompletionCondition(string condition)
+        public void GiveCompletionCondition(ArchipelagoConnection.CompletionCondition condition)
         {
-            // TODO: Check that condition matches the seed's chosen condition
-            Plugin.Log.LogInfo($"Game completed via {condition}! Releasing items...");
-            Plugin.Singleton.notifQueue.Enqueue("Game Complete! Items released");
+            if (condition != ArchipelagoConnection.completionCondition)
+        {
+                Plugin.Log.LogInfo("Game completed through the wrong condition, not sending completion");
+                return;
+            }
 
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();
+            Plugin.Log.LogInfo("Game Complete! Items released");
+            Plugin.Singleton.notifQueue.Enqueue("Game Complete! Items released");
         }
 
         public void SaveGame()

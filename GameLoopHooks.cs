@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,9 @@ namespace RainWorldRandomizer
             On.SaveState.SessionEnded += OnSessionEnded;
             On.RainWorldGame.ctor += OnStartSession;
             On.HardmodeStart.Update += OnHardmodeStart;
+            On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update += OnOEEndingScriptUpdate;
+            On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update += OnLCEndingScriptUpdate;
+            On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update += OnSpearEndingUpdate;
             On.RegionState.AdaptRegionStateToWorld += OnAdaptRegionStateToWorld;
 
             try
@@ -40,6 +44,9 @@ namespace RainWorldRandomizer
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnStartSession;
             On.HardmodeStart.Update -= OnHardmodeStart;
+            On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update -= OnOEEndingScriptUpdate;
+            On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update -= OnLCEndingScriptUpdate;
+            On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update -= OnSpearEndingUpdate;
             On.RegionState.AdaptRegionStateToWorld -= OnAdaptRegionStateToWorld;
             IL.WinState.CycleCompleted -= ILCycleCompleted;
         }
@@ -138,7 +145,11 @@ namespace RainWorldRandomizer
             // The glow is not death persistent, so I have to make sure it stays applied
             self.GetStorySession.saveState.theGlow = Plugin.RandoManager.GivenNeuronGlow;
             self.GetStorySession.saveState.deathPersistentSaveData.theMark = Plugin.RandoManager.GivenMark;
-        }
+
+            self.GetStorySession.saveState.hasRobo = Plugin.RandoManager.GivenRobo;
+            self.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = Plugin.RandoManager.GivenPebblesOff;
+            self.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
+            }
 
         // Remove Hunter's starting macguffins
         public static void OnHardmodeStart(On.HardmodeStart.orig_Update orig, HardmodeStart self, bool eu)
@@ -339,6 +350,45 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Failed Hooking for CycleCompleted");
                 Plugin.Log.LogError(e);
+            }
+        }
+
+        public static void OnOEEndingScriptUpdate(On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.orig_Update orig, MSCRoomSpecificScript.OE_GourmandEnding self, bool eu)
+        {
+            orig(self, eu);
+
+            // Check for completion via Outer Expanse
+            if (Plugin.RandoManager is ManagerArchipelago managerAP
+                && !managerAP.gameCompleted
+                && self.endTrigger)
+            {
+                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SlugTree);
+            }
+        }
+
+        public static void OnLCEndingScriptUpdate(On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.orig_Update orig, MSCRoomSpecificScript.LC_FINAL self, bool eu)
+        {
+            orig(self, eu);
+
+            // Check for completion via killing Chieftain scavenger
+            if (Plugin.RandoManager is ManagerArchipelago managerAP
+                && !managerAP.gameCompleted
+                && self.endingTriggered)
+            {
+                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.ScavKing);
+            }
+        }
+
+        public static void OnSpearEndingUpdate(On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.orig_Update orig, MSCRoomSpecificScript.SpearmasterEnding self, bool eu)
+        {
+            orig(self, eu);
+
+            // Check for completion via delivering Spearmaster's pearl to Comms array
+            if (Plugin.RandoManager is ManagerArchipelago managerAP
+                && !managerAP.gameCompleted
+                && self.SMEndingPhase == MSCRoomSpecificScript.SpearmasterEnding.SMEndingState.PEARLDATA)
+            {
+                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
             }
         }
 
