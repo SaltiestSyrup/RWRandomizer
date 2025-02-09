@@ -201,7 +201,7 @@ namespace RainWorldRandomizer
                     List<MoreSlugcats.ChatlogData.ChatlogID> output = new List<MoreSlugcats.ChatlogData.ChatlogID>();
                     foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (loc.StartsWith("SMBroadcast-")
+                        if (loc.StartsWith("Broadcast-")
                             && ExtEnumBase.TryParse(typeof(MoreSlugcats.ChatlogData.ChatlogID), loc.Substring(12), false, out ExtEnumBase value)
                             && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
                         {

@@ -212,9 +212,9 @@ namespace RainWorldRandomizer
 
             if ((self.placedObj.data as CollectToken.CollectTokenData).isWhite
                 && (self.placedObj.data as CollectToken.CollectTokenData).ChatlogCollect != null
-                && !(Plugin.RandoManager.IsLocationGiven($"SMBroadcast-{tokenString}") ?? true))
+                && !(Plugin.RandoManager.IsLocationGiven($"Broadcast-{tokenString}") ?? true))
             {
-                Plugin.RandoManager.GiveLocation($"SMBroadcast-{tokenString}");
+                Plugin.RandoManager.GiveLocation($"Broadcast-{tokenString}");
             }
             else if (!(Plugin.RandoManager.IsLocationGiven($"Token-{tokenString}") ?? true))
             {

@@ -848,7 +848,7 @@ namespace RainWorldRandomizer
                             spriteScale = 2f;
                             spriteColor = CollectToken.RedColor.rgb;
                             break;
-                        case "SMBroadcast":
+                        case "Broadcast":
                             spriteName = "ctOn";
                             spriteScale = 2f;
                             spriteColor = CollectToken.WhiteColor.rgb;

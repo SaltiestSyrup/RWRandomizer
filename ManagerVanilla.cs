@@ -364,9 +364,9 @@ namespace RainWorldRandomizer
                     if (!Plugin.Singleton.rainWorld.regionGreyTokens.ContainsKey(regionShort.ToLowerInvariant())) continue;
                     foreach (ChatlogData.ChatlogID token in Plugin.Singleton.rainWorld.regionGreyTokens[regionShort.ToLowerInvariant()])
                     {
-                        if (!randomizerKey.ContainsKey($"SMBroadcast-{token.value}"))
+                        if (!randomizerKey.ContainsKey($"Broadcast-{token.value}"))
                         {
-                            randomizerKey.Add($"SMBroadcast-{token.value}", null);
+                            randomizerKey.Add($"Broadcast-{token.value}", null);
                         }
                     }
                 }
