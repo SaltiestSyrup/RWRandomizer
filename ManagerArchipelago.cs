@@ -11,13 +11,6 @@ namespace RainWorldRandomizer
 {
     public class ManagerArchipelago : ManagerBase
     {
-        // AP TODO:
-        // First beta:
-        //  Hunter neuron and pearl
-        // After that:
-        //  Console logging
-        //  Auto connect on startup?? (Should do after console, so there's feedback of it happening)
-
         public bool isNewGame = true;
         public bool locationsLoaded = false;
         public bool gameCompleted = false;
@@ -80,29 +73,6 @@ namespace RainWorldRandomizer
             Plugin.Singleton.lastItemDeliveryQueue.Clear();
         }
 
-        /*
-        public void Populate()
-        {
-            if (isPopulated) return;
-            Reset();
-
-            foreach (var item in ArchipelagoConnection.ItemNameToID.Keys)
-            {
-                if (item.StartsWith("GATE_") && !gatesStatus.ContainsKey(item))
-                {
-                    gatesStatus.Add(item, false);
-                }
-
-                if (item.StartsWith("Passage-") && !passageTokensStatus.ContainsKey(new WinState.EndgameID(item.Substring(8))))
-                {
-                    passageTokensStatus.Add(new WinState.EndgameID(item.Substring(8)), false);
-                }
-            }
-            
-            isPopulated = true;
-        }
-        */
-
         public void LoadSave(string saveId)
         {
             isNewGame = false;
@@ -150,17 +120,6 @@ namespace RainWorldRandomizer
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
 
-            //List<string> gates = gatesStatus.Keys.ToList();
-            //foreach (string gate in gates)
-            //{
-            //    gatesStatus[gate] = false;
-            //}
-            //List<WinState.EndgameID> tokens = passageTokensStatus.Keys.ToList();
-            //foreach (WinState.EndgameID token in tokens)
-            //{
-            //    passageTokensStatus[token] = false;
-            //}
-
             foreach (string item in newItems)
             {
                 AquireItem(item, false, false);
@@ -169,11 +128,8 @@ namespace RainWorldRandomizer
 
         public void AquireItem(string item, bool printLog = true, bool isNew = true)
         {
-            Unlock unlock = null;
-
             if (item.StartsWith("GATE_"))
             {
-                unlock = new Unlock(Unlock.UnlockType.Gate, item, true);
                 if (!gatesStatus.ContainsKey(item))
                 {
                     gatesStatus.Add(item, true);
@@ -181,7 +137,6 @@ namespace RainWorldRandomizer
             }
             else if (item.StartsWith("Passage-"))
             {
-                unlock = new Unlock(Unlock.UnlockType.Token, item, true);
                 WinState.EndgameID endgameId = new WinState.EndgameID(item.Substring(8));
                 if (!passageTokensStatus.ContainsKey(endgameId))
                 {
@@ -191,15 +146,13 @@ namespace RainWorldRandomizer
             else if (item.StartsWith("Object-"))
             {
                 if (!isNew) return; // Don't double gift items, unused ones will be read from file
-                //var uitem = Unlock.IDToItem(item.Substring(7));
-                //Plugin.Log.LogDebug($"give item {uitem.name}, {uitem.id}, {uitem.type.value}");
-                unlock = new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
+                Unlock unlock = new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("PearlObject-"))
             {
                 if (!isNew) return;
-                unlock = new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
+                Unlock unlock = new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("Trap-"))
@@ -209,66 +162,44 @@ namespace RainWorldRandomizer
             }
             else if (item == "Karma")
             {
-                unlock = new Unlock(Unlock.UnlockType.Karma, item, true);
                 IncreaseKarma();
             }
             else if (item == "The Glow")
             {
-                unlock = new Unlock(Unlock.UnlockType.Glow, item, true);
                 _givenNeuronGlow = true;
                 if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
                     Plugin.Singleton.game.GetStorySession.saveState.theGlow = true;
             }
             else if (item == "The Mark")
             {
-                unlock = new Unlock(Unlock.UnlockType.Mark, item, true);
                 _givenMark = true;
                 if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
                     Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
             }
             else if (item == "IdDrone")
             {
-                unlock = new Unlock(Unlock.UnlockType.IdDrone, item, true);
                 _givenRobo = true;
                 if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
                     Plugin.Singleton.game.GetStorySession.saveState.hasRobo = true;
             }
             else if (item == "Disconnect_FP")
             {
-                unlock = new Unlock(Unlock.UnlockType.DisconnectFP, item, true);
                 _givenPebblesOff = true;
                 if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
                     Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
             }
             else if (item == "Rewrite_Spear_Pearl")
             {
-                unlock = new Unlock(Unlock.UnlockType.RewriteSpearPearl, item, true);
                 _givenSpearPearlRewrite = true;
                 if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
                     Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
             }
 
             Plugin.Log.LogInfo($"Received item: {item}");
-            //if (printLog && unlock != null)
-            //{
-            //    Plugin.Singleton.notifQueue.Enqueue(unlock.UnlockCompleteMessage());
-            //}
         }
 
         public bool InitializeSession(SlugcatStats.Name slugcat)
         {
-            // Set max karma depending on setting and current slugcat
-            if (false)// If starting min karma
-            {
-                int totalKarmaIncreases = 0; // Count karma increases from datapackage. Maybe not needed? Could just set based on slugcat
-                int cap = Mathf.Max(0, 8 - totalKarmaIncreases);
-                _currentMaxKarma = cap;
-            }
-            else
-            {
-                _currentMaxKarma = SlugcatStats.SlugcatStartingKarma(slugcat);
-            }
-
             if (isNewGame && ArchipelagoConnection.useRandomStartRegion)
             {
                 customStartDen = FindRandomStart(ArchipelagoConnection.desiredStartRegion);
@@ -358,7 +289,7 @@ namespace RainWorldRandomizer
         public void GiveCompletionCondition(ArchipelagoConnection.CompletionCondition condition)
         {
             if (condition != ArchipelagoConnection.completionCondition)
-        {
+            {
                 Plugin.Log.LogInfo("Game completed through the wrong condition, not sending completion");
                 return;
             }
@@ -372,7 +303,7 @@ namespace RainWorldRandomizer
         public override void SaveGame(bool saveCurrentState)
         {
             if (saveCurrentState)
-        {
+            {
                 SaveManager.WriteItemQueueToFile(
                     Plugin.Singleton.itemDeliveryQueue,
                     currentSlugcat,

@@ -227,9 +227,6 @@ namespace RainWorldRandomizer
             Plugin.Log.LogDebug($"Passage progress w/o Survivor?: {PPwS}");
             Plugin.Log.LogDebug($"Completion condition: {(completionType == 0 ? "Ascension" : "Alternate")}");
 
-            //IsMSC = slotData.ContainsKey("MSC") && (bool)slotData["MSC"];
-            //long slugcatIndex = slotData.ContainsKey("Slugcat") ? (long)slotData["Slugcat"] : 1;
-
             switch (worldStateIndex)
             {
                 case 0:
