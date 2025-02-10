@@ -98,9 +98,6 @@ namespace RainWorldRandomizer
                         ? self.rainWorld.progression.starvedSaveState
                         : self.rainWorld.progression.currentSaveState;
                     if (!(Plugin.RandoManager.IsLocationGiven($"Passage-{check}") ?? true) // if location exists and is not given
-                        //ManagerVanilla.CheckBlacklists.ContainsKey(Plugin.Singleton.currentSlugcat)
-                        //&& !ManagerVanilla.CheckBlacklists[Plugin.Singleton.currentSlugcat].Contains($"Passage-{check}")
-                        //&& !(Plugin.RandoManager.IsLocationGiven($"Passage-{check}") ?? false)
                         && saveState.deathPersistentSaveData.winState.GetTracker(id, false) != null)
                     {
                         WinState.EndgameTracker tracker = saveState.deathPersistentSaveData.winState.GetTracker(id, false);
@@ -109,6 +106,23 @@ namespace RainWorldRandomizer
                         if (tracker.GoalFullfilled)
                         {
                             Plugin.RandoManager.GiveLocation($"Passage-{check}");
+                        }
+
+                        // Wanderer individual pips
+                        // TODO: Add individual wanderer pips to standalone
+                        if (tracker.ID == WinState.EndgameID.Traveller
+                            && Plugin.RandoManager is ManagerArchipelago)
+                        {
+                            int progressCount = 0;
+                            foreach (bool prog in (tracker as WinState.BoolArrayTracker).progress)
+                            {
+                                if (prog) progressCount++;
+                            }
+
+                            if (progressCount > 0)
+                            {
+                                Plugin.RandoManager.GiveLocation($"Wanderer-{progressCount}");
+                            }
                         }
 
                         // Gourmand Food Quest
