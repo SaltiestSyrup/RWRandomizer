@@ -391,7 +391,7 @@ namespace RainWorldRandomizer
                     case "Yellow":
                     case "Gourmand":
                     case "Spear":
-                        randomizerKey.Add("Meet_LttM", null);
+                        randomizerKey.Add("Meet_LttM_Spear", null);
                         randomizerKey.Add("Meet_FP", null);
                         break;
                     case "Red":

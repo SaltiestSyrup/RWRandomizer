@@ -138,7 +138,7 @@ namespace RainWorldRandomizer
                 }
                 else if (ModManager.MSC && self.oracle.ID == MoreSlugcatsEnums.OracleID.DM)
                 {
-                    Plugin.RandoManager.GiveLocation("Meet_LttM");
+                    Plugin.RandoManager.GiveLocation("Meet_LttM_Spear");
                 }
             }
         }
