@@ -279,36 +279,9 @@ namespace RainWorldRandomizer
 
         public static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
-            // TODO: Make this a function of ManagerBase, passing in saveCurrentState
             if (Plugin.RandoManager.isRandomizerActive)
             {
-                if (Plugin.RandoManager is ManagerVanilla vanillaManager)
-                {
-                    SaveManager.WriteSavedGameToFile(
-                        vanillaManager.randomizerKey,
-                        Plugin.RandoManager.currentSlugcat,
-                        Plugin.Singleton.rainWorld.options.saveSlot);
-
-                    if (saveCurrentState)
-                    {
-                        SaveManager.WriteItemQueueToFile(
-                            Plugin.Singleton.itemDeliveryQueue,
-                            Plugin.RandoManager.currentSlugcat,
-                            Plugin.Singleton.rainWorld.options.saveSlot);
-                    }
-                }
-                else if (Plugin.RandoManager is ManagerArchipelago archipelagoManager)
-                {
-                    archipelagoManager.SaveGame();
-
-                    if (saveCurrentState)
-                    {
-                        SaveManager.WriteItemQueueToFile(
-                            Plugin.Singleton.itemDeliveryQueue,
-                            Plugin.RandoManager.currentSlugcat,
-                            Plugin.Singleton.rainWorld.options.saveSlot);
-                    }
-                }
+                Plugin.RandoManager.SaveGame(saveCurrentState);
             }
 
             return orig(self, saveCurrentState, saveMaps, saveMiscProg);

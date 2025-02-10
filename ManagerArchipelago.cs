@@ -369,8 +369,17 @@ namespace RainWorldRandomizer
             Plugin.Singleton.notifQueue.Enqueue("Game Complete! Items released");
         }
 
-        public void SaveGame()
+        public override void SaveGame(bool saveCurrentState)
         {
+            if (saveCurrentState)
+        {
+                SaveManager.WriteItemQueueToFile(
+                    Plugin.Singleton.itemDeliveryQueue,
+                    currentSlugcat,
+                    Plugin.Singleton.rainWorld.options.saveSlot);
+            }
+
+            // Don't save if locations are not loaded
             if (!ArchipelagoConnection.IsConnected || !locationsLoaded) return;
 
             SaveManager.WriteAPSaveToFile(

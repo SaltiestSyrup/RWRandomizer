@@ -1073,5 +1073,21 @@ namespace RainWorldRandomizer
 
             return randomizerKey[location];
         }
+
+        public override void SaveGame(bool saveCurrentState)
+        {
+            SaveManager.WriteSavedGameToFile(
+                        randomizerKey,
+                        currentSlugcat,
+                        Plugin.Singleton.rainWorld.options.saveSlot);
+
+            if (saveCurrentState)
+            {
+                SaveManager.WriteItemQueueToFile(
+                    Plugin.Singleton.itemDeliveryQueue,
+                    currentSlugcat,
+                    Plugin.Singleton.rainWorld.options.saveSlot);
+            }
+        }
     }
 }

@@ -193,6 +193,12 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
+        /// Save the randomizer game to file
+        /// </summary>
+        /// <param name="saveCurrentState">Whether to save the current game state as well</param>
+        public abstract void SaveGame(bool saveCurrentState);
+
+        /// <summary>
         /// Increases the player's karma by one, following normal karma increase rules
         /// </summary>
         public void IncreaseKarma()
