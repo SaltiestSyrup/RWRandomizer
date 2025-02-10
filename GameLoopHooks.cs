@@ -254,7 +254,11 @@ namespace RainWorldRandomizer
                         {
                             if (self.Players[i].realizedCreature.room.updateList[j] is DataPearl pearl)
                             {
-                                Plugin.RandoManager.GiveLocation($"Pearl-{pearl.AbstractPearl.dataPearlType.value}");
+                                string locName = Plugin.RandoManager is ManagerArchipelago 
+                                    ? $"Pearl-{pearl.AbstractPearl.dataPearlType.value}-{self.Players[i].realizedCreature.room.abstractRoom.name.Substring(0, 2)}"
+                                    : $"Pearl-{pearl.AbstractPearl.dataPearlType.value}";
+
+                                Plugin.RandoManager.GiveLocation(locName);
 
                                 // Check if this pearl has either already been checked or is not a valid target
                                 /*

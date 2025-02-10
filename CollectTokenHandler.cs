@@ -209,6 +209,11 @@ namespace RainWorldRandomizer
             {
                 tokenString = $"L-{tokenString}";
             }
+            else if (Plugin.RandoManager is ManagerArchipelago)
+            {
+                // Add region acronym to location name if using AP
+                tokenString = $"{tokenString}-{self.room.abstractRoom.name.Substring(0, 2)}";
+            }
 
             if ((self.placedObj.data as CollectToken.CollectTokenData).isWhite
                 && (self.placedObj.data as CollectToken.CollectTokenData).ChatlogCollect != null
@@ -218,13 +223,11 @@ namespace RainWorldRandomizer
             }
             else
             {
-                // Add region acronym to location name if using AP
-                string locationString = Plugin.RandoManager is ManagerArchipelago ? 
-                    $"Token-{tokenString}-{self.room.abstractRoom.name.Substring(0,2)}" : $"Token-{tokenString}";
+                tokenString = $"Token-{tokenString}";
                 
-                if (!(Plugin.RandoManager.IsLocationGiven(locationString) ?? true))
+                if (!(Plugin.RandoManager.IsLocationGiven(tokenString) ?? true))
                 {
-                    Plugin.RandoManager.GiveLocation(locationString);
+                    Plugin.RandoManager.GiveLocation(tokenString);
                 }
             }
         }
@@ -247,12 +250,15 @@ namespace RainWorldRandomizer
                 {
                     tokenString = $"L-{tokenString}";
                 }
+                else if (Plugin.RandoManager is ManagerArchipelago)
+                {
+                    // Add region acronym to location name if using AP
+                    tokenString = $"{tokenString}-{room.abstractRoom.name.Substring(0, 2)}";
+                }
 
-                // Add region acronym to location name if using AP
-                string locationString = Plugin.RandoManager is ManagerArchipelago ?
-                    $"Token-{tokenString}-{room.abstractRoom.name.Substring(0, 2)}" : $"Token-{tokenString}";
-
-                if (!(Plugin.RandoManager.IsLocationGiven(locationString) ?? true))
+                tokenString = $"Token-{tokenString}";
+                
+                if (!(Plugin.RandoManager.IsLocationGiven(tokenString) ?? true))
                 {
                     return false;
                 }
