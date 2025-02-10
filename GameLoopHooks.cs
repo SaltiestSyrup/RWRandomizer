@@ -234,47 +234,30 @@ namespace RainWorldRandomizer
             // Active only
             if (!Plugin.RandoManager.isRandomizerActive) return;
 
-            // Pearl Detection
+            // Applying glow effect if unlock has been given
             for (int i = 0; i < self.Players.Count; i++)
             {
-                if (self.Players[i] != null
-                    && self.Players[i].realizedCreature != null)
+                if (Plugin.RandoManager.GivenNeuronGlow
+                    && self.Players[i]?.realizedCreature is Player player
+                    && !player.glowing)
                 {
-                    // Applying glow effect if unlock has been given
-                    if (Plugin.RandoManager.GivenNeuronGlow && !(self.Players[i].realizedCreature as Player).glowing)
+                    player.glowing = true;
+                }
+            }
+
+            // Detect pearl stored in shelter
+            Room currentRoom = self.FirstRealizedPlayer?.room;
+            if (currentRoom?.abstractRoom.shelter ?? false)
+            {
+                for (int j = 0; j < currentRoom.updateList.Count; j++)
+                {
+                    if (currentRoom.updateList[j] is DataPearl pearl)
                     {
-                        (self.Players[i].realizedCreature as Player).glowing = true;
-                    }
+                        string locName = Plugin.RandoManager is ManagerArchipelago
+                            ? $"Pearl-{pearl.AbstractPearl.dataPearlType.value}-{currentRoom.abstractRoom.name.Substring(0, 2)}"
+                            : $"Pearl-{pearl.AbstractPearl.dataPearlType.value}";
 
-                    // Detect pearl stored in shelter (stolen from expedition code)
-                    if (self.Players[i].realizedCreature.room != null
-                        && self.Players[i].realizedCreature.room.abstractRoom.shelter)
-                    {
-                        for (int j = 0; j < self.Players[i].realizedCreature.room.updateList.Count; j++)
-                        {
-                            if (self.Players[i].realizedCreature.room.updateList[j] is DataPearl pearl)
-                            {
-                                string locName = Plugin.RandoManager is ManagerArchipelago 
-                                    ? $"Pearl-{pearl.AbstractPearl.dataPearlType.value}-{self.Players[i].realizedCreature.room.abstractRoom.name.Substring(0, 2)}"
-                                    : $"Pearl-{pearl.AbstractPearl.dataPearlType.value}";
-
-                                Plugin.RandoManager.GiveLocation(locName);
-
-                                // Check if this pearl has either already been checked or is not a valid target
-                                /*
-                                string pearlID = (from x in ManagerVanilla.randomizerKey
-                                                  where Regex.Split(x.Key, "-").Length > 1
-                                                  && Regex.Split(x.Key, "-")[0] == "Pearl"
-                                                  && Regex.Split(x.Key, "-")[1] == pearl.AbstractPearl.dataPearlType.value
-                                                  select x.Key).DefaultIfEmpty("").Single();
-
-                                if (pearlID != "" && !Plugin.Singleton.IsCheckGiven(pearlID))
-                                {
-                                    Plugin.Singleton.GiveCheck(pearlID);
-                                }
-                                */
-                            }
-                        }
+                        Plugin.RandoManager.GiveLocation(locName);
                     }
                 }
             }
