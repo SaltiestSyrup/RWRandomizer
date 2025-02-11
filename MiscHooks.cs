@@ -97,12 +97,11 @@ namespace RainWorldRandomizer
                 // When AP is enabled, start game button should only be available if AP is connected and the correct slugcat is chosen
                 c1.EmitDelegate<Func<SlugcatSelectMenu, bool>>((self) =>
                 {
-                    if (Plugin.archipelago.Value)
-                        return Plugin.RandoManager is ManagerArchipelago manager 
-                            && manager.locationsLoaded 
-                            && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex);
-                    else
-                        return true;
+                    return !Plugin.archipelago.Value
+                        || (Plugin.RandoManager is ManagerArchipelago manager
+                            && manager.locationsLoaded
+                            && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex)
+                            && ModManager.MSC == ArchipelagoConnection.IsMSC);
                 });
                 c1.Emit(OpCodes.Brfalse, resultJump);
             }
