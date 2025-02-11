@@ -71,6 +71,9 @@ namespace RainWorldRandomizer
             passageTokensStatus.Clear();
             Plugin.Singleton.itemDeliveryQueue.Clear();
             Plugin.Singleton.lastItemDeliveryQueue.Clear();
+
+            // Clear notifications
+            Plugin.Singleton.notifQueue.Clear();
         }
 
         public void LoadSave(string saveId)

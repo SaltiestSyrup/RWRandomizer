@@ -133,69 +133,6 @@ namespace RainWorldRandomizer
             PopulateBaseTab();
             PopulateDownpourTab();
             PopulateArchipelagoTab();
-
-            /*OpCheckBox randomizeSpawnCheckbox = new OpCheckBox(RandomizerMain.randomizeSpawnLocation, 20f, runningY);
-            OpLabel randomizeSpawnLabel = new OpLabel(60f, runningY, Translate("Randomize starting den"))
-            {
-                bumpBehav = randomizeSpawnCheckbox.bumpBehav
-            };
-            runningY -= 35;*/
-
-            /*OpUpdown minPassageTokensCheckbox = new OpUpdown(RandomizerMain.minPassageTokens, new UnityEngine.Vector2(20f, runningY), 100f);
-            OpLabel minPassageTokensLabel = new OpLabel(140f, runningY, Translate("Minimum Passage Tokens"))
-            {
-                bumpBehav = minPassageTokensCheckbox.bumpBehav
-            };
-            runningY -= 35;*/
-
-            /*OpCheckBox useSandboxTokensCheckbox = new OpCheckBox(RandomizerMain.useSandboxTokens, 20f, runningY);
-            OpLabel useSandboxTokensLabel = new OpLabel(60f, runningY, Translate("Use arena unlocks as checks"))
-            {
-                bumpBehav = useSandboxTokensCheckbox.bumpBehav
-            };
-            runningY -= 35;
-
-            OpCheckBox startMinKarmaCheckbox = new OpCheckBox(RandomizerMain.startMinKarma, 20f, runningY);
-            OpLabel startMinKarmaLabel = new OpLabel(60f, runningY, Translate("Start with low karma"))
-            {
-                bumpBehav = startMinKarmaCheckbox.bumpBehav
-            };
-            runningY -= 35;
-
-            OpCheckBox allowMetroCheckbox = new OpCheckBox(RandomizerMain.allowMetroForOthers, 20f, runningY);
-            OpLabel allowMetroLabel = new OpLabel(60f, runningY, Translate("Open Metropolis for other slugcats"))
-            {
-                bumpBehav = allowMetroCheckbox.bumpBehav
-            };
-            runningY -= 35;
-
-            OpCheckBox allowSubmergedCheckbox = new OpCheckBox(RandomizerMain.allowSubmergedForOthers, 20f, runningY);
-            OpLabel allowSubmergedLabel = new OpLabel(60f, runningY, Translate("Open Submerged Superstructure for other slugcats"))
-            {
-                bumpBehav = allowSubmergedCheckbox.bumpBehav
-            };
-            runningY -= 35;
-
-            UIelement[] generationOptions = new UIelement[]
-            {
-                useSeedCheckbox,
-                useSeedLabel,
-                seedText,
-                randomizeSpawnCheckbox,
-                randomizeSpawnLabel,
-                //minPassageTokensCheckbox,
-                //minPassageTokensLabel,
-                useSandboxTokensCheckbox,
-                useSandboxTokensLabel,
-                startMinKarmaCheckbox,
-                startMinKarmaLabel,
-                allowMetroCheckbox,
-                allowMetroLabel,
-                allowSubmergedCheckbox,
-                allowSubmergedLabel
-            };
-
-            Tabs[0].AddItems(generationOptions);*/
         }
 
         public void PopulateBaseTab()
@@ -378,11 +315,16 @@ namespace RainWorldRandomizer
             {
                 description = "Attempt to connect to the Archipelago server"
             };
+            OpSimpleButton disconnectButton = new OpSimpleButton(new Vector2(100f, runningY), new Vector2(80f, 20f), "Disconnect")
+            {
+                description = "Disconnect from the current session"
+            };
             runningY -= 35;
 
             OpLabelLong connectResultLabel = new OpLabelLong(new Vector2(20f, runningY - 100f), new Vector2(200f, 100f), "");
+            OpLabelLong slotDataLabelLeft = new OpLabelLong(new Vector2(350f, runningY - 100f), new Vector2(200f, 100f), "", false);
+            OpLabelLong slotDataLabelRight = new OpLabelLong(new Vector2(550f, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
 
-            
             APCheckBox.OnUpdate += () =>
             {
                 bool APDisabled = !APCheckBox.GetValueBool();
@@ -390,6 +332,8 @@ namespace RainWorldRandomizer
                 if (APDisabled && ArchipelagoConnection.IsConnected)
                 {
                     ArchipelagoConnection.Disconnect();
+                    slotDataLabelLeft.text = "";
+                    slotDataLabelRight.text = "";
                 }
                 // Disable options while AP is off
                 hostNameTextBox.greyedOut = APDisabled;
@@ -403,6 +347,36 @@ namespace RainWorldRandomizer
             connectButton.OnClick += (trigger) => 
             {
                 connectResultLabel.text = ArchipelagoConnection.Connect(hostNameTextBox.value, portTextBox.valueInt, slotNameTextBox.value);
+                // Create / Update slot data information
+                slotDataLabelLeft.text =
+                    $"Current Settings Information\n\n" +
+                    $"Using MSC:\n" +
+                    $"Chosen Slugcat:\n" +
+                    $"Using Random Start:\n" +
+                    $"Chosen Start Region:\n" +
+                    $"Completion Condition:\n" +
+                    $"Passage Progress w/o Survivor:\n" +
+                    $"Using DeathLink:\n" +
+                    $"DeathLink Preserves Karma:\n";
+                slotDataLabelRight.text = 
+                    $"\n\n{ArchipelagoConnection.IsMSC}\n" +
+                    $"{ArchipelagoConnection.Slugcat.value}\n" +
+                    $"{ArchipelagoConnection.useRandomStartRegion}\n" +
+                    $"{(ArchipelagoConnection.useRandomStartRegion ? ArchipelagoConnection.desiredStartRegion : "NA")}\n" +
+                    $"{ArchipelagoConnection.completionCondition}\n" +
+                    $"{ArchipelagoConnection.PPwS}\n" +
+                    $"{"No"}\n" + // TODO: Make DeathLink option display once implemented
+                    $"{"NA"}\n";
+            };
+            // Disconnect from AP on click
+            disconnectButton.OnClick += (trigger) =>
+            {
+                if (ArchipelagoConnection.Disconnect())
+                {
+                    connectResultLabel.text = "Disconnected from server";
+                    slotDataLabelLeft.text = "";
+                    slotDataLabelRight.text = "";
+                }
             };
 
             Tabs[tabIndex].AddItems(new UIelement[]
@@ -418,7 +392,10 @@ namespace RainWorldRandomizer
                 passwordTextBox,
                 passwordLabel,
                 connectButton,
+                disconnectButton,
                 connectResultLabel,
+                slotDataLabelLeft,
+                slotDataLabelRight,
             });
         }
 

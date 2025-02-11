@@ -136,9 +136,13 @@ namespace RainWorldRandomizer
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
         }
 
-        public static void Disconnect()
+        /// <summary>
+        /// Disconnect from the current session
+        /// </summary>
+        /// <returns>True if there was a running session to disconnect</returns>
+        public static bool Disconnect()
         {
-            if (Session == null) return;
+            if (Session == null) return false;
 
             Plugin.Log.LogInfo("Disconnecting from server...");
             Session.Socket.PacketReceived -= PacketListener;
@@ -149,6 +153,7 @@ namespace RainWorldRandomizer
             ReceivedSlotData = false;
 
             (Plugin.RandoManager as ManagerArchipelago).Reset();
+            return true;
         }
 
         // Catch-all packet listener
