@@ -360,9 +360,9 @@ namespace RainWorldRandomizer
                     $"DeathLink Preserves Karma:\n";
                 slotDataLabelRight.text = 
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
-                    $"{ArchipelagoConnection.Slugcat.value}\n" +
+                    $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
                     $"{ArchipelagoConnection.useRandomStartRegion}\n" +
-                    $"{(ArchipelagoConnection.useRandomStartRegion ? ArchipelagoConnection.desiredStartRegion : "NA")}\n" +
+                    $"{(ArchipelagoConnection.useRandomStartRegion ? ArchipelagoConnection.desiredStartRegion : "N/A")}\n" +
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
                     $"{"No"}\n" + // TODO: Make DeathLink option display once implemented
