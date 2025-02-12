@@ -217,6 +217,7 @@ namespace RainWorldRandomizer
         public static void Update(On.RainWorldGame.orig_Update orig, RainWorldGame self)
         {
             orig(self);
+            if (self.GamePaused) return;
 
             // Display any pending notifications
             if (Plugin.Singleton.notifQueue.Count > 0)

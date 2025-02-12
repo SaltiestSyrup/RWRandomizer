@@ -98,12 +98,12 @@ namespace RainWorldRandomizer
         public static void OnRainWorldGameUpdate(On.RainWorldGame.orig_Update orig, RainWorldGame self)
         {
             orig(self);
+            if (self.GamePaused) return;
 
             // Decrement countdown every frame
             if (currentCooldown > 0)
             {
                 currentCooldown--;
-                //Plugin.Log.LogDebug($"{currentCooldown}");
             }
 
             if (pendingTrapQueue.Count == 0) return;
@@ -114,8 +114,9 @@ namespace RainWorldRandomizer
                 if (self.FirstAlivePlayer?.realizedCreature?.room == null
                     || self.FirstAlivePlayer.realizedCreature.room.abstractRoom.shelter)
                 {
-                    Plugin.Log.LogDebug("Deferring trap, player is not ready");
+                    Plugin.Log.LogInfo("Deferring trap, player is not ready");
                     ResetCooldown();
+                    return;
                 }
 
                 // Process the next trap in queue
