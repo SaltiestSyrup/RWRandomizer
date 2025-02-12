@@ -222,6 +222,9 @@ namespace RainWorldRandomizer
             // Display any pending notifications
             if (Plugin.Singleton.notifQueue.Count > 0)
             {
+                // If there are several messages waiting, move through them quicker
+                bool hurry = Plugin.Singleton.notifQueue.Count > 3;
+
                 // If we have any pending messages and are in the actual game loop
                 if (self.session.Players[0]?.realizedCreature?.room != null
                     && self.cameras[0].hud?.textPrompt != null
@@ -234,15 +237,18 @@ namespace RainWorldRandomizer
                     if (message.Contains("//"))
                     {
                         string[] split = Regex.Split(message, "//");
-                        self.cameras[0].hud.textPrompt.AddMessage(split[0], 0, 160, true, true, 100f,
+                        self.cameras[0].hud.textPrompt.AddMessage(split[0], 0, hurry ? 60 : 120, false, false, 100f,
                             new List<MultiplayerUnlocks.SandboxUnlockID>() { new MultiplayerUnlocks.SandboxUnlockID(split[1]) });
                     }
                     else
                     {
-                        self.cameras[0].hud.textPrompt.AddMessage(message, 0, 160, true, true);
+                        self.cameras[0].hud.textPrompt.AddMessage(message, 0, hurry ? 60 : 120, false, false);
                     }
 
-                    self.session.Players[0].realizedCreature.room.PlaySound(SoundID.MENU_Passage_Button, 0, 1f, 1f);
+                    if (!hurry)
+                    {
+                        self.session.Players[0].realizedCreature.room.PlaySound(SoundID.MENU_Passage_Button, 0, 1f, 1f);
+                    }
                 }
             }
 

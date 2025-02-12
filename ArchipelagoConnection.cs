@@ -402,7 +402,12 @@ namespace RainWorldRandomizer
         private static void MessageReceived(LogMessage message)
         {
             Plugin.Log.LogInfo($"From server: {message}");
-            Plugin.Singleton.notifQueue.Enqueue(message.ToString());
+
+            if (message is ItemSendLogMessage 
+                || message is PlayerSpecificLogMessage)
+            {
+                Plugin.Singleton.notifQueue.Enqueue(message.ToString());
+            }
         }
 
         public static void SendCompletion()
