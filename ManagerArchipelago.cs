@@ -115,7 +115,7 @@ namespace RainWorldRandomizer
 
         public void InitNewInventory(List<string> newItems)
         {
-            _currentMaxKarma = 4;
+            _currentMaxKarma = 0;
             _hunterBonusCyclesGiven = 0;
             _givenNeuronGlow = false;
             _givenMark = false;

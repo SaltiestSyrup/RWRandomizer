@@ -59,6 +59,7 @@ namespace RainWorldRandomizer
         public static Configurable<int> archipelagoPort;
         public static Configurable<string> archipelagoSlotName;
         public static Configurable<string> archipelagoPassword;
+        public static Configurable<bool> disableNotificationQueue;
         #endregion
 
         public bool ItemShelterDelivery
