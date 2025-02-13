@@ -380,7 +380,7 @@ namespace RainWorldRandomizer
             runningY -= 35;
 
             // ----- Update / Button Logic -----
-            APCheckBox.OnUpdate += () =>
+            APCheckBox.OnChange += () =>
             {
                 bool APDisabled = !APCheckBox.GetValueBool();
                 // Disconnect connection when AP is turned off
