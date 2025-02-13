@@ -266,6 +266,7 @@ namespace RainWorldRandomizer
         public void PopulateArchipelagoTab()
         {
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Archipelago"));
+            // ----- Left side Configurables -----
             float runningY = 550f;
 
             OpCheckBox APCheckBox = new OpCheckBox(Plugin.archipelago, new Vector2(20f, runningY))
@@ -276,17 +277,6 @@ namespace RainWorldRandomizer
             {
                 bumpBehav = APCheckBox.bumpBehav,
                 description = APCheckBox.description
-            };
-            runningY -= 35;
-
-            OpCheckBox DisableNotificationBox = new OpCheckBox(Plugin.disableNotificationQueue, new Vector2(20f, runningY))
-            {
-                description = Translate(Plugin.disableNotificationQueue.info.description)
-            };
-            OpLabel DisableNotificationLabel = new OpLabel(60f, runningY, Translate(Plugin.disableNotificationQueue.info.Tags[0] as string))
-            {
-                bumpBehav = DisableNotificationBox.bumpBehav,
-                description = DisableNotificationBox.description
             };
             runningY -= 35;
 
@@ -344,10 +334,52 @@ namespace RainWorldRandomizer
             };
             runningY -= 35;
 
+            // ----- Status Information -----
             OpLabelLong connectResultLabel = new OpLabelLong(new Vector2(20f, runningY - 100f), new Vector2(200f, 100f), "");
             OpLabelLong slotDataLabelLeft = new OpLabelLong(new Vector2(350f, runningY - 100f), new Vector2(200f, 100f), "", false);
             OpLabelLong slotDataLabelRight = new OpLabelLong(new Vector2(550f, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
 
+            // ----- Right side Configurables -----
+            runningY = 550f;
+
+            OpCheckBox disableNotificationBox = new OpCheckBox(Plugin.disableNotificationQueue, new Vector2(420f, runningY))
+            {
+                description = Translate(Plugin.disableNotificationQueue.info.description)
+            };
+            OpLabel disableNotificationLabel = new OpLabel(460f, runningY, Translate(Plugin.disableNotificationQueue.info.Tags[0] as string))
+            {
+                bumpBehav = disableNotificationBox.bumpBehav,
+                description = disableNotificationBox.description
+            };
+            runningY -= 55;
+
+            OpLabel deathLinkLabel = new OpLabel(440f, runningY, Translate("Death Link Settings"));
+            deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
+            runningY -= 35;
+
+            OpCheckBox noKarmaLossCheckBox = new OpCheckBox(Plugin.archipelagoPreventDLKarmaLoss, new Vector2(420f, runningY))
+            {
+                description = Translate(Plugin.archipelagoPreventDLKarmaLoss.info.description)
+            };
+            OpLabel noKarmaLossLabel = new OpLabel(460f, runningY, Translate(Plugin.archipelagoPreventDLKarmaLoss.info.Tags[0] as string))
+            {
+                bumpBehav = noKarmaLossCheckBox.bumpBehav,
+                description = noKarmaLossCheckBox.description
+            };
+            runningY -= 35;
+
+            OpCheckBox ignoreMenuDeathsCheckBox = new OpCheckBox(Plugin.archipelagoIgnoreMenuDL, new Vector2(420f, runningY))
+            {
+                description = Translate(Plugin.archipelagoIgnoreMenuDL.info.description)
+            };
+            OpLabel ignoreMenuDeathsLabel = new OpLabel(460f, runningY, Translate(Plugin.archipelagoIgnoreMenuDL.info.Tags[0] as string))
+            {
+                bumpBehav = ignoreMenuDeathsCheckBox.bumpBehav,
+                description = ignoreMenuDeathsCheckBox.description
+            };
+            runningY -= 35;
+
+            // ----- Update / Button Logic -----
             APCheckBox.OnUpdate += () =>
             {
                 bool APDisabled = !APCheckBox.GetValueBool();
@@ -364,6 +396,11 @@ namespace RainWorldRandomizer
                 slotNameTextBox.greyedOut = APDisabled;
                 passwordTextBox.greyedOut = APDisabled;
                 connectButton.greyedOut = APDisabled;
+                disconnectButton.greyedOut = APDisabled;
+                disableNotificationBox.greyedOut = APDisabled;
+                deathLinkLabel.bumpBehav.greyedOut = APDisabled;
+                noKarmaLossCheckBox.greyedOut = APDisabled;
+                ignoreMenuDeathsCheckBox.greyedOut = APDisabled;
             };
 
             // Attempt AP connection on click
@@ -402,12 +439,11 @@ namespace RainWorldRandomizer
                 }
             };
 
+            // ----- Populate Tab -----
             Tabs[tabIndex].AddItems(new UIelement[]
             {
                 APCheckBox,
                 APLabel,
-                DisableNotificationBox,
-                DisableNotificationLabel,
                 hostNameTextBox,
                 hostNameLabel,
                 portTextBox,
@@ -421,6 +457,13 @@ namespace RainWorldRandomizer
                 connectResultLabel,
                 slotDataLabelLeft,
                 slotDataLabelRight,
+                disableNotificationBox,
+                disableNotificationLabel,
+                deathLinkLabel,
+                noKarmaLossCheckBox,
+                noKarmaLossLabel,
+                ignoreMenuDeathsCheckBox,
+                ignoreMenuDeathsLabel,
             });
         }
 
