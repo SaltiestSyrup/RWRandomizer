@@ -1,5 +1,7 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,12 +38,23 @@ namespace RainWorldRandomizer
         {
             On.Player.Die += OnPlayerDie;
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
+
+            try
+            {
+                IL.RainWorldGame.GoToDeathScreen += GoToDeathScreenIL;
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError(e);
+            }
         }
 
         public static void RemoveHooks()
         {
             On.Player.Die -= OnPlayerDie;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
+
+            IL.RainWorldGame.GoToDeathScreen -= GoToDeathScreenIL;
         }
 
         public static void Init(ArchipelagoSession session)
@@ -54,8 +67,8 @@ namespace RainWorldRandomizer
         {
             Plugin.Log.LogInfo($"Received DeathLink packet from {deathLink.Source}");
 
-            if (Plugin.archipelagoIgnoreMenuDL.Value // Ignore menu DeathLinks if setting
-                && Plugin.Singleton.rainWorld.processManager.currentMainLoop is RainWorldGame)
+            if (!Plugin.archipelagoIgnoreMenuDL.Value // Ignore menu DeathLinks if setting
+                || Plugin.Singleton.rainWorld.processManager.currentMainLoop is RainWorldGame)
             {
                 receiveDeathCooldown = 40; // 1 second
                 deathPending = true;
@@ -108,6 +121,38 @@ namespace RainWorldRandomizer
             // Cooldown Counter
             if (receiveDeathCooldown > 0) receiveDeathCooldown--;
             else if (deathPending) receiveDeathCooldown = 40;
+        }
+
+        // TODO: DeathLink deaths currently still display karma decreasing animation even when overwritten
+        private static void GoToDeathScreenIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            try
+            {
+                c.GotoNext(
+                    MoveType.Before,
+                    x => x.MatchLdcI4(0),
+                    x => x.MatchCallOrCallvirt(typeof(SaveState).GetMethod(nameof(SaveState.SessionEnded))),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(typeof(MainLoopProcess).GetField(nameof(MainLoopProcess.manager))),
+                    x => x.MatchLdsfld(typeof(ProcessManager.ProcessID).GetField(nameof(ProcessManager.ProcessID.DeathScreen)))
+                );
+
+                c.Emit(OpCodes.Pop);
+                // If setting and the last death was a DeathLink, tell the save state we survived actually
+                c.EmitDelegate<Func<int>>(() =>
+                {
+                    bool preventDeath = Plugin.archipelagoPreventDLKarmaLoss.Value && lastDeathWasMe;
+                    lastDeathWasMe = false;
+                    return preventDeath ? 1 : 0;
+                });
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed Hooking for GoToDeathScreen");
+                Plugin.Log.LogError(e);
+            }
         }
     }
 }
