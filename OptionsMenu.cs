@@ -1,4 +1,4 @@
-﻿using Menu.Remix.MixedUI;
+using Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI.ValueTypes;
 using System.Collections.Generic;
 using System.Linq;
@@ -114,6 +114,10 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Password for server connection (Optional)", null, "",
                 new object[] { "Password" }));
 
+            Plugin.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
+                new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
+                new object[] { "Disable notifications" }));
+                
             Plugin.archipelagoPreventDLKarmaLoss = config.Bind<bool>("ArchipelagoPreventDLKarmaLoss", false,
                 new ConfigurableInfo("Whether deaths received from DeathLink should ignore the normal karma loss mechanics", null, "",
                 new object[] { "Prevent Karma Loss" }));
@@ -275,6 +279,17 @@ namespace RainWorldRandomizer
             };
             runningY -= 35;
 
+            OpCheckBox DisableNotificationBox = new OpCheckBox(Plugin.disableNotificationQueue, new Vector2(20f, runningY))
+            {
+                description = Translate(Plugin.disableNotificationQueue.info.description)
+            };
+            OpLabel DisableNotificationLabel = new OpLabel(60f, runningY, Translate(Plugin.disableNotificationQueue.info.Tags[0] as string))
+            {
+                bumpBehav = DisableNotificationBox.bumpBehav,
+                description = DisableNotificationBox.description
+            };
+            runningY -= 35;
+
             OpTextBox hostNameTextBox = new OpTextBox(Plugin.archipelagoHostName, new Vector2(20f, runningY), 200f)
             {
                 description = Translate(Plugin.archipelagoHostName.info.description)
@@ -391,6 +406,8 @@ namespace RainWorldRandomizer
             {
                 APCheckBox,
                 APLabel,
+                DisableNotificationBox,
+                DisableNotificationLabel,
                 hostNameTextBox,
                 hostNameLabel,
                 portTextBox,
