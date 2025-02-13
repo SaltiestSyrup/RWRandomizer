@@ -94,9 +94,28 @@ namespace RainWorldRandomizer
                 {
                     WinState.EndgameID id = new WinState.EndgameID(check, false);
 
-                    SaveState saveState = self.rainWorld.progression.currentSaveState == null
-                        ? self.rainWorld.progression.starvedSaveState
-                        : self.rainWorld.progression.currentSaveState;
+                    SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
+
+                    // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
+                    if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
+                        && (ArchipelagoConnection.foodQuestForAll 
+                            || Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
+                    {
+                        WinState.GourFeastTracker gourTracker = saveState.deathPersistentSaveData.winState.GetTracker(id, true) as WinState.GourFeastTracker;
+
+                        for (int i = 0; i < gourTracker.progress.Length; i++)
+                        {
+                            string type = WinState.GourmandPassageTracker[i].type == AbstractPhysicalObject.AbstractObjectType.Creature
+                                ? WinState.GourmandPassageTracker[i].crits[0].value : WinState.GourmandPassageTracker[i].type.value;
+
+                            if (gourTracker.progress[i] > 0)
+                            {
+                                Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
+                            }
+                        }
+                        continue;
+                    }
+
                     if (!(Plugin.RandoManager.IsLocationGiven($"Passage-{check}") ?? true) // if location exists and is not given
                         && saveState.deathPersistentSaveData.winState.GetTracker(id, false) != null)
                     {
@@ -122,21 +141,6 @@ namespace RainWorldRandomizer
                             if (progressCount > 0)
                             {
                                 Plugin.RandoManager.GiveLocation($"Wanderer-{progressCount}");
-                            }
-                        }
-
-                        // Gourmand Food Quest
-                        if (tracker is WinState.GourFeastTracker gourTracker)
-                        {
-                            for (int i = 0; i < gourTracker.progress.Length; i++)
-                            {
-                                string type = WinState.GourmandPassageTracker[i].type == AbstractPhysicalObject.AbstractObjectType.Creature
-                                    ? WinState.GourmandPassageTracker[i].crits[0].value : WinState.GourmandPassageTracker[i].type.value;
-
-                                if (gourTracker.progress[i] > 0)
-                                {
-                                    Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
-                                }
                             }
                         }
                     }

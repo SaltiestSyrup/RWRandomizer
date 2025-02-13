@@ -37,6 +37,7 @@ namespace RainWorldRandomizer
         public static CompletionCondition completionCondition;
         /// <summary> Passage Progress without Survivor </summary>
         public static bool PPwS;
+        public static bool foodQuestForAll;
 
         public static ArchipelagoSession Session;
 
@@ -230,11 +231,12 @@ namespace RainWorldRandomizer
             long PPwS = slotData.ContainsKey("passage_progress_without_survivor") ? (long)slotData["passage_progress_without_survivor"] : -1;
             long completionType = slotData.ContainsKey("which_victory_condition") ? (long)slotData["which_victory_condition"] : -1;
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
+            long foodQuestAccess = slotData.ContainsKey("checks_foodquest") ? (long)slotData["checks_foodquest"] : -1;
 
-            Plugin.Log.LogDebug($"World state index: {worldStateIndex}");
-            Plugin.Log.LogDebug($"Starting region: {startingRegion}");
-            Plugin.Log.LogDebug($"Passage progress w/o Survivor?: {PPwS}");
-            Plugin.Log.LogDebug($"Completion condition: {(completionType == 0 ? "Ascension" : "Alternate")}");
+            //Plugin.Log.LogDebug($"World state index: {worldStateIndex}");
+            //Plugin.Log.LogDebug($"Starting region: {startingRegion}");
+            //Plugin.Log.LogDebug($"Passage progress w/o Survivor?: {PPwS}");
+            //Plugin.Log.LogDebug($"Completion condition: {(completionType == 0 ? "Ascension" : "Alternate")}");
 
             switch (worldStateIndex)
             {
@@ -363,6 +365,9 @@ namespace RainWorldRandomizer
             // TODO: Force value of PPwS in remix based on slot data
 
             DeathLinkHandler.Active = deathLink > 0;
+
+            // We don't actually care if option is 0, the server can just ingore us sending Gourm's foods
+            foodQuestForAll = foodQuestAccess == 2;
         }
 
         // Need to wait until client is fully connected and ready
