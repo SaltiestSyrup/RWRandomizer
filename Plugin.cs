@@ -59,6 +59,8 @@ namespace RainWorldRandomizer
         public static Configurable<int> archipelagoPort;
         public static Configurable<string> archipelagoSlotName;
         public static Configurable<string> archipelagoPassword;
+        public static Configurable<bool> archipelagoPreventDLKarmaLoss;
+        public static Configurable<bool> archipelagoIgnoreMenuDL;
         #endregion
 
         public bool ItemShelterDelivery
@@ -148,6 +150,7 @@ namespace RainWorldRandomizer
                 SpearmasterCutscenes.ApplyHooks();
 
                 TrapsHandler.ApplyHooks();
+                DeathLinkHandler.ApplyHooks();
 
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
@@ -181,6 +184,7 @@ namespace RainWorldRandomizer
                 SpearmasterCutscenes.RemoveHooks();
 
                 TrapsHandler.RemoveHooks();
+                DeathLinkHandler.RemoveHooks();
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;

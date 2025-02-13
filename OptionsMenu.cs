@@ -113,6 +113,14 @@ namespace RainWorldRandomizer
             Plugin.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
                 new ConfigurableInfo("Password for server connection (Optional)", null, "",
                 new object[] { "Password" }));
+
+            Plugin.archipelagoPreventDLKarmaLoss = config.Bind<bool>("ArchipelagoPreventDLKarmaLoss", false,
+                new ConfigurableInfo("Whether deaths received from DeathLink should ignore the normal karma loss mechanics", null, "",
+                new object[] { "Prevent Karma Loss" }));
+
+            Plugin.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
+                new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
+                new object[] { "Ignore Menu Deaths" }));
         }
 
         public override void Initialize()
@@ -365,8 +373,8 @@ namespace RainWorldRandomizer
                     $"{(ArchipelagoConnection.useRandomStartRegion ? ArchipelagoConnection.desiredStartRegion : "N/A")}\n" +
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
-                    $"{"No"}\n" + // TODO: Make DeathLink option display once implemented
-                    $"{"NA"}\n";
+                    $"{DeathLinkHandler.Active}\n" + // TODO: Make DeathLink option display once implemented
+                    $"{"N/A"}\n";
             };
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
