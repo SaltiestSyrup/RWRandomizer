@@ -94,27 +94,27 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ArchipelagoConnection.cs" />
-    <Compile Include="CollectTokenHandler.cs" />
-    <Compile Include="CustomRegionCompatability.cs" />
-    <Compile Include="DeathLinkHandler.cs" />
-    <Compile Include="ExtCollectibleTrackerComptability.cs" />
-    <Compile Include="FakeEndgameToken.cs" />
-    <Compile Include="GameLoopHooks.cs" />
-    <Compile Include="ManagerArchipelago.cs" />
+    <Compile Include="Archipelago\ArchipelagoConnection.cs" />
+    <Compile Include="Archipelago\CollectTokenHandler.cs" />
+    <Compile Include="ModCompat\CustomRegionCompatability.cs" />
+    <Compile Include="Archipelago\DeathLinkHandler.cs" />
+    <Compile Include="ModCompat\ExtCollectibleTrackerComptability.cs" />
+    <Compile Include="Menu\FakeEndgameToken.cs" />
+    <Compile Include="Hooks\GameLoopHooks.cs" />
+    <Compile Include="Archipelago\ManagerArchipelago.cs" />
     <Compile Include="ManagerVanilla.cs" />
     <Compile Include="ManagerBase.cs" />
-    <Compile Include="PlayerHooks.cs" />
-    <Compile Include="SpearmasterCutscenes.cs" />
-    <Compile Include="IteratorHooks.cs" />
-    <Compile Include="OptionsMenu.cs" />
+    <Compile Include="Hooks\PlayerHooks.cs" />
+    <Compile Include="Hooks\SpearmasterCutscenes.cs" />
+    <Compile Include="Hooks\IteratorHooks.cs" />
+    <Compile Include="Menu\OptionsMenu.cs" />
     <Compile Include="RandomizerEnums.cs" />
-    <Compile Include="MiscHooks.cs" />
+    <Compile Include="Hooks\MiscHooks.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RegionKitCompatibility.cs" />
+    <Compile Include="ModCompat\RegionKitCompatibility.cs" />
     <Compile Include="SaveManager.cs" />
-    <Compile Include="MenuExtension.cs" />
+    <Compile Include="Menu\MenuExtension.cs" />
     <Compile Include="TrapsHandler.cs" />
     <Compile Include="Unlock.cs" />
   </ItemGroup>
