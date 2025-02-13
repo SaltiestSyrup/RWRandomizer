@@ -2,6 +2,7 @@
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,6 +64,18 @@ namespace RainWorldRandomizer
             service.OnDeathLinkReceived += OnReceiveDeath;
         }
 
+        private static void Kill(Creature player)
+        {
+            // This is the same effect played when Pebbles kills the player
+            player.room.PlaySound(SoundID.SS_AI_Give_The_Mark_Boom, player.mainBodyChunk, false, 1f, 0.5f + UnityEngine.Random.value * 0.5f);
+            player.mainBodyChunk.vel += RWCustom.Custom.RNV() * 12f;
+            for (int k = 0; k < 20; k++)
+            {
+                player.room.AddObject(new Spark(player.mainBodyChunk.pos, RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, new Color(1f, 1f, 1f), null, 30, 120));
+            }
+            player.Die();
+        }
+
         private static void OnReceiveDeath(DeathLink deathLink)
         {
             Plugin.Log.LogInfo($"Received DeathLink packet from {deathLink.Source}");
@@ -94,11 +107,25 @@ namespace RainWorldRandomizer
             if (self.GamePaused || !self.processActive) return;
 
             if (deathPending 
-                && self.FirstAlivePlayer?.realizedCreature?.room != null // Player exists
+                && self.FirstAlivePlayer?.realizedCreature is Player firstPlayer // Player exists
+                && firstPlayer.room != null // Player is in a room
                 && self.manager.fadeToBlack == 0 // The screen has fully faded in
-                && (self.FirstAlivePlayer.realizedCreature as Player).controller == null) // There are no external forces controlling us
+                && firstPlayer.controller == null) // There are no external forces controlling us
             {
                 deathPending = false;
+
+                // Secret chance to kill a slugpup instead
+                foreach (var creature in firstPlayer.room.abstractRoom.creatures)
+                {
+                    if (creature.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.SlugNPC
+                        && creature.state.alive
+                        && UnityEngine.Random.value < 0.05f)
+                    {
+                        Kill(creature.realizedCreature);
+                        return;
+                    }
+                }
+                
                 lastDeathWasMe = true;
                 foreach (AbstractCreature abstractPlayer in self.AlivePlayers)
                 {
@@ -106,13 +133,7 @@ namespace RainWorldRandomizer
                     if (abstractPlayer.realizedCreature is Player player)
                     {
                         Plugin.Log.LogInfo("Deathlink Killing Player...");
-                        // This is the same effect played when Pebbles kills the player
-                        player.mainBodyChunk.vel += RWCustom.Custom.RNV() * 12f;
-                        for (int k = 0; k < 20; k++)
-                        {
-                            player.room.AddObject(new Spark(player.mainBodyChunk.pos, RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, new Color(1f, 1f, 1f), null, 30, 120));
-                        }
-                        player.Die();
+                        Kill(player);
                     }
                 }
             }
