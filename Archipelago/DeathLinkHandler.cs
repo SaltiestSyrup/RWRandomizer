@@ -42,7 +42,7 @@ namespace RainWorldRandomizer
 
             try
             {
-                IL.RainWorldGame.GoToDeathScreen += GoToDeathScreenIL;
+                IL.DeathPersistentSaveData.SaveToString += DeathPersistentSaveDataToStringIL;
             }
             catch (Exception e)
             {
@@ -55,7 +55,7 @@ namespace RainWorldRandomizer
             On.Player.Die -= OnPlayerDie;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
 
-            IL.RainWorldGame.GoToDeathScreen -= GoToDeathScreenIL;
+            IL.DeathPersistentSaveData.SaveToString -= DeathPersistentSaveDataToStringIL;
         }
 
         public static void Init(ArchipelagoSession session)
@@ -144,35 +144,24 @@ namespace RainWorldRandomizer
         }
 
         // TODO: DeathLink deaths currently still display karma decreasing animation even when overwritten
-        private static void GoToDeathScreenIL(ILContext il)
+        private static void DeathPersistentSaveDataToStringIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
-            try
-            {
-                c.GotoNext(
-                    MoveType.Before,
-                    x => x.MatchLdcI4(0),
-                    x => x.MatchCallOrCallvirt(typeof(SaveState).GetMethod(nameof(SaveState.SessionEnded))),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(MainLoopProcess).GetField(nameof(MainLoopProcess.manager))),
-                    x => x.MatchLdsfld(typeof(ProcessManager.ProcessID).GetField(nameof(ProcessManager.ProcessID.DeathScreen)))
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdstr("KARMA<dpB>{0}<dpA>"),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.karma))),
+                x => x.MatchLdcI4(1)
                 );
 
-                c.Emit(OpCodes.Pop);
-                // If setting and the last death was a DeathLink, tell the save state we survived actually
-                c.EmitDelegate<Func<int>>(() =>
-                {
-                    bool preventDeath = Plugin.archipelagoPreventDLKarmaLoss.Value && lastDeathWasMe;
-                    lastDeathWasMe = false;
-                    return preventDeath ? 1 : 0;
-                });
-            }
-            catch (Exception e)
+            c.EmitDelegate<Func<int, int>>((orig) =>
             {
-                Plugin.Log.LogError("Failed Hooking for GoToDeathScreen");
-                Plugin.Log.LogError(e);
-            }
+                bool preventDeath = Plugin.archipelagoPreventDLKarmaLoss.Value && lastDeathWasMe;
+                lastDeathWasMe = false;
+                return preventDeath ? 0 : 1;
+            });
         }
     }
 }
