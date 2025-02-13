@@ -93,7 +93,6 @@ namespace RainWorldRandomizer
             orig(self);
             if (self.GamePaused || !self.processActive) return;
 
-            // TODO: depending on poll results, logic may have to move to a global update to ignore on sleep screen
             if (deathPending 
                 && self.FirstAlivePlayer?.realizedCreature?.room != null // Player exists
                 && self.manager.fadeToBlack == 0 // The screen has fully faded in

@@ -362,7 +362,12 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            // TODO: Force value of PPwS in remix based on slot data
+            // Force value of PPwS in remix based on slot data
+            // TODO: Add some check to ensure player doesn't use PPwS without Remix enabled
+            if (ModManager.MMF)
+            {
+                MMF.cfgSurvivorPassageNotRequired.Value = PPwS > 0;
+            }
 
             DeathLinkHandler.Active = deathLink > 0;
 

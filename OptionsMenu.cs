@@ -416,8 +416,7 @@ namespace RainWorldRandomizer
                     $"Chosen Start Region:\n" +
                     $"Completion Condition:\n" +
                     $"Passage Progress w/o Survivor:\n" +
-                    $"Using DeathLink:\n" +
-                    $"DeathLink Preserves Karma:\n";
+                    $"Using DeathLink:\n";
                 slotDataLabelRight.text = 
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
                     $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
@@ -425,8 +424,7 @@ namespace RainWorldRandomizer
                     $"{(ArchipelagoConnection.useRandomStartRegion ? ArchipelagoConnection.desiredStartRegion : "N/A")}\n" +
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
-                    $"{DeathLinkHandler.Active}\n" + // TODO: Make DeathLink option display once implemented
-                    $"{"N/A"}\n";
+                    $"{DeathLinkHandler.Active}\n";
             };
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
