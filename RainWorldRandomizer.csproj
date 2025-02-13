@@ -97,6 +97,7 @@
     <Compile Include="ArchipelagoConnection.cs" />
     <Compile Include="CollectTokenHandler.cs" />
     <Compile Include="CustomRegionCompatability.cs" />
+    <Compile Include="DeathLinkHandler.cs" />
     <Compile Include="ExtCollectibleTrackerComptability.cs" />
     <Compile Include="FakeEndgameToken.cs" />
     <Compile Include="GameLoopHooks.cs" />

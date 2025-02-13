@@ -1,4 +1,5 @@
 ﻿using Archipelago.MultiClient.Net;
+using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
@@ -81,6 +82,7 @@ namespace RainWorldRandomizer
 
             Session.Socket.PacketReceived += PacketListener;
             Session.MessageLog.OnMessageReceived += MessageReceived;
+            DeathLinkHandler.Init(Session);
             LoginResult result;
 
             try
@@ -146,6 +148,7 @@ namespace RainWorldRandomizer
 
             Plugin.Log.LogInfo("Disconnecting from server...");
             Session.Socket.PacketReceived -= PacketListener;
+            Session.MessageLog.OnMessageReceived -= MessageReceived;
             Session.Socket.DisconnectAsync();
             Session = null;
             Authenticated = false;
@@ -226,6 +229,7 @@ namespace RainWorldRandomizer
             long startingRegion = slotData.ContainsKey("random_starting_region") ? (long)slotData["random_starting_region"] : -1;
             long PPwS = slotData.ContainsKey("passage_progress_without_survivor") ? (long)slotData["passage_progress_without_survivor"] : -1;
             long completionType = slotData.ContainsKey("which_victory_condition") ? (long)slotData["which_victory_condition"] : -1;
+            long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
 
             Plugin.Log.LogDebug($"World state index: {worldStateIndex}");
             Plugin.Log.LogDebug($"Starting region: {startingRegion}");
@@ -357,6 +361,8 @@ namespace RainWorldRandomizer
             }
 
             // TODO: Force value of PPwS in remix based on slot data
+
+            DeathLinkHandler.Active = deathLink > 0;
         }
 
         // Need to wait until client is fully connected and ready
