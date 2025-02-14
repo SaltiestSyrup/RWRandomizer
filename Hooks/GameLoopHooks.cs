@@ -110,6 +110,7 @@ namespace RainWorldRandomizer
 
                             if (gourTracker.progress[i] > 0)
                             {
+                                Plugin.Log.LogDebug($"FoodQuest-{type}: {Plugin.RandoManager.IsLocationGiven($"FoodQuest-{type}")}");
                                 Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
                             }
                         }
@@ -333,8 +334,18 @@ namespace RainWorldRandomizer
                 // Remove the check for if the player has at least 5 karma
                 // for the Survivor passage increase
                 c.Index += 1;
-                c.Emit(OpCodes.Pop);
-                c.Emit(OpCodes.Ldc_I4_4);
+                c.EmitDelegate<Func<int, int>>((orig) =>
+                {
+                    // Remain as normal in AP
+                    if (Plugin.RandoManager is ManagerArchipelago)
+                    {
+                        return orig;
+                    }
+                    else
+                    {
+                        return 4;
+                    }
+                });
             }
             catch (Exception e)
             {
