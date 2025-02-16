@@ -68,7 +68,7 @@ namespace RainWorldRandomizer
         public void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
         {
             orig(self);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
 
             spoilerButton = new SimpleButton(self, self.pages[0], self.Translate("SHOW SPOILERS"), "SHOW_SPOILERS",
                 new Vector2(
