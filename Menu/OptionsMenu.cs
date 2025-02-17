@@ -406,7 +406,11 @@ namespace RainWorldRandomizer
             // Attempt AP connection on click
             connectButton.OnClick += (trigger) => 
             {
-                connectResultLabel.text = ArchipelagoConnection.Connect(hostNameTextBox.value, portTextBox.valueInt, slotNameTextBox.value);
+                connectResultLabel.text = ArchipelagoConnection.Connect(
+                    hostNameTextBox.value, 
+                    portTextBox.valueInt, 
+                    slotNameTextBox.value, 
+                    passwordTextBox.value == "" ? passwordTextBox.value : null);
                 // Create / Update slot data information
                 slotDataLabelLeft.text =
                     $"Current Settings Information\n\n" +
