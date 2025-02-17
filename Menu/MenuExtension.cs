@@ -204,7 +204,7 @@ namespace RainWorldRandomizer
             {
                 List<string> openedGates = Plugin.RandoManager.GetGatesStatus().Where(g => g.Value == true).ToList().ConvertAll(g => g.Key);
                 menuLabels = new MenuLabel[openedGates.Count + 1];
-                size = new Vector2(250f, (menuLabels.Length * 15f) + 20f);
+                size = new Vector2(300f, (menuLabels.Length * 15f) + 20f);
 
                 //RandomizerMain.Log.LogDebug(menuLabels.Length);
 

@@ -302,22 +302,22 @@ namespace RainWorldRandomizer
             };
             runningY -= 35;
 
-            OpTextBox slotNameTextBox = new OpTextBox(Plugin.archipelagoSlotName, new Vector2(20f, runningY), 100f)
+            OpTextBox slotNameTextBox = new OpTextBox(Plugin.archipelagoSlotName, new Vector2(20f, runningY), 200f)
             {
                 description = Translate(Plugin.archipelagoSlotName.info.description)
             };
-            OpLabel slotNameLabel = new OpLabel(140f, runningY, Translate(Plugin.archipelagoSlotName.info.Tags[0] as string))
+            OpLabel slotNameLabel = new OpLabel(240f, runningY, Translate(Plugin.archipelagoSlotName.info.Tags[0] as string))
             {
                 bumpBehav = slotNameTextBox.bumpBehav,
                 description = slotNameTextBox.description
             };
             runningY -= 35;
 
-            OpTextBox passwordTextBox = new OpTextBox(Plugin.archipelagoPassword, new Vector2(20f, runningY), 100f)
+            OpTextBox passwordTextBox = new OpTextBox(Plugin.archipelagoPassword, new Vector2(20f, runningY), 200f)
             {
                 description = Translate(Plugin.archipelagoPassword.info.description)
             };
-            OpLabel passwordLabel = new OpLabel(140f, runningY, Translate(Plugin.archipelagoPassword.info.Tags[0] as string))
+            OpLabel passwordLabel = new OpLabel(240f, runningY, Translate(Plugin.archipelagoPassword.info.Tags[0] as string))
             {
                 bumpBehav = passwordTextBox.bumpBehav,
                 description = passwordTextBox.description
