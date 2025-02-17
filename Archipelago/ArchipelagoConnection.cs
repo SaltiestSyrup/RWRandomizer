@@ -368,6 +368,7 @@ namespace RainWorldRandomizer
             {
                 MMF.cfgSurvivorPassageNotRequired.Value = PPwS > 0;
             }
+            ArchipelagoConnection.PPwS = PPwS > 0;
 
             DeathLinkHandler.Active = deathLink > 0;
 
@@ -375,7 +376,6 @@ namespace RainWorldRandomizer
             foodQuestForAll = foodQuestAccess == 2;
         }
 
-        // Need to wait until client is fully connected and ready
         private static void InitializePlayer()
         {
             string saveId = $"{generationSeed}_{playerName}";
