@@ -32,6 +32,7 @@ namespace RainWorldRandomizer
                 IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
                 IL.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
                 //IL.WinState.CreateAndAddTracker += WinStateCreateTrackerIL;
+                IL.Spear.HitSomethingWithoutStopping += SpearmasterMushroomAddEat;
             }
             catch (Exception e)
             {
@@ -55,6 +56,7 @@ namespace RainWorldRandomizer
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
             IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
+            IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -616,5 +618,29 @@ namespace RainWorldRandomizer
         }
 
         public static bool YesItIsMeGourmand(bool prev) => (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuestForAll) || prev;
+
+        /// <summary>
+        /// Allow Spearmaster to eat mushrooms for the food quest.
+        /// </summary>
+        private static void SpearmasterMushroomAddEat(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(x => x.MatchIsinst<Mushroom>());
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
+
+            void Delegate(Spear self, PhysicalObject obj)
+            {
+                // Previous IL has already checked whether it's a live Spearmaster needle.
+                if (self.room?.game.GetStorySession?.playerSessionRecords is PlayerSessionRecord[] records)
+                {
+                    records[((self.thrownBy as Player).abstractCreature.state as PlayerState).playerNumber].AddEat(obj);
+                }
+            }
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldarg_1);
+            c.EmitDelegate<Action<Spear, PhysicalObject>>(Delegate);
+        }
     }
 }
