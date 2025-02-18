@@ -615,6 +615,6 @@ namespace RainWorldRandomizer
             });
         }
 
-        public static bool YesItIsMeGourmand(bool prev) => Plugin.RandoManager is ManagerArchipelago || prev;
+        public static bool YesItIsMeGourmand(bool prev) => (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuestForAll) || prev;
     }
 }
