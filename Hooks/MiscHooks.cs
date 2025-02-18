@@ -364,7 +364,7 @@ namespace RainWorldRandomizer
                 self.karmaRequirements[0] = RegionGate.GateRequirement.DemoLock;
                 self.karmaRequirements[1] = RegionGate.GateRequirement.DemoLock;
             }
-            else if (Plugin.startMinKarma.Value) // Reduce requirement if the karma cap was forced lower
+            else if (Plugin.startMinKarma.Value || Plugin.RandoManager is ManagerArchipelago) // Reduce requirement if the karma cap was forced lower
             {
                 int karmaCap = Plugin.Singleton.rainWorld.progression.currentSaveState.deathPersistentSaveData.karmaCap;
                 if (int.TryParse(self.karmaRequirements[0].value, out int oldReq1)
