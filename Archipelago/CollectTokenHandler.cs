@@ -209,7 +209,7 @@ namespace RainWorldRandomizer
             {
                 tokenString = $"L-{tokenString}";
             }
-            else if (Plugin.RandoManager is ManagerArchipelago)
+            else if (Plugin.RandoManager is ManagerArchipelago && !(self.placedObj.data as CollectToken.CollectTokenData).isWhite)
             {
                 // Add region acronym to location name if using AP
                 tokenString = $"{tokenString}-{self.room.abstractRoom.name.Substring(0, 2)}";
