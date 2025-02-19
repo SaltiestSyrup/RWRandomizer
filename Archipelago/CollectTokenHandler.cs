@@ -521,6 +521,7 @@ namespace RainWorldRandomizer
 
         public static Dictionary<string, List<SlugcatStats.Name>> GetRoomAccessibility(string regionName)
         {
+            regionName = regionName.ToLowerInvariant();
             if (!roomAccessibilities.ContainsKey(regionName))
             {
                 roomAccessibilities.Add(regionName, LoadRoomAccessibility(regionName));
@@ -537,6 +538,18 @@ namespace RainWorldRandomizer
         // Adapted code from WorldLoader to just find which rooms are accessible to each slugcat
         private static Dictionary<string, List<SlugcatStats.Name>> LoadRoomAccessibility(string regionName)
         {
+            
+            string worldFilePath = AssetManager.ResolveFilePath(string.Concat(new string[]
+            {
+                "World",
+                Path.DirectorySeparatorChar.ToString(),
+                regionName,
+                Path.DirectorySeparatorChar.ToString(),
+                "world_",
+                regionName,
+                ".txt"
+            }));
+
             // Making this list should not be this hard
             SlugcatStats.Name[] allSlugcats = new SlugcatStats.Name[ExtEnum<SlugcatStats.Name>.values.Count];
             for (int i = 0; i < allSlugcats.Length; i++)
@@ -551,16 +564,9 @@ namespace RainWorldRandomizer
             Dictionary<string, List<SlugcatStats.Name>> hiddenRooms = new Dictionary<string, List<SlugcatStats.Name>>();
             Dictionary<WorldLoader.ConditionalLink, List<string>> conditionalLinks = new Dictionary<WorldLoader.ConditionalLink, List<string>>();
 
-            string[] worldFile = File.ReadAllLines(AssetManager.ResolveFilePath(string.Concat(new string[]
-            {
-                "World",
-                Path.DirectorySeparatorChar.ToString(),
-                regionName,
-                Path.DirectorySeparatorChar.ToString(),
-                "world_",
-                regionName,
-                ".txt"
-            })));
+            // Read world info from file
+            if (!File.Exists(worldFilePath)) return accessibility;
+            string[] worldFile = File.ReadAllLines(worldFilePath);
 
             int conditionalLinksStart = -1;
             int conditionalLinksEnd = -1;

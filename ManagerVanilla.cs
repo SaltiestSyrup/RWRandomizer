@@ -201,14 +201,21 @@ namespace RainWorldRandomizer
                     }
                 }
 
+                string[] split = Regex.Split(gate, "_");
                 // Check specific gate blacklists
                 if (GateBlackLists[slugcat].Contains(gate)
                     // Check that both connecting regions actually exist
-                    || !Region.GetFullRegionOrder().Contains(Regex.Split(gate, "_")[1])
-                    || !Region.GetFullRegionOrder().Contains(Regex.Split(gate, "_")[2])
-                    // Check if this gate room is not accessible to the current slugcat
-                    || (CollectTokenHandler.GetRoomAccessibility(Regex.Split(gate, "_")[1]).ContainsKey(gate)
-                        && !CollectTokenHandler.GetRoomAccessibility(Regex.Split(gate, "_")[1])[gate].Contains(slugcat)))
+                    || !Region.GetFullRegionOrder().Contains(split[1])
+                    || !Region.GetFullRegionOrder().Contains(split[2]))
+                {
+                    isBlacklisted = true;
+                }
+
+                // Check if this gate room is not accessible to the current slugcat)
+                if (CollectTokenHandler.GetRoomAccessibility(split[1]).ContainsKey(gate.ToLowerInvariant())
+                    && CollectTokenHandler.GetRoomAccessibility(split[2]).ContainsKey(gate.ToLowerInvariant())
+                    && !(CollectTokenHandler.GetRoomAccessibility(split[1])[gate.ToLowerInvariant()].Contains(slugcat)
+                        && CollectTokenHandler.GetRoomAccessibility(split[2])[gate.ToLowerInvariant()].Contains(slugcat)))
                 {
                     isBlacklisted = true;
                 }
@@ -290,6 +297,7 @@ namespace RainWorldRandomizer
             foreach (string ID in ExtEnumBase.GetNames(typeof(GhostWorldPresence.GhostID)))
             {
                 if (!ID.Equals("NoGhost")
+                    && World.CheckForRegionGhost(slugcat, ID)
                     && !CheckBlacklists[slugcat].Contains($"Echo-{ID}")
                     && !RegionBlacklists[slugcat].Contains(ID)
                     && !randomizerKey.ContainsKey($"Echo-{ID}"))
@@ -553,7 +561,7 @@ namespace RainWorldRandomizer
             {
                 customStartDen = FindRandomStart(currentSlugcat);
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
-                regionsAvailable.Add(Region.GetVanillaEquivalentRegionAcronym(Regex.Split(customStartDen, "_")[0]));
+                regionsAvailable.Add(Plugin.ProperRegionMap[Regex.Split(customStartDen, "_")[0]]);
             }
             else
             {
@@ -658,9 +666,24 @@ namespace RainWorldRandomizer
                             }
                             break;
                     }
-                    // Save_LttM !> NSHSwarmer
-                    // Any LC !> IDDrone
-                    // Any Ascend !> +Karma
+
+                    // Make the mark not locked behind Scholar
+                    if (index == -1 && Plugin.usePassageChecks.Value)
+                    {
+                        index = remainingUnlocks.FindIndex(u => u.Type == Unlock.UnlockType.Mark);
+                        if (index > -1)
+                        {
+                            // Checks that aren't the Scholar
+                            List<string> possibleChecks = randomizerKey.Where(k =>
+                            {
+                                if (k.Value != null) return false;
+                                return !k.Key.Equals("Passage-Scholar");
+                            }).ToList().ConvertAll(p => p.Key);
+
+                            key = possibleChecks[UnityEngine.Random.Range(0, possibleChecks.Count)];
+                        }
+                    }
+                    #endregion
 
                     // Assign purely random check-unlock pair
                     if (key == "" || index == -1)
@@ -720,7 +743,7 @@ namespace RainWorldRandomizer
                                 string[] split = Regex.Split(u.ID, "_");
 
                                 // If exactly one of this gate's region connection matches one available
-                                if (regionsAvailable.Contains(split[1]) ^ regionsAvailable.Contains(split[2]))
+                                if (regionsAvailable.Contains(Plugin.ProperRegionMap[split[1]]) ^ regionsAvailable.Contains(Plugin.ProperRegionMap[split[2]]))
                                 {
                                     return true;
                                 }
@@ -816,17 +839,17 @@ namespace RainWorldRandomizer
 
             foreach (string gate in preOpened)
             {
+                string[] split = Regex.Split(gate, "_");
+
                 string[] connected = (from r in availableRegions
-                                      where gate.Contains(r)
+                                      where r == Plugin.ProperRegionMap[split[1]] || r == Plugin.ProperRegionMap[split[2]]
                                       select r).ToArray();
 
                 if (connected.Length != 1)
                     continue;
 
-                string[] split = Regex.Split(gate, "_");
-
                 // Add whichever region is new
-                newRegions.Add(connected[0] != split[1] ? split[1] : split[2]);
+                newRegions.Add(connected[0] != Plugin.ProperRegionMap[split[1]] ? Plugin.ProperRegionMap[split[1]] : Plugin.ProperRegionMap[split[2]]);
             }
 
             if (newRegions.Count > 0)
