@@ -266,7 +266,7 @@ namespace RainWorldRandomizer
                 {
                     randomizerKey.Add($"Passage-{ID}", null);
                 }
-                if (Plugin.givePassageUnlocks.Value
+                if (Plugin.GivePassageUnlocks
                     && (currentSlugcat != SlugcatStats.Name.Red
                         && (!ModManager.MSC || currentSlugcat != MoreSlugcatsEnums.SlugcatStatsName.Saint)) // Hunter and Saint can't use passages
                     && ID != "Gourmand")
@@ -313,7 +313,7 @@ namespace RainWorldRandomizer
             AllUnlocks.Add(new Unlock(Unlock.UnlockType.Karma, "Karma"));
 
             // Reduce max karma if setting
-            if (Plugin.startMinKarma.Value)
+            if (Plugin.StartMinKarma)
             {
                 int totalKarmaIncreases = AllUnlocks.Count(u => u.Type == Unlock.UnlockType.Karma);
                 int cap = Mathf.Max(0, 8 - totalKarmaIncreases);
@@ -411,7 +411,7 @@ namespace RainWorldRandomizer
                         break;
                     case "Rivulet":
                         randomizerKey.Add("Meet_LttM", null);
-                        if (Plugin.useEnergyCell.Value) randomizerKey.Add("Kill_FP", null);
+                        if (Plugin.UseEnergyCell) randomizerKey.Add("Kill_FP", null);
                         break;
                     case "Saint":
                         randomizerKey.Add("Ascend_LttM", null);
@@ -437,7 +437,7 @@ namespace RainWorldRandomizer
                     AllUnlocks.Add(new Unlock(Unlock.UnlockType.IdDrone, "IdDrone"));
                     break;
                 case "Rivulet":
-                    if (Plugin.useEnergyCell.Value)
+                    if (Plugin.UseEnergyCell)
                     {
                         AllUnlocks.Add(new Unlock(Unlock.UnlockType.Item, new Unlock.Item("Mass Rarefaction Cell", MoreSlugcatsEnums.AbstractObjectType.EnergyCell)));
                         AllUnlocks.Add(new Unlock(Unlock.UnlockType.DisconnectFP, "FP_Disconnected"));
@@ -495,7 +495,7 @@ namespace RainWorldRandomizer
                     unlocksToAdd.Add(new Unlock(Unlock.UnlockType.HunterCycles, "HunterCycles"));
                     hunterCounter++;
                 }
-                else if (Plugin.giveItemUnlocks.Value)
+                else if (Plugin.GiveItemUnlocks)
                 {
                     unlocksToAdd.Add(new Unlock(Unlock.UnlockType.Item, Unlock.RandomJunkItem()));
                 }
@@ -557,7 +557,7 @@ namespace RainWorldRandomizer
 
             List<string> regionsAvailable = new List<string>();
             // If option selected, start from a random den
-            if (Plugin.randomizeSpawnLocation.Value)
+            if (Plugin.RandomizeSpawnLocation)
             {
                 customStartDen = FindRandomStart(currentSlugcat);
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
@@ -683,7 +683,6 @@ namespace RainWorldRandomizer
                             key = possibleChecks[UnityEngine.Random.Range(0, possibleChecks.Count)];
                         }
                     }
-                    #endregion
 
                     // Assign purely random check-unlock pair
                     if (key == "" || index == -1)
@@ -711,7 +710,7 @@ namespace RainWorldRandomizer
                             if (k.Value != null) return false;
                             if (LogicBlacklist.Contains(k.Key)) return false;
                             // If using Start Minimum Karma, don't consider echoes as always possible checks
-                            if (Plugin.startMinKarma.Value && k.Key.StartsWith("Echo-")) return false;
+                            if (Plugin.StartMinKarma && k.Key.StartsWith("Echo-")) return false;
                             // If this is a passage marked as 'easy', use it
                             if (GetFeasiblePassages(regionsAvailable, currentSlugcat).Any(c => k.Key == $"Passage-{c.value}")) return true;
                             foreach (string region in regionsAvailable)

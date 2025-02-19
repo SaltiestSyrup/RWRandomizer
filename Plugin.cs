@@ -38,19 +38,67 @@ namespace RainWorldRandomizer
         public static Configurable<bool> useSpecialChecks;
 
         public static Configurable<bool> giveItemUnlocks;
+        public static bool GiveItemUnlocks {
+            get
+            {
+                return RandoManager is ManagerArchipelago || giveItemUnlocks.Value;
+            }
+        }
         public static Configurable<bool> itemShelterDelivery;
+        public static bool ItemShelterDelivery {
+            get 
+            { 
+                return itemShelterDelivery.Value || (ModManager.MSC && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear);
+            }
+        }
         public static Configurable<bool> givePassageUnlocks;
+        public static bool GivePassageUnlocks {
+            get
+            {
+                return RandoManager is ManagerArchipelago || givePassageUnlocks.Value;
+            }
+        }
         public static Configurable<float> hunterCyclesDensity;
 
         public static Configurable<bool> randomizeSpawnLocation;
+        public static bool RandomizeSpawnLocation {
+            get
+            {
+                if (RandoManager is ManagerArchipelago)
+                {
+                    if (ArchipelagoConnection.useRandomStartRegion)
+                    {
+                        return true;
+                    }
+                }
+                else if (randomizeSpawnLocation.Value)
+                {
+                    return true;
+                }
+
+                return false;
+            }
+        }
         [Obsolete("Use constant MIN_PASSAGE_TOKENS instead")] public static Configurable<int> minPassageTokens;
         public static Configurable<bool> startMinKarma;
+        public static bool StartMinKarma {
+            get
+            {
+                return RandoManager is ManagerArchipelago || startMinKarma.Value;
+            }
+        }
 
         // MSC
         public static Configurable<bool> allowMetroForOthers;
         public static Configurable<bool> allowSubmergedForOthers;
         public static Configurable<bool> useFoodQuestChecks;
         public static Configurable<bool> useEnergyCell;
+        public static bool UseEnergyCell {
+            get
+            {
+                return RandoManager is ManagerArchipelago || useEnergyCell.Value;
+            }
+        }
         public static Configurable<bool> useSMTokens;
 
         // Archipelago
@@ -64,13 +112,6 @@ namespace RainWorldRandomizer
         public static Configurable<bool> archipelagoIgnoreMenuDL;
         #endregion
 
-        public bool ItemShelterDelivery
-        {
-            get
-            {
-                return (itemShelterDelivery.Value || (ModManager.MSC && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear));
-            }
-        }
 
         //public static bool isRandomizerActive = false; // -- Move to manager base
         public RainWorld rainWorld;

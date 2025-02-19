@@ -63,16 +63,9 @@ namespace RainWorldRandomizer
         {
             orig(self);
 
-            if (Plugin.RandoManager is ManagerArchipelago managerAP)
+            if (Plugin.RandomizeSpawnLocation)
             {
-                if (ArchipelagoConnection.useRandomStartRegion)
-                {
-                    self.denPosition = Plugin.RandoManager.customStartDen;
-                }
-            }
-            else if (Plugin.randomizeSpawnLocation.Value)
-            {
-                self.denPosition = Plugin.RandoManager.customStartDen;
+               self.denPosition = Plugin.RandoManager.customStartDen;
             }
         }
 
@@ -367,7 +360,7 @@ namespace RainWorldRandomizer
                 self.karmaRequirements[0] = RegionGate.GateRequirement.DemoLock;
                 self.karmaRequirements[1] = RegionGate.GateRequirement.DemoLock;
             }
-            else if (Plugin.startMinKarma.Value) // Reduce requirement if the karma cap was forced lower
+            else if (Plugin.StartMinKarma) // Reduce requirement if the karma cap was forced lower
             {
                 int karmaCap = Plugin.Singleton.rainWorld.progression.currentSaveState.deathPersistentSaveData.karmaCap;
                 if (int.TryParse(self.karmaRequirements[0].value, out int oldReq1)
@@ -452,7 +445,7 @@ namespace RainWorldRandomizer
         public static void PassageTokens(On.Menu.EndgameTokens.orig_ctor orig, Menu.EndgameTokens self, Menu.Menu menu, Menu.MenuObject owner, Vector2 pos, FContainer container, Menu.KarmaLadder ladder)
         {
             orig(self, menu, owner, pos, container, ladder);
-            if (!Plugin.givePassageUnlocks.Value) return;
+            if (!Plugin.GivePassageUnlocks) return;
 
             // We won't be needing these
             foreach (Menu.EndgameTokens.Token token in self.tokens)
@@ -481,7 +474,7 @@ namespace RainWorldRandomizer
         public static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, Menu.EndgameTokens self, WinState.EndgameID ID)
         {
             orig(self, ID);
-            if (!Plugin.givePassageUnlocks.Value) return;
+            if (!Plugin.GivePassageUnlocks) return;
 
             // I said NO!
             foreach (Menu.EndgameTokens.Token token in self.tokens)
@@ -506,7 +499,7 @@ namespace RainWorldRandomizer
         // Overwrites the default logic
         public static WinState.EndgameID NextPassageToken(On.WinState.orig_GetNextEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !Plugin.givePassageUnlocks.Value) return orig(self);
+            if (!Plugin.RandoManager.isRandomizerActive || !Plugin.GivePassageUnlocks) return orig(self);
 
             foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {
@@ -522,7 +515,7 @@ namespace RainWorldRandomizer
         // Overwrites the default logic
         public static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !Plugin.givePassageUnlocks.Value)
+            if (!Plugin.RandoManager.isRandomizerActive || !Plugin.GivePassageUnlocks)
             {
                 orig(self);
                 return;

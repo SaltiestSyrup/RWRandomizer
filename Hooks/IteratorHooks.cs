@@ -303,7 +303,7 @@ namespace RainWorldRandomizer
                     c.Index--;
                     c.EmitDelegate<Func<bool, bool>>((energyTaken) =>
                     {
-                        if (Plugin.useEnergyCell.Value)
+                        if (Plugin.UseEnergyCell)
                         {
                             return Plugin.RandoManager.IsLocationGiven("Kill_FP") ?? false;
                         }
@@ -331,7 +331,7 @@ namespace RainWorldRandomizer
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate<Func<MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell, bool>>(self =>
                 {
-                    if (Plugin.useEnergyCell.Value)
+                    if (Plugin.UseEnergyCell)
                     {
                         Plugin.RandoManager.GiveLocation("Kill_FP");
 
