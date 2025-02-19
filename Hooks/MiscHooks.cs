@@ -1,6 +1,7 @@
 ﻿using Menu;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,8 +26,13 @@ namespace RainWorldRandomizer
 
             try
             {
+                IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
                 IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
                 IL.MoreSlugcats.CutsceneArtificerRobo.GetInput += ArtificerRoboIL;
+                IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
+                IL.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
+                //IL.WinState.CreateAndAddTracker += WinStateCreateTrackerIL;
+                IL.Spear.HitSomethingWithoutStopping += SpearmasterMushroomAddEat;
             }
             catch (Exception e)
             {
@@ -44,17 +50,74 @@ namespace RainWorldRandomizer
             On.Menu.EndgameTokens.Passage -= DoPassage;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
+            IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
+            IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
+            IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
+            IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
+            IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
         {
             orig(self);
 
-            if (Plugin.randomizeSpawnLocation.Value)
+            if (Plugin.RandoManager is ManagerArchipelago managerAP)
             {
-                self.denPosition = Plugin.Singleton.customStartDen;
+                if (ArchipelagoConnection.useRandomStartRegion)
+                {
+                    self.denPosition = Plugin.RandoManager.customStartDen;
+                }
+            }
+            else if (Plugin.randomizeSpawnLocation.Value)
+            {
+                self.denPosition = Plugin.RandoManager.customStartDen;
+            }
+        }
+
+        // TODO: Need explanation text for when start game button is greyed out
+        public static void SlugcatSelectMenuUpdateIL(ILContext il)
+        {
+            try
+            {
+                ILCursor c1 = new ILCursor(il);
+
+                ILLabel resultJump = null;
+                c1.GotoNext(MoveType.Before,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.slugcatPageIndex))),
+                    x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.colorFromIndex))),
+                    x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.SlugcatUnlocked))),
+                    x => x.MatchLdcI4(0),
+                    x => x.MatchCeq(),
+                    x => x.MatchBr(out resultJump)
+                    );
+
+                // Move the label a step back, to ldc.i4.1
+                ILCursor c2 = new ILCursor(il);
+                c2.GotoLabel(resultJump, MoveType.Before);
+                c2.Index--;
+                resultJump = c2.MarkLabel();
+
+                c1.Emit(OpCodes.Ldarg_0);
+                // When AP is enabled, start game button should only be available if AP is connected and the correct slugcat is chosen
+                c1.EmitDelegate<Func<SlugcatSelectMenu, bool>>((self) =>
+                {
+                    return !Plugin.archipelago.Value
+                        || (Plugin.RandoManager is ManagerArchipelago manager
+                            && manager.locationsLoaded
+                            && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex)
+                            && ModManager.MSC == ArchipelagoConnection.IsMSC);
+                });
+                c1.Emit(OpCodes.Brfalse, resultJump);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed Hooking for SlugcatSelectMenuUpdate");
+                Plugin.Log.LogError(e);
             }
         }
 
@@ -75,13 +138,19 @@ namespace RainWorldRandomizer
                 c.EmitDelegate<Func<List<MultiplayerUnlocks.LevelUnlockID>>>(() =>
                 {
                     List<MultiplayerUnlocks.LevelUnlockID> output = new List<MultiplayerUnlocks.LevelUnlockID>();
-                    foreach (var k in Generation.randomizerKey)
+                    foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (k.Key.StartsWith("Token-L-")
-                            && ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.LevelUnlockID), k.Key.Substring(8), false, out ExtEnumBase value)
-                            && (k.Value?.IsGiven ?? false))
+                        if (loc.StartsWith("Token-L-"))
                         {
-                            output.Add((MultiplayerUnlocks.LevelUnlockID)value);
+                            // Trim region suffix if present
+                            //string[] split = Regex.Split(loc, "-");
+                            //string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.LevelUnlockID), loc.Substring(8), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                output.Add((MultiplayerUnlocks.LevelUnlockID)value);
+                            }
                         }
                     }
                     return output;
@@ -98,13 +167,19 @@ namespace RainWorldRandomizer
                 c.EmitDelegate<Func<List<MultiplayerUnlocks.SandboxUnlockID>>>(() =>
                 {
                     List<MultiplayerUnlocks.SandboxUnlockID> output = new List<MultiplayerUnlocks.SandboxUnlockID>();
-                    foreach (var k in Generation.randomizerKey)
+                    foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (k.Key.StartsWith("Token-")
-                            && ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), k.Key.Substring(6), false, out ExtEnumBase value)
-                            && (k.Value?.IsGiven ?? false))
+                        if (loc.StartsWith("Token-"))
                         {
-                            output.Add((MultiplayerUnlocks.SandboxUnlockID)value);
+                            // Trim region suffix if present
+                            string[] split = Regex.Split(loc, "-");
+                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), trimmedLoc.Substring(6), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                output.Add((MultiplayerUnlocks.SandboxUnlockID)value);
+                            }
                         }
                     }
                     return output;
@@ -121,13 +196,19 @@ namespace RainWorldRandomizer
                 c.EmitDelegate<Func<List<MultiplayerUnlocks.SlugcatUnlockID>>>(() =>
                 {
                     List<MultiplayerUnlocks.SlugcatUnlockID> output = new List<MultiplayerUnlocks.SlugcatUnlockID>();
-                    foreach (var k in Generation.randomizerKey)
+                    foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (k.Key.StartsWith("Token-")
-                            && ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SlugcatUnlockID), k.Key.Substring(6), false, out ExtEnumBase value)
-                            && (k.Value?.IsGiven ?? false))
+                        if (loc.StartsWith("Token-"))
                         {
-                            output.Add((MultiplayerUnlocks.SlugcatUnlockID)value);
+                            // Trim region suffix if present
+                            string[] split = Regex.Split(loc, "-");
+                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SlugcatUnlockID), trimmedLoc.Substring(6), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                output.Add((MultiplayerUnlocks.SlugcatUnlockID)value);
+                            }
                         }
                     }
                     return output;
@@ -144,11 +225,11 @@ namespace RainWorldRandomizer
                 c.EmitDelegate<Func<List<MoreSlugcats.ChatlogData.ChatlogID>>>(() =>
                 {
                     List<MoreSlugcats.ChatlogData.ChatlogID> output = new List<MoreSlugcats.ChatlogData.ChatlogID>();
-                    foreach (var k in Generation.randomizerKey)
+                    foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (k.Key.StartsWith("SMBroadcast-")
-                            && ExtEnumBase.TryParse(typeof(MoreSlugcats.ChatlogData.ChatlogID), k.Key.Substring(12), false, out ExtEnumBase value)
-                            && (k.Value?.IsGiven ?? false))
+                        if (loc.StartsWith("Broadcast-")
+                            && ExtEnumBase.TryParse(typeof(MoreSlugcats.ChatlogData.ChatlogID), loc.Substring(12), false, out ExtEnumBase value)
+                            && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
                         {
                             output.Add((MoreSlugcats.ChatlogData.ChatlogID)value);
                         }
@@ -167,13 +248,19 @@ namespace RainWorldRandomizer
                 c.EmitDelegate<Func<List<MultiplayerUnlocks.SafariUnlockID>>>(() =>
                 {
                     List<MultiplayerUnlocks.SafariUnlockID> output = new List<MultiplayerUnlocks.SafariUnlockID>();
-                    foreach (var k in Generation.randomizerKey)
+                    foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (k.Key.StartsWith("Token-S-")
-                            && ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SafariUnlockID), k.Key.Substring(8), false, out ExtEnumBase value)
-                            && (k.Value?.IsGiven ?? false))
+                        if (loc.StartsWith("Token-S-"))
                         {
-                            output.Add((MultiplayerUnlocks.SafariUnlockID)value);
+                            // Trim region suffix if present
+                            //string[] split = Regex.Split(loc, "-");
+                            //string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SafariUnlockID), loc.Substring(8), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                output.Add((MultiplayerUnlocks.SafariUnlockID)value);
+                            }
                         }
                     }
                     return output;
@@ -201,18 +288,24 @@ namespace RainWorldRandomizer
                     // Pearls
                     List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = new List<DataPearl.AbstractDataPearl.DataPearlType>();
                     List<GhostWorldPresence.GhostID> foundEchoes = new List<GhostWorldPresence.GhostID>();
-                    foreach (var k in Generation.randomizerKey)
+                    foreach (string loc in Plugin.RandoManager.GetLocations())
                     {
-                        if (k.Key.StartsWith("Pearl-")
-                            && ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), k.Key.Substring(6), false, out ExtEnumBase value)
-                            && (k.Value?.IsGiven ?? false))
+                        if (loc.StartsWith("Pearl-"))
                         {
-                            foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
+                            // Trim region suffix if present
+                            string[] split = Regex.Split(loc, "-");
+                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                            if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), trimmedLoc.Substring(6), false, out ExtEnumBase value)
+                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                            {
+                                foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
+                            }
                         }
 
-                        if (k.Key.StartsWith("Echo-")
-                            && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), k.Key.Substring(5), false, out ExtEnumBase value1)
-                            && (k.Value?.IsGiven ?? false))
+                        if (loc.StartsWith("Echo-")
+                            && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), loc.Substring(5), false, out ExtEnumBase value1)
+                            && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
                         {
                             foundEchoes.Add((GhostWorldPresence.GhostID)value1);
                         }
@@ -261,16 +354,15 @@ namespace RainWorldRandomizer
 
         public static void GateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
         {
-            if (!Plugin.isRandomizerActive)
+            if (!Plugin.RandoManager.isRandomizerActive)
             {
                 orig(self);
                 return;
             }
 
-            // All gates can be unlocked by simply updating their entry in gateStatusDict
-            if ((!Plugin.Singleton.gateUnlocks.ContainsKey(self.room.abstractRoom.name)
-                || Plugin.Singleton.gateUnlocks[self.room.abstractRoom.name] == false)
-                    && self.room.abstractRoom.name != "GATE_OE_SU") // OE_SU needs to stay open to avoid softlocks
+            // All gates can be unlocked by simply updating their entry in gateStatus Dict
+            if (!(Plugin.RandoManager.IsGateOpen(self.room.abstractRoom.name) ?? false)
+                && self.room.abstractRoom.name != "GATE_OE_SU") // OE_SU needs to stay open to avoid softlocks
             {
                 self.karmaRequirements[0] = RegionGate.GateRequirement.DemoLock;
                 self.karmaRequirements[1] = RegionGate.GateRequirement.DemoLock;
@@ -306,7 +398,7 @@ namespace RainWorldRandomizer
         // Unless gateUnlocks hasn't been populated yet
         public static void ReloadLocksList(On.PlayerProgression.orig_ReloadLocksList orig, PlayerProgression self)
         {
-            if (!Plugin.isRandomizerActive || Plugin.Singleton.gateUnlocks.Count == 0)
+            if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager.GetGatesStatus().Count == 0)
             {
                 orig(self);
                 return;
@@ -330,8 +422,7 @@ namespace RainWorldRandomizer
                 for (int i = 0; i < vanillaLocks.Length; i++)
                 {
                     // If we don't have the gate stored, or it should be locked, lock it
-                    if ((!Plugin.Singleton.gateUnlocks.ContainsKey(Regex.Split(vanillaLocks[i], " : ")[0])
-                        || Plugin.Singleton.gateUnlocks[Regex.Split(vanillaLocks[i], " : ")[0]] == false)
+                    if (!(Plugin.RandoManager.IsGateOpen(Regex.Split(vanillaLocks[i], " : ")[0]) ?? false)
                             && Regex.Split(vanillaLocks[i], " : ")[0] != "GATE_OE_SU") // OE_SU needs to stay open to avoid softlocks
                     {
                         // Split the gate apart and set the values to locked
@@ -373,11 +464,11 @@ namespace RainWorldRandomizer
 
             Plugin.Singleton.passageTokensUI = new List<FakeEndgameToken>();
             int index = 0;
-            foreach (WinState.EndgameID id in Plugin.Singleton.passageTokenUnlocks.Keys)
+            foreach (WinState.EndgameID id in Plugin.RandoManager.GetPassageTokensStatus().Keys)
             {
                 if (id == MoreSlugcats.MoreSlugcatsEnums.EndgameID.Gourmand) continue;
 
-                if (Plugin.Singleton.passageTokenUnlocks[id] == true
+                if ((Plugin.RandoManager.HasPassageToken(id) ?? false)
                     && (menu as KarmaLadderScreen).winState.GetTracker(id, true).consumed == false)
                 {
                     Plugin.Singleton.passageTokensUI.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
@@ -415,9 +506,9 @@ namespace RainWorldRandomizer
         // Overwrites the default logic
         public static WinState.EndgameID NextPassageToken(On.WinState.orig_GetNextEndGame orig, WinState self)
         {
-            if (!Plugin.isRandomizerActive || !Plugin.givePassageUnlocks.Value) return orig(self);
+            if (!Plugin.RandoManager.isRandomizerActive || !Plugin.givePassageUnlocks.Value) return orig(self);
 
-            foreach (var passage in Plugin.Singleton.passageTokenUnlocks)
+            foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {
                 if (passage.Value
                     && !self.GetTracker(passage.Key, true).consumed)
@@ -431,13 +522,13 @@ namespace RainWorldRandomizer
         // Overwrites the default logic
         public static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
         {
-            if (!Plugin.isRandomizerActive || !Plugin.givePassageUnlocks.Value)
+            if (!Plugin.RandoManager.isRandomizerActive || !Plugin.givePassageUnlocks.Value)
             {
                 orig(self);
                 return;
             }
 
-            foreach (var passage in Plugin.Singleton.passageTokenUnlocks)
+            foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {
                 if (passage.Value
                     && !self.GetTracker(passage.Key, true).consumed)
@@ -451,15 +542,12 @@ namespace RainWorldRandomizer
         public static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
         {
             orig(self, ghost, rainWorld);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
-            self.deathPersistentSaveData.karmaCap = Plugin.Singleton.currentMaxKarma;
+            self.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
             self.deathPersistentSaveData.karma = self.deathPersistentSaveData.karmaCap;
 
-            if (!Plugin.Singleton.IsCheckGiven("Echo-" + ghost.value))
-            {
-                Plugin.Singleton.GiveCheck("Echo-" + ghost.value);
-            }
+            Plugin.RandoManager.GiveLocation("Echo-" + ghost.value);
 
             Plugin.Singleton.game.rainWorld.progression.SaveProgressionAndDeathPersistentDataOfCurrentState(false, false);
         }
@@ -485,6 +573,75 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogError("Failed Hooking for ArtificerRoboIL");
                 Plugin.Log.LogError(e);
             }
+        }
+
+        /// <summary>
+        /// Allow the food quest to appear on the HUD for any Slugcat.
+        /// </summary>
+        public static void HUD_InitSinglePlayerHud(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality")));
+            c.MoveAfterLabels();
+            c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
+        }
+
+        /// <summary>
+        /// All non-Gourmands to progress the food quest and collect the relevant checks.
+        /// </summary>
+        public static void PlayerSessionRecord_AddEat(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+            for (int i = 0; i < 2; i++)
+            {
+                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality")));
+                c.MoveAfterLabels();
+                c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
+            }
+        }
+
+        public static void WinStateCreateTrackerIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.EndgameID).GetField(nameof(MoreSlugcatsEnums.EndgameID.Gourmand))),
+                x => x.MatchCallOrCallvirt(typeof(ExtEnum<WinState.EndgameID>).GetMethod("op_Equality"))
+            );
+            c.MoveAfterLabels();
+
+            c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
+
+            c.EmitDelegate<Action>(() =>
+            {
+                Plugin.Log.LogDebug("Adding Gourmand Tracker");
+            });
+        }
+
+        public static bool YesItIsMeGourmand(bool prev) => (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuestForAll) || prev;
+
+        /// <summary>
+        /// Allow Spearmaster to eat mushrooms for the food quest.
+        /// </summary>
+        private static void SpearmasterMushroomAddEat(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(x => x.MatchIsinst<Mushroom>());
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
+
+            void Delegate(Spear self, PhysicalObject obj)
+            {
+                // Previous IL has already checked whether it's a live Spearmaster needle.
+                if (self.room?.game.GetStorySession?.playerSessionRecords is PlayerSessionRecord[] records)
+                {
+                    records[((self.thrownBy as Player).abstractCreature.state as PlayerState).playerNumber].AddEat(obj);
+                }
+            }
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldarg_1);
+            c.EmitDelegate<Action<Spear, PhysicalObject>>(Delegate);
         }
     }
 }

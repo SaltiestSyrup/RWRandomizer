@@ -209,20 +209,26 @@ namespace RainWorldRandomizer
             {
                 tokenString = $"L-{tokenString}";
             }
+            else if (Plugin.RandoManager is ManagerArchipelago && !(self.placedObj.data as CollectToken.CollectTokenData).isWhite)
+            {
+                // Add region acronym to location name if using AP
+                tokenString = $"{tokenString}-{self.room.abstractRoom.name.Substring(0, 2)}";
+            }
 
             if ((self.placedObj.data as CollectToken.CollectTokenData).isWhite
                 && (self.placedObj.data as CollectToken.CollectTokenData).ChatlogCollect != null
-                && Generation.randomizerKey.ContainsKey($"SMBroadcast-{tokenString}")
-                && !(Generation.randomizerKey[$"SMBroadcast-{tokenString}"]?.IsGiven ?? false))
+                && !(Plugin.RandoManager.IsLocationGiven($"Broadcast-{tokenString}") ?? true))
             {
-                Generation.randomizerKey[$"SMBroadcast-{tokenString}"].GiveUnlock();
-                Plugin.Singleton.notifQueue.Enqueue(Generation.randomizerKey[$"SMBroadcast-{tokenString}"].UnlockCompleteMessage());
+                Plugin.RandoManager.GiveLocation($"Broadcast-{tokenString}");
             }
-            else if (Generation.randomizerKey.ContainsKey($"Token-{tokenString}")
-                && !(Generation.randomizerKey[$"Token-{tokenString}"]?.IsGiven ?? false))
+            else
             {
-                Generation.randomizerKey[$"Token-{tokenString}"].GiveUnlock();
-                Plugin.Singleton.notifQueue.Enqueue(Generation.randomizerKey[$"Token-{tokenString}"].UnlockCompleteMessage());
+                tokenString = $"Token-{tokenString}";
+                
+                if (!(Plugin.RandoManager.IsLocationGiven(tokenString) ?? true))
+                {
+                    Plugin.RandoManager.GiveLocation(tokenString);
+                }
             }
         }
 
@@ -244,9 +250,15 @@ namespace RainWorldRandomizer
                 {
                     tokenString = $"L-{tokenString}";
                 }
+                else if (Plugin.RandoManager is ManagerArchipelago)
+                {
+                    // Add region acronym to location name if using AP
+                    tokenString = $"{tokenString}-{room.abstractRoom.name.Substring(0, 2)}";
+                }
 
-                if (Generation.randomizerKey.ContainsKey($"Token-{tokenString}")
-                && !(Generation.randomizerKey[$"Token-{tokenString}"]?.IsGiven ?? false))
+                tokenString = $"Token-{tokenString}";
+                
+                if (!(Plugin.RandoManager.IsLocationGiven(tokenString) ?? true))
                 {
                     return false;
                 }

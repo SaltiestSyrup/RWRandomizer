@@ -34,11 +34,13 @@ namespace RainWorldRandomizer
         public static bool OnIsPearlRead(Func<RainWorld, DataPearl.AbstractDataPearl.DataPearlType, bool> orig, RainWorld rainWorld, DataPearl.AbstractDataPearl.DataPearlType pearlType)
         {
             bool origResult = orig(rainWorld, pearlType);
-            string keyString = $"Pearl-{pearlType}";
+            string keyString = Plugin.RandoManager is ManagerArchipelago
+                ? $"Pearl-{pearlType}-{Plugin.Singleton.game?.FirstRealizedPlayer?.room.abstractRoom.name.Substring(0, 2)}"
+                : $"Pearl-{pearlType}";
 
-            if (Generation.randomizerKey.ContainsKey(keyString))
+            if (Plugin.RandoManager.LocationExists(keyString))
             {
-                return Generation.randomizerKey[keyString]?.IsGiven ?? false;
+                return Plugin.RandoManager.IsLocationGiven(keyString) ?? false;
             }
 
             return origResult;

@@ -22,6 +22,7 @@ namespace RainWorldRandomizer
             On.SSOracleBehavior.Update += PebblesUpdate;
             On.SLOracleBehaviorHasMark.Update += MoonMarkUpdate;
             On.SLOracleWakeUpProcedure.Update += MoonWakeUpUpdate;
+            On.SLOracleBehaviorHasMark.SpecialEvent += OnMoonSpecialEvent;
             On.HUD.DialogBox.NewMessage_string_float_float_int += DialogueAddMessage;
 
             try
@@ -48,6 +49,7 @@ namespace RainWorldRandomizer
             On.SSOracleBehavior.Update -= PebblesUpdate;
             On.SLOracleBehaviorHasMark.Update -= MoonMarkUpdate;
             On.SLOracleWakeUpProcedure.Update -= MoonWakeUpUpdate;
+            On.SLOracleBehaviorHasMark.SpecialEvent -= OnMoonSpecialEvent;
             On.HUD.DialogBox.NewMessage_string_float_float_int -= DialogueAddMessage;
 
             IL.SSOracleBehavior.SSOracleMeetWhite.Update -= PebblesMeetWhiteUpdateIL;
@@ -62,7 +64,7 @@ namespace RainWorldRandomizer
         static void OnEatNeuron(On.OracleSwarmer.orig_BitByPlayer orig, OracleSwarmer self, Creature.Grasp grasp, bool eu)
         {
             orig(self, grasp, eu);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             if (self.bites < 1)
             {
@@ -73,7 +75,7 @@ namespace RainWorldRandomizer
         static void OnEatNeuron(On.SLOracleSwarmer.orig_BitByPlayer orig, SLOracleSwarmer self, Creature.Grasp grasp, bool eu)
         {
             orig(self, grasp, eu);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             if (self.bites < 1)
             {
@@ -84,32 +86,26 @@ namespace RainWorldRandomizer
         static void EatenNeuron(Player player)
         {
             // Remove unearned glowing effect
-            if (!Plugin.Singleton.givenNeuronGlow)
+            if (!Plugin.RandoManager.GivenNeuronGlow)
             {
                 (Plugin.Singleton.game.session as StoryGameSession).saveState.theGlow = false;
                 player.glowing = false;
             }
 
-            if (!Plugin.Singleton.IsCheckGiven("Eat_Neuron"))
-            {
-                Plugin.Singleton.GiveCheck("Eat_Neuron");
-            }
+            Plugin.RandoManager.GiveLocation("Eat_Neuron");
         }
 
         static void OnGiftNeuron(On.SLOracleBehavior.orig_ConvertingSSSwarmer orig, SLOracleBehavior self)
         {
             orig(self);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
-            if (!Plugin.Singleton.IsCheckGiven("Gift_Neuron"))
-            {
-                Plugin.Singleton.GiveCheck("Gift_Neuron");
-            }
+            Plugin.RandoManager.GiveLocation("Gift_Neuron");
         }
 
         static void PebblesUpdate(On.SSOracleBehavior.orig_Update orig, SSOracleBehavior self, bool eu)
         {
-            if (!Plugin.isRandomizerActive)
+            if (!Plugin.RandoManager.isRandomizerActive)
             {
                 orig(self, eu);
                 return;
@@ -122,30 +118,27 @@ namespace RainWorldRandomizer
             {
                 //Logger.LogDebug($"Gave the mark! Iterator ID: {self.oracle.ID}");
                 // No karma increases >:(
-                Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.Singleton.currentMaxKarma;
-                Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.karma = Plugin.Singleton.currentMaxKarma;
+                Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
+                Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.karma = Plugin.RandoManager.CurrentMaxKarma;
                 for (int num2 = 0; num2 < Plugin.Singleton.game.cameras.Length; num2++)
                 {
                     Plugin.Singleton.game.cameras[num2].hud.karmaMeter?.UpdateGraphic();
                 }
 
                 // Reset the mark if not unlocked yet
-                if (!Plugin.Singleton.givenMark)
+                if (!Plugin.RandoManager.GivenMark)
                 {
                     Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.theMark = false;
                     //self.afterGiveMarkAction = SSOracleBehavior.Action.ThrowOut_ThrowOut;
                 }
 
-                if (self.oracle.ID == Oracle.OracleID.SS
-                    && !Plugin.Singleton.IsCheckGiven("Meet_FP"))
+                if (self.oracle.ID == Oracle.OracleID.SS)
                 {
-                    Plugin.Singleton.GiveCheck("Meet_FP");
+                    Plugin.RandoManager.GiveLocation("Meet_FP");
                 }
-
-                if (ModManager.MSC && self.oracle.ID == MoreSlugcatsEnums.OracleID.DM
-                    && !Plugin.Singleton.IsCheckGiven("Meet_LttM"))
+                else if (ModManager.MSC && self.oracle.ID == MoreSlugcatsEnums.OracleID.DM)
                 {
-                    Plugin.Singleton.GiveCheck("Meet_LttM");
+                    Plugin.RandoManager.GiveLocation("Meet_LttM_Spear");
                 }
             }
         }
@@ -233,7 +226,7 @@ namespace RainWorldRandomizer
                     );
 
                 c.Emit(OpCodes.Pop); // Only set robo if it has been given
-                c.EmitDelegate<Func<bool>>(() => { return Plugin.Singleton.givenRobo; });
+                c.EmitDelegate<Func<bool>>(() => { return Plugin.RandoManager.GivenRobo; });
 
                 // ------
                 c.GotoNext(
@@ -312,7 +305,7 @@ namespace RainWorldRandomizer
                     {
                         if (Plugin.useEnergyCell.Value)
                         {
-                            return Plugin.Singleton.IsCheckGiven("Kill_FP");
+                            return Plugin.RandoManager.IsLocationGiven("Kill_FP") ?? false;
                         }
                         return energyTaken;
                     });
@@ -340,13 +333,10 @@ namespace RainWorldRandomizer
                 {
                     if (Plugin.useEnergyCell.Value)
                     {
-                        if (!Plugin.Singleton.IsCheckGiven("Kill_FP"))
-                        {
-                            Plugin.Singleton.GiveCheck("Kill_FP");
-                        }
+                        Plugin.RandoManager.GiveLocation("Kill_FP");
 
                         // If power is not supposed to be off yet, turn it back on
-                        if (!Plugin.Singleton.givenPebblesOff)
+                        if (!Plugin.RandoManager.GivenPebblesOff)
                         {
                             (self.room.game.session as StoryGameSession).saveState.miscWorldSaveData.pebblesEnergyTaken = false;
                         }
@@ -374,13 +364,12 @@ namespace RainWorldRandomizer
         static void MoonMarkUpdate(On.SLOracleBehaviorHasMark.orig_Update orig, SLOracleBehaviorHasMark self, bool eu)
         {
             orig(self, eu);
-            if (!Plugin.isRandomizerActive) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             // Meeting for the first time
-            if (!Plugin.Singleton.IsCheckGiven("Meet_LttM")
-                && (Plugin.Singleton.game.session as StoryGameSession).saveState.miscWorldSaveData.SLOracleState.playerEncountersWithMark > 0)
+            if (Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.SLOracleState.playerEncountersWithMark > 0)
             {
-                Plugin.Singleton.GiveCheck("Meet_LttM");
+                Plugin.RandoManager.GiveLocation("Meet_LttM");
             }
         }
 
@@ -413,13 +402,23 @@ namespace RainWorldRandomizer
         {
             if (self.phase == SLOracleWakeUpProcedure.Phase.Done)
             {
-                if (!Plugin.Singleton.IsCheckGiven("Save_LttM"))
-                {
-                    Plugin.Singleton.GiveCheck("Save_LttM");
-                }
+                Plugin.RandoManager.GiveLocation("Save_LttM");
             }
 
             orig(self, eu);
+        }
+
+        static void OnMoonSpecialEvent(On.SLOracleBehaviorHasMark.orig_SpecialEvent orig, SLOracleBehaviorHasMark self, string eventName)
+        {
+            orig(self, eventName);
+
+            // Check for completion via visiting LttM after placing the Rarefaction cell
+            if (Plugin.RandoManager is ManagerArchipelago managerAP
+                && !managerAP.gameCompleted
+                && eventName == "RivEndingFade")
+            {
+                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SaveMoon);
+            }
         }
 
         static void IteratorThrowOutBehaviorIL(ILContext il)
@@ -438,7 +437,7 @@ namespace RainWorldRandomizer
                     x => x.MatchBrfalse(out jump)
                     );
 
-                c.EmitDelegate<Func<bool>>(() => { return Plugin.Singleton.givenRobo; });
+                c.EmitDelegate<Func<bool>>(() => { return Plugin.RandoManager.GivenRobo; });
                 c.Emit(OpCodes.Brfalse, jump);
             }
             catch (Exception e)
@@ -451,8 +450,8 @@ namespace RainWorldRandomizer
         static void DialogueAddMessage(On.HUD.DialogBox.orig_NewMessage_string_float_float_int orig, HUD.DialogBox self, string text, float xOrientation, float yPos, int extraLinger)
         {
             // Swap Pebbles dialogue for gibberish if mark not obtained
-            if (Plugin.Singleton.givenMark
-                || (ModManager.MSC && Plugin.Singleton.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint))
+            if (Plugin.RandoManager.GivenMark
+                || (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint))
             {
                 orig(self, text, xOrientation, yPos, extraLinger);
                 return;

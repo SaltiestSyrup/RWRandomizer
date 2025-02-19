@@ -4,6 +4,7 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -15,11 +16,13 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.0.2";
+        public const string PLUGIN_VERSION = "1.1.0";
 
         internal static ManualLogSource Log;
 
         public static Plugin Singleton = null;
+        public static ArchipelagoConnection APConnection = new ArchipelagoConnection();
+        public static ManagerBase RandoManager = null;
         public CollectTokenHandler collectTokenHandler;
         public MenuExtension seedViewer;
 
@@ -49,20 +52,30 @@ namespace RainWorldRandomizer
         public static Configurable<bool> useFoodQuestChecks;
         public static Configurable<bool> useEnergyCell;
         public static Configurable<bool> useSMTokens;
+
+        // Archipelago
+        public static Configurable<bool> archipelago;
+        public static Configurable<string> archipelagoHostName;
+        public static Configurable<int> archipelagoPort;
+        public static Configurable<string> archipelagoSlotName;
+        public static Configurable<string> archipelagoPassword;
+        public static Configurable<bool> disableNotificationQueue;
+        public static Configurable<bool> archipelagoPreventDLKarmaLoss;
+        public static Configurable<bool> archipelagoIgnoreMenuDL;
         #endregion
 
         public bool ItemShelterDelivery
         {
             get
             {
-                return (itemShelterDelivery.Value || (ModManager.MSC && currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear));
+                return (itemShelterDelivery.Value || (ModManager.MSC && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear));
             }
         }
 
-        public static bool isRandomizerActive = false;
+        //public static bool isRandomizerActive = false; // -- Move to manager base
         public RainWorld rainWorld;
         public RainWorldGame game;
-        public SlugcatStats.Name currentSlugcat;
+        //public SlugcatStats.Name currentSlugcat; // -- Move to manager base
 
         public Queue<string> notifQueue = new Queue<string>(); // Queue of pending notifications to be sent to the player in-game
         // Queue of items that the player has recieved and not claimed
@@ -70,11 +83,13 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
 
         // Values for currently unlocked features
-        public List<Unlock> AllUnlocks = new List<Unlock>();
-        public Dictionary<string, bool> gateUnlocks = new Dictionary<string, bool>();
-        public Dictionary<WinState.EndgameID, bool> passageTokenUnlocks = new Dictionary<WinState.EndgameID, bool>();
-        public List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>();
+        //public List<Unlock> AllUnlocks = new List<Unlock>(); // -- Move to Generation, only used there
+        //public Dictionary<string, bool> gateUnlocks = new Dictionary<string, bool>(); // -- Move to manager base
+        //public Dictionary<WinState.EndgameID, bool> passageTokenUnlocks = new Dictionary<WinState.EndgameID, bool>(); // -- Move to manager base
+        public List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>(); // Used for karma ladder screen. Maybe move to Misc hooks class?
 
+        // -- Move to manager base
+        /*
         public int currentMaxKarma = 4;
         public int hunterBonusCyclesGiven = 0;
         public bool givenNeuronGlow = false;
@@ -83,7 +98,9 @@ namespace RainWorldRandomizer
         public bool givenPebblesOff = false;
         public bool givenSpearPearlRewrite = false;
         public string customStartDen = "SU_S01";
+        */
 
+        // These are just for reference. Should they stay here or move to manager base?
         // A map of every region to it's display name
         public static Dictionary<string, string> RegionNamesMap = new Dictionary<string, string>();
         // A map of the 'correct' region acronyms for each region depending on current slugcat
@@ -111,6 +128,8 @@ namespace RainWorldRandomizer
                 return;
             }
 
+            // Assign as vanilla until decided otherwise
+            RandoManager = new ManagerVanilla();
             collectTokenHandler = new CollectTokenHandler();
             seedViewer = new MenuExtension();
             Log = Logger;
@@ -130,6 +149,9 @@ namespace RainWorldRandomizer
                 MiscHooks.ApplyHooks();
                 IteratorHooks.ApplyHooks();
                 SpearmasterCutscenes.ApplyHooks();
+
+                TrapsHandler.ApplyHooks();
+                DeathLinkHandler.ApplyHooks();
 
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
@@ -161,6 +183,9 @@ namespace RainWorldRandomizer
                 MiscHooks.RemoveHooks();
                 IteratorHooks.RemoveHooks();
                 SpearmasterCutscenes.RemoveHooks();
+
+                TrapsHandler.RemoveHooks();
+                DeathLinkHandler.RemoveHooks();
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
@@ -197,16 +222,16 @@ namespace RainWorldRandomizer
                 Logger.LogError(e);
             }
 
-            Generation.LoadBlacklist(SlugcatStats.Name.White);
-            Generation.LoadBlacklist(SlugcatStats.Name.Yellow);
-            Generation.LoadBlacklist(SlugcatStats.Name.Red);
+            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.White);
+            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.Yellow);
+            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.Red);
             if (ModManager.MSC)
             {
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Artificer);
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Spear);
-                Generation.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Saint);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Artificer);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Spear);
+                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Saint);
             }
 
             CustomRegionCompatability.Init();
@@ -223,20 +248,29 @@ namespace RainWorldRandomizer
             }
         }
 
+        /*
         public bool IsCheckGiven(string check)
         {
-            return Generation.randomizerKey.ContainsKey(check) && Generation.randomizerKey[check].IsGiven;
+            if (ArchipelagoConnection.IsConnected)
+            {
+                return true;
+            }
+            else
+            {
+                return ManagerVanilla.randomizerKey.ContainsKey(check) && ManagerVanilla.randomizerKey[check].IsGiven;
+            }
         }
 
         public bool GiveCheck(string check)
         {
-            if (!Generation.randomizerKey.ContainsKey(check) || Generation.randomizerKey[check].IsGiven) return false;
+            if (!ManagerVanilla.randomizerKey.ContainsKey(check) || ManagerVanilla.randomizerKey[check].IsGiven) return false;
 
-            Generation.randomizerKey[check].GiveUnlock();
-            notifQueue.Enqueue(Generation.randomizerKey[check].UnlockCompleteMessage());
+            ManagerVanilla.randomizerKey[check].GiveUnlock();
+            notifQueue.Enqueue(ManagerVanilla.randomizerKey[check].UnlockCompleteMessage());
             Log.LogInfo($"Completed Check: {check}");
             return true;
         }
+        */
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom, int data = 0)
         {
@@ -257,33 +291,39 @@ namespace RainWorldRandomizer
                 else
                 {
                     return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null,
-                    new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
-                    itemPearlType);
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
+                        itemPearlType);
                 }
             }
             else if (item.type is AbstractPhysicalObject.AbstractObjectType itemObjectType)
             {
-                // Special cases here
+                // Normal objects that need special treatment
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DataPearl)
                 {
                     return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null,
-                    new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
-                    DataPearl.AbstractDataPearl.DataPearlType.Misc);
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
+                        DataPearl.AbstractDataPearl.DataPearlType.Misc);
                 }
+                // Various spear types are all still "Spear"
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.Spear)
                 {
                     return new AbstractSpear(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
-                        item.id == "FireSpear", item.id == "ElectricSpear");
+                        item.id == "FireSpear" || item.id == "ExplosiveSpear", item.id == "ElectricSpear");
                 }
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.KarmaFlower
-                    || itemObjectType == AbstractPhysicalObject.AbstractObjectType.Mushroom
-                    || itemObjectType == AbstractPhysicalObject.AbstractObjectType.PuffBall
-                    || itemObjectType == AbstractPhysicalObject.AbstractObjectType.Lantern)
+                // Lillypuck is a consumable, but still needs its own constructor
+                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.LillyPuck)
+                {
+                    return new LillyPuck.AbstractLillyPuck(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
+                }
+                // Handles all "Consumables"
+                if (AbstractConsumable.IsTypeConsumable(itemObjectType))
                 {
                     return new AbstractConsumable(world, itemObjectType, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
                 }
+                // Special object cases that need their own constructor
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.VultureMask)
                 {
                     EntityID newID = world.game.GetNewID();
@@ -295,6 +335,24 @@ namespace RainWorldRandomizer
                     return new BubbleGrass.AbstractBubbleGrass(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 1f, -1, -1, null)
                     { isConsumed = false };
+                }
+                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.EggBugEgg)
+                {
+                    return new EggBugEgg.AbstractBugEgg(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
+                        Mathf.Lerp(-0.15f, 0.1f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)));
+                }
+                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.FireEgg)
+                {
+                    return new FireEgg.AbstractBugEgg(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
+                        Mathf.Lerp(0.35f, 0.6f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)));
+                }
+                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.JokeRifle)
+                {
+                    return new JokeRifle.AbstractRifle(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
+                        JokeRifle.AbstractRifle.AmmoType.Rock);
                 }
 
                 // Default case
@@ -353,21 +411,6 @@ namespace RainWorldRandomizer
             }
 
             return output;
-        }
-
-        public static void IncreaseKarma()
-        {
-            if (Singleton.currentMaxKarma == 4)
-            {
-                Singleton.currentMaxKarma = 6;
-            }
-            else if (Singleton.currentMaxKarma < 9)
-            {
-                Singleton.currentMaxKarma++;
-            }
-
-            try { (Singleton.game.session as StoryGameSession).saveState.deathPersistentSaveData.karmaCap = Singleton.currentMaxKarma; }
-            catch { };
         }
     }
 }

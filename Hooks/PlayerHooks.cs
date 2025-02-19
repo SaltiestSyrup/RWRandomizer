@@ -13,6 +13,7 @@ namespace RainWorldRandomizer
         public static void ApplyHooks()
         {
             On.Player.Regurgitate += OnRegurgitate;
+            On.Player.Update += OnPlayerUpdate;
             On.RedsIllness.RedsCycles += OnRedsCycles;
             On.Player.ClassMechanicsSaint += OnClassMechanicsSaint;
 
@@ -30,6 +31,7 @@ namespace RainWorldRandomizer
         public static void RemoveHooks()
         {
             On.Player.Regurgitate -= OnRegurgitate;
+            On.Player.Update -= OnPlayerUpdate;
             On.RedsIllness.RedsCycles -= OnRedsCycles;
             On.Player.ClassMechanicsSaint -= OnClassMechanicsSaint;
             IL.Player.GrabUpdate -= ILPlayerGrabUpdate;
@@ -38,7 +40,7 @@ namespace RainWorldRandomizer
 
         public static void OnRegurgitate(On.Player.orig_Regurgitate orig, Player self)
         {
-            if (!Plugin.isRandomizerActive
+            if (!Plugin.RandoManager.isRandomizerActive
                 || Plugin.Singleton.ItemShelterDelivery
                 || Plugin.Singleton.itemDeliveryQueue.Count == 0)
             {
@@ -65,6 +67,29 @@ namespace RainWorldRandomizer
             if (tempObject != null)
             {
                 self.objectInStomach = tempObject;
+            }
+        }
+
+        public static void OnPlayerUpdate(On.Player.orig_Update orig, Player self, bool eu)
+        {
+            orig(self, eu);
+
+            // Check for completion via Void Sea
+            // TODO: Currently if the player reaches here, but their completion condition isn't void sea, it will try to send every frame
+            if (Plugin.RandoManager is ManagerArchipelago managerAP
+                && !managerAP.gameCompleted
+                && self.room is Room room)
+            {
+                if (room.abstractRoom.name == "SB_L01"
+                    && self.firstChunk.pos.y < -500f)
+                {
+                    managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Ascension);
+                }
+                else if (room.abstractRoom.name == "HR_FINAL"
+                    && self.firstChunk.pos.y > room.PixelHeight + 500f)
+                {
+                    managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
+                }
             }
         }
 
@@ -173,12 +198,24 @@ namespace RainWorldRandomizer
         {
             int origResult = orig(extracycles);
 
+            // Remove cycle limit completely for Archipelago
+            if (Plugin.RandoManager is ManagerArchipelago)
+            {
+                if (Plugin.Singleton.game != null)
+                {
+                    return Plugin.Singleton.game.GetStorySession.saveState.cycleNumber + 1;
+                }
+                // If this is isn't in game there's not an easy way to get the cycle count
+                // Will need to hook individual cases to fix this
+                return int.MaxValue;
+            }
+
             int bonusCycles = ModManager.MMF && MoreSlugcats.MMF.cfgHunterBonusCycles != null
                 ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : 5;
             int baseCycles = extracycles ? origResult - bonusCycles : origResult;
 
             // If the save hasn't been initialized, read the file to count cycles
-            if (!Plugin.isRandomizerActive)
+            if (!Plugin.RandoManager.isRandomizerActive)
             {
                 int countedCycles = SaveManager.CountRedsCycles(Plugin.Singleton.rainWorld.options.saveSlot);
                 if (countedCycles == -1)
@@ -189,23 +226,21 @@ namespace RainWorldRandomizer
                 return baseCycles + (countedCycles * bonusCycles);
             }
 
-            return baseCycles + (Plugin.Singleton.hunterBonusCyclesGiven * bonusCycles);
+            return baseCycles + (Plugin.RandoManager.HunterBonusCyclesGiven * bonusCycles);
         }
 
         public static void OnClassMechanicsSaint(On.Player.orig_ClassMechanicsSaint orig, Player self)
         {
             orig(self);
 
-            if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripPebbles
-                && !Plugin.Singleton.IsCheckGiven("Ascend_FP"))
+            if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripPebbles)
             {
-                Plugin.Singleton.GiveCheck("Ascend_FP");
+                Plugin.RandoManager.GiveLocation("Ascend_FP");
             }
 
-            if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripMoon
-                && !Plugin.Singleton.IsCheckGiven("Ascend_LttM"))
+            if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripMoon)
             {
-                Plugin.Singleton.GiveCheck("Ascend_LttM");
+                Plugin.RandoManager.GiveLocation("Ascend_LttM");
             }
         }
     }

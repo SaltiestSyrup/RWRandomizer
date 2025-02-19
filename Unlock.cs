@@ -113,21 +113,21 @@ namespace RainWorldRandomizer
             switch (Type)
             {
                 case UnlockType.Gate:
-                    Plugin.Singleton.gateUnlocks[ID] = true;
+                    Plugin.RandoManager.OpenGate(ID);
                     break;
                 case UnlockType.Token:
-                    Plugin.Singleton.passageTokenUnlocks[new WinState.EndgameID(ID)] = true;
+                    Plugin.RandoManager.AwardPassageToken(new WinState.EndgameID(ID));
                     break;
                 case UnlockType.Karma:
-                    Plugin.IncreaseKarma();
+                    Plugin.RandoManager.IncreaseKarma();
                     break;
                 case UnlockType.Glow:
                     Plugin.Singleton.game.GetStorySession.saveState.theGlow = true;
-                    Plugin.Singleton.givenNeuronGlow = true;
+                    Plugin.RandoManager.GivenNeuronGlow = true;
                     break;
                 case UnlockType.Mark:
                     Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
-                    Plugin.Singleton.givenMark = true;
+                    Plugin.RandoManager.GivenMark = true;
                     break;
                 case UnlockType.Item:
                     if (item != null)
@@ -158,19 +158,19 @@ namespace RainWorldRandomizer
                     ShowItemTutorial();
                     break;
                 case UnlockType.HunterCycles:
-                    Plugin.Singleton.hunterBonusCyclesGiven++;
+                    Plugin.RandoManager.HunterBonusCyclesGiven++;
                     break;
                 case UnlockType.IdDrone:
                     Plugin.Singleton.game.GetStorySession.saveState.hasRobo = true;
-                    Plugin.Singleton.givenRobo = true;
+                    Plugin.RandoManager.GivenRobo = true;
                     break;
                 case UnlockType.DisconnectFP:
                     Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
-                    Plugin.Singleton.givenPebblesOff = true;
+                    Plugin.RandoManager.GivenPebblesOff = true;
                     break;
                 case UnlockType.RewriteSpearPearl:
                     Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
-                    Plugin.Singleton.givenSpearPearlRewrite = true;
+                    Plugin.RandoManager.GivenSpearPearlRewrite = true;
                     break;
             }
         }
@@ -180,7 +180,7 @@ namespace RainWorldRandomizer
             switch (Type)
             {
                 case UnlockType.Gate:
-                    return $"Unlocked Gate: {Plugin.GateToString(ID, Plugin.Singleton.currentSlugcat)}";
+                    return $"Unlocked Gate: {Plugin.GateToString(ID, Plugin.RandoManager.currentSlugcat)}";
                 case UnlockType.Token:
                     return $"Unlocked Passage Token: {ID}";
                 case UnlockType.Karma:
@@ -244,7 +244,7 @@ namespace RainWorldRandomizer
             switch (Type)
             {
                 case UnlockType.Gate:
-                    return Plugin.GateToShortString(ID, Plugin.Singleton.currentSlugcat);
+                    return Plugin.GateToShortString(ID, Plugin.RandoManager.currentSlugcat);
                 case UnlockType.Token:
                     return ID;
                 case UnlockType.Karma:
@@ -280,7 +280,7 @@ namespace RainWorldRandomizer
             if (isPearl)
                 return new Item(IDToString(id), new DataPearl.AbstractDataPearl.DataPearlType(id));
 
-            if (id == "FireSpear")
+            if (id == "FireSpear" || id == "ExplosiveSpear")
                 return new Item("Explosive Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
             if (id == "ElectricSpear")
                 return new Item("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
@@ -302,7 +302,7 @@ namespace RainWorldRandomizer
         {
             //RandomizerMain.Log.LogDebug(hasSeenItemTutorial);
 
-            if (hasSeenItemTutorial || Plugin.Singleton.ItemShelterDelivery) return;
+            if (hasSeenItemTutorial || Plugin.Singleton.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
             Plugin.Singleton.notifQueue.Enqueue("TIP: Unlocked items are stored in your stomach for safe keeping");
             hasSeenItemTutorial = true;
         }

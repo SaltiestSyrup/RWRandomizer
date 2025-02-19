@@ -59,7 +59,7 @@ namespace RainWorldRandomizer
 
         public static void OnMoonUpdate(On.SSOracleBehavior.SSSleepoverBehavior.orig_Update orig, SSOracleBehavior.SSSleepoverBehavior self)
         {
-            if (!Plugin.Singleton.IsCheckGiven("Meet_LttM"))
+            if (!(Plugin.RandoManager.IsLocationGiven("Meet_LttM") ?? true))
             {
                 self.owner.NewAction(SSOracleBehavior.Action.General_GiveMark);
                 return;
@@ -67,7 +67,7 @@ namespace RainWorldRandomizer
 
             orig(self);
 
-            if (!Plugin.Singleton.givenSpearPearlRewrite
+            if (!Plugin.RandoManager.GivenSpearPearlRewrite
                 && self.owner.inspectPearl != null
                 && self.owner.inspectPearl is SpearMasterPearl)
             {
@@ -95,7 +95,7 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate<Func<bool, bool>>(broadcastTagged =>
             {
-                return broadcastTagged || Plugin.Singleton.IsCheckGiven("Meet_LttM");
+                return broadcastTagged || (Plugin.RandoManager.IsLocationGiven("Meet_LttM") ?? false);
             });
         }
 
@@ -116,7 +116,7 @@ namespace RainWorldRandomizer
                 c.EmitDelegate<Func<bool, bool>>(hasMark =>
                 {
                     //RandomizerMain.Log.LogDebug($"{i}: {RandomizerMain.Singleton.randomizerKey.ContainsKey("Meet_LttM")}, {RandomizerMain.Singleton.randomizerKey["Meet_LttM"].IsGiven}");
-                    return hasMark || Plugin.Singleton.IsCheckGiven("Meet_LttM");
+                    return hasMark || (Plugin.RandoManager.IsLocationGiven("Meet_LttM") ?? false);
                 });
             }
         }

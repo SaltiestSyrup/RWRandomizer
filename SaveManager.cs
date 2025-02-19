@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,15 +20,14 @@ namespace RainWorldRandomizer
             return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.json"));
         }
 
-        //TODO: make this async if possible
+        // Meant for vanilla saves only
         public static void WriteSavedGameToFile(Dictionary<string, Unlock> game, SlugcatStats.Name slugcat, int saveSlot)
         {
             StreamWriter file = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
-            file.WriteLine(Generation.currentSeed);
+            file.WriteLine(Plugin.RandoManager.currentSeed);
             foreach (var item in game)
             {
-                string check = item.Key;
                 string serializedUnlock = $"{{{(int)item.Value.Type},{item.Value.ID},{item.Value.IsGiven}}}";
 
                 file.Write($"{item.Key}->{serializedUnlock}");
@@ -43,6 +43,7 @@ namespace RainWorldRandomizer
             }
         }
 
+        // Meant for vanilla saves only
         public static Dictionary<string, Unlock> LoadSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
             Dictionary<string, Unlock> game = new Dictionary<string, Unlock>();
@@ -54,7 +55,7 @@ namespace RainWorldRandomizer
 
             string[] file = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
-            Generation.currentSeed = int.Parse(file[0]);
+            Plugin.RandoManager.currentSeed = int.Parse(file[0]);
             file = file.Skip(1).ToArray();
             foreach (string line in file)
             {
@@ -183,5 +184,156 @@ namespace RainWorldRandomizer
             Dictionary<string, Unlock> game = LoadSavedGame(SlugcatStats.Name.Red, saveSlot);
             return game.Values.Where(u => u.Type == Unlock.UnlockType.HunterCycles && u.IsGiven).Count();
         }
+
+        #region Archipelago saved data
+        // Fetch locally saved checksum
+        /*
+        public static string GetDataPackageChecksum()
+        {
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_checksum.txt");
+            if (!File.Exists(path))
+            {
+                return "";
+            }
+
+            string[] file = File.ReadAllLines(path);
+
+            return file.Length > 0 ? file[0] : "";
+        }
+        
+        public static void WriteDataPackageToFile(Dictionary<string, long> itemLookup, Dictionary<string, long> locationLookup, string checksum)
+        {
+            Plugin.Log.LogDebug("Writing Data package files...");
+            StreamWriter itemsFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_items.txt"));
+
+            foreach (var item in itemLookup)
+            {
+                itemsFile.Write($"{item.Key}->{item.Value}");
+                itemsFile.WriteLine();
+            }
+            itemsFile.Close();
+
+            StreamWriter locationsFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_locations.txt"));
+
+            foreach (var item in locationLookup)
+            {
+                locationsFile.Write($"{item.Key}->{item.Value}");
+                locationsFile.WriteLine();
+            }
+            locationsFile.Close();
+
+            StreamWriter checksumFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_checksum.txt"));
+            checksumFile.Write(checksum);
+            checksumFile.Close();
+
+            Plugin.Log.LogDebug("DataPackage file write complete");
+        }
+
+        public static bool LoadDataPackage(out Dictionary<string, long> itemLookup, out Dictionary<string, long> locationLookup)
+        {
+            itemLookup = new Dictionary<string, long>();
+            locationLookup = new Dictionary<string, long>();
+
+            string itemsPath = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_items.txt");
+            string locationsPath = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_locations.txt");
+
+            if (!(File.Exists(itemsPath) && File.Exists(locationsPath)))
+            {
+                return false;
+            }
+
+            string[] itemsFile = File.ReadAllLines(itemsPath);
+            foreach (string line in itemsFile)
+            {
+                string[] keyValue = Regex.Split(line, "->");
+                itemLookup.Add(keyValue[0], long.Parse(keyValue[1]));
+            }
+
+            string[] locationsFile = File.ReadAllLines(locationsPath);
+            foreach (string line in locationsFile)
+            {
+                string[] keyValue = Regex.Split(line, "->");
+                locationLookup.Add(keyValue[0], long.Parse(keyValue[1]));
+            }
+
+            return true;
+        }
+        */
+
+        public struct APSave
+        {
+            public APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
+            {
+                this.lastIndex = lastIndex;
+                this.locationsStatus = locationsStatus;
+            }
+
+            public long lastIndex;
+            public Dictionary<string, bool> locationsStatus;
+        }
+
+        // AP saves store the found locations under a save ID, which is a string of pattern "[Generation Seed]_[Player Name]"
+        public static bool IsThereAnAPSave(string saveId)
+        {
+            return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
+        }
+
+        public static void WriteAPSaveToFile(string saveId, long lastIndex, Dictionary<string, bool> locationsStatus)
+        {
+            if (locationsStatus == null || locationsStatus.Count == 0) return;
+
+            StreamWriter saveFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
+
+            APSave save = new APSave(lastIndex, locationsStatus);
+
+            string jsonSave = JsonConvert.SerializeObject(save, Formatting.Indented);
+            saveFile.Write(jsonSave);
+
+            saveFile.Close();
+        }
+
+        public static APSave LoadAPSave(string saveId)
+        {
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json");
+
+            if (!File.Exists(path))
+            {
+                Plugin.Log.LogError($"Failed to load save from file: ap_save_{saveId}.json");
+                return new APSave();
+            }
+
+            return JsonConvert.DeserializeObject<APSave>(File.ReadAllText(path));
+        }
+
+        public static void WriteLastItemIndexToFile(string saveId, long lastIndex)
+        {
+            Dictionary<string, long> origRegistry = LoadLastItemIndices();
+            if (origRegistry.ContainsKey(saveId))
+            {
+                origRegistry[saveId] = lastIndex;
+            }
+            else
+            {
+                origRegistry.Add(saveId, lastIndex);
+            }
+
+            StreamWriter indexFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_save_registry.txt"));
+
+            indexFile.Write(JsonConvert.SerializeObject(origRegistry));
+            indexFile.Close();
+        }
+
+        public static Dictionary<string, long> LoadLastItemIndices()
+        {
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_save_registry.txt");
+            if (!File.Exists(path))
+            {
+                return new Dictionary<string, long>();
+            }
+
+            return JsonConvert.DeserializeObject<Dictionary<string, long>>(File.ReadAllText(path)) ?? new Dictionary<string, long>();
+        }
+
+        #endregion
     }
 }
