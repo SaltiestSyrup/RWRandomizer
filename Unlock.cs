@@ -302,7 +302,7 @@ namespace RainWorldRandomizer
         {
             //RandomizerMain.Log.LogDebug(hasSeenItemTutorial);
 
-            if (hasSeenItemTutorial || Plugin.Singleton.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
+            if (hasSeenItemTutorial || Plugin.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
             Plugin.Singleton.notifQueue.Enqueue("TIP: Unlocked items are stored in your stomach for safe keeping");
             hasSeenItemTutorial = true;
         }

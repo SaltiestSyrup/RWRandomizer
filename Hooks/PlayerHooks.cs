@@ -41,7 +41,7 @@ namespace RainWorldRandomizer
         public static void OnRegurgitate(On.Player.orig_Regurgitate orig, Player self)
         {
             if (!Plugin.RandoManager.isRandomizerActive
-                || Plugin.Singleton.ItemShelterDelivery
+                || Plugin.ItemShelterDelivery
                 || Plugin.Singleton.itemDeliveryQueue.Count == 0)
             {
                 orig(self);
@@ -104,7 +104,7 @@ namespace RainWorldRandomizer
                     {
                         return objectInstomach;
                     }
-                    if (!Plugin.Singleton.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    if (!Plugin.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
                         return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), player.room);
                     }
@@ -167,7 +167,7 @@ namespace RainWorldRandomizer
                     {
                         return objectInstomach;
                     }
-                    if (!Plugin.Singleton.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    if (!Plugin.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
                         return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), playerGraphics.player.room);
                     }

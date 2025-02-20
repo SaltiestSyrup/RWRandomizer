@@ -397,7 +397,7 @@ namespace RainWorldRandomizer
         {
             orig(self, playerShelter, activeGate);
 
-            if (!Plugin.Singleton.ItemShelterDelivery) return;
+            if (!Plugin.ItemShelterDelivery) return;
 
             int count = Plugin.Singleton.itemDeliveryQueue.Count;
             for (int i = 0; i < count; i++)
