@@ -19,7 +19,7 @@ namespace RainWorldRandomizer
             On.WinState.GetNextEndGame += NextPassageToken;
             On.WinState.ConsumeEndGame += ConsumePassageToken;
             On.PlayerProgression.ReloadLocksList += ReloadLocksList;
-            On.Menu.EndgameTokens.ctor += PassageTokens;
+            On.Menu.EndgameTokens.ctor += OnEndgameTokensCtor;
             On.Menu.EndgameTokens.Passage += DoPassage;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
@@ -33,6 +33,7 @@ namespace RainWorldRandomizer
                 IL.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
                 //IL.WinState.CreateAndAddTracker += WinStateCreateTrackerIL;
                 IL.Spear.HitSomethingWithoutStopping += SpearmasterMushroomAddEat;
+                IL.Menu.EndgameTokens.ctor += EngameTokensCtorIL;
             }
             catch (Exception e)
             {
@@ -46,7 +47,7 @@ namespace RainWorldRandomizer
             On.WinState.GetNextEndGame -= NextPassageToken;
             On.WinState.ConsumeEndGame -= ConsumePassageToken;
             On.PlayerProgression.ReloadLocksList -= ReloadLocksList;
-            On.Menu.EndgameTokens.ctor -= PassageTokens;
+            On.Menu.EndgameTokens.ctor -= OnEndgameTokensCtor;
             On.Menu.EndgameTokens.Passage -= DoPassage;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
@@ -57,6 +58,7 @@ namespace RainWorldRandomizer
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
             IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
             IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
+            IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -479,7 +481,7 @@ namespace RainWorldRandomizer
         }
 
         #region Karma ladder hacking
-        public static void PassageTokens(On.Menu.EndgameTokens.orig_ctor orig, Menu.EndgameTokens self, Menu.Menu menu, Menu.MenuObject owner, Vector2 pos, FContainer container, Menu.KarmaLadder ladder)
+        public static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, Menu.EndgameTokens self, Menu.Menu menu, Menu.MenuObject owner, Vector2 pos, FContainer container, Menu.KarmaLadder ladder)
         {
             orig(self, menu, owner, pos, container, ladder);
             if (!Plugin.GivePassageUnlocks) return;
@@ -506,6 +508,25 @@ namespace RainWorldRandomizer
                     index++;
                 }
             }
+        }
+
+        public static void EngameTokensCtorIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdloc(0),
+                x => x.MatchBrfalse(out _)
+                );
+
+            c.Index--;
+
+            c.EmitDelegate<Func<bool, bool>>((flag) =>
+            {
+                // Make passage button appear if any token has been found
+                return flag || Plugin.RandoManager.GetPassageTokensStatus().Values.Any(v => v);
+            });
         }
 
         public static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, Menu.EndgameTokens self, WinState.EndgameID ID)
