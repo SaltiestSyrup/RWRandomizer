@@ -95,7 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Archipelago\ArchipelagoConnection.cs" />
-    <Compile Include="Archipelago\CollectTokenHandler.cs" />
+    <Compile Include="CollectTokenHandler.cs" />
     <Compile Include="ModCompat\CustomRegionCompatability.cs" />
     <Compile Include="Archipelago\DeathLinkHandler.cs" />
     <Compile Include="ModCompat\ExtCollectibleTrackerComptability.cs" />
