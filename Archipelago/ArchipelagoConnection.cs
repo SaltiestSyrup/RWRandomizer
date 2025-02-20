@@ -35,6 +35,7 @@ namespace RainWorldRandomizer
         public static bool useRandomStartRegion;
         public static string desiredStartRegion;
         public static CompletionCondition completionCondition;
+        public static Plugin.GateBehavior gateBehavior;
         /// <summary> Passage Progress without Survivor </summary>
         public static bool PPwS;
         public static bool foodQuestForAll;
@@ -232,6 +233,7 @@ namespace RainWorldRandomizer
             long completionType = slotData.ContainsKey("which_victory_condition") ? (long)slotData["which_victory_condition"] : -1;
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
             long foodQuestAccess = slotData.ContainsKey("checks_foodquest") ? (long)slotData["checks_foodquest"] : -1;
+            long desiredGateBehavior = slotData.ContainsKey("which_gate_behavior") ? (long)slotData["which_gate_behavior"] : -1;
 
             //Plugin.Log.LogDebug($"World state index: {worldStateIndex}");
             //Plugin.Log.LogDebug($"Starting region: {startingRegion}");
@@ -245,6 +247,7 @@ namespace RainWorldRandomizer
                     Slugcat = SlugcatStats.Name.Yellow;
                     completionCondition = CompletionCondition.Ascension;
                     break;
+                case -1:
                 case 1:
                     IsMSC = false;
                     Slugcat = SlugcatStats.Name.White;
@@ -304,6 +307,7 @@ namespace RainWorldRandomizer
 
             switch (startingRegion)
             {
+                case -1:
                 case 0:
                     useRandomStartRegion = false;
                     desiredStartRegion = "";
@@ -362,11 +366,27 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            // Force value of PPwS in remix based on slot data
+            // Set gate behavior
+            if (desiredGateBehavior == -1)
+            {
+                gateBehavior = Plugin.GateBehavior.OnlyKey;
+            }
+            else
+            {
+                gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
+            }
+
             // TODO: Add some check to ensure player doesn't use PPwS without Remix enabled
+            // TODO: Force setting remix options isn't a good thing, there should be some way around this
             if (ModManager.MMF)
             {
+                // Force value of PPwS in remix based on slot data
                 MMF.cfgSurvivorPassageNotRequired.Value = PPwS > 0;
+                // Force assist values based on gate behavior
+                if (gateBehavior == Plugin.GateBehavior.KeyAndKarma)
+                {
+                    MMF.cfgGlobalMonkGates.Value = true;
+                }
             }
             ArchipelagoConnection.PPwS = PPwS > 0;
 

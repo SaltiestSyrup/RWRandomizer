@@ -353,35 +353,72 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            // All gates can be unlocked by simply updating their entry in gateStatus Dict
-            if (!(Plugin.RandoManager.IsGateOpen(self.room.abstractRoom.name) ?? false)
-                && self.room.abstractRoom.name != "GATE_OE_SU") // OE_SU needs to stay open to avoid softlocks
-            {
-                self.karmaRequirements[0] = RegionGate.GateRequirement.DemoLock;
-                self.karmaRequirements[1] = RegionGate.GateRequirement.DemoLock;
-            }
-            else if (Plugin.StartMinKarma) // Reduce requirement if the karma cap was forced lower
-            {
-                int karmaCap = Plugin.Singleton.rainWorld.progression.currentSaveState.deathPersistentSaveData.karmaCap;
-                if (int.TryParse(self.karmaRequirements[0].value, out int oldReq1)
-                    && oldReq1 > karmaCap)
-                {
-                    self.karmaRequirements[0] = new RegionGate.GateRequirement($"{karmaCap + 1}");
-                }
+            string gateName = self.room.abstractRoom.name;
+            bool hasKeyForGate = Plugin.RandoManager.IsGateOpen(gateName) ?? false;
 
-                if (int.TryParse(self.karmaRequirements[1].value, out int oldReq2)
-                    && oldReq2 > karmaCap)
-                {
-                    self.karmaRequirements[1] = new RegionGate.GateRequirement($"{karmaCap + 1}");
-                }
-            }
-            else if (self.room.abstractRoom.name == "GATE_UW_LC"
-                //&& (currentSlugcat == SlugcatStats.Name.White || currentSlugcat == SlugcatStats.Name.Yellow)
-                && Plugin.allowMetroForOthers.Value)
+            // Consider these gates as always unlocked
+            if (gateName == "GATE_OE_SU"
+                || (gateName == "GATE_SL_MS"
+                    && ModManager.MSC
+                    && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet))
             {
-                // Force open Metropolis Gate
+                hasKeyForGate = true;
+            }
+
+            // Change default Metropolis gate karma
+            if (gateName == "GATE_UW_LC" && Plugin.allowMetroForOthers.Value)
+            {
                 self.karmaRequirements[0] = RegionGate.GateRequirement.FiveKarma;
                 self.karmaRequirements[1] = RegionGate.GateRequirement.FiveKarma;
+            }
+
+            // Decide gate behavior
+            Plugin.GateBehavior gateBehavior;
+            if (Plugin.RandoManager is ManagerArchipelago)
+            {
+                gateBehavior = ArchipelagoConnection.gateBehavior;
+            }
+            else if (Plugin.StartMinKarma)
+            {
+                gateBehavior = Plugin.GateBehavior.OnlyKey;
+            }
+            else
+            {
+                gateBehavior = Plugin.GateBehavior.KeyAndKarma;
+            }
+
+            // Apply behavior
+            switch (gateBehavior)
+            {
+                case Plugin.GateBehavior.OnlyKey:
+                    if (hasKeyForGate)
+                    {
+                        self.karmaRequirements[0] = RegionGate.GateRequirement.OneKarma;
+                        self.karmaRequirements[1] = RegionGate.GateRequirement.OneKarma;
+                    }
+                    else
+                    {
+                        self.karmaRequirements[0] = RegionGate.GateRequirement.DemoLock;
+                        self.karmaRequirements[1] = RegionGate.GateRequirement.DemoLock;
+                    }
+                    break;
+                case Plugin.GateBehavior.KeyAndKarma:
+                    if (!hasKeyForGate)
+                    {
+                        self.karmaRequirements[0] = RegionGate.GateRequirement.DemoLock;
+                        self.karmaRequirements[1] = RegionGate.GateRequirement.DemoLock;
+                    }
+                    break;
+                case Plugin.GateBehavior.KeyOrKarma:
+                    if (hasKeyForGate)
+                    {
+                        self.karmaRequirements[0] = RegionGate.GateRequirement.OneKarma;
+                        self.karmaRequirements[1] = RegionGate.GateRequirement.OneKarma;
+                    }
+                    break;
+                case Plugin.GateBehavior.OnlyKarma:
+                    // Nothing to be done here, use vanilla mechanics
+                    break;
             }
 
             orig(self);

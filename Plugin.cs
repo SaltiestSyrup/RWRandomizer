@@ -112,7 +112,6 @@ namespace RainWorldRandomizer
         public static Configurable<bool> archipelagoIgnoreMenuDL;
         #endregion
 
-
         //public static bool isRandomizerActive = false; // -- Move to manager base
         public RainWorld rainWorld;
         public RainWorldGame game;
@@ -124,24 +123,8 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
 
         // Values for currently unlocked features
-        //public List<Unlock> AllUnlocks = new List<Unlock>(); // -- Move to Generation, only used there
-        //public Dictionary<string, bool> gateUnlocks = new Dictionary<string, bool>(); // -- Move to manager base
-        //public Dictionary<WinState.EndgameID, bool> passageTokenUnlocks = new Dictionary<WinState.EndgameID, bool>(); // -- Move to manager base
         public List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>(); // Used for karma ladder screen. Maybe move to Misc hooks class?
 
-        // -- Move to manager base
-        /*
-        public int currentMaxKarma = 4;
-        public int hunterBonusCyclesGiven = 0;
-        public bool givenNeuronGlow = false;
-        public bool givenMark = false;
-        public bool givenRobo = false;
-        public bool givenPebblesOff = false;
-        public bool givenSpearPearlRewrite = false;
-        public string customStartDen = "SU_S01";
-        */
-
-        // These are just for reference. Should they stay here or move to manager base?
         // A map of every region to it's display name
         public static Dictionary<string, string> RegionNamesMap = new Dictionary<string, string>();
         // A map of the 'correct' region acronyms for each region depending on current slugcat
@@ -155,6 +138,14 @@ namespace RainWorldRandomizer
         };
 
         public static List<SlugcatStats.Name> CompatibleSlugcats = new List<SlugcatStats.Name>();
+
+        public enum GateBehavior
+        {
+            OnlyKey, // Only keys matter, karma not required
+            KeyAndKarma, // Need both key and karma
+            KeyOrKarma, // Key allows bypassing karma requirement
+            OnlyKarma // Keys not needed, normal gate behavior
+        }
 
         public void OnEnable()
         {
