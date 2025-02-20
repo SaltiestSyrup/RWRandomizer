@@ -410,7 +410,7 @@ namespace RainWorldRandomizer
                     hostNameTextBox.value, 
                     portTextBox.valueInt, 
                     slotNameTextBox.value, 
-                    passwordTextBox.value == "" ? passwordTextBox.value : null);
+                    passwordTextBox.value == "" ? null : passwordTextBox.value);
                 // Create / Update slot data information
                 slotDataLabelLeft.text =
                     $"Current Settings Information\n\n" +
