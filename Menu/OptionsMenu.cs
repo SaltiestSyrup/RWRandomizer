@@ -380,7 +380,8 @@ namespace RainWorldRandomizer
             runningY -= 35;
 
             // ----- Update / Button Logic -----
-            APCheckBox.OnChange += () =>
+
+            void APCheckedChange()
             {
                 bool APDisabled = !APCheckBox.GetValueBool();
                 // Disconnect connection when AP is turned off
@@ -401,6 +402,13 @@ namespace RainWorldRandomizer
                 deathLinkLabel.bumpBehav.greyedOut = APDisabled;
                 noKarmaLossCheckBox.greyedOut = APDisabled;
                 ignoreMenuDeathsCheckBox.greyedOut = APDisabled;
+            }
+
+            // Call the function once to initialize
+            APCheckedChange();
+            APCheckBox.OnChange += () =>
+            {
+                APCheckedChange();
             };
 
             // Attempt AP connection on click
@@ -411,6 +419,9 @@ namespace RainWorldRandomizer
                     portTextBox.valueInt, 
                     slotNameTextBox.value, 
                     passwordTextBox.value == "" ? null : passwordTextBox.value);
+
+                if (!ArchipelagoConnection.IsConnected) return;
+
                 // Create / Update slot data information
                 slotDataLabelLeft.text =
                     $"Current Settings Information\n\n" +
