@@ -1,0 +1,155 @@
+//SU - Outskirts
+SU_S05
+SU_S04
+SU_S01
+SU_S03
+
+//HI - Industrial Complex
+HI_S02
+HI_S04
+HI_S01
+HI_S05
+HI_S06
+
+//DS - Drainage System
+DS_S01r
+DS_S02l
+DS_S04
+
+//CC - Chimney Canopy
+CC_S01
+CC_S03
+CC_S04
+
+//GW - Garbage Wastes
+GW_S02
+GW_S06
+GW_S07
+
+//SH - Shaded Citadel
+SH_S10
+SH_S08
+SH_S02
+SH_S04
+
+//SL - Shoreline
+SL_S05
+SL_S03
+SL_S04
+SL_S07
+SL_S08
+SL_S09
+SL_S10
+
+//SI - Sky Islands
+SI_S05
+SI_S04
+SI_S03
+
+//LF - Farm Arrays
+LF_S01
+LF_S02
+LF_S03
+LF_S05
+LF_S07
+
+//UW - The Exterior
+UW_S07
+UW_S04
+UW_S01
+UW_S02
+UW_S05
+UW_S06
+
+//SS - Five Pebbles
+SS_S02
+SS_S01
+SS_S04
+
+//SB - Subterreanean 
+SB_S04
+SB_S02
+SB_S05
+SB_S06
+SB_S07
+
+//VS - Pipeyard
+VS_S05
+VS_S08
+VS_S01
+VS_S04
+
+//RM - The Rot
+RM_S01
+RM_LCS2
+RM_LCS1
+
+//LC - Metropolis
+LC_S01
+LC_A05
+LC_S03
+LC_S04
+LC_shelter_above
+LC_ShelterTrain1
+
+//DM - Looks To The Moon
+DM_STOP
+DM_S14
+DM_S01
+DM_S02
+DM_S11
+DM_S13
+
+//UG - Undergrowth
+UG_S01r
+UG_S02l
+UG_S04
+
+//CL - Silent Construct
+CL_S10
+CL_S12
+CL_LCS2
+CL_S02
+CL_S05
+CL_S14
+
+//LM - Waterfront Facility
+LM_S05
+LM_S06
+LM_S11
+LM_S13
+
+// ---- Sunlit Trail ----
+//FR - Far Shore
+FR_S07
+FR_S01
+FR_S03
+FR_S04
+FR_S08
+FR_S05
+
+//MF - Moss Fields
+MF_S02
+MF_S03
+MF_S04
+
+//CW - Chasing Wind
+CW_S01
+CW_S02
+CW_S03
+CW_S04
+
+//SD - Scorched District
+SD_S01
+SD_S02
+SD_S04
+SD_S05
+SD_S07
+SD_S08
+
+//PA - Pilgrims' Ascent
+PA_S01
+PA_S02
+PA_S03
+PA_S04
+PA_S05
