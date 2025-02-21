@@ -1,6 +1,7 @@
 ﻿using Menu;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,32 @@ namespace RainWorldRandomizer
 
             try
             {
+                // In order for used passages to always save, they need to consider their consumed status
+                Func<Func<WinState.EndgameTracker, bool>, WinState.EndgameTracker, bool> ProgressHook = (orig, tracker) =>
+                {
+                    return orig(tracker) || tracker.consumed;
+                };
+
+                _ = new Hook(typeof(WinState.BoolArrayTracker)
+                    .GetProperty(nameof(WinState.BoolArrayTracker.AnyProgressToSave))
+                    .GetGetMethod(),
+                    ProgressHook);
+
+                _ = new Hook(typeof(WinState.ListTracker)
+                    .GetProperty(nameof(WinState.ListTracker.AnyProgressToSave))
+                    .GetGetMethod(),
+                    ProgressHook);
+
+                _ = new Hook(typeof(WinState.FloatTracker)
+                    .GetProperty(nameof(WinState.FloatTracker.AnyProgressToSave))
+                    .GetGetMethod(),
+                    ProgressHook);
+
+                _ = new Hook(typeof(WinState.IntegerTracker)
+                    .GetProperty(nameof(WinState.IntegerTracker.AnyProgressToSave))
+                    .GetGetMethod(),
+                    ProgressHook);
+
                 IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
                 IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
                 IL.MoreSlugcats.CutsceneArtificerRobo.GetInput += ArtificerRoboIL;
