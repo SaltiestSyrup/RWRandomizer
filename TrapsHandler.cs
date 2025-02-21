@@ -156,6 +156,12 @@ namespace RainWorldRandomizer
             int[] connectedRooms = player.room.abstractRoom.connections;
             AbstractRoom chosenRoom = game.world.GetAbstractRoom(connectedRooms[UnityEngine.Random.Range(0, connectedRooms.Length)]);
 
+            if (chosenRoom == null)
+            {
+                Plugin.Log.LogError("Trap failed to find a valid room to spawn creature in");
+                return;
+            }
+
             AbstractCreature crit = new AbstractCreature(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
             
             chosenRoom.AddEntity(crit);
