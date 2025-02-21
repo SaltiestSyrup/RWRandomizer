@@ -5,8 +5,8 @@
     "target_game_version": "v1.9.15b",
     "authors": "SaltySyrup",
     "description": "A randomizer game mode that forces you to complete 'checks' to unlock gates to other regions",
-    "requirements": [],
-    "requirements_names": [],
+    "requirements": ["rwremix"],
+    "requirements_names": ["Rain World Remix"],
     "priorities": ["regionkit"],
     "tags": ["Game Mechanics", "Game Modes"],
     "checksum_override_version": false

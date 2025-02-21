@@ -376,18 +376,16 @@ namespace RainWorldRandomizer
                 gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
             }
 
-            // TODO: Add some check to ensure player doesn't use PPwS without Remix enabled
             // TODO: Force setting remix options isn't a good thing, there should be some way around this
-            if (ModManager.MMF)
+            
+            // Force value of PPwS in remix based on slot data
+            MMF.cfgSurvivorPassageNotRequired.Value = PPwS > 0;
+            // Force assist values based on gate behavior
+            if (gateBehavior == Plugin.GateBehavior.KeyAndKarma)
             {
-                // Force value of PPwS in remix based on slot data
-                MMF.cfgSurvivorPassageNotRequired.Value = PPwS > 0;
-                // Force assist values based on gate behavior
-                if (gateBehavior == Plugin.GateBehavior.KeyAndKarma)
-                {
-                    MMF.cfgGlobalMonkGates.Value = true;
-                }
+                MMF.cfgGlobalMonkGates.Value = true;
             }
+
             ArchipelagoConnection.PPwS = PPwS > 0;
 
             DeathLinkHandler.Active = deathLink > 0;
