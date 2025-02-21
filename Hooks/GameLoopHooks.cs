@@ -284,9 +284,28 @@ namespace RainWorldRandomizer
                 {
                     if (currentRoom.updateList[j] is DataPearl pearl)
                     {
-                        string locName = Plugin.RandoManager is ManagerArchipelago
-                            ? $"Pearl-{pearl.AbstractPearl.dataPearlType.value}-{currentRoom.abstractRoom.name.Substring(0, 2)}"
-                            : $"Pearl-{pearl.AbstractPearl.dataPearlType.value}";
+                        string locName = $"Pearl-{pearl.AbstractPearl.dataPearlType.value}";
+
+                        if (Plugin.RandoManager is ManagerArchipelago)
+                        {
+                            // Check if this pearl matching the current region is valid
+                            if (Plugin.RandoManager.LocationExists(locName + currentRoom.abstractRoom.name.Substring(0, 2)))
+                            {
+                                locName += $"-{currentRoom.abstractRoom.name.Substring(0, 2)}";
+                            }
+                            else
+                            {
+                                // More costly lookup to find where this pearl comes from
+                                foreach (var region in self.rainWorld.regionDataPearls)
+                                {
+                                    if (region.Value.Contains(pearl.AbstractPearl.dataPearlType))
+                                    {
+                                        locName += $"-{region.Key.ToUpperInvariant()}";
+                                        break;
+                                    }
+                                }
+                            }
+                        }
 
                         Plugin.RandoManager.GiveLocation(locName);
                     }
