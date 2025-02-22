@@ -435,10 +435,13 @@ namespace RainWorldRandomizer
 
         private static void MessageReceived(LogMessage message)
         {
-            Plugin.Log.LogInfo($"From server: {message}");
+            Plugin.Log.LogInfo($"[Server Message] {message}");
 
-            if (message is ItemSendLogMessage 
-                || message is PlayerSpecificLogMessage)
+            if ((message is ItemSendLogMessage || message is PlayerSpecificLogMessage) // Filter only items and player specific messages
+                && !(message is JoinLogMessage) // Filter out join logs
+                && !(message is LeaveLogMessage) // Filter out leave logs
+                && !(message is TagsChangedLogMessage) // Filter out tag change logs
+                && (!(message is ChatLogMessage chatMessage) || !chatMessage.Message.StartsWith("!"))) // Filter out chat commands
             {
                 Plugin.Singleton.notifQueue.Enqueue(message.ToString());
             }
