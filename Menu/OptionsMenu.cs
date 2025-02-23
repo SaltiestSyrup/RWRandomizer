@@ -126,9 +126,9 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
                 new object[] { "Ignore Menu Deaths" }));
 
-            Plugin.disableTokenCollection = config.Bind<bool>("DisableTokenCollection", false,
-                new ConfigurableInfo("Disable collection of tokens, preventing pop-up text and broadcast chatlogs from appearing", null, "",
-                new object[] { "Disable token collection" }));
+            Plugin.disableTokenText = config.Bind<bool>("DisableTokenCollection", false,
+                new ConfigurableInfo("Disable pop-up text and chatlogs from appearing when collecting tokens", null, "",
+                new object[] { "Disable token text" }));
         }
 
         public override void Initialize()
@@ -383,14 +383,14 @@ namespace RainWorldRandomizer
             };
             runningY -= 35;
 
-            OpCheckBox disableTokenCollectionCheckBox = new OpCheckBox(Plugin.disableTokenCollection, new Vector2(420f, runningY))
+            OpCheckBox disableTokenTextCheckBox = new OpCheckBox(Plugin.disableTokenText, new Vector2(420f, runningY))
             {
-                description = Translate(Plugin.disableTokenCollection.info.description)
+                description = Translate(Plugin.disableTokenText.info.description)
             };
-            OpLabel disableTokenCollectionLabel = new OpLabel(460f, runningY, Translate(Plugin.disableTokenCollection.info.Tags[0] as string))
+            OpLabel disableTokenTextLabel = new OpLabel(460f, runningY, Translate(Plugin.disableTokenText.info.Tags[0] as string))
             {
-                bumpBehav = disableTokenCollectionCheckBox.bumpBehav,
-                description = disableTokenCollectionCheckBox.description
+                bumpBehav = disableTokenTextCheckBox.bumpBehav,
+                description = disableTokenTextCheckBox.description
             };
             runningY -= 35;
 
@@ -492,8 +492,8 @@ namespace RainWorldRandomizer
                 noKarmaLossLabel,
                 ignoreMenuDeathsCheckBox,
                 ignoreMenuDeathsLabel,
-                disableTokenCollectionCheckBox,
-                disableTokenCollectionLabel,
+                disableTokenTextCheckBox,
+                disableTokenTextLabel,
             });
         }
 

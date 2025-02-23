@@ -202,7 +202,7 @@ namespace RainWorldRandomizer
             orig(self, player);
 
             // Prevent TextPrompt from being issued.
-            if (Plugin.disableTokenCollection.Value) self.anythingUnlocked = false;
+            if (Plugin.disableTokenText.Value) self.anythingUnlocked = false;
 
             string tokenString = (self.placedObj.data as CollectToken.CollectTokenData).tokenString;
 
@@ -527,7 +527,7 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// If <see cref="Plugin.disableTokenCollection"/> is enabled, prevent chatlogs from happening.
+        /// If <see cref="Plugin.disableTokenText"/> is enabled, prevent chatlogs from happening.
         /// </summary>
         private void Player_ProcessChatLog(ILContext il)
         {
@@ -535,17 +535,17 @@ namespace RainWorldRandomizer
 
             // Prevent stun and mushroom effect (branch interception at 0026).
             c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<ChatlogData.ChatlogID>).GetMethod("op_Inequality")));
-            bool PreventStun(bool prev) => prev && !Plugin.disableTokenCollection.Value;
+            bool PreventStun(bool prev) => prev && !Plugin.disableTokenText.Value;
             c.EmitDelegate<Func<bool, bool>>(PreventStun);
 
             // Prevent chatlog from being displayed (branch interception at 00b1).
             c.GotoNext(MoveType.Before, x => x.MatchLdcI4(60));  // 00aa
-            int PreventChatlog(int prev) => Plugin.disableTokenCollection.Value ? 59 : prev;
+            int PreventChatlog(int prev) => Plugin.disableTokenText.Value ? 59 : prev;
             c.EmitDelegate<Func<int, int>>(PreventChatlog);
         }
 
         /// <summary>
-        /// If <see cref="Plugin.disableTokenCollection"/> is enabled, prevent Slugcat from being stopped by touching a chatlog token.
+        /// If <see cref="Plugin.disableTokenText"/> is enabled, prevent Slugcat from being stopped by touching a chatlog token.
         /// </summary>
         private void Player_InitChatLog(ILContext il)
         {
@@ -553,7 +553,7 @@ namespace RainWorldRandomizer
 
             // Prevent the `for` loop from running (branch interception at 0038).
             c.GotoNext(MoveType.Before, x => x.MatchConvI4());  // 0037
-            int PreventStop(int prev) => Plugin.disableTokenCollection.Value ? 0 : prev;
+            int PreventStop(int prev) => Plugin.disableTokenText.Value ? 0 : prev;
             c.EmitDelegate<Func<int, int>>(PreventStop);
         }
 
