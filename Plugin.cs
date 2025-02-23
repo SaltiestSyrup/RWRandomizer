@@ -110,6 +110,7 @@ namespace RainWorldRandomizer
         public static Configurable<bool> disableNotificationQueue;
         public static Configurable<bool> archipelagoPreventDLKarmaLoss;
         public static Configurable<bool> archipelagoIgnoreMenuDL;
+        public static Configurable<bool> disableTokenCollection;
         #endregion
 
         //public static bool isRandomizerActive = false; // -- Move to manager base

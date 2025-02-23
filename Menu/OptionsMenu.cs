@@ -125,6 +125,10 @@ namespace RainWorldRandomizer
             Plugin.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
                 new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
                 new object[] { "Ignore Menu Deaths" }));
+
+            Plugin.disableTokenCollection = config.Bind<bool>("DisableTokenCollection", false,
+                new ConfigurableInfo("Disable collection of tokens, preventing pop-up text and broadcast chatlogs from appearing", null, "",
+                new object[] { "Disable token collection" }));
         }
 
         public override void Initialize()
@@ -379,6 +383,17 @@ namespace RainWorldRandomizer
             };
             runningY -= 35;
 
+            OpCheckBox disableTokenCollectionCheckBox = new OpCheckBox(Plugin.disableTokenCollection, new Vector2(420f, runningY))
+            {
+                description = Translate(Plugin.disableTokenCollection.info.description)
+            };
+            OpLabel disableTokenCollectionLabel = new OpLabel(460f, runningY, Translate(Plugin.disableTokenCollection.info.Tags[0] as string))
+            {
+                bumpBehav = disableTokenCollectionCheckBox.bumpBehav,
+                description = disableTokenCollectionCheckBox.description
+            };
+            runningY -= 35;
+
             // ----- Update / Button Logic -----
 
             void APCheckedChange()
@@ -477,6 +492,8 @@ namespace RainWorldRandomizer
                 noKarmaLossLabel,
                 ignoreMenuDeathsCheckBox,
                 ignoreMenuDeathsLabel,
+                disableTokenCollectionCheckBox,
+                disableTokenCollectionLabel,
             });
         }
 
