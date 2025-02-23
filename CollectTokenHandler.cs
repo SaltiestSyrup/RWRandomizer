@@ -32,6 +32,8 @@ namespace RainWorldRandomizer
             {
                 IL.Room.Loaded += ILRoomLoaded;
                 IL.RainWorld.BuildTokenCache += ILBuildTokenCache;
+                IL.Player.ProcessChatLog += Player_ProcessChatLog;
+                IL.Player.InitChatLog += Player_InitChatLog;
             }
             catch (Exception e)
             {
@@ -45,6 +47,8 @@ namespace RainWorldRandomizer
 
             IL.Room.Loaded -= ILRoomLoaded;
             IL.RainWorld.BuildTokenCache -= ILBuildTokenCache;
+            IL.Player.ProcessChatLog -= Player_ProcessChatLog;
+            IL.Player.InitChatLog -= Player_InitChatLog;
         }
 
         public void LoadAvailableTokens(RainWorld rainWorld, SlugcatStats.Name slugcat)
@@ -196,6 +200,9 @@ namespace RainWorldRandomizer
         public void OnTokenPop(On.CollectToken.orig_Pop orig, CollectToken self, Player player)
         {
             orig(self, player);
+
+            // Prevent TextPrompt from being issued.
+            if (Plugin.disableTokenCollection.Value) self.anythingUnlocked = false;
 
             string tokenString = (self.placedObj.data as CollectToken.CollectTokenData).tokenString;
 
@@ -517,6 +524,37 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogError("Failed Hooking for ILBuildTokenCache");
                 Plugin.Log.LogError(e);
             }
+        }
+
+        /// <summary>
+        /// If <see cref="Plugin.disableTokenCollection"/> is enabled, prevent chatlogs from happening.
+        /// </summary>
+        private void Player_ProcessChatLog(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // Prevent stun and mushroom effect (branch interception at 0026).
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<ChatlogData.ChatlogID>).GetMethod("op_Inequality")));
+            bool PreventStun(bool prev) => prev && !Plugin.disableTokenCollection.Value;
+            c.EmitDelegate<Func<bool, bool>>(PreventStun);
+
+            // Prevent chatlog from being displayed (branch interception at 00b1).
+            c.GotoNext(MoveType.Before, x => x.MatchLdcI4(60));  // 00aa
+            int PreventChatlog(int prev) => Plugin.disableTokenCollection.Value ? 59 : prev;
+            c.EmitDelegate<Func<int, int>>(PreventChatlog);
+        }
+
+        /// <summary>
+        /// If <see cref="Plugin.disableTokenCollection"/> is enabled, prevent Slugcat from being stopped by touching a chatlog token.
+        /// </summary>
+        private void Player_InitChatLog(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // Prevent the `for` loop from running (branch interception at 0038).
+            c.GotoNext(MoveType.Before, x => x.MatchConvI4());  // 0037
+            int PreventStop(int prev) => Plugin.disableTokenCollection.Value ? 0 : prev;
+            c.EmitDelegate<Func<int, int>>(PreventStop);
         }
 
         public static Dictionary<string, List<SlugcatStats.Name>> GetRoomAccessibility(string regionName)
