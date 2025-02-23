@@ -72,6 +72,10 @@ namespace RainWorldRandomizer
                 "Gates will have their karma requirements decreased to match", null, "", 
                     new object[] { "Start with low karma" }));
 
+            Plugin.disableTokenText = config.Bind<bool>("DisableTokenText", false,
+                new ConfigurableInfo("Prevent pop-up text and chatlogs from appearing when collecting tokens", null, "",
+                new object[] { "Disable token text" }));
+
             // ----- MSC -----
             Plugin.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
                 new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (Where applicable)", null, "", 
@@ -125,10 +129,6 @@ namespace RainWorldRandomizer
             Plugin.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
                 new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
                 new object[] { "Ignore Menu Deaths" }));
-
-            Plugin.disableTokenText = config.Bind<bool>("DisableTokenCollection", false,
-                new ConfigurableInfo("Disable pop-up text and chatlogs from appearing when collecting tokens", null, "",
-                new object[] { "Disable token text" }));
         }
 
         public override void Initialize()
@@ -383,17 +383,6 @@ namespace RainWorldRandomizer
             };
             runningY -= 35;
 
-            OpCheckBox disableTokenTextCheckBox = new OpCheckBox(Plugin.disableTokenText, new Vector2(420f, runningY))
-            {
-                description = Translate(Plugin.disableTokenText.info.description)
-            };
-            OpLabel disableTokenTextLabel = new OpLabel(460f, runningY, Translate(Plugin.disableTokenText.info.Tags[0] as string))
-            {
-                bumpBehav = disableTokenTextCheckBox.bumpBehav,
-                description = disableTokenTextCheckBox.description
-            };
-            runningY -= 35;
-
             // ----- Update / Button Logic -----
 
             void APCheckedChange()
@@ -492,8 +481,6 @@ namespace RainWorldRandomizer
                 noKarmaLossLabel,
                 ignoreMenuDeathsCheckBox,
                 ignoreMenuDeathsLabel,
-                disableTokenTextCheckBox,
-                disableTokenTextLabel,
             });
         }
 
@@ -514,6 +501,7 @@ namespace RainWorldRandomizer
                 Plugin.giveItemUnlocks,
                 Plugin.itemShelterDelivery,
                 Plugin.givePassageUnlocks,
+                Plugin.disableTokenText,
             };
 
             boolConfigOrderMSC = new Configurable<bool>[]
