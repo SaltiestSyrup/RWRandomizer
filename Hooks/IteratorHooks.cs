@@ -1,14 +1,8 @@
 ﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MoreSlugcats;
-
-//using MoreSlugcats;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -279,13 +273,6 @@ namespace RainWorldRandomizer
             {
                 ILCursor c = new ILCursor(il);
 
-                
-                //c.GotoNext(
-                //    MoveType.Before,
-                //    x => x.MatchLdarg(0),
-                //    x => x.MatchCallOrCallvirt(typeof(MSCRoomSpecificScript.RM_CORE_EnergyCell).GetMethod(nameof(MSCRoomSpecificScript.RM_CORE_EnergyCell.ReloadRooms)))
-                //    );
-
                 // Make the game think the power is still on if we turned it off
                 while(c.TryGotoNext(
                     MoveType.After,
@@ -296,11 +283,10 @@ namespace RainWorldRandomizer
                     x => x.MatchIsinst(typeof(StoryGameSession)),
                     x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
                     x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.miscWorldSaveData))),
-                    x => x.MatchLdfld(typeof(MiscWorldSaveData).GetField(nameof(MiscWorldSaveData.pebblesEnergyTaken))),
-                    x => x.MatchBrtrue(out _)
+                    x => x.MatchLdfld(typeof(MiscWorldSaveData).GetField(nameof(MiscWorldSaveData.pebblesEnergyTaken)))
                     ))
                 {
-                    c.Index--;
+                    //c.Index--;
                     c.EmitDelegate<Func<bool, bool>>((energyTaken) =>
                     {
                         if (Plugin.UseEnergyCell)
@@ -311,25 +297,27 @@ namespace RainWorldRandomizer
                     });
                 }
 
+                ILCursor c1 = new ILCursor(il);
+
                 // Skip over code for giving player the Mass Rarefaction cell
-                c.GotoNext(
-                    MoveType.Before,
+                c1.GotoNext(
+                    MoveType.After,
                     x => x.MatchCallOrCallvirt(typeof(HUD.TextPrompt).GetMethod(nameof(HUD.TextPrompt.AddMessage), 
                         new Type[] { typeof(string), typeof(int), typeof(int), typeof(bool), typeof(bool) }))
                     );
 
-                ILLabel jump = c.MarkLabel();
+                ILLabel jump = c1.MarkLabel();
 
-                c.GotoPrev(
+                c1.GotoPrev(
                     MoveType.After,
                     x => x.MatchLdarg(0),
                     x => x.MatchLdfld(typeof(MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell).GetField(nameof(MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.myEnergyCell), BindingFlags.NonPublic | BindingFlags.Instance)),
                     x => x.MatchCallOrCallvirt(typeof(Room).GetMethod(nameof(Room.RemoveObject)))
                     );
-                c.MoveAfterLabels();
+                c1.MoveAfterLabels();
 
-                c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate<Func<MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell, bool>>(self =>
+                c1.Emit(OpCodes.Ldarg_0);
+                c1.EmitDelegate<Func<MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell, bool>>(self =>
                 {
                     if (Plugin.UseEnergyCell)
                     {
@@ -341,6 +329,7 @@ namespace RainWorldRandomizer
                             (self.room.game.session as StoryGameSession).saveState.miscWorldSaveData.pebblesEnergyTaken = false;
                         }
 
+                        self.myEnergyCell = null;
                         self.ReloadRooms();
                         return true;
                     }
@@ -349,14 +338,11 @@ namespace RainWorldRandomizer
                         return false;
                     }
                 });
-                c.Emit(OpCodes.Brtrue, jump);
-
-                //RandomizerMain.Log.LogDebug(il);
+                c1.Emit(OpCodes.Brtrue, jump);
             }
             catch (Exception e)
             {
                 Plugin.Log.LogError("Failed Hooking for RotCoreRoomUpdateIL");
-                //RandomizerMain.Log.LogDebug(il);
                 Plugin.Log.LogError(e);
             }
         }
