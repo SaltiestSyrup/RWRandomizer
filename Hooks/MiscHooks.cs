@@ -62,6 +62,7 @@ namespace RainWorldRandomizer
                 IL.Spear.HitSomethingWithoutStopping += SpearmasterMushroomAddEat;
                 IL.Menu.EndgameTokens.ctor += EngameTokensCtorIL;
                 IL.Menu.SleepAndDeathScreen.AddPassageButton += AddPassageButtonIL;
+                IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
             }
             catch (Exception e)
             {
@@ -88,6 +89,7 @@ namespace RainWorldRandomizer
             IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
             IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
             IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
+            IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -739,6 +741,30 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldarg_1);
             c.EmitDelegate<Action<Spear, PhysicalObject>>(Delegate);
+        }
+        
+        // Filter the next predicted food item to be accessible to the current slugcat
+        public static void ILFoodQuestUpdateNextPredictedItem(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            ILLabel jump = null;
+            c.GotoNext(
+                MoveType.After,
+                //x => x.MatchLdfld(typeof(GourmandMeter).GetField(nameof(GourmandMeter.CurrentProgress))),
+                x => x.MatchLdloc(2),
+                x => x.MatchCallOrCallvirt(out _),
+                x => x.MatchLdcI4(0),
+                x => x.MatchBgt(out jump)
+                );
+
+            c.Emit(OpCodes.Ldloc_2); // i
+            c.EmitDelegate<Func<int, bool>>((i) =>
+            {
+                // Returns whether or not the current slugcat can eat this food
+                return Constants.slugcatFoodQuestAccessibility[Plugin.RandoManager.currentSlugcat][i];
+            });
+            c.Emit(OpCodes.Brfalse, jump);
         }
     }
 }
