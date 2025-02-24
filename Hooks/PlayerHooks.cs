@@ -137,6 +137,23 @@ namespace RainWorldRandomizer
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate((Func<AbstractPhysicalObject, Player, AbstractPhysicalObject>)objectReplace);
 
+                // Make item delivery spit up faster
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.swallowAndRegurgitateCounter))),
+                    x => x.MatchLdcI4(110)
+                    );
+
+                c.EmitDelegate<Func<int, int>>((origTime) =>
+                {
+                    if (!Plugin.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    {
+                        // This time needs to be longer than the 90 ticks swallowing an item takes
+                        return 95;
+                    }
+                    return origTime;
+                });
+
                 c.GotoNext(
                     MoveType.After,
                     x => x.MatchLdarg(0),
