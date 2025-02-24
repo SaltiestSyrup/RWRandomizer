@@ -108,6 +108,7 @@ namespace RainWorldRandomizer
         public static Configurable<string> archipelagoSlotName;
         public static Configurable<string> archipelagoPassword;
         public static Configurable<bool> disableNotificationQueue;
+        public static Configurable<bool> archipelagoDeathLinkOverride;
         public static Configurable<bool> archipelagoPreventDLKarmaLoss;
         public static Configurable<bool> archipelagoIgnoreMenuDL;
         public static Configurable<bool> disableTokenText;

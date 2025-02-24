@@ -10,6 +10,7 @@ namespace RainWorldRandomizer
     {
         private Configurable<bool>[] boolConfigOrderGen;
         private Configurable<bool>[] boolConfigOrderMSC;
+        private Configurable<bool>[] boolConfigOrderAP;
         //private Configurable<int>[] intConfigOrder;
 
         public OptionsMenu()
@@ -121,7 +122,11 @@ namespace RainWorldRandomizer
             Plugin.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
                 new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
                 new object[] { "Disable notifications" }));
-                
+
+            Plugin.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
+                new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here", null, "",
+                new object[] { "Enable DeathLink" }));
+
             Plugin.archipelagoPreventDLKarmaLoss = config.Bind<bool>("ArchipelagoPreventDLKarmaLoss", false,
                 new ConfigurableInfo("Whether deaths received from DeathLink should ignore the normal karma loss mechanics", null, "",
                 new object[] { "Prevent Karma Loss" }));
@@ -343,22 +348,79 @@ namespace RainWorldRandomizer
             OpLabelLong slotDataLabelLeft = new OpLabelLong(new Vector2(350f, runningY - 100f), new Vector2(200f, 100f), "", false);
             OpLabelLong slotDataLabelRight = new OpLabelLong(new Vector2(550f, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
 
+            Tabs[tabIndex].AddItems(new UIelement[]
+            {
+                APCheckBox,
+                APLabel,
+                hostNameTextBox,
+                hostNameLabel,
+                portTextBox,
+                portLabel,
+                slotNameTextBox,
+                slotNameLabel,
+                passwordTextBox,
+                passwordLabel,
+                connectButton,
+                disconnectButton,
+                connectResultLabel,
+                slotDataLabelLeft,
+                slotDataLabelRight,
+            });
+
             // ----- Right side Configurables -----
             runningY = 550f;
 
-            OpCheckBox disableNotificationBox = new OpCheckBox(Plugin.disableNotificationQueue, new Vector2(420f, runningY))
+            // Add boolean configs
+            foreach (Configurable<bool> config in boolConfigOrderAP)
             {
-                description = Translate(Plugin.disableNotificationQueue.info.description)
-            };
-            OpLabel disableNotificationLabel = new OpLabel(460f, runningY, Translate(Plugin.disableNotificationQueue.info.Tags[0] as string))
-            {
-                bumpBehav = disableNotificationBox.bumpBehav,
-                description = disableNotificationBox.description
-            };
-            runningY -= 55;
+                if (config == null)
+                {
+                    runningY -= 35;
+                    continue;
+                }
+
+                OpCheckBox opCheckBox = new OpCheckBox(config, new Vector2(420f, runningY))
+                {
+                    description = Translate(config.info.description)
+                };
+
+                Tabs[tabIndex].AddItems(new UIelement[]
+                {
+                    opCheckBox,
+                    new OpLabel(460f, runningY, Translate(config.info.Tags[0] as string))
+                    {
+                        bumpBehav = opCheckBox.bumpBehav,
+                        description = opCheckBox.description
+                    }
+                });
+
+                runningY -= 35;
+            }
+
+            //OpCheckBox disableNotificationBox = new OpCheckBox(Plugin.disableNotificationQueue, new Vector2(420f, runningY))
+            //{
+            //    description = Translate(Plugin.disableNotificationQueue.info.description)
+            //};
+            //OpLabel disableNotificationLabel = new OpLabel(460f, runningY, Translate(Plugin.disableNotificationQueue.info.Tags[0] as string))
+            //{
+            //    bumpBehav = disableNotificationBox.bumpBehav,
+            //    description = disableNotificationBox.description
+            //};
+            //runningY -= 55;
 
             OpLabel deathLinkLabel = new OpLabel(440f, runningY, Translate("Death Link Settings"));
             deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
+            runningY -= 35;
+
+            OpCheckBox deathLinkOverrideCheckbox = new OpCheckBox(Plugin.archipelagoDeathLinkOverride, new Vector2(420f, runningY))
+            {
+                description = Translate(Plugin.archipelagoDeathLinkOverride.info.description)
+            };
+            OpLabel deathLinkOverrrideLabel = new OpLabel(460f, runningY, Translate(Plugin.archipelagoDeathLinkOverride.info.Tags[0] as string))
+            {
+                bumpBehav = deathLinkOverrideCheckbox.bumpBehav,
+                description = deathLinkOverrideCheckbox.description
+            };
             runningY -= 35;
 
             OpCheckBox noKarmaLossCheckBox = new OpCheckBox(Plugin.archipelagoPreventDLKarmaLoss, new Vector2(420f, runningY))
@@ -402,8 +464,9 @@ namespace RainWorldRandomizer
                 passwordTextBox.greyedOut = APDisabled;
                 connectButton.greyedOut = APDisabled;
                 disconnectButton.greyedOut = APDisabled;
-                disableNotificationBox.greyedOut = APDisabled;
+                //disableNotificationBox.greyedOut = APDisabled;
                 deathLinkLabel.bumpBehav.greyedOut = APDisabled;
+                deathLinkOverrideCheckbox.greyedOut = APDisabled;
                 noKarmaLossCheckBox.greyedOut = APDisabled;
                 ignoreMenuDeathsCheckBox.greyedOut = APDisabled;
             }
@@ -425,6 +488,8 @@ namespace RainWorldRandomizer
                     passwordTextBox.value == "" ? null : passwordTextBox.value);
 
                 if (!ArchipelagoConnection.Authenticated) return;
+
+                deathLinkOverrideCheckbox.SetValueBool(DeathLinkHandler.Active);
 
                 // Create / Update slot data information
                 slotDataLabelLeft.text =
@@ -456,27 +521,20 @@ namespace RainWorldRandomizer
                 }
             };
 
+            deathLinkOverrideCheckbox.OnChange += () =>
+            {
+                // TODO: DeathLink probably shouldn't send a toggle to server every time the box is clicked, change to happen on apply settings
+                DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
+            };
+
             // ----- Populate Tab -----
             Tabs[tabIndex].AddItems(new UIelement[]
             {
-                APCheckBox,
-                APLabel,
-                hostNameTextBox,
-                hostNameLabel,
-                portTextBox,
-                portLabel,
-                slotNameTextBox,
-                slotNameLabel,
-                passwordTextBox,
-                passwordLabel,
-                connectButton,
-                disconnectButton,
-                connectResultLabel,
-                slotDataLabelLeft,
-                slotDataLabelRight,
-                disableNotificationBox,
-                disableNotificationLabel,
+                //disableNotificationBox,
+                //disableNotificationLabel,
                 deathLinkLabel,
+                deathLinkOverrideCheckbox,
+                deathLinkOverrrideLabel,
                 noKarmaLossCheckBox,
                 noKarmaLossLabel,
                 ignoreMenuDeathsCheckBox,
@@ -512,6 +570,13 @@ namespace RainWorldRandomizer
                 Plugin.useFoodQuestChecks,
                 Plugin.useEnergyCell,
                 Plugin.useSMTokens,
+            };
+
+            boolConfigOrderAP = new Configurable<bool>[]
+            {
+                Plugin.disableNotificationQueue,
+                //Plugin.itemShelterDelivery,
+                //Plugin.disableTokenText,
             };
         }
     }
