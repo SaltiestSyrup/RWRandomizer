@@ -61,6 +61,7 @@ namespace RainWorldRandomizer
                 //IL.WinState.CreateAndAddTracker += WinStateCreateTrackerIL;
                 IL.Spear.HitSomethingWithoutStopping += SpearmasterMushroomAddEat;
                 IL.Menu.EndgameTokens.ctor += EngameTokensCtorIL;
+                IL.Menu.SleepAndDeathScreen.AddPassageButton += AddPassageButtonIL;
             }
             catch (Exception e)
             {
@@ -86,6 +87,7 @@ namespace RainWorldRandomizer
             IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
             IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
             IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
+            IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -554,6 +556,23 @@ namespace RainWorldRandomizer
                 // Make passage button appear if any token has been found
                 return flag || Plugin.RandoManager.GetPassageTokensStatus().Values.Any(v => v);
             });
+        }
+
+        public static void AddPassageButtonIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // Remove check for Hunter / Saint to let them use passages
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(typeof(KarmaLadderScreen).GetField(nameof(KarmaLadderScreen.saveState))),
+                x => x.MatchBrfalse(out _)
+                );
+            
+            c.Index--;
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldc_I4, 0);
         }
 
         public static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, Menu.EndgameTokens self, WinState.EndgameID ID)

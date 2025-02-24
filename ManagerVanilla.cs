@@ -228,7 +228,6 @@ namespace RainWorldRandomizer
             }
 
             // Populate Passage Unlocks
-            // Hunter can't use passages, so don't include the tokens
             foreach (string ID in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
             {
                 bool motherUnlocked = ModManager.MSC && (Plugin.Singleton.rainWorld.progression.miscProgressionData.beaten_Gourmand_Full || MoreSlugcats.MoreSlugcats.chtUnlockSlugpups.Value);
@@ -266,10 +265,7 @@ namespace RainWorldRandomizer
                 {
                     randomizerKey.Add($"Passage-{ID}", null);
                 }
-                if (Plugin.GivePassageUnlocks
-                    && (currentSlugcat != SlugcatStats.Name.Red
-                        && (!ModManager.MSC || currentSlugcat != MoreSlugcatsEnums.SlugcatStatsName.Saint)) // Hunter and Saint can't use passages
-                    && ID != "Gourmand")
+                if (Plugin.GivePassageUnlocks && ID != "Gourmand")
                 {
                     AllUnlocks.Add(new Unlock(Unlock.UnlockType.Token, ID));
                     passageTokensStatus.Add(new WinState.EndgameID(ID), false);
