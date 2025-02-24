@@ -1,4 +1,5 @@
-﻿using Mono.Cecil.Cil;
+﻿using Archipelago.MultiClient.Net.Helpers;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MoreSlugcats;
 using System;
@@ -24,10 +25,10 @@ namespace RainWorldRandomizer
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update += OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update += OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update += OnSpearEndingUpdate;
-            On.RegionState.AdaptRegionStateToWorld += OnAdaptRegionStateToWorld;
 
             try
             {
+                IL.RainWorldGame.ctor += RainWorldGameCtorIL;
                 IL.WinState.CycleCompleted += ILCycleCompleted;
             }
             catch (Exception e)
@@ -47,7 +48,7 @@ namespace RainWorldRandomizer
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update -= OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update -= OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update -= OnSpearEndingUpdate;
-            On.RegionState.AdaptRegionStateToWorld -= OnAdaptRegionStateToWorld;
+            IL.RainWorldGame.ctor -= RainWorldGameCtorIL;
             IL.WinState.CycleCompleted -= ILCycleCompleted;
         }
 
@@ -157,18 +158,53 @@ namespace RainWorldRandomizer
             Plugin.Singleton.game = self;
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
-
+            
             self.rainWorld.progression.ReloadLocksList();
             self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
 
-            // The glow is not death persistent, so I have to make sure it stays applied
+            // Ensure found state triggers are set
             self.GetStorySession.saveState.theGlow = Plugin.RandoManager.GivenNeuronGlow;
             self.GetStorySession.saveState.deathPersistentSaveData.theMark = Plugin.RandoManager.GivenMark;
-
             self.GetStorySession.saveState.hasRobo = Plugin.RandoManager.GivenRobo;
             self.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = Plugin.RandoManager.GivenPebblesOff;
             self.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
-            }
+        }
+
+        public static void RainWorldGameCtorIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // Add shelter delivery after overworld is created, but before first room is realized
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdnull(),
+                x => x.MatchStloc(6)
+                );
+            c.MoveAfterLabels();
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldloc_0); // num, is the room index of the spawn room
+            c.EmitDelegate<Action<RainWorldGame, int>>((self, roomIndex) =>
+            {
+                // Spawn pending items in spawn room
+                if (Plugin.ItemShelterDelivery)
+                {
+                    while (Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    {
+                        AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
+                        try
+                        {
+                            self.world.GetAbstractRoom(roomIndex).AddEntity(obj);
+                        }
+                        catch (Exception e)
+                        {
+                            Plugin.Log.LogError("Failed to spawn object in starting room");
+                            Plugin.Log.LogError(e);
+                        }
+                    }
+                }
+            });
+        }
 
         // Remove Hunter's starting macguffins
         public static void OnHardmodeStart(On.HardmodeStart.orig_Update orig, HardmodeStart self, bool eu)
@@ -409,21 +445,6 @@ namespace RainWorldRandomizer
                 && self.SMEndingPhase == MSCRoomSpecificScript.SpearmasterEnding.SMEndingState.PEARLDATA)
             {
                 managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
-            }
-        }
-
-        public static void OnAdaptRegionStateToWorld(On.RegionState.orig_AdaptRegionStateToWorld orig, RegionState self, int playerShelter, int activeGate)
-        {
-            orig(self, playerShelter, activeGate);
-
-            if (!Plugin.ItemShelterDelivery) return;
-
-            int count = Plugin.Singleton.itemDeliveryQueue.Count;
-            for (int i = 0; i < count; i++)
-            {
-                AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(playerShelter));
-                if (obj != null) // Sometimes shelters have a -1 index, we can't spawn items in these
-                    self.savedObjects.Add(obj.ToString());
             }
         }
     }
