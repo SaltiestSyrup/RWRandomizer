@@ -377,16 +377,6 @@ namespace RainWorldRandomizer
                 gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
             }
 
-            // TODO: Force setting remix options isn't a good thing, there should be some way around this
-            
-            // Force value of PPwS in remix based on slot data
-            MMF.cfgSurvivorPassageNotRequired.Value = PPwS > 0;
-            // Force assist values based on gate behavior
-            if (gateBehavior == Plugin.GateBehavior.KeyAndKarma)
-            {
-                MMF.cfgGlobalMonkGates.Value = true;
-            }
-
             ArchipelagoConnection.PPwS = PPwS > 0;
 
             DeathLinkHandler.Active = deathLink > 0;

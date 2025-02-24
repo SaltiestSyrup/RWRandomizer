@@ -63,6 +63,7 @@ namespace RainWorldRandomizer
                 IL.Menu.EndgameTokens.ctor += EngameTokensCtorIL;
                 IL.Menu.SleepAndDeathScreen.AddPassageButton += AddPassageButtonIL;
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
+                IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
             }
             catch (Exception e)
             {
@@ -90,6 +91,7 @@ namespace RainWorldRandomizer
             IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
             IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
+            IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -455,6 +457,30 @@ namespace RainWorldRandomizer
             }
 
             orig(self);
+        }
+
+        public static void CanUseUnlockedGatesIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // Act as if Monk style karma gates is set if player YAML needs it
+            ILLabel jump = null;
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Yellow))),
+                x => x.MatchCallOrCallvirt(out _),
+                x => x.MatchBrtrue(out jump)
+                );
+
+            c.EmitDelegate<Func<bool>>(() =>
+            {
+                if (Plugin.RandoManager is ManagerArchipelago)
+                {
+                    return ArchipelagoConnection.gateBehavior != Plugin.GateBehavior.OnlyKey;
+                }
+                return false;
+            });
+            c.Emit(OpCodes.Brtrue, jump);
         }
 
         // Overwrites the default logic

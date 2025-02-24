@@ -401,6 +401,23 @@ namespace RainWorldRandomizer
                         return 4;
                     }
                 });
+
+                // Fake the "Passage Progress without Survivor" option if needed
+                ILCursor c1 = new ILCursor(il);
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdsfld(typeof(MMF).GetField(nameof(MMF.cfgSurvivorPassageNotRequired))),
+                    x => x.MatchCallOrCallvirt(typeof(Configurable<bool>).GetProperty(nameof(Configurable<bool>.Value)).GetGetMethod())
+                    );
+
+                c.EmitDelegate<Func<bool, bool>>((config) =>
+                {
+                    if (Plugin.RandoManager is ManagerArchipelago)
+                    {
+                        return ArchipelagoConnection.PPwS;
+                    }
+                    return config;
+                });
             }
             catch (Exception e)
             {
