@@ -246,7 +246,7 @@ namespace RainWorldRandomizer
                         if (message.Contains("//"))
                         {
                             string[] split = Regex.Split(message, "//");
-                            self.cameras[0].hud.textPrompt.AddMessage(split[0], 0, hurry ? 60 : 120, false, false, 100f,
+                            self.cameras[0].hud.textPrompt.AddMessage(split[0], 0, hurry ? 60 : 120, false, true, 100f,
                                 new List<MultiplayerUnlocks.SandboxUnlockID>() { new MultiplayerUnlocks.SandboxUnlockID(split[1]) });
                         }
                         else
