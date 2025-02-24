@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Security.Policy;
 using System.Text;
@@ -25,7 +26,7 @@ namespace RainWorldRandomizer
 
         public static bool Authenticated = false;
         public static bool CurrentlyConnecting = false;
-        public static bool IsConnected = false;
+        //public static bool IsConnected = false;
         public static bool ReceivedSlotData = false;
         public static bool DataPackageReady = false;
 
@@ -84,6 +85,7 @@ namespace RainWorldRandomizer
 
             Session.Socket.PacketReceived += PacketListener;
             Session.MessageLog.OnMessageReceived += MessageReceived;
+            Session.Socket.ErrorReceived += ErrorReceived;
             DeathLinkHandler.Init(Session);
             LoginResult result;
 
@@ -135,7 +137,6 @@ namespace RainWorldRandomizer
             InitializePlayer();
 
             Authenticated = true;
-            IsConnected = true;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
         }
@@ -151,10 +152,10 @@ namespace RainWorldRandomizer
             Plugin.Log.LogInfo("Disconnecting from server...");
             Session.Socket.PacketReceived -= PacketListener;
             Session.MessageLog.OnMessageReceived -= MessageReceived;
+            Session.Socket.ErrorReceived -= ErrorReceived;
             Session.Socket.DisconnectAsync();
             Session = null;
             Authenticated = false;
-            IsConnected = false;
             ReceivedSlotData = false;
 
             (Plugin.RandoManager as ManagerArchipelago).Reset();
@@ -194,7 +195,7 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogInfo($"Received items packet. Index: {packet.Index} | Last index: {lastItemIndex} | Item count: {packet.Items.Length}");
 
                 // Wait until session fully connected before receiving any items
-                while (!IsConnected) { await Task.Delay(50); }
+                while (!Authenticated) { await Task.Delay(50); }
 
                 // This is a fresh inventory, initialize it
                 if (packet.Index == 0)
@@ -444,6 +445,18 @@ namespace RainWorldRandomizer
                 && (!(message is ChatLogMessage chatMessage) || !chatMessage.Message.StartsWith("!"))) // Filter out chat commands
             {
                 Plugin.Singleton.notifQueue.Enqueue(message.ToString());
+            }
+        }
+
+        private static void ErrorReceived(Exception e, string msg)
+        {
+            Plugin.Log.LogError(e);
+
+            if (e is WebSocketException)
+            {
+                Session.Socket.DisconnectAsync();
+                Plugin.Log.LogError("Disconnected Socket due to WebSocketException");
+                Plugin.Singleton.notifQueue.Enqueue("You have been disconnected due to an exception. Please attempt to reconnect.");
             }
         }
 

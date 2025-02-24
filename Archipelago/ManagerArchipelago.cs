@@ -19,7 +19,7 @@ namespace RainWorldRandomizer
 
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
-            if (!ArchipelagoConnection.IsConnected)
+            if (!ArchipelagoConnection.Session.Socket.Connected)
             {
                 Plugin.Log.LogError("Tried to start AP campaign without first connecting to server");
                 isRandomizerActive = false;
@@ -268,7 +268,7 @@ namespace RainWorldRandomizer
 
         public override bool GiveLocation(string location)
         {
-            if (!ArchipelagoConnection.IsConnected || (IsLocationGiven(location) ?? true)) return false;
+            if (!ArchipelagoConnection.Session.Socket.Connected || (IsLocationGiven(location) ?? true)) return false;
 
             long locId = ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, location);
             if (locId == -1L)
@@ -314,7 +314,7 @@ namespace RainWorldRandomizer
             }
 
             // Don't save if locations are not loaded
-            if (!ArchipelagoConnection.IsConnected || !locationsLoaded) return;
+            if (!ArchipelagoConnection.Session.Socket.Connected || !locationsLoaded) return;
 
             SaveManager.WriteAPSaveToFile(
                 $"{ArchipelagoConnection.generationSeed}_{ArchipelagoConnection.playerName}",
