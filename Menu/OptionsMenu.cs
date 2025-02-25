@@ -8,10 +8,9 @@ namespace RainWorldRandomizer
 {
     public class OptionsMenu : OptionInterface
     {
-        private Configurable<bool>[] boolConfigOrderGen;
+        private Configurable<bool>[] boolConfigOrderGen1;
+        private Configurable<bool>[] boolConfigOrderGen2;
         private Configurable<bool>[] boolConfigOrderMSC;
-        private Configurable<bool>[] boolConfigOrderAP;
-        //private Configurable<int>[] intConfigOrder;
 
         public OptionsMenu()
         {
@@ -49,7 +48,7 @@ namespace RainWorldRandomizer
 
             Options.itemShelterDelivery = config.Bind<bool>("itemShelterDelivery", false,
                 new ConfigurableInfo("Whether items should be delivered in the next shelter instead of placed inside slugcat's stomach", null, "",
-                    new object[] { "Deliver items through shelters" }));
+                    new object[] { "Deliver items in shelters" }));
 
             Options.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
                 new ConfigurableInfo("Whether the game will randomize passage tokens", null, "",
@@ -64,14 +63,14 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
                     new object[] { "Randomize starting den" }));
 
-            //RandomizerMain.minPassageTokens = config.Bind<int>("minPassageTokens", 0,
-            //    new ConfigurableInfo("The minimum amount of tokens the generation will leave in the pool", 
-            //    new ConfigAcceptableRange<int>(0, 14)));
-
             Options.startMinKarma = config.Bind<bool>("startMinKarma", false,
                 new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
                 "Gates will have their karma requirements decreased to match", null, "", 
                     new object[] { "Start with low karma" }));
+
+            Options.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
+                new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
+                new object[] { "Disable notifications" }));
 
             Options.disableTokenText = config.Bind<bool>("DisableTokenText", true,
                 new ConfigurableInfo("Prevent pop-up text and chatlogs from appearing when collecting tokens", null, "",
@@ -119,10 +118,6 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Password for server connection (Optional)", null, "",
                 new object[] { "Password" }));
 
-            Options.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
-                new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
-                new object[] { "Disable notifications" }));
-
             Options.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
                 new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here", null, "",
                 new object[] { "Enable DeathLink" }));
@@ -161,6 +156,9 @@ namespace RainWorldRandomizer
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Base"));
             float runningY = 550f;
 
+            OpLabel standaloneConfigsLabel = new OpLabel(40f, runningY, Translate("Standalone Options"));
+            runningY -= 35;
+
             // Seed options
             OpCheckBox useSeedCheckbox = new OpCheckBox(Options.useSeed, 20f, runningY)
             {
@@ -183,18 +181,19 @@ namespace RainWorldRandomizer
 
             Tabs[tabIndex].AddItems(new UIelement[]
             {
+                standaloneConfigsLabel,
                 useSeedCheckbox,
                 useSeedLabel,
                 seedText
             });
 
-            if (boolConfigOrderGen == null)
+            if (boolConfigOrderGen1 == null)
             {
                 PopulateConfigurableArrays();
             }
 
             // Add boolean configs
-            foreach (Configurable<bool> config in boolConfigOrderGen)
+            foreach (Configurable<bool> config in boolConfigOrderGen1)
             {
                 if (config == null)
                 {
@@ -235,6 +234,43 @@ namespace RainWorldRandomizer
                 hunterCyclesLabel
             });
             runningY -= 35;
+
+            // ----- Right side configs -----
+            runningY = 550f;
+
+            OpLabel globalConfigsLabel = new OpLabel(440f, runningY, Translate("Global Options"));
+            Tabs[tabIndex].AddItems(new UIelement[]
+            {
+                globalConfigsLabel
+            });
+            runningY -= 35;
+
+            // Add boolean configs
+            foreach (Configurable<bool> config in boolConfigOrderGen2)
+            {
+                if (config == null)
+                {
+                    runningY -= 35;
+                    continue;
+                }
+
+                OpCheckBox opCheckBox = new OpCheckBox(config, new Vector2(420f, runningY))
+                {
+                    description = Translate(config.info.description)
+                };
+
+                Tabs[tabIndex].AddItems(new UIelement[]
+                {
+                    opCheckBox,
+                    new OpLabel(460f, runningY, Translate(config.info.Tags[0] as string))
+                    {
+                        bumpBehav = opCheckBox.bumpBehav,
+                        description = opCheckBox.description
+                    }
+                });
+
+                runningY -= 35;
+            }
         }
 
         public void PopulateDownpourTab()
@@ -369,44 +405,6 @@ namespace RainWorldRandomizer
 
             // ----- Right side Configurables -----
             runningY = 550f;
-
-            // Add boolean configs
-            foreach (Configurable<bool> config in boolConfigOrderAP)
-            {
-                if (config == null)
-                {
-                    runningY -= 35;
-                    continue;
-                }
-
-                OpCheckBox opCheckBox = new OpCheckBox(config, new Vector2(420f, runningY))
-                {
-                    description = Translate(config.info.description)
-                };
-
-                Tabs[tabIndex].AddItems(new UIelement[]
-                {
-                    opCheckBox,
-                    new OpLabel(460f, runningY, Translate(config.info.Tags[0] as string))
-                    {
-                        bumpBehav = opCheckBox.bumpBehav,
-                        description = opCheckBox.description
-                    }
-                });
-
-                runningY -= 35;
-            }
-
-            //OpCheckBox disableNotificationBox = new OpCheckBox(Plugin.disableNotificationQueue, new Vector2(420f, runningY))
-            //{
-            //    description = Translate(Plugin.disableNotificationQueue.info.description)
-            //};
-            //OpLabel disableNotificationLabel = new OpLabel(460f, runningY, Translate(Plugin.disableNotificationQueue.info.Tags[0] as string))
-            //{
-            //    bumpBehav = disableNotificationBox.bumpBehav,
-            //    description = disableNotificationBox.description
-            //};
-            //runningY -= 55;
 
             OpLabel deathLinkLabel = new OpLabel(440f, runningY, Translate("Death Link Settings"));
             deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
@@ -545,7 +543,7 @@ namespace RainWorldRandomizer
         public void PopulateConfigurableArrays()
         {
             // Null indicates a line break
-            boolConfigOrderGen = new Configurable<bool>[]
+            boolConfigOrderGen1 = new Configurable<bool>[]
             {
                 Options.randomizeSpawnLocation,
                 Options.startMinKarma,
@@ -557,8 +555,13 @@ namespace RainWorldRandomizer
                 Options.useSpecialChecks,
                 null,
                 Options.giveItemUnlocks,
-                Options.itemShelterDelivery,
                 Options.givePassageUnlocks,
+            };
+
+            boolConfigOrderGen2 = new Configurable<bool>[]
+            {
+                Options.itemShelterDelivery,
+                Options.disableNotificationQueue,
                 Options.disableTokenText,
             };
 
@@ -570,13 +573,6 @@ namespace RainWorldRandomizer
                 Options.useFoodQuestChecks,
                 Options.useEnergyCell,
                 Options.useSMTokens,
-            };
-
-            boolConfigOrderAP = new Configurable<bool>[]
-            {
-                Options.disableNotificationQueue,
-                //Plugin.itemShelterDelivery,
-                //Plugin.disableTokenText,
             };
         }
     }
