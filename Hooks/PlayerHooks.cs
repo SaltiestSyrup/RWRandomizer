@@ -41,7 +41,7 @@ namespace RainWorldRandomizer
         public static void OnRegurgitate(On.Player.orig_Regurgitate orig, Player self)
         {
             if (!Plugin.RandoManager.isRandomizerActive
-                || Plugin.ItemShelterDelivery
+                || Options.ItemShelterDelivery
                 || Plugin.Singleton.itemDeliveryQueue.Count == 0)
             {
                 orig(self);
@@ -104,7 +104,7 @@ namespace RainWorldRandomizer
                     {
                         return objectInstomach;
                     }
-                    if (!Plugin.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    if (!Options.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
                         return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), player.room);
                     }
@@ -146,7 +146,7 @@ namespace RainWorldRandomizer
 
                 c.EmitDelegate<Func<int, int>>((origTime) =>
                 {
-                    if (!Plugin.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    if (!Options.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
                         // This time needs to be longer than the 90 ticks swallowing an item takes
                         return 95;
@@ -184,7 +184,7 @@ namespace RainWorldRandomizer
                     {
                         return objectInstomach;
                     }
-                    if (!Plugin.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    if (!Options.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
                         return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), playerGraphics.player.room);
                     }

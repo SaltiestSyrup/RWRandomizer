@@ -202,7 +202,7 @@ namespace RainWorldRandomizer
             orig(self, player);
 
             // Prevent TextPrompt from being issued.
-            if (Plugin.disableTokenText.Value) self.anythingUnlocked = false;
+            if (Options.DisableTokenPopUps) self.anythingUnlocked = false;
 
             string tokenString = (self.placedObj.data as CollectToken.CollectTokenData).tokenString;
 
@@ -535,12 +535,12 @@ namespace RainWorldRandomizer
 
             // Prevent stun and mushroom effect (branch interception at 0026).
             c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<ChatlogData.ChatlogID>).GetMethod("op_Inequality")));
-            bool PreventStun(bool prev) => prev && !Plugin.disableTokenText.Value;
+            bool PreventStun(bool prev) => prev && !Options.DisableTokenPopUps;
             c.EmitDelegate<Func<bool, bool>>(PreventStun);
 
             // Prevent chatlog from being displayed (branch interception at 00b1).
             c.GotoNext(MoveType.Before, x => x.MatchLdcI4(60));  // 00aa
-            int PreventChatlog(int prev) => Plugin.disableTokenText.Value ? 59 : prev;
+            int PreventChatlog(int prev) => Options.DisableTokenPopUps ? 59 : prev;
             c.EmitDelegate<Func<int, int>>(PreventChatlog);
         }
 
@@ -553,7 +553,7 @@ namespace RainWorldRandomizer
 
             // Prevent the `for` loop from running (branch interception at 0038).
             c.GotoNext(MoveType.Before, x => x.MatchConvI4());  // 0037
-            int PreventStop(int prev) => Plugin.disableTokenText.Value ? 0 : prev;
+            int PreventStop(int prev) => Options.DisableTokenPopUps ? 0 : prev;
             c.EmitDelegate<Func<int, int>>(PreventStop);
         }
 

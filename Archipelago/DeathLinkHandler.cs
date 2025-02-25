@@ -80,7 +80,7 @@ namespace RainWorldRandomizer
         {
             Plugin.Log.LogInfo($"Received DeathLink packet from {deathLink.Source}");
 
-            if (!Plugin.archipelagoIgnoreMenuDL.Value // Ignore menu DeathLinks if setting
+            if (!Options.archipelagoIgnoreMenuDL.Value // Ignore menu DeathLinks if setting
                 || Plugin.Singleton.rainWorld.processManager.currentMainLoop is RainWorldGame)
             {
                 receiveDeathCooldown = 40; // 1 second
@@ -158,7 +158,7 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate<Func<int, int>>((orig) =>
             {
-                bool preventDeath = Plugin.archipelagoPreventDLKarmaLoss.Value && lastDeathWasMe;
+                bool preventDeath = Options.archipelagoPreventDLKarmaLoss.Value && lastDeathWasMe;
                 lastDeathWasMe = false;
                 return preventDeath ? 0 : 1;
             });

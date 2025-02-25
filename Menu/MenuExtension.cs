@@ -51,7 +51,7 @@ namespace RainWorldRandomizer
                 new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 20f));
             self.pages[0].subObjects.Add(gatesDisplay);
 
-            if (Plugin.GiveItemUnlocks && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+            if (Options.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
             {
                 pendingItemsDisplay = new PendingItemsDisplay(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gatesDisplay.size.y - 20f));

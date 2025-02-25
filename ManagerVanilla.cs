@@ -131,11 +131,11 @@ namespace RainWorldRandomizer
 
             if (ModManager.MSC)
             {
-                if (Plugin.allowMetroForOthers.Value)
+                if (Options.ForceOpenMetropolis)
                 {
                     OverrideBlacklist(slugcat, "LC");
                 }
-                if (Plugin.allowSubmergedForOthers.Value
+                if (Options.ForceOpenSubmerged
                     && slugcat != MoreSlugcatsEnums.SlugcatStatsName.Artificer
                     && slugcat != MoreSlugcatsEnums.SlugcatStatsName.Spear)
                 {
@@ -261,11 +261,11 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                if (Plugin.usePassageChecks.Value)
+                if (Options.UsePassageChecks)
                 {
                     randomizerKey.Add($"Passage-{ID}", null);
                 }
-                if (Plugin.GivePassageUnlocks && ID != "Gourmand")
+                if (Options.GivePassageItems && ID != "Gourmand")
                 {
                     AllUnlocks.Add(new Unlock(Unlock.UnlockType.Token, ID));
                     passageTokensStatus.Add(new WinState.EndgameID(ID), false);
@@ -280,7 +280,7 @@ namespace RainWorldRandomizer
                     if (RegionKitCompatibility.RegionHasEcho(regionInitials, slugcat)
                         && !CheckBlacklists[slugcat].Contains($"Echo-{regionInitials}"))
                     {
-                        if (Plugin.useEchoChecks.Value)
+                        if (Options.UseEchoChecks)
                         {
                             randomizerKey.Add($"Echo-{regionInitials}", null);
                         }
@@ -298,7 +298,7 @@ namespace RainWorldRandomizer
                     && !RegionBlacklists[slugcat].Contains(ID)
                     && !randomizerKey.ContainsKey($"Echo-{ID}"))
                 {
-                    if (Plugin.useEchoChecks.Value)
+                    if (Options.UseEchoChecks)
                     {
                         randomizerKey.Add($"Echo-{ID}", null);
                     }
@@ -309,7 +309,7 @@ namespace RainWorldRandomizer
             AllUnlocks.Add(new Unlock(Unlock.UnlockType.Karma, "Karma"));
 
             // Reduce max karma if setting
-            if (Plugin.StartMinKarma)
+            if (Options.StartMinimumKarma)
             {
                 int totalKarmaIncreases = AllUnlocks.Count(u => u.Type == Unlock.UnlockType.Karma);
                 int cap = Mathf.Max(0, 8 - totalKarmaIncreases);
@@ -319,7 +319,7 @@ namespace RainWorldRandomizer
 
             // Populate Pearls
             // Monk do no pearls if not using MSC
-            if (Plugin.usePearlChecks.Value && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow))
+            if (Options.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow))
             {
                 // For each region
                 foreach (string region in allAccessibleRegions)
@@ -341,7 +341,7 @@ namespace RainWorldRandomizer
             }
 
             // Populate Sandbox Token unlocks
-            if (Plugin.useSandboxTokenChecks.Value)
+            if (Options.UseSandboxTokenChecks)
             {
                 foreach (string regionShort in Plugin.Singleton.collectTokenHandler.availableTokens.Keys)
                 {
@@ -361,7 +361,7 @@ namespace RainWorldRandomizer
             // Populate Spearmaster Broadcast tokens
             if (ModManager.MSC
                 && currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear
-                && Plugin.useSMTokens.Value)
+                && Options.UseSMBroadcasts)
             {
                 foreach (string regionShort in allAccessibleRegions)
                 {
@@ -376,7 +376,7 @@ namespace RainWorldRandomizer
                 }
             }
 
-            if (ModManager.MSC && Plugin.useFoodQuestChecks.Value && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)
+            if (ModManager.MSC && Options.UseFoodQuest && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)
             {
                 foreach (WinState.GourmandTrackerData data in WinState.GourmandPassageTracker)
                 {
@@ -385,7 +385,7 @@ namespace RainWorldRandomizer
             }
 
             // Misc Checks
-            if (Plugin.useSpecialChecks.Value)
+            if (Options.UseSpecialChecks)
             {
                 randomizerKey.Add("Eat_Neuron", null);
 
@@ -407,7 +407,7 @@ namespace RainWorldRandomizer
                         break;
                     case "Rivulet":
                         randomizerKey.Add("Meet_LttM", null);
-                        if (Plugin.UseEnergyCell) randomizerKey.Add("Kill_FP", null);
+                        if (Options.UseEnergyCell) randomizerKey.Add("Kill_FP", null);
                         break;
                     case "Saint":
                         randomizerKey.Add("Ascend_LttM", null);
@@ -433,7 +433,7 @@ namespace RainWorldRandomizer
                     AllUnlocks.Add(new Unlock(Unlock.UnlockType.IdDrone, "IdDrone"));
                     break;
                 case "Rivulet":
-                    if (Plugin.UseEnergyCell)
+                    if (Options.UseEnergyCell)
                     {
                         AllUnlocks.Add(new Unlock(Unlock.UnlockType.Item, new Unlock.Item("Mass Rarefaction Cell", MoreSlugcatsEnums.AbstractObjectType.EnergyCell)));
                         AllUnlocks.Add(new Unlock(Unlock.UnlockType.DisconnectFP, "FP_Disconnected"));
@@ -459,10 +459,10 @@ namespace RainWorldRandomizer
             // Set the seed for the rest of the generation to use
             try
             {
-                if (Plugin.useSeed.Value)
+                if (Options.UseSetSeed)
                 {
-                    currentSeed = Plugin.seed.Value;
-                    Plugin.Log.LogInfo($"Using set seed: {Plugin.seed.Value}");
+                    currentSeed = Options.SetSeed;
+                    Plugin.Log.LogInfo($"Using set seed: {Options.SetSeed}");
                 }
                 else
                 {
@@ -486,12 +486,12 @@ namespace RainWorldRandomizer
             while (randomizerKey.Count > remainingUnlocks.Count + unlocksToAdd.Count)
             {
                 if (currentSlugcat == SlugcatStats.Name.Red
-                    && (int)(randomizerKey.Count * Plugin.hunterCyclesDensity.Value) > hunterCounter) // Hunter cycle increases can only occupy up to 20% of the total unlocks
+                    && (int)(randomizerKey.Count * Options.HunterCycleIncreaseDensity) > hunterCounter) // Hunter cycle increases can only occupy up to 20% of the total unlocks
                 {
                     unlocksToAdd.Add(new Unlock(Unlock.UnlockType.HunterCycles, "HunterCycles"));
                     hunterCounter++;
                 }
-                else if (Plugin.GiveItemUnlocks)
+                else if (Options.GiveObjectItems)
                 {
                     unlocksToAdd.Add(new Unlock(Unlock.UnlockType.Item, Unlock.RandomJunkItem()));
                 }
@@ -553,7 +553,7 @@ namespace RainWorldRandomizer
 
             List<string> regionsAvailable = new List<string>();
             // If option selected, start from a random den
-            if (Plugin.RandomizeSpawnLocation)
+            if (Options.RandomizeSpawnLocation)
             {
                 customStartDen = FindRandomStart(currentSlugcat);
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
@@ -664,7 +664,7 @@ namespace RainWorldRandomizer
                     }
 
                     // Make the mark not locked behind Scholar
-                    if (index == -1 && Plugin.usePassageChecks.Value)
+                    if (index == -1 && Options.UsePassageChecks)
                     {
                         index = remainingUnlocks.FindIndex(u => u.Type == Unlock.UnlockType.Mark);
                         if (index > -1)
@@ -706,7 +706,7 @@ namespace RainWorldRandomizer
                             if (k.Value != null) return false;
                             if (LogicBlacklist.Contains(k.Key)) return false;
                             // If using Start Minimum Karma, don't consider echoes as always possible checks
-                            if (Plugin.StartMinKarma && k.Key.StartsWith("Echo-")) return false;
+                            if (Options.StartMinimumKarma && k.Key.StartsWith("Echo-")) return false;
                             // If this is a passage marked as 'easy', use it
                             if (GetFeasiblePassages(regionsAvailable, currentSlugcat).Any(c => k.Key == $"Passage-{c.value}")) return true;
                             foreach (string region in regionsAvailable)

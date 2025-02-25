@@ -187,7 +187,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Action<RainWorldGame, int>>((self, roomIndex) =>
             {
                 // Spawn pending items in spawn room
-                if (Plugin.ItemShelterDelivery)
+                if (Options.ItemShelterDelivery)
                 {
                     while (Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
@@ -263,7 +263,7 @@ namespace RainWorldRandomizer
             // Display any pending notifications
             if (Plugin.Singleton.notifQueue.Count > 0)
             {
-                if (Plugin.disableNotificationQueue.Value)
+                if (Options.DisableNotificationQueue)
                 {
                     Plugin.Singleton.notifQueue.Dequeue();
                 }

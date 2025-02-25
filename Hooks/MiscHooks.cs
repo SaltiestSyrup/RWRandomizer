@@ -98,7 +98,7 @@ namespace RainWorldRandomizer
         {
             orig(self);
 
-            if (Plugin.RandomizeSpawnLocation)
+            if (Options.RandomizeSpawnLocation)
             {
                self.denPosition = Plugin.RandoManager.customStartDen;
             }
@@ -134,7 +134,7 @@ namespace RainWorldRandomizer
                 // When AP is enabled, start game button should only be available if AP is connected and the correct slugcat is chosen
                 c1.EmitDelegate<Func<SlugcatSelectMenu, bool>>((self) =>
                 {
-                    return !Plugin.archipelago.Value
+                    return !Options.archipelago.Value
                         || (Plugin.RandoManager is ManagerArchipelago manager
                             && manager.locationsLoaded
                             && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex)
@@ -401,7 +401,7 @@ namespace RainWorldRandomizer
             }
 
             // Change default Metropolis gate karma
-            if (gateName == "GATE_UW_LC" && Plugin.allowMetroForOthers.Value)
+            if (gateName == "GATE_UW_LC" && Options.ForceOpenMetropolis)
             {
                 self.karmaRequirements[0] = RegionGate.GateRequirement.FiveKarma;
                 self.karmaRequirements[1] = RegionGate.GateRequirement.FiveKarma;
@@ -413,7 +413,7 @@ namespace RainWorldRandomizer
             {
                 gateBehavior = ArchipelagoConnection.gateBehavior;
             }
-            else if (Plugin.StartMinKarma)
+            else if (Options.StartMinimumKarma)
             {
                 gateBehavior = Plugin.GateBehavior.OnlyKey;
             }
@@ -541,7 +541,7 @@ namespace RainWorldRandomizer
         public static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, Menu.EndgameTokens self, Menu.Menu menu, Menu.MenuObject owner, Vector2 pos, FContainer container, Menu.KarmaLadder ladder)
         {
             orig(self, menu, owner, pos, container, ladder);
-            if (!Plugin.GivePassageUnlocks) return;
+            if (!Options.GivePassageItems) return;
 
             // We won't be needing these
             foreach (Menu.EndgameTokens.Token token in self.tokens)
@@ -606,7 +606,7 @@ namespace RainWorldRandomizer
         public static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, Menu.EndgameTokens self, WinState.EndgameID ID)
         {
             orig(self, ID);
-            if (!Plugin.GivePassageUnlocks) return;
+            if (!Options.GivePassageItems) return;
 
             // I said NO!
             foreach (Menu.EndgameTokens.Token token in self.tokens)
@@ -631,7 +631,7 @@ namespace RainWorldRandomizer
         // Overwrites the default logic
         public static WinState.EndgameID NextPassageToken(On.WinState.orig_GetNextEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !Plugin.GivePassageUnlocks) return orig(self);
+            if (!Plugin.RandoManager.isRandomizerActive || !Options.GivePassageItems) return orig(self);
 
             foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {
@@ -647,7 +647,7 @@ namespace RainWorldRandomizer
         // Overwrites the default logic
         public static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !Plugin.GivePassageUnlocks)
+            if (!Plugin.RandoManager.isRandomizerActive || !Options.GivePassageItems)
             {
                 orig(self);
                 return;
