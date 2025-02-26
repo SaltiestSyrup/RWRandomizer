@@ -222,12 +222,23 @@ namespace RainWorldRandomizer
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom, int data = 0)
         {
-            return ItemToAbstractObject(item, spawnRoom.game.world, spawnRoom.abstractRoom, data);
+            AbstractPhysicalObject output = ItemToAbstractObject(item, spawnRoom.game.world, spawnRoom.abstractRoom, data);
+
+            if (output == null)
+            {
+                Log.LogError($"Failed to provide abstract object with id {item.id} of type {item.type}");
+            }
+
+            return output;
         }
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, World world, AbstractRoom spawnRoom, int data = 0)
         {
-            if (item.name == "" || spawnRoom == null || world.game == null) return null;
+            if (item.name == "" || spawnRoom == null || world.game == null)
+            {
+                Log.LogError("ItemToAbstractObject did not receive valid world conditions");
+                return null;
+            }
 
             if (item.type is DataPearl.AbstractDataPearl.DataPearlType itemPearlType)
             {
@@ -308,6 +319,7 @@ namespace RainWorldRandomizer
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID());
             }
 
+            Log.LogError($"Item type \"{item.type}\" is not a valid object type");
             return null;
         }
 
