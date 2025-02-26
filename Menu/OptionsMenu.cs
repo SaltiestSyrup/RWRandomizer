@@ -1,5 +1,7 @@
+using Menu.Remix;
 using Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI.ValueTypes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -443,6 +445,12 @@ namespace RainWorldRandomizer
             };
             runningY -= 35;
 
+            OpSimpleButton clearSavesButton = new OpSimpleButton(new Vector2(490f, 10f), new Vector2(100f, 25f), "Clear Save Files")
+            {
+                colorEdge = new Color(0.85f, 0.35f, 0.4f),
+                description = Translate("Delete ALL Archipelago save games. It's a good idea to do this periodically to save space")
+            };
+
             // ----- Update / Button Logic -----
 
             void APCheckedChange()
@@ -525,6 +533,8 @@ namespace RainWorldRandomizer
                 DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
             };
 
+            clearSavesButton.OnClick += AskToClearSaveFiles;
+
             // ----- Populate Tab -----
             Tabs[tabIndex].AddItems(new UIelement[]
             {
@@ -537,7 +547,23 @@ namespace RainWorldRandomizer
                 noKarmaLossLabel,
                 ignoreMenuDeathsCheckBox,
                 ignoreMenuDeathsLabel,
+                clearSavesButton,
             });
+        }
+
+        private void AskToClearSaveFiles(UIfocusable trigger)
+        {
+            if (ConfigContainer.mute) return;
+
+            ConfigConnector.CreateDialogBoxYesNo(string.Concat(new string[]
+            {
+                Translate("This will delete ALL of your saved Archipelago randomizer games."),
+                Environment.NewLine,
+                Translate("Be sure you don't plan to return to any of your games before doing this."),
+                Environment.NewLine,
+                Environment.NewLine,
+                Translate("Are you sure you want to delete your saves?")
+            }), new Action(SaveManager.DeleteAllAPSaves));
         }
 
         public void PopulateConfigurableArrays()

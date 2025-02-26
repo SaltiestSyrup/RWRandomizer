@@ -305,6 +305,22 @@ namespace RainWorldRandomizer
             return JsonConvert.DeserializeObject<APSave>(File.ReadAllText(path));
         }
 
+        /// <summary>
+        /// Deletes every AP save file in the "newest" folder
+        /// </summary>
+        public static void DeleteAllAPSaves()
+        {
+            string folder = ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath;
+
+            foreach (string file in Directory.EnumerateFiles(folder))
+            {
+                if (file.Contains("ap_save"))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
+
         public static void WriteLastItemIndexToFile(string saveId, long lastIndex)
         {
             Dictionary<string, long> origRegistry = LoadLastItemIndices();
