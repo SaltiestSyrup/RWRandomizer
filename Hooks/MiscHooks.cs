@@ -64,6 +64,7 @@ namespace RainWorldRandomizer
                 IL.Menu.SleepAndDeathScreen.AddPassageButton += AddPassageButtonIL;
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
+                IL.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreenGetDataFromGameIL;
             }
             catch (Exception e)
             {
@@ -92,6 +93,7 @@ namespace RainWorldRandomizer
             IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
+            IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreenGetDataFromGameIL;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -582,6 +584,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<bool, bool>>((flag) =>
             {
                 // Make passage button appear if any token has been found
+                Plugin.Log.LogDebug(Plugin.RandoManager.GetPassageTokensStatus().Values.Any(v => v));
                 return flag || Plugin.RandoManager.GetPassageTokensStatus().Values.Any(v => v);
             });
         }
@@ -601,6 +604,21 @@ namespace RainWorldRandomizer
             c.Index--;
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldc_I4, 0);
+        }
+
+        public static void SleepAndDeathScreenGetDataFromGameIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // Remove check for Hunter to let them use passages
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Red))),
+                x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Inequality"))
+                );
+
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldc_I4, 1);
         }
 
         public static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, Menu.EndgameTokens self, WinState.EndgameID ID)
