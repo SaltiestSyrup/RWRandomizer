@@ -1082,6 +1082,9 @@ namespace RainWorldRandomizer
             randomizerKey[location].GiveUnlock();
             Plugin.Singleton.notifQueue.Enqueue(randomizerKey[location].UnlockCompleteMessage());
             Plugin.Log.LogInfo($"Completed Check: {location}");
+
+            HudExtension.chatLog?.AddMessage(location);
+
             return true;
         }
 
