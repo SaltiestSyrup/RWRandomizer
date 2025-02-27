@@ -28,6 +28,7 @@ namespace RainWorldRandomizer
                 IL.SSOracleBehavior.ThrowOutBehavior.Update += IteratorThrowOutBehaviorIL;
                 IL.SLOracleWakeUpProcedure.Update += ILMoonWakeUpUpdate;
                 IL.MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.Update += RotCoreRoomUpdateIL;
+                IL.Oracle.ctor += OracleCtorIL;
             }
             catch (Exception e)
             {
@@ -53,6 +54,7 @@ namespace RainWorldRandomizer
             IL.SSOracleBehavior.ThrowOutBehavior.Update -= IteratorThrowOutBehaviorIL;
             IL.SLOracleWakeUpProcedure.Update -= ILMoonWakeUpUpdate;
             IL.MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.Update -= RotCoreRoomUpdateIL;
+            IL.Oracle.ctor -= OracleCtorIL;
         }
 
         static void OnEatNeuron(On.OracleSwarmer.orig_BitByPlayer orig, OracleSwarmer self, Creature.Grasp grasp, bool eu)
@@ -392,6 +394,25 @@ namespace RainWorldRandomizer
             }
 
             orig(self, eu);
+        }
+
+        static void OracleCtorIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.theMark)))
+                );
+
+            // Tell LttM we have the mark if this should be riv ending scene
+            c.EmitDelegate<Func<bool, bool>>((hasMark) =>
+            {
+                return hasMark ||
+                    (ModManager.MSC
+                    && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet
+                    && Plugin.Singleton.game.IsMoonActive());
+            });
         }
 
         static void OnMoonSpecialEvent(On.SLOracleBehaviorHasMark.orig_SpecialEvent orig, SLOracleBehaviorHasMark self, string eventName)
