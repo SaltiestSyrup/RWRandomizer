@@ -71,10 +71,7 @@ namespace RainWorldRandomizer
             if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
 
             spoilerButton = new SimpleButton(self, self.pages[0], self.Translate("SHOW SPOILERS"), "SHOW_SPOILERS",
-                new Vector2(
-                    self.ContinueAndExitButtonsXPos - 460.2f - self.moveLeft - self.manager.rainWorld.options.SafeScreenOffset.x,
-                    Mathf.Max(self.manager.rainWorld.options.SafeScreenOffset.y, 15f)
-                    ),
+                new Vector2(self.ContinueAndExitButtonsXPos - 460.2f - self.moveLeft, 15f),
                 new Vector2(110f, 30f));
 
             self.pages[0].subObjects.Add(spoilerButton);
@@ -114,16 +111,10 @@ namespace RainWorldRandomizer
             spoilerButton = null;
 
             self.confirmYesButton = new SimpleButton(self, self.pages[0], self.Translate("YES"), "YES_SPOILERS",
-                new Vector2(
-                    self.ContinueAndExitButtonsXPos - 180.2f - self.moveLeft - self.manager.rainWorld.options.SafeScreenOffset.x,
-                    Mathf.Max(self.manager.rainWorld.options.SafeScreenOffset.y, 15f)
-                    ),
+                new Vector2(self.ContinueAndExitButtonsXPos - 180.2f - self.moveLeft, 15f),
                 new Vector2(110f, 30f));
             self.confirmNoButton = new SimpleButton(self, self.pages[0], self.Translate("NO"), "NO_SPOILERS",
-                new Vector2(
-                    self.ContinueAndExitButtonsXPos - 320.2f - self.moveLeft - self.manager.rainWorld.options.SafeScreenOffset.x,
-                    Mathf.Max(self.manager.rainWorld.options.SafeScreenOffset.y, 15f)
-                    ),
+                new Vector2(self.ContinueAndExitButtonsXPos - 320.2f - self.moveLeft, 15f),
                 new Vector2(110f, 30f));
             self.confirmMessage = new MenuLabel(self, self.pages[0], self.Translate("Are you sure you want to spoil the seed for this run?"),
                 self.confirmNoButton.pos, new Vector2(10f, 30f), false, null);

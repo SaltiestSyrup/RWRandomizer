@@ -36,6 +36,8 @@ namespace RainWorldRandomizer
         protected const float MSG_SIZE_X = 250;
         protected const float MSG_SIZE_Y = 35f;
 
+        public bool forceDisplay = false;
+
         private FContainer container;
         private Queue<ChatMessage> messages = new Queue<ChatMessage>();
 
@@ -44,7 +46,7 @@ namespace RainWorldRandomizer
         public ChatLog(HUD.HUD hud, FContainer container) : base(hud)
         {
             this.container = container;
-            pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X - 50f, Mathf.Max(50f, hud.rainWorld.options.SafeScreenOffset.y + 17.25f));
+            pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X - 50f, 50f);
 
             AddMessage("This is a test message");
             AddMessage("This is a second test message");
@@ -78,6 +80,16 @@ namespace RainWorldRandomizer
             messages.Enqueue(message);
         }
 
+        public override void Update()
+        {
+            base.Update();
+
+            foreach (ChatMessage msg in messages)
+            {
+                msg.Update();
+            }
+        }
+
         // TODO: Hide when paused
         public override void Draw(float timeStacker)
         {
@@ -95,6 +107,11 @@ namespace RainWorldRandomizer
 
             public int index;
             public string text;
+            private float lifetime;
+
+            private float show = 1;
+            private float lastShow = 1;
+
             FSprite backgroundSprite;
             FLabel[] messageLabels;
 
@@ -105,6 +122,7 @@ namespace RainWorldRandomizer
                 owner = chatLog;
                 index = 0;
                 text = message;
+                lifetime = 5f;
 
                 // TODO: Make backdrop stand out on map view
                 backgroundSprite = new FSprite("pixel")
@@ -136,14 +154,35 @@ namespace RainWorldRandomizer
 
             }
 
-            // TODO: Fade messages over time
+            public void Update()
+            {
+                lastShow = show;
+
+                // Lifetime countdown
+                lifetime = Mathf.Max(0f, lifetime - 0.025f);
+                
+                if (lifetime == 0f)
+                {
+                    show = Mathf.Max(0f, show - 0.0083f);
+                }
+            }
+
             // TODO: Make new messages push onto screen instead of instant update
             public void Draw(float timeStacker)
             {
+                // Position update
                 backgroundSprite.y = owner.pos.y + (index * MSG_SIZE_Y);
                 foreach (FLabel label in messageLabels)
                 {
                     label.y = owner.pos.y + (index * MSG_SIZE_Y);
+                }
+
+                // Set alpha values
+                float fade = Mathf.Lerp(lastShow, show, timeStacker);
+                backgroundSprite.alpha = fade;
+                foreach (FLabel label in messageLabels)
+                {
+                    label.alpha = fade;
                 }
             }
 
