@@ -446,6 +446,23 @@ namespace RainWorldRandomizer
 
                 c.EmitDelegate<Func<bool>>(() => { return Plugin.RandoManager.GivenRobo; });
                 c.Emit(OpCodes.Brfalse, jump);
+
+
+                ILCursor c1 = new ILCursor(il);
+
+                // Inv's Meet FP check is given when killed by FP
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchCallOrCallvirt(typeof(SSOracleBehavior.SubBehavior).GetProperty(nameof(SSOracleBehavior.SubBehavior.player)).GetGetMethod()),
+                    x => x.MatchCallOrCallvirt(typeof(Creature).GetMethod(nameof(Creature.Die)))
+                    );
+                c.EmitDelegate<Action>(() =>
+                {
+                    if (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel)
+                    {
+                        Plugin.RandoManager.GiveLocation("Meet_FP");
+                    }
+                });
             }
             catch (Exception e)
             {
