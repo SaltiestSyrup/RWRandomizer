@@ -138,7 +138,7 @@ namespace RainWorldRandomizer
             get
             {
                 return Plugin.RandoManager is ManagerArchipelago
-                    ? ArchipelagoConnection.useRandomStartRegion : randomizeSpawnLocation.Value;
+                    ? ArchipelagoConnection.useRandomStart : randomizeSpawnLocation.Value;
             }
         }
         public static bool StartMinimumKarma

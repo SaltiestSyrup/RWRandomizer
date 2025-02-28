@@ -33,8 +33,9 @@ namespace RainWorldRandomizer
         // Ported settings from slot data
         public static bool IsMSC;
         public static SlugcatStats.Name Slugcat;
-        public static bool useRandomStartRegion;
+        public static bool useRandomStart;
         public static string desiredStartRegion;
+        public static string desiredStartDen = "";
         public static CompletionCondition completionCondition;
         public static Plugin.GateBehavior gateBehavior;
         /// <summary> Passage Progress without Survivor </summary>
@@ -236,6 +237,9 @@ namespace RainWorldRandomizer
             long foodQuestAccess = slotData.ContainsKey("checks_foodquest") ? (long)slotData["checks_foodquest"] : -1;
             long desiredGateBehavior = slotData.ContainsKey("which_gate_behavior") ? (long)slotData["which_gate_behavior"] : -1;
 
+            // This key may change depending on what AP world passes
+            string startingShelter = slotData.ContainsKey("starting_shelter") ? (string)slotData["starting_shelter"] : null;
+
             //Plugin.Log.LogDebug($"World state index: {worldStateIndex}");
             //Plugin.Log.LogDebug($"Starting region: {startingRegion}");
             //Plugin.Log.LogDebug($"Passage progress w/o Survivor?: {PPwS}");
@@ -306,65 +310,71 @@ namespace RainWorldRandomizer
                     break;
             }
 
+            // TODO: Remove this once AP starts sending the specific den
             switch (startingRegion)
             {
                 case -1:
                 case 0:
-                    useRandomStartRegion = false;
+                    useRandomStart = false;
                     desiredStartRegion = "";
                     break;
                 case 1:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "SU";
                     break;
                 case 2:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "HI";
                     break;
                 case 3:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "DS";
                     break;
                 case 4:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "GW";
                     break;
                 case 5:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "SL";
                     break;
                 case 6:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "SH";
                     break;
                 case 7:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "UW";
                     break;
                 case 8:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "SS";
                     break;
                 case 9:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "CC";
                     break;
                 case 10:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "SI";
                     break;
                 case 11:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "LF";
                     break;
                 case 12:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "SB";
                     break;
                 case 20:
-                    useRandomStartRegion = true;
+                    useRandomStart = true;
                     desiredStartRegion = "VS";
                     break;
+            }
+
+            if (startingShelter != null)
+            {
+                desiredStartDen = startingShelter;
             }
 
             // Set gate behavior

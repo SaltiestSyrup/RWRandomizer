@@ -510,8 +510,8 @@ namespace RainWorldRandomizer
                 slotDataLabelRight.text = 
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
                     $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
-                    $"{ArchipelagoConnection.useRandomStartRegion}\n" +
-                    $"{(ArchipelagoConnection.useRandomStartRegion ? ArchipelagoConnection.desiredStartRegion : "N/A")}\n" +
+                    $"{ArchipelagoConnection.useRandomStart}\n" +
+                    $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartRegion : "N/A")}\n" +
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
                     $"{DeathLinkHandler.Active}\n";
