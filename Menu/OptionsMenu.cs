@@ -503,7 +503,7 @@ namespace RainWorldRandomizer
                     $"Using MSC:\n" +
                     $"Chosen Slugcat:\n" +
                     $"Using Random Start:\n" +
-                    $"Chosen Start Region:\n" +
+                    $"Chosen Starting Room:\n" +
                     $"Completion Condition:\n" +
                     $"Passage Progress w/o Survivor:\n" +
                     $"Using DeathLink:\n";
@@ -511,7 +511,7 @@ namespace RainWorldRandomizer
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
                     $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
                     $"{ArchipelagoConnection.useRandomStart}\n" +
-                    $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartRegion : "N/A")}\n" +
+                    $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}\n" +
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
                     $"{DeathLinkHandler.Active}\n";

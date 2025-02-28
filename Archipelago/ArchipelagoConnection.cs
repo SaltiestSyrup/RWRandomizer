@@ -34,7 +34,7 @@ namespace RainWorldRandomizer
         public static bool IsMSC;
         public static SlugcatStats.Name Slugcat;
         public static bool useRandomStart;
-        public static string desiredStartRegion;
+        //public static string desiredStartRegion;
         public static string desiredStartDen = "";
         public static CompletionCondition completionCondition;
         public static Plugin.GateBehavior gateBehavior;
@@ -230,20 +230,13 @@ namespace RainWorldRandomizer
         private static void ParseSlotData(Dictionary<string, object> slotData)
         {
             long worldStateIndex = slotData.ContainsKey("which_gamestate") ? (long)slotData["which_gamestate"] : -1;
-            long startingRegion = slotData.ContainsKey("random_starting_region") ? (long)slotData["random_starting_region"] : -1;
             long PPwS = slotData.ContainsKey("passage_progress_without_survivor") ? (long)slotData["passage_progress_without_survivor"] : -1;
             long completionType = slotData.ContainsKey("which_victory_condition") ? (long)slotData["which_victory_condition"] : -1;
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
             long foodQuestAccess = slotData.ContainsKey("checks_foodquest") ? (long)slotData["checks_foodquest"] : -1;
             long desiredGateBehavior = slotData.ContainsKey("which_gate_behavior") ? (long)slotData["which_gate_behavior"] : -1;
 
-            // This key may change depending on what AP world passes
-            string startingShelter = slotData.ContainsKey("starting_shelter") ? (string)slotData["starting_shelter"] : null;
-
-            //Plugin.Log.LogDebug($"World state index: {worldStateIndex}");
-            //Plugin.Log.LogDebug($"Starting region: {startingRegion}");
-            //Plugin.Log.LogDebug($"Passage progress w/o Survivor?: {PPwS}");
-            //Plugin.Log.LogDebug($"Completion condition: {(completionType == 0 ? "Ascension" : "Alternate")}");
+            string startingShelter = slotData.ContainsKey("starting_room") ? (string)slotData["starting_room"] : null;
 
             switch (worldStateIndex)
             {
@@ -310,70 +303,9 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            // TODO: Remove this once AP starts sending the specific den
-            switch (startingRegion)
+            if (!(startingShelter?.Equals("") ?? true))
             {
-                case -1:
-                case 0:
-                    useRandomStart = false;
-                    desiredStartRegion = "";
-                    break;
-                case 1:
-                    useRandomStart = true;
-                    desiredStartRegion = "SU";
-                    break;
-                case 2:
-                    useRandomStart = true;
-                    desiredStartRegion = "HI";
-                    break;
-                case 3:
-                    useRandomStart = true;
-                    desiredStartRegion = "DS";
-                    break;
-                case 4:
-                    useRandomStart = true;
-                    desiredStartRegion = "GW";
-                    break;
-                case 5:
-                    useRandomStart = true;
-                    desiredStartRegion = "SL";
-                    break;
-                case 6:
-                    useRandomStart = true;
-                    desiredStartRegion = "SH";
-                    break;
-                case 7:
-                    useRandomStart = true;
-                    desiredStartRegion = "UW";
-                    break;
-                case 8:
-                    useRandomStart = true;
-                    desiredStartRegion = "SS";
-                    break;
-                case 9:
-                    useRandomStart = true;
-                    desiredStartRegion = "CC";
-                    break;
-                case 10:
-                    useRandomStart = true;
-                    desiredStartRegion = "SI";
-                    break;
-                case 11:
-                    useRandomStart = true;
-                    desiredStartRegion = "LF";
-                    break;
-                case 12:
-                    useRandomStart = true;
-                    desiredStartRegion = "SB";
-                    break;
-                case 20:
-                    useRandomStart = true;
-                    desiredStartRegion = "VS";
-                    break;
-            }
-
-            if (startingShelter != null)
-            {
+                useRandomStart = true;
                 desiredStartDen = startingShelter;
             }
 
