@@ -57,6 +57,7 @@ namespace RainWorldRandomizer
 
             AddMessage("This is a test message");
             AddMessage("This is a second test message");
+            AddMessage("This is a third test message that is a lot longer than a message should be. Like way too long of a message.");
         }
 
         public void AddMessage(string text)
@@ -119,6 +120,16 @@ namespace RainWorldRandomizer
             private float show = 1;
             private float lastShow = 1;
 
+            private float yPos;
+            private float lastYPos;
+            private float DesiredYPos
+            {
+                get
+                {
+                    return owner.pos.y + (index * MSG_SIZE_Y);
+                }
+            }
+
             FSprite backgroundSprite;
             FLabel[] messageLabels;
 
@@ -130,6 +141,7 @@ namespace RainWorldRandomizer
                 index = 0;
                 text = message;
                 lifetime = 5f;
+                yPos = DesiredYPos - MSG_SIZE_Y;
 
                 // TODO: Make backdrop stand out on map view
                 backgroundSprite = new FSprite("pixel")
@@ -164,8 +176,9 @@ namespace RainWorldRandomizer
             public void Update()
             {
                 if (owner.GamePaused) return;
-
                 lastShow = show;
+
+
 
                 // Lifetime countdown
                 lifetime = Mathf.Max(0f, lifetime - 0.025f);
@@ -180,10 +193,10 @@ namespace RainWorldRandomizer
             public void Draw(float timeStacker)
             {
                 // Position update
-                backgroundSprite.y = owner.pos.y + (index * MSG_SIZE_Y);
+                backgroundSprite.y = DesiredYPos;
                 foreach (FLabel label in messageLabels)
                 {
-                    label.y = owner.pos.y + (index * MSG_SIZE_Y);
+                    label.y = DesiredYPos;
                 }
 
                 // Set alpha values
