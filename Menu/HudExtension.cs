@@ -37,6 +37,13 @@ namespace RainWorldRandomizer
         protected const float MSG_SIZE_Y = 35f;
 
         public bool forceDisplay = false;
+        private bool GamePaused
+        {
+            get 
+            {
+                return hud.rainWorld.processManager.currentMainLoop is RainWorldGame game && game.pauseMenu != null;
+            }
+        }
 
         private FContainer container;
         private Queue<ChatMessage> messages = new Queue<ChatMessage>();
@@ -156,6 +163,8 @@ namespace RainWorldRandomizer
 
             public void Update()
             {
+                if (owner.GamePaused) return;
+
                 lastShow = show;
 
                 // Lifetime countdown
@@ -179,6 +188,8 @@ namespace RainWorldRandomizer
 
                 // Set alpha values
                 float fade = Mathf.Lerp(lastShow, show, timeStacker);
+                if (owner.GamePaused) fade = 0; // Don't display when game paused
+
                 backgroundSprite.alpha = fade;
                 foreach (FLabel label in messageLabels)
                 {
