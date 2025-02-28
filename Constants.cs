@@ -1,9 +1,5 @@
 ﻿using MoreSlugcats;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -48,6 +44,10 @@ namespace RainWorldRandomizer
                 true, true, false, true, false, true, false, false, true, false, false,
                 false, false, true, false, false, true, false, true, false, true, false
             }},
+            { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, new bool[] {
+                true, true, true, true, true, true, true, true, true, true, true,
+                true, true, true, true, true, true, true, true, true, true, true
+            }}
         };
 
     }
