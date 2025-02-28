@@ -205,14 +205,7 @@ namespace RainWorldRandomizer
         {
             if (isNewGame && ArchipelagoConnection.useRandomStart)
             {
-                if (ArchipelagoConnection.desiredStartDen != "")
-                {
-                    customStartDen = ArchipelagoConnection.desiredStartDen;
-                }
-                else
-                {
-                    customStartDen = FindRandomStart(ArchipelagoConnection.desiredStartRegion);
-                }
+                customStartDen = ArchipelagoConnection.desiredStartDen;
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
             }
 
