@@ -111,7 +111,6 @@ namespace RainWorldRandomizer
 
                             if (gourTracker.progress[i] > 0)
                             {
-                                Plugin.Log.LogDebug($"FoodQuest-{type}: {Plugin.RandoManager.IsLocationGiven($"FoodQuest-{type}")}");
                                 Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
                             }
                         }

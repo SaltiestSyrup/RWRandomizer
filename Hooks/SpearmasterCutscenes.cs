@@ -115,7 +115,6 @@ namespace RainWorldRandomizer
 
                 c.EmitDelegate<Func<bool, bool>>(hasMark =>
                 {
-                    //RandomizerMain.Log.LogDebug($"{i}: {RandomizerMain.Singleton.randomizerKey.ContainsKey("Meet_LttM")}, {RandomizerMain.Singleton.randomizerKey["Meet_LttM"].IsGiven}");
                     return hasMark || (Plugin.RandoManager.IsLocationGiven("Meet_LttM") ?? false);
                 });
             }

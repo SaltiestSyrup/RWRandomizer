@@ -176,8 +176,6 @@ namespace RainWorldRandomizer
                 c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner)));
                 c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk)));
                 c.Emit(OpCodes.Stfld, typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)));
-
-                //RandomizerMain.Log.LogDebug(il);
             }
             catch (Exception e)
             {
