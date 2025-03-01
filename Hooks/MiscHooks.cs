@@ -3,6 +3,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MoreSlugcats;
+using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,6 +25,7 @@ namespace RainWorldRandomizer
             On.Menu.EndgameTokens.Passage += DoPassage;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
+            On.Menu.KarmaLadder.ctor += OnKarmaLadderCtor;
 
             try
             {
@@ -693,6 +695,12 @@ namespace RainWorldRandomizer
             Plugin.RandoManager.GiveLocation("Echo-" + ghost.value);
 
             Plugin.Singleton.game.rainWorld.progression.SaveProgressionAndDeathPersistentDataOfCurrentState(false, false);
+        }
+
+        public static void OnKarmaLadderCtor(On.Menu.KarmaLadder.orig_ctor orig, KarmaLadder self, Menu.Menu menu, MenuObject owner, Vector2 pos, HUD.HUD hud, IntVector2 displayKarma, bool reinforced)
+        {
+            (menu as KarmaLadderScreen).preGhostEncounterKarmaCap = Plugin.RandoManager.CurrentMaxKarma;
+            orig(self, menu, owner, pos, hud, displayKarma, reinforced);
         }
 
         public static void ArtificerRoboIL(ILContext il)
