@@ -197,8 +197,6 @@ namespace RainWorldRandomizer
                 menuLabels = new MenuLabel[openedGates.Count + 1];
                 size = new Vector2(300f, (menuLabels.Length * 15f) + 20f);
 
-                //RandomizerMain.Log.LogDebug(menuLabels.Length);
-
                 roundedRect = new RoundedRect(menu, this, new Vector2(0f, -size.y), size, true)
                 {
                     fillAlpha = 1f
@@ -467,8 +465,6 @@ namespace RainWorldRandomizer
                     return;
                 }
                 sliderValue = Custom.LerpAndTick(sliderValue, Mathf.InverseLerp(0f, sliderValueCap, floatScrollPos), 0.02f, 0.05f);
-
-                //RandomizerMain.Log.LogDebug(floatScrollPos);
             }
 
             public void FilterEntries(EntryFilterType filter)

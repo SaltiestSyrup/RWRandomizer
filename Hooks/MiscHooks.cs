@@ -586,7 +586,6 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<bool, bool>>((flag) =>
             {
                 // Make passage button appear if any token has been found
-                Plugin.Log.LogDebug(Plugin.RandoManager.GetPassageTokensStatus().Values.Any(v => v));
                 return flag || Plugin.RandoManager.GetPassageTokensStatus().Values.Any(v => v);
             });
         }
@@ -762,11 +761,6 @@ namespace RainWorldRandomizer
             c.MoveAfterLabels();
 
             c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
-
-            c.EmitDelegate<Action>(() =>
-            {
-                Plugin.Log.LogDebug("Adding Gourmand Tracker");
-            });
         }
 
         public static bool YesItIsMeGourmand(bool prev) => (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuestForAll) || prev;

@@ -155,13 +155,6 @@ namespace RainWorldRandomizer
 
                 foreach (var token in rainWorld.regionBlueTokens[regionLower])
                 {
-                    //RandomizerMain.Log.LogDebug($"{token}");
-                    //string output = "";
-                    //foreach (SlugcatStats.Name val in rainWorld.regionBlueTokensAccessibility[regionLower][rainWorld.regionBlueTokens[regionLower].IndexOf(token)])
-                    //{
-                    //    output += $"{val.value}, ";
-                    //}
-                    //RandomizerMain.Log.LogDebug($"{output}");
                     if (rainWorld.regionBlueTokensAccessibility[regionLower][rainWorld.regionBlueTokens[regionLower].IndexOf(token)].Contains(slugcat))
                     {
                         idsToAdd.Add(token.value);
@@ -323,7 +316,6 @@ namespace RainWorldRandomizer
                 {
                     room = Path.GetFileNameWithoutExtension(room);
                     room = room.Substring(0, room.IndexOf("_setting")).ToLower();
-                    //RandomizerMain.Log.LogDebug(room);
                     if (GetRoomAccessibility(region).ContainsKey(room))
                     {
                         return tokenClearance.Intersect(GetRoomAccessibility(region)[room]).ToList();
@@ -447,20 +439,7 @@ namespace RainWorldRandomizer
                     x => x.MatchLdfld(typeof(CollectToken.CollectTokenData).GetField(nameof(CollectToken.CollectTokenData.availableToPlayers))),
                     x => x.MatchLdloc(28),
                     x => x.MatchLdloc(12)
-                    //x => x.MatchCallOrCallvirt(typeof(RainWorld).GetMethod(nameof(RainWorld.FilterTokenClearance)))
                     );
-
-                // Log helper
-                //c.Emit(OpCodes.Ldloc, 12);
-                //c.EmitDelegate<Action<List<SlugcatStats.Name>>>((list3) =>
-                //{
-                //    string output = "";
-                //    foreach (var item in list3)
-                //    {
-                //        output += $"{item}, ";
-                //    }
-                //    RandomizerMain.Log.LogDebug(output);
-                //});
 
                 c.Emit(OpCodes.Ldloc_0);
                 c.Emit(OpCodes.Ldfld, regionNameField);
@@ -492,20 +471,7 @@ namespace RainWorldRandomizer
                     x => x.MatchLdloc(35),
                     x => x.MatchCallOrCallvirt(out _),
                     x => x.MatchLdloc(12)
-                    //x => x.MatchCallOrCallvirt(typeof(RainWorld).GetMethod(nameof(RainWorld.FilterTokenClearance)))
                     );
-
-                // Log helper
-                //c.Emit(OpCodes.Ldloc, 12);
-                //c.EmitDelegate<Action<List<SlugcatStats.Name>>>((list3) =>
-                //{
-                //    string output = "";
-                //    foreach (var item in list3)
-                //    {
-                //        output += $"{item}, ";
-                //    }
-                //    RandomizerMain.Log.LogDebug(output);
-                //});
 
                 c.Emit(OpCodes.Ldloc_0);
                 c.Emit(OpCodes.Ldfld, regionNameField);
@@ -516,8 +482,6 @@ namespace RainWorldRandomizer
 
                 c.EmitDelegate<Func<List<SlugcatStats.Name>, string, string, List<SlugcatStats.Name>>>(IntersectClearance);
                 #endregion
-
-                //RandomizerMain.Log.LogDebug(il);
             }
             catch (Exception e)
             {
@@ -827,8 +791,6 @@ namespace RainWorldRandomizer
                     int listIndex = Plugin.Singleton.rainWorld.regionBlueTokens[regionShort.ToLower()].IndexOf(new MultiplayerUnlocks.SandboxUnlockID(idAndSetting[0]));
 
                     if (idAndSetting[0].StartsWith("L-") || idAndSetting[0].StartsWith("S-") || listIndex == -1) continue;
-
-                    //RandomizerMain.Log.LogDebug($"{listIndex} : {tokensAccessibility[regionShort].Length}");
                     if (idAndSetting.Length == 1)
                     {
                         tokensAccessibility[regionShort][listIndex] = allSlugcats.ToList();
