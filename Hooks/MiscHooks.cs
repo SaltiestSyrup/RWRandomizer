@@ -26,6 +26,7 @@ namespace RainWorldRandomizer
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
             On.Menu.KarmaLadder.ctor += OnKarmaLadderCtor;
+            On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
 
             try
             {
@@ -84,6 +85,7 @@ namespace RainWorldRandomizer
             On.Menu.EndgameTokens.Passage -= DoPassage;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
+            On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
@@ -763,7 +765,8 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
         }
 
-        public static bool YesItIsMeGourmand(bool prev) => (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuestForAll) || prev;
+        public static bool YesItIsMeGourmand(bool prev) => 
+            (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuest > ArchipelagoConnection.FoodQuestBehavior.Disabled) || prev;
 
         /// <summary>
         /// Allow Spearmaster to eat mushrooms for the food quest.
@@ -812,5 +815,44 @@ namespace RainWorldRandomizer
             });
             c.Emit(OpCodes.Brfalse, jump);
         }
+
+        /// <summary>
+        /// Create two arrays of food quest items for normal and expanded food quest.
+        /// </summary>
+        private static void MoreSlugcats_OnInit(On.MoreSlugcats.MoreSlugcats.orig_OnInit orig)
+        {
+            orig();
+            int oldLength = WinState.GourmandPassageTracker.Length;
+            unexpanded = WinState.GourmandPassageTracker.ToArray();
+            CreatureTemplate.Type[] crits = new CreatureTemplate.Type[]
+            {
+                // Edible by Survivor/Monk/Rivulet
+                CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede, CreatureTemplate.Type.VultureGrub, CreatureTemplate.Type.SmallNeedleWorm,
+                // Lizards
+                CreatureTemplate.Type.GreenLizard, CreatureTemplate.Type.BlueLizard, CreatureTemplate.Type.PinkLizard,
+                CreatureTemplate.Type.WhiteLizard, CreatureTemplate.Type.RedLizard, MoreSlugcatsEnums.CreatureTemplateType.SpitLizard,
+                MoreSlugcatsEnums.CreatureTemplateType.ZoopLizard, MoreSlugcatsEnums.CreatureTemplateType.TrainLizard,
+                // Spiders
+                CreatureTemplate.Type.BigSpider, CreatureTemplate.Type.SpitterSpider, MoreSlugcatsEnums.CreatureTemplateType.MotherSpider,
+                // Vultures
+                CreatureTemplate.Type.Vulture, CreatureTemplate.Type.KingVulture, MoreSlugcatsEnums.CreatureTemplateType.MirosVulture,
+                // (Mostly) passive
+                CreatureTemplate.Type.LanternMouse, CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB, MoreSlugcatsEnums.CreatureTemplateType.Yeek,
+                CreatureTemplate.Type.BigNeedleWorm,
+                // Other not-passive
+                CreatureTemplate.Type.DropBug, CreatureTemplate.Type.MirosBird,
+                CreatureTemplate.Type.Scavenger, MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite, 
+                // Rot
+                CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, MoreSlugcatsEnums.CreatureTemplateType.TerrorLongLegs,
+                // Spearmaster only
+                CreatureTemplate.Type.PoleMimic, CreatureTemplate.Type.TentaclePlant,
+                CreatureTemplate.Type.BigEel, MoreSlugcatsEnums.CreatureTemplateType.Inspector,
+            };
+
+            expanded = unexpanded.Concat(crits.Select(crit => new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[1] { crit }))).ToArray();
+        }
+
+        internal static WinState.GourmandTrackerData[] unexpanded;
+        internal static WinState.GourmandTrackerData[] expanded;
     }
 }
