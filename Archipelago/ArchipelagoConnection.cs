@@ -39,7 +39,7 @@ namespace RainWorldRandomizer
         public static CompletionCondition completionCondition;
         public static Plugin.GateBehavior gateBehavior;
         /// <summary> Passage Progress without Survivor </summary>
-        public static bool PPwS;
+        public static PPwSBehavior PPwS;
         public static bool foodQuestForAll;
 
         public static ArchipelagoSession Session;
@@ -47,6 +47,8 @@ namespace RainWorldRandomizer
         public static long lastItemIndex = 0;
         public static string playerName;
         public static string generationSeed;
+
+        public enum PPwSBehavior { Disabled = 0, Enabled = 1, Bypassed = 2 }
 
         public enum CompletionCondition
         {
@@ -230,7 +232,7 @@ namespace RainWorldRandomizer
         private static void ParseSlotData(Dictionary<string, object> slotData)
         {
             long worldStateIndex = slotData.ContainsKey("which_gamestate") ? (long)slotData["which_gamestate"] : -1;
-            long PPwS = slotData.ContainsKey("passage_progress_without_survivor") ? (long)slotData["passage_progress_without_survivor"] : -1;
+            long PPwS = slotData.ContainsKey("passage_progress_without_survivor") ? (long)slotData["passage_progress_without_survivor"] : 0;
             long completionType = slotData.ContainsKey("which_victory_condition") ? (long)slotData["which_victory_condition"] : -1;
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
             long foodQuestAccess = slotData.ContainsKey("checks_foodquest") ? (long)slotData["checks_foodquest"] : -1;
@@ -319,7 +321,7 @@ namespace RainWorldRandomizer
                 gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
             }
 
-            ArchipelagoConnection.PPwS = PPwS > 0;
+            ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
 
             DeathLinkHandler.Active = deathLink > 0;
 

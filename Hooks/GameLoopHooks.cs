@@ -413,10 +413,25 @@ namespace RainWorldRandomizer
                 {
                     if (Plugin.RandoManager is ManagerArchipelago)
                     {
-                        return ArchipelagoConnection.PPwS;
+                        return ArchipelagoConnection.PPwS != ArchipelagoConnection.PPwSBehavior.Disabled;
                     }
                     return config;
                 });
+
+                // Conditionally remove the hardcoded Survivor checks on other passages
+                // (branch interception at 049f, 04ed, 0570, 0599, 05ea, 06e8, 07bb).
+                c.GotoNext(x => x.MatchRet());  // 0480
+                for (int i = 0; i < 7; i++)
+                {
+                    c.GotoNext(
+                        MoveType.After,
+                        x => x.MatchLdloc(12),
+                        x => x.MatchCallOrCallvirt(typeof(WinState.EndgameTracker).GetProperty(nameof(WinState.EndgameTracker.GoalAlreadyFullfilled)).GetGetMethod())
+                        );
+                    bool BypassHardcodedSurvivorRequirement(bool prev) =>
+                        prev || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.PPwS == ArchipelagoConnection.PPwSBehavior.Bypassed);
+                    c.EmitDelegate<Func<bool, bool>>(BypassHardcodedSurvivorRequirement);
+                }
             }
             catch (Exception e)
             {
