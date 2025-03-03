@@ -40,13 +40,15 @@ namespace RainWorldRandomizer
         public static Plugin.GateBehavior gateBehavior;
         /// <summary> Passage Progress without Survivor </summary>
         public static bool PPwS;
-        public static bool foodQuestForAll;
+        public static FoodQuestBehavior foodQuest;
 
         public static ArchipelagoSession Session;
 
         public static long lastItemIndex = 0;
         public static string playerName;
         public static string generationSeed;
+
+        public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
 
         public enum CompletionCondition
         {
@@ -234,6 +236,7 @@ namespace RainWorldRandomizer
             long completionType = slotData.ContainsKey("which_victory_condition") ? (long)slotData["which_victory_condition"] : -1;
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
             long foodQuestAccess = slotData.ContainsKey("checks_foodquest") ? (long)slotData["checks_foodquest"] : -1;
+            long foodQuestExpanded = slotData.ContainsKey("checks_foodquest_expanded") ? (long)slotData["checks_foodquest_expanded"] : -1;
             long desiredGateBehavior = slotData.ContainsKey("which_gate_behavior") ? (long)slotData["which_gate_behavior"] : -1;
 
             string startingShelter = slotData.ContainsKey("starting_room") ? (string)slotData["starting_room"] : null;
@@ -323,8 +326,9 @@ namespace RainWorldRandomizer
 
             DeathLinkHandler.Active = deathLink > 0;
 
-            // We don't actually care if option is 0, the server can just ingore us sending Gourm's foods
-            foodQuestForAll = foodQuestAccess == 2;
+            foodQuest = IsMSC && (Slugcat.value == "Gourmand" || foodQuestAccess == 2) ?
+                (foodQuestExpanded > 0 ? FoodQuestBehavior.Expanded : FoodQuestBehavior.Enabled) : FoodQuestBehavior.Disabled;
+            WinState.GourmandPassageTracker = foodQuest == FoodQuestBehavior.Expanded ? MiscHooks.expanded : MiscHooks.unexpanded;
         }
 
         private static void InitializePlayer()

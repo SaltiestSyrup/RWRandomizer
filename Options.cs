@@ -186,12 +186,12 @@ namespace RainWorldRandomizer
             {
                 if (Plugin.RandoManager is ManagerArchipelago)
                 {
-                    return Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand 
-                        || ArchipelagoConnection.foodQuestForAll;
+                    return ArchipelagoConnection.foodQuest != ArchipelagoConnection.FoodQuestBehavior.Disabled;
                 }
                 else
                 {
-                    return useFoodQuestChecks.Value;
+                    return Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand
+                        && useFoodQuestChecks.Value;
                 }
             }
         }
