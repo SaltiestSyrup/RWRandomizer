@@ -190,7 +190,8 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
-                    return useFoodQuestChecks.Value;
+                    return Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand
+                        && useFoodQuestChecks.Value;
                 }
             }
         }

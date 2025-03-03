@@ -765,8 +765,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
         }
 
-        public static bool YesItIsMeGourmand(bool prev) => 
-            (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuest > ArchipelagoConnection.FoodQuestBehavior.Disabled) || prev;
+        public static bool YesItIsMeGourmand(bool prev) => Options.UseFoodQuest || prev;
 
         /// <summary>
         /// Allow Spearmaster to eat mushrooms for the food quest.
