@@ -324,7 +324,7 @@ namespace RainWorldRandomizer
                         if (Plugin.RandoManager is ManagerArchipelago)
                         {
                             // Check if this pearl matching the current region is valid
-                            if (Plugin.RandoManager.LocationExists(locName + currentRoom.abstractRoom.name.Substring(0, 2)))
+                            if (Plugin.RandoManager.LocationExists(locName + $"-{currentRoom.abstractRoom.name.Substring(0, 2)}"))
                             {
                                 locName += $"-{currentRoom.abstractRoom.name.Substring(0, 2)}";
                             }
