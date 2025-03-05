@@ -130,8 +130,22 @@ namespace RainWorldRandomizer
 
             if (loginSuccess.SlotData != null)
             {
-                ParseSlotData(loginSuccess.SlotData);
+                if (!ParseSlotData(loginSuccess.SlotData))
+                {
+                    // Log an error if slot data was not valid
+                    string errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
+                    Plugin.Log.LogError(errLog);
+                    return errLog;
+                }
+                
                 ReceivedSlotData = true;
+            }
+            else if (!ReceivedSlotData)
+            {
+                // Log an error if no slot data packet was present
+                string errLog = "Did not receive any slot data. Please try again.";
+                Plugin.Log.LogError(errLog);
+                return errLog;
             }
 
             generationSeed = Session.RoomState.Seed;
@@ -227,16 +241,28 @@ namespace RainWorldRandomizer
             }
         }
 
-        private static void ParseSlotData(Dictionary<string, object> slotData)
+        private static bool ParseSlotData(Dictionary<string, object> slotData)
         {
-            long worldStateIndex = slotData.ContainsKey("which_gamestate") ? (long)slotData["which_gamestate"] : -1;
-            long PPwS = slotData.ContainsKey("passage_progress_without_survivor") ? (long)slotData["passage_progress_without_survivor"] : -1;
-            long completionType = slotData.ContainsKey("which_victory_condition") ? (long)slotData["which_victory_condition"] : -1;
-            long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
-            long foodQuestAccess = slotData.ContainsKey("checks_foodquest") ? (long)slotData["checks_foodquest"] : -1;
-            long desiredGateBehavior = slotData.ContainsKey("which_gate_behavior") ? (long)slotData["which_gate_behavior"] : -1;
+            // If any required slot data is missing, connection is invalid
+            if (!slotData.ContainsKey("which_gamestate")
+                || !slotData.ContainsKey("passage_progress_without_survivor")
+                || !slotData.ContainsKey("which_victory_condition")
+                || !slotData.ContainsKey("checks_foodquest")
+                || !slotData.ContainsKey("which_gate_behavior")
+                || !slotData.ContainsKey("starting_room")
+                )
+            {
+                return false;
+            }
 
-            string startingShelter = slotData.ContainsKey("starting_room") ? (string)slotData["starting_room"] : null;
+            long worldStateIndex = (long)slotData["which_gamestate"];
+            long PPwS = (long)slotData["passage_progress_without_survivor"];
+            long completionType = (long)slotData["which_victory_condition"];
+            long foodQuestAccess = (long)slotData["checks_foodquest"];
+            long desiredGateBehavior = (long)slotData["which_gate_behavior"];
+            string startingShelter = (string)slotData["starting_room"];
+            // DeathLink we can live without receiving
+            long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
 
             switch (worldStateIndex)
             {
@@ -245,7 +271,6 @@ namespace RainWorldRandomizer
                     Slugcat = SlugcatStats.Name.Yellow;
                     completionCondition = CompletionCondition.Ascension;
                     break;
-                case -1:
                 case 1:
                     IsMSC = false;
                     Slugcat = SlugcatStats.Name.White;
@@ -303,21 +328,14 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            if (!(startingShelter?.Equals("") ?? true))
+            if (!startingShelter.Equals(""))
             {
                 useRandomStart = true;
                 desiredStartDen = startingShelter;
             }
 
             // Set gate behavior
-            if (desiredGateBehavior == -1)
-            {
-                gateBehavior = Plugin.GateBehavior.OnlyKey;
-            }
-            else
-            {
-                gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
-            }
+            gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
 
             ArchipelagoConnection.PPwS = PPwS > 0;
 
@@ -325,6 +343,8 @@ namespace RainWorldRandomizer
 
             // We don't actually care if option is 0, the server can just ingore us sending Gourm's foods
             foodQuestForAll = foodQuestAccess == 2;
+
+            return true;
         }
 
         private static void InitializePlayer()
