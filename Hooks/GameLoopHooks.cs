@@ -333,7 +333,8 @@ namespace RainWorldRandomizer
                                 // More costly lookup to find where this pearl comes from
                                 foreach (var region in self.rainWorld.regionDataPearls)
                                 {
-                                    if (region.Value.Contains(pearl.AbstractPearl.dataPearlType))
+                                    if (region.Value.Contains(pearl.AbstractPearl.dataPearlType)
+                                        && Plugin.RandoManager.LocationExists(locName + $"-{region.Key.ToUpperInvariant()}"))
                                     {
                                         locName += $"-{region.Key.ToUpperInvariant()}";
                                         break;
