@@ -33,7 +33,7 @@ namespace RainWorldRandomizer
     public class ChatLog : HudPart
     {
         private const int MAX_MESSAGES = 5;
-        protected const float MSG_SIZE_X = 250;
+        protected const float MSG_SIZE_X = 300;
         protected const float MSG_SIZE_Y = 35f;
 
         public bool forceDisplay = false;
@@ -53,7 +53,7 @@ namespace RainWorldRandomizer
         public ChatLog(HUD.HUD hud, FContainer container) : base(hud)
         {
             this.container = container;
-            pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X - 50f, 50f);
+            pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X + 5f, 50f);
 
             AddMessage("This is a test message");
             AddMessage("This is a second test message");
@@ -141,7 +141,7 @@ namespace RainWorldRandomizer
                 index = 0;
                 text = message;
                 lifetime = 5f;
-                yPos = DesiredYPos - MSG_SIZE_Y;
+                yPos = -MSG_SIZE_Y;
 
                 // TODO: Make backdrop stand out on map view
                 backgroundSprite = new FSprite("pixel")
@@ -177,8 +177,9 @@ namespace RainWorldRandomizer
             {
                 if (owner.GamePaused) return;
                 lastShow = show;
+                lastYPos = yPos;
 
-
+                yPos = Mathf.Lerp(yPos, DesiredYPos, 0.05f);
 
                 // Lifetime countdown
                 lifetime = Mathf.Max(0f, lifetime - 0.025f);
@@ -193,10 +194,11 @@ namespace RainWorldRandomizer
             public void Draw(float timeStacker)
             {
                 // Position update
-                backgroundSprite.y = DesiredYPos;
+                float newY = Mathf.Lerp(lastYPos, yPos, timeStacker);
+                backgroundSprite.y = newY;
                 foreach (FLabel label in messageLabels)
                 {
-                    label.y = DesiredYPos;
+                    label.y = newY;
                 }
 
                 // Set alpha values
