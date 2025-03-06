@@ -1,8 +1,10 @@
 ﻿using Archipelago.MultiClient.Net.MessageLog.Messages;
 using HUD;
 using Menu;
+using Menu.Remix.MixedUI;
 using RWCustom;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -34,7 +36,8 @@ namespace RainWorldRandomizer
     {
         private const int MAX_MESSAGES = 5;
         protected const float MSG_SIZE_X = 300;
-        protected const float MSG_SIZE_Y = 35f;
+        protected const float MSG_SIZE_Y = 15f;
+        protected const float MSG_MARGIN = 10f;
 
         public bool forceDisplay = false;
         private bool GamePaused
@@ -53,11 +56,11 @@ namespace RainWorldRandomizer
         public ChatLog(HUD.HUD hud, FContainer container) : base(hud)
         {
             this.container = container;
-            pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X + 5f, 50f);
+            pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X + 5f, 30f);
 
             AddMessage("This is a test message");
             AddMessage("This is a second test message");
-            AddMessage("This is a third test message that is a lot longer than a message should be. Like way too long of a message.");
+            AddMessage("This is a third test message that is a lot longer than a message normally is. Messages will probably never be this long but they should work anyway.");
         }
 
         public void AddMessage(string text)
@@ -76,6 +79,7 @@ namespace RainWorldRandomizer
             foreach (ChatMessage msg in messages)
             {
                 msg.index++;
+                msg.heightIndex += message.height;
             }
 
             // Remove oldest message if reached message limit
@@ -111,9 +115,11 @@ namespace RainWorldRandomizer
 
         private class ChatMessage
         {
-            ChatLog owner;
+            private readonly ChatLog owner;
 
             public int index;
+            public int heightIndex;
+            public int height;
             public string text;
             private float lifetime;
 
@@ -126,7 +132,7 @@ namespace RainWorldRandomizer
             {
                 get
                 {
-                    return owner.pos.y + (index * MSG_SIZE_Y);
+                    return owner.pos.y + (heightIndex * MSG_SIZE_Y) + (index * MSG_MARGIN * 2);
                 }
             }
 
@@ -134,7 +140,6 @@ namespace RainWorldRandomizer
             FLabel[] messageLabels;
 
             // Constructor for "simple" messages (Only one message part)
-            // TODO: Text wrapping
             public ChatMessage(ChatLog chatLog, string message)
             {
                 owner = chatLog;
@@ -143,27 +148,34 @@ namespace RainWorldRandomizer
                 lifetime = 5f;
                 yPos = -MSG_SIZE_Y;
 
+                // Labels
+                string[] splitMessage = Regex.Split(message.WrapText(false, MSG_SIZE_X - 20f), "\n");
+
+                messageLabels = new FLabel[splitMessage.Length];
+                height = messageLabels.Length;
+
                 // TODO: Make backdrop stand out on map view
+                // Background
                 backgroundSprite = new FSprite("pixel")
                 {
                     color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black),
                     x = chatLog.pos.x + (MSG_SIZE_X / 2),
-                    scaleX = MSG_SIZE_X,
-                    scaleY = MSG_SIZE_Y,
-                    alpha = 0.8f
+                    scaleX = MSG_SIZE_X + MSG_MARGIN,
+                    scaleY = (MSG_SIZE_Y * messageLabels.Length) + MSG_MARGIN * 2,
+                    anchorY = 0f
                 };
                 chatLog.container.AddChild(backgroundSprite);
 
-                // Only need one label for simple message
-                messageLabels = new FLabel[1]
+                for (int i = 0; i < splitMessage.Length; i++)
                 {
-                    new FLabel(Custom.GetFont(), message)
+                    messageLabels[i] = new FLabel(Custom.GetFont(), splitMessage[i])
                     {
-                        x = chatLog.pos.x + 10f,
+                        x = chatLog.pos.x + MSG_MARGIN,
                         alignment = FLabelAlignment.Left,
-                    }
+                        anchorY = 0f
+                    };
+                    chatLog.container.AddChild(messageLabels[i]);
                 };
-                chatLog.container.AddChild(messageLabels[0]);
             }
 
             // Constructor for complex messages using an Archipelago LogMessage
@@ -190,15 +202,14 @@ namespace RainWorldRandomizer
                 }
             }
 
-            // TODO: Make new messages push onto screen instead of instant update
             public void Draw(float timeStacker)
             {
                 // Position update
                 float newY = Mathf.Lerp(lastYPos, yPos, timeStacker);
                 backgroundSprite.y = newY;
-                foreach (FLabel label in messageLabels)
+                for (int i = 0; i < messageLabels.Length; i++)
                 {
-                    label.y = newY;
+                    messageLabels[i].y = newY + (messageLabels[i].FontLineHeight * (messageLabels.Length - 1 - i)) + MSG_MARGIN;
                 }
 
                 // Set alpha values
