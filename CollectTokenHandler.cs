@@ -26,6 +26,7 @@ namespace RainWorldRandomizer
 
         public void ApplyHooks()
         {
+            On.CollectToken.AvailableToPlayer += OnTokenAvailableToPlayer;
             On.CollectToken.Pop += OnTokenPop;
 
             try
@@ -43,6 +44,7 @@ namespace RainWorldRandomizer
 
         public void RemoveHooks()
         {
+            On.CollectToken.AvailableToPlayer -= OnTokenAvailableToPlayer;
             On.CollectToken.Pop -= OnTokenPop;
 
             IL.Room.Loaded -= ILRoomLoaded;
@@ -53,97 +55,6 @@ namespace RainWorldRandomizer
 
         public void LoadAvailableTokens(RainWorld rainWorld, SlugcatStats.Name slugcat)
         {
-            /*
-            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == RandomizerMain.PLUGIN_GUID).NewestPath, $"chkrand_arena_unlocks{(ModManager.MSC ? "_MSC" : "")}.txt");
-            
-            if (!File.Exists(path))
-            {
-                return;
-            }
-
-            availableTokens.Clear();
-            string[] file = File.ReadAllLines(path);
-            Dictionary<string, string[]> fileData = new Dictionary<string, string[]>();
-            foreach (string line in file)
-            {
-                if (line == "") continue;
-
-                string regionShort = Regex.Split(line, ":")[0].Trim();
-                string[] data = Regex.Split(Regex.Split(line, ":")[1].Trim().TrimStart('<').TrimEnd('>'), "> <");
-                fileData.Add(regionShort, data);
-            }
-
-            List<string> allRegions = Region.GetFullRegionOrder();
-            // For each region
-            for (int i = 0; i < allRegions.Count; i++)
-            {
-                List<string> idsToAdd = new List<string>();
-
-                //RandomizerMain.Log.LogDebug($"{allRegions[i]}");
-
-                // If there is stored info for this region, use that
-                if (fileData.ContainsKey(allRegions[i]))
-                {
-                    string[] data = fileData[allRegions[i]];
-                    
-                    // For each token in region
-                    foreach (string id in data)
-                    {
-                        string[] idAndSetting = Regex.Split(id, "~");
-
-                        // If the token has no settings, or the settings indicate id is valid for slugcat
-                        if (idAndSetting.Length == 1
-                            || (idAndSetting[1].StartsWith("!") ^ Regex.Split(idAndSetting[1].TrimStart('!'), "\\|").Contains(slugcat.value)))
-                        {
-                            idsToAdd.Add(idAndSetting[0]);
-                        }
-                    }
-                }
-                // Otherwise, refer to Token Cache
-                else
-                {
-                    string regionLower = allRegions[i].ToLowerInvariant();
-
-                    foreach (var token in rainWorld.regionBlueTokens[regionLower])
-                    {
-                        //RandomizerMain.Log.LogDebug($"{token}");
-                        //string output = "";
-                        //foreach (SlugcatStats.Name val in rainWorld.regionBlueTokensAccessibility[regionLower][rainWorld.regionBlueTokens[regionLower].IndexOf(token)])
-                        //{
-                        //    output += $"{val.value}, ";
-                        //}
-                        //RandomizerMain.Log.LogDebug($"{output}");
-                        if (rainWorld.regionBlueTokensAccessibility[regionLower][rainWorld.regionBlueTokens[regionLower].IndexOf(token)].Contains(slugcat))
-                        {
-                            idsToAdd.Add(token.value);
-                        }
-                    }
-
-                    foreach (var token in rainWorld.regionGoldTokens[regionLower])
-                    {
-                        if (rainWorld.regionGoldTokensAccessibility[regionLower][rainWorld.regionGoldTokens[regionLower].IndexOf(token)].Contains(slugcat))
-                        {
-                            idsToAdd.Add($"L-{token.value}");
-                        }
-                    }
-
-                    foreach (var token in rainWorld.regionRedTokens[regionLower])
-                    {
-                        if (rainWorld.regionRedTokensAccessibility[regionLower][rainWorld.regionRedTokens[regionLower].IndexOf(token)].Contains(slugcat))
-                        {
-                            idsToAdd.Add($"S-{token.value}");
-                        }
-                    }
-
-                    foreach (var token in rainWorld.regionGreenTokens[regionLower])
-                    {
-                        if (rainWorld.regionGreenTokensAccessibility[regionLower][rainWorld.regionGreenTokens[regionLower].IndexOf(token)].Contains(slugcat))
-                        {
-                            idsToAdd.Add(token.value);
-                        }
-                    }
-                }
-            */
             availableTokens.Clear();
             List<string> allRegions = Region.GetFullRegionOrder();
             
@@ -188,6 +99,15 @@ namespace RainWorldRandomizer
                 availableTokens.Add(allRegions[i], idsToAdd.ToArray());
 
             }
+        }
+
+        // Make tokens spawn as Inv
+        public bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
+        {
+            return orig(self) || (ModManager.MSC 
+                && !self.devToken
+                && !(self.room.game.StoryCharacter == null) 
+                && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
         }
 
         public void OnTokenPop(On.CollectToken.orig_Pop orig, CollectToken self, Player player)
