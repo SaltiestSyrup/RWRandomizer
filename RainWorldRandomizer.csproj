@@ -44,8 +44,8 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Archipelago.MultiClient.Net, Version=6.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Archipelago.MultiClient.Net.6.5.0\lib\net45\Archipelago.MultiClient.Net.dll</HintPath>
+    <Reference Include="Archipelago.MultiClient.Net, Version=6.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Archipelago.MultiClient.Net.6.6.0\lib\net45\Archipelago.MultiClient.Net.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
       <HintPath>bin\References\BepInEx.dll</HintPath>
@@ -66,7 +66,7 @@
       <HintPath>bin\References\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Archipelago.MultiClient.Net.6.5.0\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>packages\Archipelago.MultiClient.Net.6.6.0\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="PUBLIC-Assembly-CSharp">
       <HintPath>bin\References\PUBLIC-Assembly-CSharp.dll</HintPath>
