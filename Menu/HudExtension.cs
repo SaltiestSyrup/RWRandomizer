@@ -102,7 +102,6 @@ namespace RainWorldRandomizer
             }
         }
 
-        // TODO: Hide when paused
         public override void Draw(float timeStacker)
         {
             base.Draw(timeStacker);
@@ -161,7 +160,7 @@ namespace RainWorldRandomizer
                     color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black),
                     x = chatLog.pos.x + (MSG_SIZE_X / 2),
                     scaleX = MSG_SIZE_X + MSG_MARGIN,
-                    scaleY = (MSG_SIZE_Y * messageLabels.Length) + MSG_MARGIN * 2,
+                    scaleY = (MSG_SIZE_Y * height) + MSG_MARGIN * 2,
                     anchorY = 0f
                 };
                 chatLog.container.AddChild(backgroundSprite);
@@ -182,7 +181,37 @@ namespace RainWorldRandomizer
             // TODO: Implement splitting LogMessages with multiple labels
             public ChatMessage(ChatLog chatLog, LogMessage message)
             {
+                owner = chatLog;
+                index = 0;
+                text = message.ToString();
+                lifetime = 5f;
+                yPos = -MSG_SIZE_Y;
 
+                messageLabels = new FLabel[message.Parts.Length];
+                height = messageLabels.Length; // TODO: Custom text wrapping
+
+                // TODO: Make backdrop stand out on map view
+                // Background
+                backgroundSprite = new FSprite("pixel")
+                {
+                    color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black),
+                    x = chatLog.pos.x + (MSG_SIZE_X / 2),
+                    scaleX = MSG_SIZE_X + MSG_MARGIN,
+                    scaleY = (MSG_SIZE_Y * height) + MSG_MARGIN * 2,
+                    anchorY = 0f
+                };
+                chatLog.container.AddChild(backgroundSprite);
+
+                for (int i = 0; i < message.Parts.Length; i++)
+                {
+                    messageLabels[i] = new FLabel(Custom.GetFont(), message.Parts[i].Text)
+                    {
+                        //color = message.Parts[i]
+                        x = chatLog.pos.x + MSG_MARGIN,
+                        alignment = FLabelAlignment.Left,
+                        anchorY = 0f
+                    };
+                }
             }
 
             public void Update()
