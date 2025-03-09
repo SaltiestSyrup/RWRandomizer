@@ -1,9 +1,11 @@
-﻿using Archipelago.MultiClient.Net.MessageLog.Messages;
+﻿using Archipelago.MultiClient.Net.Colors;
+using Archipelago.MultiClient.Net.MessageLog.Messages;
 using HUD;
 using Menu;
 using Menu.Remix.MixedUI;
 using RWCustom;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -56,7 +58,7 @@ namespace RainWorldRandomizer
         public ChatLog(HUD.HUD hud, FContainer container) : base(hud)
         {
             this.container = container;
-            pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X + 5f, 30f);
+            pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X - (MSG_MARGIN * 2) + 0.01f, 30.01f);
 
             AddMessage("This is a test message");
             AddMessage("This is a second test message");
@@ -121,6 +123,7 @@ namespace RainWorldRandomizer
             public int height;
             public string text;
             private float lifetime;
+            private List<int> wrapIndices;
 
             private float show = 1;
             private float lastShow = 1;
@@ -146,9 +149,10 @@ namespace RainWorldRandomizer
                 text = message;
                 lifetime = 5f;
                 yPos = -MSG_SIZE_Y;
+                wrapIndices = new List<int>();
 
                 // Labels
-                string[] splitMessage = Regex.Split(message.WrapText(false, MSG_SIZE_X - 20f), "\n");
+                string[] splitMessage = Regex.Split(message.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "\n");
 
                 messageLabels = new FLabel[splitMessage.Length];
                 height = messageLabels.Length;
@@ -159,8 +163,8 @@ namespace RainWorldRandomizer
                 {
                     color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black),
                     x = chatLog.pos.x + (MSG_SIZE_X / 2),
-                    scaleX = MSG_SIZE_X + MSG_MARGIN,
-                    scaleY = (MSG_SIZE_Y * height) + MSG_MARGIN * 2,
+                    scaleX = MSG_SIZE_X + (MSG_MARGIN * 2),
+                    scaleY = (MSG_SIZE_Y * height) + (MSG_MARGIN * 2),
                     anchorY = 0f
                 };
                 chatLog.container.AddChild(backgroundSprite);
@@ -174,11 +178,11 @@ namespace RainWorldRandomizer
                         anchorY = 0f
                     };
                     chatLog.container.AddChild(messageLabels[i]);
+                    wrapIndices.Add(i + 1);
                 };
             }
 
             // Constructor for complex messages using an Archipelago LogMessage
-            // TODO: Implement splitting LogMessages with multiple labels
             public ChatMessage(ChatLog chatLog, LogMessage message)
             {
                 owner = chatLog;
@@ -186,32 +190,60 @@ namespace RainWorldRandomizer
                 text = message.ToString();
                 lifetime = 5f;
                 yPos = -MSG_SIZE_Y;
+                wrapIndices = new List<int>();
 
                 messageLabels = new FLabel[message.Parts.Length];
-                height = messageLabels.Length; // TODO: Custom text wrapping
 
                 // TODO: Make backdrop stand out on map view
                 // Background
                 backgroundSprite = new FSprite("pixel")
                 {
                     color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black),
-                    x = chatLog.pos.x + (MSG_SIZE_X / 2),
-                    scaleX = MSG_SIZE_X + MSG_MARGIN,
-                    scaleY = (MSG_SIZE_Y * height) + MSG_MARGIN * 2,
+                    x = chatLog.pos.x,
+                    scaleX = MSG_SIZE_X + (MSG_MARGIN * 2),
+                    anchorX = 0f,
                     anchorY = 0f
                 };
                 chatLog.container.AddChild(backgroundSprite);
 
+                StringBuilder wrapText = new StringBuilder();
                 for (int i = 0; i < message.Parts.Length; i++)
                 {
+                    // Running offset to position labels in a line
+                    float curOffset = chatLog.pos.x + MSG_MARGIN;
+                    if (i > 0)
+                    {
+                        curOffset = messageLabels[i - 1].x + messageLabels[i - 1].textRect.width + 1f;
+                    }
+
+                    // Detect when text should be wrapped
+                    wrapText.Append(message.Parts[i].Text);
+                    if (wrapText.ToString().WrapText(false, MSG_SIZE_X).Contains("\n"))
+                    {
+                        // Skip wrapping this step if this is just a closing bracket
+                        if (!message.Parts[i].Text.Equals(")"))
+                        {
+                            wrapIndices.Add(i);
+                            wrapText.Clear();
+                            curOffset = chatLog.pos.x + MSG_MARGIN;
+                        }
+                    }
+
+                    Plugin.Log.LogDebug($"\"{message.Parts[i].Text}\"");
+
+                    // Create the label
                     messageLabels[i] = new FLabel(Custom.GetFont(), message.Parts[i].Text)
                     {
-                        //color = message.Parts[i]
-                        x = chatLog.pos.x + MSG_MARGIN,
+                        color = ArchipelagoConnection.palette[message.Parts[i].PaletteColor],
+                        x = curOffset,
                         alignment = FLabelAlignment.Left,
                         anchorY = 0f
                     };
+                    chatLog.container.AddChild(messageLabels[i]);
                 }
+
+                height = wrapIndices.Count + 1;
+                backgroundSprite.scaleY = (MSG_SIZE_Y * height) + MSG_MARGIN * 2;
             }
 
             public void Update()
@@ -236,9 +268,11 @@ namespace RainWorldRandomizer
                 // Position update
                 float newY = Mathf.Lerp(lastYPos, yPos, timeStacker);
                 backgroundSprite.y = newY;
+                int lineIndex = 0;
                 for (int i = 0; i < messageLabels.Length; i++)
                 {
-                    messageLabels[i].y = newY + (messageLabels[i].FontLineHeight * (messageLabels.Length - 1 - i)) + MSG_MARGIN;
+                    if (wrapIndices.Contains(i)) lineIndex++;
+                    messageLabels[i].y = newY + (messageLabels[i].FontLineHeight * (height - 1 - lineIndex)) + MSG_MARGIN;
                 }
 
                 // Set alpha values
