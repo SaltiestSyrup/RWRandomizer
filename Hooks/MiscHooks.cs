@@ -67,6 +67,7 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
                 IL.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreenGetDataFromGameIL;
+                IL.World.SpawnGhost += ILSpawnGhost;
             }
             catch (Exception e)
             {
@@ -96,6 +97,7 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
             IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreenGetDataFromGameIL;
+            IL.World.SpawnGhost -= ILSpawnGhost;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -681,6 +683,99 @@ namespace RainWorldRandomizer
                     return;
                 }
             }
+        }
+
+        public static void ILSpawnGhost(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(
+                MoveType.Before,
+                x => x.MatchCallOrCallvirt(typeof(World).GetProperty(nameof(World.game)).GetGetMethod()),
+                x => x.MatchLdfld(typeof(RainWorldGame).GetField(nameof(RainWorldGame.rainWorld))),
+                x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.safariMode)))
+                );
+
+            // Modify echo spawning conditions based on settings
+            c.Emit(OpCodes.Ldloc_0); // ghostID
+            c.Emit(OpCodes.Ldloc_2); // flag for if echo should be spawned
+            c.EmitDelegate<Func<World, GhostWorldPresence.GhostID, bool, bool>>(CustomEchoLogic);
+            c.Emit(OpCodes.Stloc_2);
+
+            bool CustomEchoLogic(World self, GhostWorldPresence.GhostID ghostID, bool spawnEcho)
+            {
+                // Use default logic if karma cap >= 5 or we're not in a mode where this applies
+                if (!Plugin.RandoManager.isRandomizerActive
+                    || !(Plugin.RandoManager is ManagerArchipelago)
+                    || self.game.GetStorySession?.saveState.deathPersistentSaveData.karmaCap >= 4)
+                {
+                    return spawnEcho;
+                }
+                // Use default logic if in Expedition
+                if (ModManager.Expedition && self.game.rainWorld.ExpeditionMode)
+                {
+                    return spawnEcho;
+                }
+                // Echoes that don't require karma should use default logic
+                if (ghostID == GhostWorldPresence.GhostID.UW
+                    || ghostID == GhostWorldPresence.GhostID.SB
+                    || ModManager.MSC 
+                    && (ghostID == MoreSlugcatsEnums.GhostID.LC 
+                    || ghostID == MoreSlugcatsEnums.GhostID.MS))
+                {
+                    return spawnEcho;
+                }
+
+                // Create some locals to improve readability below
+                int karma = self.game.GetStorySession.saveState.deathPersistentSaveData.karma;
+                int cap = self.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap;
+                bool reinforced = self.game.GetStorySession.saveState.deathPersistentSaveData.reinforcedKarma;
+                int encounterIndex = self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo.ContainsKey(ghostID) ? 
+                    self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo[ghostID] : 0;
+                bool isArtificer = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer;
+                bool isSaint = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Saint;
+
+                // How should we treat echoes when below 5 max karma?
+                switch (ArchipelagoConnection.echoDifficulty)
+                {
+                    case ArchipelagoConnection.EchoLowKarmaDifficulty.Impossible:
+                        // Disable spawn entirely
+                        return false;
+                    case ArchipelagoConnection.EchoLowKarmaDifficulty.WithFlower:
+                        // Require a karma flower and at karma cap
+                        if (isArtificer)
+                        {
+                            // This IS default logic for Artificer
+                            return spawnEcho;
+                        }
+                        if (isSaint)
+                        {
+                            // Saint will have overwritten logic, so we need to add it again
+                            return encounterIndex < 2 && karma == cap && reinforced;
+                        }
+                        return spawnEcho && reinforced;
+                    case ArchipelagoConnection.EchoLowKarmaDifficulty.MaxKarma:
+                        // Just require karma cap
+                        if (isArtificer)
+                        {
+                            // Artificer will have set to false, logic must be redone
+                            return encounterIndex == 1 && karma == cap;
+                        }
+                        if (isSaint)
+                        {
+                            // Saint will have overwritten logic, so we need to add it again
+                            return encounterIndex < 2 && karma == cap;
+                        }
+                        // This is default logic for most slugcats, so just return orig
+                        return spawnEcho;
+                    case ArchipelagoConnection.EchoLowKarmaDifficulty.Vanilla:
+                    default:
+                        // Vanilla logic
+                        return spawnEcho;
+                }
+            }
+
+            c.Emit(OpCodes.Ldarg_0); // We interuppted after a ldarg_0, so put that back before we leave
         }
 
         public static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
