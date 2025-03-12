@@ -7,6 +7,7 @@ using UnityEngine;
 using RWCustom;
 using System.Text.RegularExpressions;
 using Menu.Remix;
+using System.Linq.Expressions;
 
 namespace RainWorldRandomizer
 {
@@ -198,7 +199,8 @@ namespace RainWorldRandomizer
         {
             public Dictionary<string, Node> nodes = new Dictionary<string, Node>();
             public Dictionary<string, Connector> connectors = new Dictionary<string, Connector>();
-            public string Scug => Plugin.RandoManager.currentSlugcat?.value ?? "White";
+            public static string Scug => Plugin.RandoManager.currentSlugcat?.value ?? "White";
+            public static string CurrentRegion => (Custom.rainWorld.processManager.currentMainLoop as RainWorldGame)?.world.name;
             public static Color COLOR_ACCESSIBLE = Color.white;
             public static Color COLOR_INACCESSIBLE = new Color(0.2f, 0.2f, 0.2f);
             public static Color COLOR_YOU_ARE_HERE = Color.cyan;
@@ -232,7 +234,7 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                if (nodes.TryGetValue(GetNodeName((Custom.rainWorld.processManager.currentMainLoop as RainWorldGame)?.world.name), out Node node2))
+                if (nodes.TryGetValue(GetNodeName(CurrentRegion), out Node node2))
                 {
                     node2.Color = COLOR_YOU_ARE_HERE;
                 }
@@ -340,24 +342,43 @@ namespace RainWorldRandomizer
             }
 
             /// <summary>
+            /// Determine whether a particular gate is usable in either direction.
+            /// </summary>
+            /// <param name="key">The gate name ("GATE_A_B").</param>
+            /// <returns>Two <see cref="bool"/>s - one for whether going from region A to region B is possible, and one for B to A.
+            /// Note that which region is A and which is B is dependent only on the gate name, not on the physical position of the regions.</returns>
+            public static bool[] CanUseGate(string key)
+            {
+                switch (key)
+                {
+                    case "GATE_LF_SB": return Scug == "Saint" ? new bool[] { true, true } : new bool[] { true, false };
+                    case "GATE_SL_MS": return new bool[] { false, true };
+                    case "GATE_OE_SU": return new bool[] { true, false };
+                    case "GATE_UW_SL": return Scug == "Artificer" || Scug == "Spear" ? new bool[] { true, true } : new bool[] { false, false };
+                    case "GATE_SL_VS": return Scug == "Artificer" ? new bool[] { false, false } : new bool[] { true, true };
+                }
+                return new bool[] { true, true };
+            }
+
+            /// <summary>
             /// Given a list of currently held gate keys, determinine which region nodes are accessible.
             /// </summary>
             public static IEnumerable<string> GetAccessibleNodes(IEnumerable<string> keys)
             {
-                List<string> ret = new List<string>() { ActualStartRegion };
+                List<string> ret = new List<string>() { GetNodeName(ActualStartRegion) };
+                Dictionary<string, bool[]> keyDict = keys.ToDictionary(x => x, CanUseGate);
                 bool updated = true;
                 while (updated)
                 {
-                    //Plugin.Log.LogDebug($"List is {string.Join(", ", ret)}");
                     updated = false;
-                    foreach (string key in keys)
+                    foreach (var pair in keyDict)
                     {
-                        string[] split = key.Split('_');
+                        string[] split = pair.Key.Split('_');
                         string left = GetNodeName(split[1]);
                         string right = GetNodeName(split[2]);
-                        if (ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); updated = true; }
-                        else if (!ret.Contains(left) && ret.Contains(right)) { ret.Add(left); updated = true; }
-                        //Plugin.Log.LogDebug($"After {key}, list is {string.Join(", ", ret)}");
+                        bool[] usable = pair.Value;
+                        if (usable[0] && ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); updated = true; }
+                        else if (usable[1] && !ret.Contains(left) && ret.Contains(right)) { ret.Add(left); updated = true; }
                     }
                 }
                 return ret;
