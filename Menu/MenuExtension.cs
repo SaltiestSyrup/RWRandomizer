@@ -17,7 +17,6 @@ namespace RainWorldRandomizer
         public bool displaySpoilerMenu = false;
         public SimpleButton spoilerButton;
         public SpoilerMenu spoilerMenu;
-        public GatesDisplay gatesDisplay;
         public PendingItemsDisplay pendingItemsDisplay;
 
         public void ApplyHooks()
@@ -47,14 +46,14 @@ namespace RainWorldRandomizer
             // Extra offset if using Warp Menu
             float xOffset = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("LeeMoriya.Warp") ? 190f : 20f;
 
-            gatesDisplay = new GatesDisplay(self, self.pages[0], 
-                new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 20f));
-            self.pages[0].subObjects.Add(gatesDisplay);
+            GateMapDisplay gateMapDisplay = new GateMapDisplay(self, self.pages[0],
+                new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 320f));
+            self.pages[0].subObjects.Add(gateMapDisplay);
 
             if (Options.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
             {
                 pendingItemsDisplay = new PendingItemsDisplay(self, self.pages[0],
-                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gatesDisplay.size.y - 20f));
+                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateMapDisplay.size.y - 20f));
                 self.pages[0].subObjects.Add(pendingItemsDisplay);
             }
         }
@@ -195,36 +194,329 @@ namespace RainWorldRandomizer
             }
         }
 
-        public class GatesDisplay : RectangularMenuObject
+        public class GateMapDisplay : RoundedRect
         {
-            public RoundedRect roundedRect;
-            public MenuLabel[] menuLabels;
+            public Dictionary<string, Node> nodes = new Dictionary<string, Node>();
+            public Dictionary<string, Connector> connectors = new Dictionary<string, Connector>();
+            public string Scug => Plugin.RandoManager.currentSlugcat?.value ?? "White";
+            public static Color COLOR_ACCESSIBLE = Color.white;
+            public static Color COLOR_INACCESSIBLE = new Color(0.2f, 0.2f, 0.2f);
+            public static Color COLOR_YOU_ARE_HERE = Color.cyan;
 
-            public GatesDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
+            public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
             {
-                List<string> openedGates = Plugin.RandoManager.GetGatesStatus().Where(g => g.Value == true).ToList().ConvertAll(g => g.Key);
-                menuLabels = new MenuLabel[openedGates.Count + 1];
-                size = new Vector2(300f, (menuLabels.Length * 15f) + 20f);
+                size = new Vector2(320f, 270f);
+                fillAlpha = 1f;
 
-                roundedRect = new RoundedRect(menu, this, new Vector2(0f, -size.y), size, true)
+                // Nodes have to exist before the connectors, but we want the connectors to be behind the nodes.
+                CreateNodes();
+                CreateConnectors();
+                foreach (Connector connector in connectors.Values) Container.AddChild(connector);
+                subObjects.AddRange(nodes.Values);
+
+                Dictionary<string, bool> gates = Plugin.RandoManager.GetGatesStatus();
+
+                foreach (var pair in gates)
                 {
-                    fillAlpha = 1f
-                };
-                subObjects.Add(roundedRect);
+                    if (connectors.TryGetValue(pair.Key, out Connector connector))
+                    {
+                        connector.Color = pair.Value ? COLOR_ACCESSIBLE : COLOR_INACCESSIBLE;
+                    }
+                }
 
-                menuLabels[0] = new MenuLabel(menu, this, "Currently Unlocked Gates:", new Vector2(10f, -13f), default, false, null);
-                menuLabels[0].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
-                menuLabels[0].label.alignment = FLabelAlignment.Left;
-                subObjects.Add(menuLabels[0]);
-
-                for (int i = 1; i < menuLabels.Length; i++)
+                foreach (string nodeName in GetAccessibleNodes(gates.Where(x => x.Value).Select(x => x.Key)))
                 {
-                    menuLabels[i] = new MenuLabel(menu, this, 
-                        Plugin.GateToString(openedGates[i - 1], Plugin.RandoManager.currentSlugcat),
-                        new Vector2(10f, -15f - (15f * i)), default, false, null);
-                    menuLabels[i].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
-                    menuLabels[i].label.alignment = FLabelAlignment.Left;
-                    subObjects.Add(menuLabels[i]);
+                    if (nodes.TryGetValue(nodeName, out Node node))
+                    {
+                        node.Color = COLOR_ACCESSIBLE;
+                    }
+                }
+
+                if (nodes.TryGetValue(GetNodeName((Custom.rainWorld.processManager.currentMainLoop as RainWorldGame)?.world.name), out Node node2))
+                {
+                    node2.Color = COLOR_YOU_ARE_HERE;
+                }
+            }
+
+            public void CreateNodes()
+            {
+                // Nodes which are always present, regardless of gamestate.
+                nodes["SB"] = new Node(menu, this, new Vector2(40f, 40f), "SB");
+                nodes["DS"] = new Node(menu, this, new Vector2(100f, 40f), Scug == "Saint" ? "UG" : "DS");
+                nodes["LF"] = new Node(menu, this, new Vector2(40f, 80f), "LF");
+                nodes["SU"] = new Node(menu, this, new Vector2(100f, 80f), "SU");
+                nodes["GW"] = new Node(menu, this, new Vector2(160f, 80f), "GW");
+                nodes["HI"] = new Node(menu, this, new Vector2(100f, 120f), "HI");
+                nodes["SH"] = new Node(menu, this, new Vector2(160f, 120f), Scug == "Saint" ? "CL" : "SH");
+                nodes["SL"] = new Node(menu, this, new Vector2(220f, 120f), Scug == "Artificer" || Scug == "Spear" ? "LM" : "SL");
+                nodes["SI"] = new Node(menu, this, new Vector2(40f, 160f), "SI");
+                nodes["CC"] = new Node(menu, this, new Vector2(100f, 160f), "CC");
+
+                if (ModManager.MSC)
+                {
+                    nodes["VS"] = new Node(menu, this, new Vector2(40f, 120f), "VS");
+                    if (Scug == "White" || Scug == "Yellow" || Scug == "Gourmand") nodes["OE"] = new Node(menu, this, new Vector2(70f, 60f), "OE");
+                    if (Scug == "Artificer") nodes["LC"] = new Node(menu, this, new Vector2(160f, 200f), "LC");
+                    if (Scug != "Artificer") nodes["MS"] = new Node(menu, this, new Vector2(280f, 160f), Scug == "Spear" ? "DM" : "MS");
+                }
+
+                if (Scug != "Saint")
+                {
+                    nodes["UW"] = new Node(menu, this, new Vector2(160f, 160f), "UW");
+                    nodes["SS"] = new Node(menu, this, new Vector2(220f, 160f), Scug == "Rivulet" ? "RM" : "SS");
+                }
+            }
+
+            public void CreateConnectors()
+            {
+                // Vanilla connections that always exist (except SI_LF).
+                connectors["GATE_SU_DS"] = new Connector(nodes["SU"].Bottom, nodes["DS"].Top);
+                connectors["GATE_SU_HI"] = new Connector(nodes["HI"].Bottom, nodes["SU"].Top);
+                connectors["GATE_LF_SU"] = new Connector(nodes["LF"].Right, nodes["SU"].Left);
+                connectors["GATE_DS_GW"] = new Connector(false, nodes["DS"].Right, 45, 30);
+                connectors["GATE_DS_SB"] = new Connector(nodes["SB"].Right, nodes["DS"].Left);
+                connectors["GATE_GW_SL"] = new Connector(nodes["GW"].TopRight, nodes["SL"].BottomLeft);
+                connectors["GATE_HI_CC"] = new Connector(nodes["CC"].Bottom, nodes["HI"].Top);
+                connectors["GATE_HI_GW"] = new Connector(nodes["HI"].BottomRight, nodes["GW"].TopLeft);
+                connectors["GATE_HI_SH"] = new Connector(nodes["HI"].Right, nodes["SH"].Left);
+                connectors["GATE_LF_SB"] = new Connector(nodes["LF"].Bottom, nodes["SB"].Top);
+                connectors["GATE_SB_SL"] = new Connector(true, nodes["SB"].Bottom, -10, 180, 90);
+                connectors["GATE_SH_SL"] = new Connector(nodes["SH"].Right, nodes["SL"].Left);
+                connectors["GATE_SI_CC"] = new Connector(nodes["SI"].Right, nodes["CC"].Left);
+                connectors["GATE_SS_UW"] = new Connector(nodes["UW"].TopRight, nodes["SS"].TopLeft);
+                connectors["GATE_UW_SS"] = new Connector(nodes["UW"].BottomRight, nodes["SS"].BottomLeft);
+
+
+                if (Scug != "Saint")
+                {
+                    connectors["GATE_CC_UW"] = new Connector(nodes["CC"].Right, nodes["UW"].Left);
+                    connectors["GATE_SH_UW"] = new Connector(nodes["UW"].Bottom, nodes["SH"].Top);
+                }
+
+                if (ModManager.MSC)
+                {
+                    connectors["GATE_SL_UW"] = new Connector(nodes["SL"].TopLeft, nodes["UW"].BottomRight);
+                    connectors["GATE_HI_VS"] = new Connector(nodes["VS"].Right, nodes["HI"].Left);
+                    connectors["GATE_SI_VS"] = new Connector(nodes["SI"].Bottom, nodes["VS"].Top);
+                    connectors["GATE_GW_SH"] = new Connector(nodes["SH"].Bottom, nodes["GW"].Top);
+                    connectors["GATE_SI_LF"] = new Connector(false, nodes["SI"].Left, -10, -57, 0, float.NaN, -5, 0, -18, 10);
+                    connectors["GATE_SB_VS"] = new Connector(true, nodes["VS"].Bottom, -10, -25, -60, 10);
+
+                    connectors["GATE_SI_LF"] = Connector.Broken(
+                        nodes["SI"].BottomRight,
+                        new Vector2(20f, 0f), new Vector2(0f, -31f), default, new Vector2(0f, -5f), new Vector2(0f, -32f), new Vector2(-20f, 0f));
+
+                    connectors["GATE_DS_CC"] = Connector.Wrapping(nodes["DS"].Bottom, new Vector2(0f, -30f), nodes["CC"].Top, new Vector2(0f, 30f));
+                    connectors["GATE_SL_VS"] = Connector.Wrapping(nodes["VS"].Left, new Vector2(-30f, 0f), nodes["SL"].Right, new Vector2(30f, 0f));
+
+                    if (Scug == "Artificer") connectors["GATE_UW_LC"] = new Connector(nodes["UW"].Top, nodes["LC"].Bottom);
+                    if (Scug != "Artificer")
+                    {
+                        connectors["GATE_MS_SL"] = new Connector(nodes["SL"].TopRight, nodes["MS"].Bottom);
+                        connectors["GATE_SL_MS"] = new Connector(nodes["SL"].Top, nodes["MS"].BottomLeft);
+                    }
+                    if (Scug == "White" || Scug == "Yellow" || Scug == "Gourmand")
+                    {
+                        connectors["GATE_OE_SU"] = new Connector(true, nodes["SU"].Bottom + new Vector2(-5f, 0f), -10, -10);
+                        connectors["GATE_SB_OE"] = new Connector(true, nodes["SB"].Top + new Vector2(5f, 0f), 10, 10);
+                    }
+                }
+                else
+                {
+                    // Without MSC, VS is not in the way of the SI_LF connection.
+                    connectors["GATE_SI_LF"] = new Connector(nodes["SI"].Bottom, nodes["LF"].Top);
+                }
+            }
+
+            public static string ActualStartRegion
+            {
+                get
+                {
+                    // `customStartDen` currently does not reliably reflect an AP start; grab AP directly
+                    string s = Plugin.RandoManager is ManagerArchipelago ? ArchipelagoConnection.desiredStartDen : Plugin.RandoManager.customStartDen;
+                    // Special case for Spearmaster
+                    return s == "GATE_OE_SU" ? "SU" : s.Split('_')[0];
+                }
+            }
+
+            /// <summary>
+            /// Given a list of currently held gate keys, determinine which region nodes are accessible.
+            /// </summary>
+            public static IEnumerable<string> GetAccessibleNodes(IEnumerable<string> keys)
+            {
+                List<string> ret = new List<string>() { ActualStartRegion };
+                bool updated = true;
+                while (updated)
+                {
+                    //Plugin.Log.LogDebug($"List is {string.Join(", ", ret)}");
+                    updated = false;
+                    foreach (string key in keys)
+                    {
+                        string[] split = key.Split('_');
+                        string left = GetNodeName(split[1]);
+                        string right = GetNodeName(split[2]);
+                        if (ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); updated = true; }
+                        else if (!ret.Contains(left) && ret.Contains(right)) { ret.Add(left); updated = true; }
+                        //Plugin.Log.LogDebug($"After {key}, list is {string.Join(", ", ret)}");
+                    }
+                }
+                return ret;
+            }
+
+            /// <summary>
+            /// Get the name of the node associated with a given region code.
+            /// </summary>
+            public static string GetNodeName(string code)
+            {
+                switch (code)
+                {
+                    case "LM": return "SL";
+                    case "RM": return "SS";
+                    case "UG": return "DS";
+                    case "DM": return "MS";
+                    case "CL": return "SH";
+                    default: return code;
+                }
+            }
+
+            public class Node : RoundedRect
+            {
+                public MenuLabel label;
+                public static Vector2 SIZE = new Vector2(30f, 20f);
+
+                public Node(Menu.Menu menu, MenuObject owner, Vector2 pos, string text) 
+                    : base(menu, owner, pos, SIZE, true)
+                {
+                    fillAlpha = 1f;
+                    label = new MenuLabel(menu, owner, text, pos + (SIZE / 2) + new Vector2(0.01f, 0.01f), default, false);
+                    label.label.alignment = FLabelAlignment.Center;
+                    subObjects.Add(label);
+                    Color = COLOR_INACCESSIBLE;
+                }
+
+                public Vector2 Bottom => pos + new Vector2(size.x / 2, 1f) + (owner as GateMapDisplay).pos;
+                public Vector2 Top => pos + new Vector2(size.x / 2, size.y + 1f) + (owner as GateMapDisplay).pos;
+                public Vector2 Left => pos + new Vector2(1f, size.y / 2) + (owner as GateMapDisplay).pos;
+                public Vector2 Right => pos + new Vector2(size.x, size.y / 2) + (owner as GateMapDisplay).pos;
+                public Vector2 BottomLeft => pos + new Vector2(4f, 4f) + (owner as GateMapDisplay).pos;
+                public Vector2 BottomRight => pos + new Vector2(size.x - 4f, 4f) + (owner as GateMapDisplay).pos;
+                public Vector2 TopRight => pos + new Vector2(size.x - 4f, size.y - 4f) + (owner as GateMapDisplay).pos;
+                public Vector2 TopLeft => pos + new Vector2(4f, size.y - 4f) + (owner as GateMapDisplay).pos;
+
+                public Color Color
+                {
+                    set
+                    { 
+                        label.label.color = value; 
+                        var c = Custom.RGB2HSL(value);
+                        borderColor = new HSLColor(c.x, c.y, c.z);
+                    }
+                    get => label.label.color;
+                }
+            }
+
+            public class Connector : FContainer
+            {
+                /// <summary>
+                /// Create a Connector from a list of vector vertices.
+                /// </summary>
+                public Connector(params Vector2[] vertices)
+                {
+                    for (int i = 1; i < vertices.Length; i++)
+                    {
+                        AddChild(new Segment(vertices[i-1], vertices[i]));
+                    }
+                }
+
+                /// <summary>
+                /// Create an connector from a start point and a list of vector offsets, optionally with gaps.
+                /// </summary>
+                /// <param name="start">The point to start at.</param>
+                /// <param name="offsets">The list of vectors used to define the remaining points, each acting as an offset from the last point.
+                /// If <see cref="Vector2.zero"/> is given, the next step is not actually drawn, resulting in a gap.</param>
+                /// <returns>The constructed <see cref="Connector"/>.</returns>
+                public static Connector Broken(Vector2 start, params Vector2[] offsets)
+                {
+                    Vector2 point = start;
+                    bool discardNext = false;
+                    List<Segment> segments = new List<Segment>();
+                    foreach (Vector2 offset in offsets)
+                    {
+                        if (offset == Vector2.zero) { discardNext = true; continue; }
+                        Vector2 nextPoint = point + offset;
+                        if (!discardNext) segments.Add(new Segment(point, nextPoint));
+                        point = nextPoint;
+                        discardNext = false;
+                    }
+                    return new Connector(segments);
+                }
+
+                /// <summary>
+                /// Create an orthogonal angled connector from a start point and a list of steps, optionally with gaps.
+                /// </summary>
+                /// <param name="verticalFirst">Whether the first step is vertical instead of horizontal.</param>
+                /// <param name="start">The start point.</param>
+                /// <param name="offsets">The list of steps to take.  The orientation of each step is orthogonal to the last step.
+                /// If <see cref="float.NaN"/> is given, the next step is not drawn, resulting in a gap (and the orientation does not change).
+                /// If 0 (zero) is given, the orientation changes without drawing a new segment.</param>
+                public Connector(bool verticalFirst, Vector2 start, params float[] offsets)
+                {
+                    Vector2 point = start;
+                    bool verticalNext = verticalFirst;
+                    bool discardNext = false;
+                    foreach (float offset in offsets)
+                    {
+                        if (float.IsNaN(offset)) { discardNext = true; continue; }
+                        if (offset == 0) { verticalNext = !verticalNext; continue; }
+                        Vector2 nextPoint = point + (verticalNext ? new Vector2(0f, offset) : new Vector2(offset, 0f));
+                        if (!discardNext) AddChild(new Segment(point, nextPoint));
+                        point = nextPoint;
+                        verticalNext = !verticalNext;
+                        discardNext = false;
+                    }
+                }
+
+                public Connector(List<Segment> segments) { foreach (Segment segment in segments) AddChild(segment); }
+
+                public static Connector Wrapping(Vector2 startA, Vector2 offsetA, Vector2 startB, Vector2 offsetB, float dashLength = 7f, float dashSpace = 5f)
+                {
+                    List<Segment> segments = new List<Segment>();
+                    for (int i = 0; i < 3; i++)
+                    {
+                        segments.Add(new Segment(
+                            startA + offsetA.normalized * (dashLength + dashSpace) * i, 
+                            startA + offsetA.normalized * ((dashLength + dashSpace) * i + dashLength)
+                            ));
+                        segments.Add(new Segment(
+                            startB + offsetB.normalized * (dashLength + dashSpace) * i, 
+                            startB + offsetB.normalized * ((dashLength + dashSpace) * i + dashLength)
+                            ));
+                    }
+                    return new Connector(segments);
+                }
+
+                public Color Color
+                {
+                    set { foreach (Segment segment in _childNodes.OfType<Segment>()) segment.color = value; }
+                    get => _childNodes.OfType<Segment>().FirstOrDefault()?.color ?? COLOR_INACCESSIBLE;
+                }
+
+                public class Segment : FSprite
+                {
+                    public Segment(Vector2 start, Vector2 end) : base("pixel")
+                    {
+                        Vector2 midpoint = (start + end) / 2;
+                        SetPosition(midpoint);
+                        var displacement = end - start;
+                        color = COLOR_INACCESSIBLE;
+                        if (displacement.x == 0) { width = 1; height = displacement.y; }
+                        else if (displacement.y == 0) { width = displacement.x; height = 1; }
+                        else
+                        {
+                            rotation = Custom.AimFromOneVectorToAnother(start, end);
+                            width = 1; height = displacement.magnitude;
+                        }
+                    }
                 }
             }
         }
