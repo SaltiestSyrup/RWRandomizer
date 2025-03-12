@@ -67,6 +67,7 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
                 IL.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreenGetDataFromGameIL;
+                IL.World.SpawnGhost += ILSpawnGhost;
             }
             catch (Exception e)
             {
@@ -96,6 +97,7 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
             IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreenGetDataFromGameIL;
+            IL.World.SpawnGhost -= ILSpawnGhost;
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
@@ -700,7 +702,7 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldloc_0); // ghostID
             c.Emit(OpCodes.Ldloc_2); // flag for if echo should be spawned
             c.EmitDelegate<Func<World, GhostWorldPresence.GhostID, bool, bool>>(CustomEchoLogic);
-            c.Emit(OpCodes.Stfld, 2);
+            c.Emit(OpCodes.Stloc_2);
 
             bool CustomEchoLogic(World self, GhostWorldPresence.GhostID ghostID, bool spawnEcho)
             {
