@@ -691,14 +691,12 @@ namespace RainWorldRandomizer
 
             c.GotoNext(
                 MoveType.Before,
-                x => x.MatchLdarg(0),
                 x => x.MatchCallOrCallvirt(typeof(World).GetProperty(nameof(World.game)).GetGetMethod()),
                 x => x.MatchLdfld(typeof(RainWorldGame).GetField(nameof(RainWorldGame.rainWorld))),
                 x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.safariMode)))
                 );
 
             // Modify echo spawning conditions based on settings
-            c.Emit(OpCodes.Ldarg_0); // this
             c.Emit(OpCodes.Ldloc_0); // ghostID
             c.Emit(OpCodes.Ldloc_2); // flag for if echo should be spawned
             c.EmitDelegate<Func<World, GhostWorldPresence.GhostID, bool, bool>>(CustomEchoLogic);
@@ -776,6 +774,8 @@ namespace RainWorldRandomizer
                         return spawnEcho;
                 }
             }
+
+            c.Emit(OpCodes.Ldarg_0); // We interuppted after a ldarg_0, so put that back before we leave
         }
 
         public static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
