@@ -506,7 +506,8 @@ namespace RainWorldRandomizer
                     $"Chosen Starting Room:\n" +
                     $"Completion Condition:\n" +
                     $"Passage Progress w/o Survivor:\n" +
-                    $"Using DeathLink:\n";
+                    $"Using DeathLink:\n" +
+                    $"Food Quest:\n";
                 slotDataLabelRight.text = 
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
                     $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
@@ -514,7 +515,8 @@ namespace RainWorldRandomizer
                     $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}\n" +
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
-                    $"{DeathLinkHandler.Active}\n";
+                    $"{DeathLinkHandler.Active}\n" +
+                    $"{ArchipelagoConnection.foodQuest}";
             };
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
