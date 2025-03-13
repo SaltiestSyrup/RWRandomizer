@@ -16,7 +16,7 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.1.1";
+        public const string PLUGIN_VERSION = "1.1.2";
 
         internal static ManualLogSource Log;
 
@@ -275,6 +275,12 @@ namespace RainWorldRandomizer
                 {
                     return new LillyPuck.AbstractLillyPuck(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
+                }
+                // Same with Bubble Fruits
+                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.WaterNut)
+                {
+                    return new WaterNut.AbstractWaterNut(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false);
                 }
                 // Handles all "Consumables"
                 if (AbstractConsumable.IsTypeConsumable(itemObjectType))

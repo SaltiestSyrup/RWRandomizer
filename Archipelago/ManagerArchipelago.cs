@@ -299,8 +299,8 @@ namespace RainWorldRandomizer
 
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();
-            Plugin.Log.LogInfo("Game Complete! Items released");
-            Plugin.Singleton.notifQueue.Enqueue("Game Complete! Items released");
+            Plugin.Log.LogInfo("Game Complete!");
+            Plugin.Singleton.notifQueue.Enqueue("Game Complete!");
         }
 
         public override void SaveGame(bool saveCurrentState)
