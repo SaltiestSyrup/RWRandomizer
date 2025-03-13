@@ -809,6 +809,10 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldloc_2); // i
             c.EmitDelegate<Func<int, bool>>((i) =>
             {
+                if (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuest == ArchipelagoConnection.FoodQuestBehavior.Expanded)
+                {
+                    return (ArchipelagoConnection.foodQuestAccessibility & (1 << i)) != 0;
+                }
                 // Returns whether or not the current slugcat can eat this food
                 return Constants.slugcatFoodQuestAccessibility[Plugin.RandoManager.currentSlugcat][i];
             });
@@ -821,34 +825,42 @@ namespace RainWorldRandomizer
         private static void MoreSlugcats_OnInit(On.MoreSlugcats.MoreSlugcats.orig_OnInit orig)
         {
             orig();
-            int oldLength = WinState.GourmandPassageTracker.Length;
-            unexpanded = WinState.GourmandPassageTracker.ToArray();
-            CreatureTemplate.Type[] crits = new CreatureTemplate.Type[]
+            // Order must match APWorld.
+            WinState.GourmandTrackerData[] data = new WinState.GourmandTrackerData[]
             {
-                // Edible by Survivor/Monk/Rivulet
-                CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede, CreatureTemplate.Type.VultureGrub, CreatureTemplate.Type.SmallNeedleWorm,
-                // Lizards
-                CreatureTemplate.Type.GreenLizard, CreatureTemplate.Type.BlueLizard, CreatureTemplate.Type.PinkLizard,
-                CreatureTemplate.Type.WhiteLizard, CreatureTemplate.Type.RedLizard, MoreSlugcatsEnums.CreatureTemplateType.SpitLizard,
-                MoreSlugcatsEnums.CreatureTemplateType.ZoopLizard, MoreSlugcatsEnums.CreatureTemplateType.TrainLizard,
-                // Spiders
-                CreatureTemplate.Type.BigSpider, CreatureTemplate.Type.SpitterSpider, MoreSlugcatsEnums.CreatureTemplateType.MotherSpider,
-                // Vultures
-                CreatureTemplate.Type.Vulture, CreatureTemplate.Type.KingVulture, MoreSlugcatsEnums.CreatureTemplateType.MirosVulture,
-                // (Mostly) passive
-                CreatureTemplate.Type.LanternMouse, CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB, MoreSlugcatsEnums.CreatureTemplateType.Yeek,
-                CreatureTemplate.Type.BigNeedleWorm,
-                // Other not-passive
-                CreatureTemplate.Type.DropBug, CreatureTemplate.Type.MirosBird,
-                CreatureTemplate.Type.Scavenger, MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite, 
-                // Rot
-                CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, MoreSlugcatsEnums.CreatureTemplateType.TerrorLongLegs,
-                // Spearmaster only
-                CreatureTemplate.Type.PoleMimic, CreatureTemplate.Type.TentaclePlant,
-                CreatureTemplate.Type.BigEel, MoreSlugcatsEnums.CreatureTemplateType.Inspector,
+                new WinState.GourmandTrackerData(AbstractPhysicalObject.AbstractObjectType.SeedCob, null),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.VultureGrub }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.SmallNeedleWorm, CreatureTemplate.Type.BigNeedleWorm }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.GreenLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BlueLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.PinkLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.WhiteLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.RedLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.SpitLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.ZoopLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.TrainLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BigSpider }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.SpitterSpider }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.MotherSpider }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Vulture }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.KingVulture }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.MirosVulture }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.LanternMouse }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.Yeek }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.DropBug }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.MirosBird }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Scavenger, MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BrotherLongLegs, CreatureTemplate.Type.DaddyLongLegs, MoreSlugcatsEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.PoleMimic }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.TentaclePlant }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BigEel }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.Inspector }),
             };
 
-            expanded = unexpanded.Concat(crits.Select(crit => new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[1] { crit }))).ToArray();
+            unexpanded = WinState.GourmandPassageTracker.ToArray();
+            expanded = unexpanded.Concat(data).ToArray();
         }
 
         internal static WinState.GourmandTrackerData[] unexpanded;
