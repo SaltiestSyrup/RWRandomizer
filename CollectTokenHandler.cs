@@ -105,7 +105,6 @@ namespace RainWorldRandomizer
         public bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
         {
             return orig(self) || (ModManager.MSC 
-                && !self.devToken
                 && !(self.room.game.StoryCharacter == null) 
                 && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
         }
@@ -117,15 +116,14 @@ namespace RainWorldRandomizer
             // Prevent TextPrompt from being issued.
             if (Options.DisableTokenPopUps) self.anythingUnlocked = false;
 
-            string tokenString = (self.placedObj.data as CollectToken.CollectTokenData).tokenString;
+            CollectToken.CollectTokenData data = self.placedObj.data as CollectToken.CollectTokenData;
+            string tokenString = data.tokenString;
 
-            if ((self.placedObj.data as CollectToken.CollectTokenData).isRed
-                && (self.placedObj.data as CollectToken.CollectTokenData).SafariUnlock != null)
+            if (data.isRed && data.SafariUnlock != null)
             {
                 tokenString = $"S-{tokenString}";
             }
-            else if (!(self.placedObj.data as CollectToken.CollectTokenData).isBlue
-                && (self.placedObj.data as CollectToken.CollectTokenData).LevelUnlock != null)
+            else if (!data.isBlue && data.LevelUnlock != null)
             {
                 tokenString = $"L-{tokenString}";
             }
@@ -135,11 +133,15 @@ namespace RainWorldRandomizer
                 tokenString = $"{tokenString}-{self.room.abstractRoom.name.Substring(0, 2)}";
             }
 
-            if ((self.placedObj.data as CollectToken.CollectTokenData).isWhite
-                && (self.placedObj.data as CollectToken.CollectTokenData).ChatlogCollect != null
+            if (data.isWhite
+                && data.ChatlogCollect != null
                 && !(Plugin.RandoManager.IsLocationGiven($"Broadcast-{tokenString}") ?? true))
             {
                 Plugin.RandoManager.GiveLocation($"Broadcast-{tokenString}");
+            }
+            else if (data.isDev && !(Plugin.RandoManager.IsLocationGiven($"DevToken-{player.room.abstractRoom.name}") ?? true))
+            {
+                Plugin.RandoManager.GiveLocation($"DevToken-{player.room.abstractRoom.name}");
             }
             else
             {
@@ -155,6 +157,7 @@ namespace RainWorldRandomizer
         // Make Sandbox tokens spawn regardless of meta unlocks
         public void ILRoomLoaded(ILContext il)
         {
+            // TODO: Make dev tokens stop spawning after they're collected
             bool DoTokenOverride(Room room, int index)
             {
                 CollectToken.CollectTokenData data = room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData;
