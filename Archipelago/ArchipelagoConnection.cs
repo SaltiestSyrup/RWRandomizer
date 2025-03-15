@@ -41,6 +41,7 @@ namespace RainWorldRandomizer
         /// <summary> Passage Progress without Survivor </summary>
         public static bool PPwS;
         public static bool foodQuestForAll;
+        public static bool sheltersanity;
 
         public static ArchipelagoSession Session;
 
@@ -263,6 +264,7 @@ namespace RainWorldRandomizer
             string startingShelter = (string)slotData["starting_room"];
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
+            long sheltersanity = slotData.ContainsKey("checks_sheltersanity") ? (long)slotData["checks_sheltersanity"] : -1;
 
             switch (worldStateIndex)
             {
@@ -338,6 +340,7 @@ namespace RainWorldRandomizer
             gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
 
             ArchipelagoConnection.PPwS = PPwS > 0;
+            ArchipelagoConnection.sheltersanity = sheltersanity > 0;
 
             DeathLinkHandler.Active = deathLink > 0;
 
