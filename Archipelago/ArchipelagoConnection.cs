@@ -1,5 +1,6 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
+using Archipelago.MultiClient.Net.Colors;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
@@ -47,6 +48,28 @@ namespace RainWorldRandomizer
         public static long lastItemIndex = 0;
         public static string playerName;
         public static string generationSeed;
+
+        /// <summary>
+        /// Defined palette for the mod to use when displaying colors
+        /// </summary>
+        public static Palette<UnityEngine.Color> palette = 
+            new Palette<UnityEngine.Color>(
+                Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
+                new Dictionary<PaletteColor, UnityEngine.Color>()
+                {
+                    { PaletteColor.Black, Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black) },
+                    { PaletteColor.Blue, new UnityEngine.Color(0f, 0f, 1f) },
+                    { PaletteColor.Cyan, new UnityEngine.Color(0f, 1f, 1f) },
+                    { PaletteColor.Green, new UnityEngine.Color(0, 0.5f, 0f) },
+                    { PaletteColor.Magenta, new UnityEngine.Color(1f, 0f, 1f) },
+                    { PaletteColor.Plum, new UnityEngine.Color(0.85f, 0.6f, 0.85f) },
+                    { PaletteColor.Red, new UnityEngine.Color(1f, 0f, 0f) },
+                    { PaletteColor.Salmon, new UnityEngine.Color(0.98f, 0.5f, 0.45f) },
+                    { PaletteColor.SlateBlue, new UnityEngine.Color(0.4f, 0.35f, 0.8f) },
+                    { PaletteColor.White, new UnityEngine.Color(1f, 1f, 1f) },
+                    { PaletteColor.Yellow, new UnityEngine.Color(1f, 1f, 0f) }
+                }
+            );
 
         public enum CompletionCondition
         {
@@ -397,6 +420,7 @@ namespace RainWorldRandomizer
                 && (!(message is ChatLogMessage chatMessage) || !chatMessage.Message.StartsWith("!"))) // Filter out chat commands
             {
                 Plugin.Singleton.notifQueue.Enqueue(message.ToString());
+                HudExtension.chatLog?.AddMessage(message);
             }
         }
 
