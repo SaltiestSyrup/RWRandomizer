@@ -315,6 +315,14 @@ namespace RainWorldRandomizer
             Room currentRoom = self.FirstRealizedPlayer?.room;
             if (currentRoom?.abstractRoom.shelter ?? false)
             {
+                if (Plugin.RandoManager is ManagerArchipelago 
+                    && ArchipelagoConnection.sheltersanity
+                    && $"Shelter - {currentRoom.abstractRoom.name.ToUpper()}" is string checkName
+                    && Plugin.RandoManager.LocationExists(checkName))
+                {
+                    Plugin.RandoManager.GiveLocation(checkName);
+                }
+
                 for (int j = 0; j < currentRoom.updateList.Count; j++)
                 {
                     if (currentRoom.updateList[j] is DataPearl pearl)
