@@ -149,6 +149,12 @@ namespace RainWorldRandomizer
             orig(self);
             rainWorld = self;
 
+            //try
+            //{
+            //    Futile.atlasManager.LoadImage("atlases/rwrandomizer/ColoredSymbolSeedCob");
+            //}
+            //catch (Exception e) { Logger.LogError(e); }
+
             CompatibleSlugcats = new List<SlugcatStats.Name>()
             {
                 SlugcatStats.Name.White,
