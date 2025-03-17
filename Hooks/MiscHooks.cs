@@ -751,6 +751,18 @@ namespace RainWorldRandomizer
                 c.MoveAfterLabels();
                 c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
             }
+
+            // Allow popcorn seeds to count as popcorn plants (argument interception at 0231).
+            c.GotoNext(x => x.MatchCallOrCallvirt(typeof(WinState).GetMethod(nameof(WinState.GourmandPassageRequirementAtIndex))));  // 0221
+            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(AbstractPhysicalObject).GetField(nameof(AbstractPhysicalObject.type))));  // 022c
+
+            AbstractPhysicalObject.AbstractObjectType TreatSeedsAsCobs(AbstractPhysicalObject.AbstractObjectType prev)
+            {
+                return (ModManager.MSC && prev == MoreSlugcatsEnums.AbstractObjectType.Seed) ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
+            }
+
+            c.EmitDelegate<Func<AbstractPhysicalObject.AbstractObjectType, AbstractPhysicalObject.AbstractObjectType>>(TreatSeedsAsCobs);
+
         }
 
         public static void WinStateCreateTrackerIL(ILContext il)
