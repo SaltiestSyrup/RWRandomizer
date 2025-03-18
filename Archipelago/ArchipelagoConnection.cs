@@ -40,7 +40,7 @@ namespace RainWorldRandomizer
         public static Plugin.GateBehavior gateBehavior;
         public static EchoLowKarmaDifficulty echoDifficulty;
         /// <summary> Passage Progress without Survivor </summary>
-        public static bool PPwS;
+        public static PPwSBehavior PPwS;
         public static bool foodQuestForAll;
 
         public static ArchipelagoSession Session;
@@ -48,6 +48,8 @@ namespace RainWorldRandomizer
         public static long lastItemIndex = 0;
         public static string playerName;
         public static string generationSeed;
+
+        public enum PPwSBehavior { Disabled = 0, Enabled = 1, Bypassed = 2 }
 
         public enum CompletionCondition
         {
@@ -345,7 +347,7 @@ namespace RainWorldRandomizer
             // Set gate behavior
             gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
 
-            ArchipelagoConnection.PPwS = PPwS > 0;
+            ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
 
             ArchipelagoConnection.echoDifficulty = (EchoLowKarmaDifficulty)echoDifficulty;
 
