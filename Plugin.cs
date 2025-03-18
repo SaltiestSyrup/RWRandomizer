@@ -103,6 +103,8 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
+                On.RainWorld.LoadModResources += LoadResources;
+                On.RainWorld.UnloadResources += UnloadResources;
 
                 if (ExtCollectibleTrackerComptability.Enabled)
                 {
@@ -137,6 +139,8 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
+                On.RainWorld.LoadModResources -= LoadResources;
+                On.RainWorld.UnloadResources -= UnloadResources;
             }
             catch (Exception e)
             {
@@ -200,6 +204,18 @@ namespace RainWorldRandomizer
             {
                 RegionNamesMap.Add(regionShort, Region.GetRegionFullName(regionShort, null));
             }
+        }
+
+        public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
+        {
+            orig(self);
+            Futile.atlasManager.LoadAtlas("Atlases/randomizer");
+        }
+
+        public void UnloadResources(On.RainWorld.orig_UnloadResources orig, RainWorld self)
+        {
+            orig(self);
+            Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
         }
 
         /*

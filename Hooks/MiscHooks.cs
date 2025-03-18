@@ -884,7 +884,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intData)
         {
-            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_Spear";
+            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
             return orig(itemType, intData);
         }
     }
