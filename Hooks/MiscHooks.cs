@@ -87,6 +87,7 @@ namespace RainWorldRandomizer
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
+            On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
