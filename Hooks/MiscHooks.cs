@@ -825,7 +825,7 @@ namespace RainWorldRandomizer
             {
                 if (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuest == ArchipelagoConnection.FoodQuestBehavior.Expanded)
                 {
-                    return (ArchipelagoConnection.foodQuestAccessibility & (1 << i)) != 0;
+                    return (ArchipelagoConnection.foodQuestAccessibility & (1L << i)) != 0;
                 }
                 // Returns whether or not the current slugcat can eat this food
                 return Constants.slugcatFoodQuestAccessibility[Plugin.RandoManager.currentSlugcat][i];
