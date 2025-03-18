@@ -122,7 +122,8 @@ namespace RainWorldRandomizer
             public int heightIndex;
             public int height;
             public string text;
-            private float lifetime;
+            private float lifetime = 5f;
+            public bool forceDisplay = false;
             private List<int> wrapIndices;
 
             private float show = 1;
@@ -147,7 +148,6 @@ namespace RainWorldRandomizer
                 owner = chatLog;
                 index = 0;
                 text = message;
-                lifetime = 5f;
                 yPos = -MSG_SIZE_Y;
                 wrapIndices = new List<int>();
 
@@ -188,7 +188,6 @@ namespace RainWorldRandomizer
                 owner = chatLog;
                 index = 0;
                 text = message.ToString();
-                lifetime = 5f;
                 yPos = -MSG_SIZE_Y;
                 wrapIndices = new List<int>();
 
@@ -206,6 +205,7 @@ namespace RainWorldRandomizer
                 };
                 chatLog.container.AddChild(backgroundSprite);
 
+                // TODO: Smarter text wrapping
                 StringBuilder wrapText = new StringBuilder();
                 for (int i = 0; i < message.Parts.Length; i++)
                 {
@@ -249,6 +249,7 @@ namespace RainWorldRandomizer
             public void Update()
             {
                 if (owner.GamePaused) return;
+                forceDisplay = owner.hud.owner.RevealMap;
                 lastShow = show;
                 lastYPos = yPos;
 
@@ -257,9 +258,13 @@ namespace RainWorldRandomizer
                 // Lifetime countdown
                 lifetime = Mathf.Max(0f, lifetime - 0.025f);
                 
-                if (lifetime == 0f)
+                if (forceDisplay)
                 {
-                    show = Mathf.Max(0f, show - 0.0083f);
+                    show = Mathf.Min(show + 0.01f, 1f);
+                }
+                else if (lifetime == 0f)
+                {
+                    show = Mathf.Max(0f, show - 0.02f);
                 }
             }
 
