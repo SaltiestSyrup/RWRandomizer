@@ -37,7 +37,7 @@ namespace RainWorldRandomizer
 
         public static void ApplyHooks()
         {
-            On.Player.Die += OnPlayerDie;
+            On.RainWorldGame.GoToDeathScreen += OnPlayerDie;
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
 
             try
@@ -52,7 +52,7 @@ namespace RainWorldRandomizer
 
         public static void RemoveHooks()
         {
-            On.Player.Die -= OnPlayerDie;
+            On.RainWorldGame.GoToDeathScreen -= OnPlayerDie;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
 
             IL.DeathPersistentSaveData.SaveToString -= DeathPersistentSaveDataToStringIL;
@@ -92,10 +92,10 @@ namespace RainWorldRandomizer
             }
         }
 
-        private static void OnPlayerDie(On.Player.orig_Die orig, Player self)
+        private static void OnPlayerDie(On.RainWorldGame.orig_GoToDeathScreen orig, RainWorldGame self)
         {
             orig(self);
-            if (!Active || receiveDeathCooldown > 0 || self.AI != null) return;
+            if (!Active || receiveDeathCooldown > 0) return;
 
             Plugin.Log.LogInfo("Sending DeathLink packet...");
             service.SendDeathLink(new DeathLink(ArchipelagoConnection.playerName));
