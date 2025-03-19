@@ -257,6 +257,7 @@ namespace RainWorldRandomizer
                 nodes["SL"] = new Node(menu, this, new Vector2(220f, 120f), Scug == "Artificer" || Scug == "Spear" ? "LM" : "SL");
                 nodes["SI"] = new Node(menu, this, new Vector2(40f, 160f), "SI");
                 nodes["CC"] = new Node(menu, this, new Vector2(100f, 160f), "CC");
+                nodes["<P>"] = new Node(menu, this, new Vector2(280f, 40f), "P");
 
                 if (ModManager.MSC)
                 {
@@ -264,6 +265,7 @@ namespace RainWorldRandomizer
                     if (Scug == "White" || Scug == "Yellow" || Scug == "Gourmand") nodes["OE"] = new Node(menu, this, new Vector2(70f, 60f), "OE");
                     if (Scug == "Artificer") nodes["LC"] = new Node(menu, this, new Vector2(160f, 200f), "LC");
                     if (Scug != "Artificer") nodes["MS"] = new Node(menu, this, new Vector2(280f, 160f), Scug == "Spear" ? "DM" : "MS");
+                    nodes["<FQ>"] = new Node(menu, this, new Vector2(280f, 80f), "FQ");
                 }
 
                 if (Scug != "Saint")
@@ -369,7 +371,7 @@ namespace RainWorldRandomizer
             /// </summary>
             public static IEnumerable<string> GetAccessibleNodes(IEnumerable<string> keys)
             {
-                List<string> ret = new List<string>() { GetNodeName(ActualStartRegion) };
+                List<string> ret = new List<string>() { GetNodeName(ActualStartRegion), "<FQ>", "<P>" };
                 Dictionary<string, bool[]> keyDict = keys.ToDictionary(x => x, CanUseGate);
                 bool updated = true;
                 while (updated)
@@ -481,6 +483,8 @@ namespace RainWorldRandomizer
                             case "SS": return "Five Pebbles";
                             case "UW": return "The Exterior";
                             case "GW": return "Garbage Wastes";
+                            case "<FQ>": return "Food Quest";
+                            case "<P>": return "Passages";
                             default: return "huh";
                         }
                     }
@@ -648,6 +652,8 @@ namespace RainWorldRandomizer
                 if (location == "Token-L-gutter") return region == "SB";
                 if (location == "Token-L-GWold") return region == "GW";
                 if (location.StartsWith("Shelter -")) return location.Substring(10, 2) == region;
+                if (location.StartsWith("FoodQuest-")) return region == "<FQ>";
+                if (location.StartsWith("Passage-")) return region == "<P>";
                 return false;
             }
 
@@ -704,7 +710,7 @@ namespace RainWorldRandomizer
                         switch (kind)
                         {
                             case LocationKind.Passage:
-                                element = name + "A";
+                                element = name.Substring(8) + "A";
                                 if (name == "Gourmand")
                                 {
                                     iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
@@ -748,15 +754,16 @@ namespace RainWorldRandomizer
                                 color = CollectToken.WhiteColor.rgb;
                                 break;
                             case LocationKind.FoodQuest:
-                                if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(name))
+                                string objtype = name.Substring(10);
+                                if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(objtype))
                                 {
-                                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(name), 0);
+                                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(objtype), 0);
                                     element = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                                     color = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                                 }
-                                else if (ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)).Contains(name))
+                                else if (ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)).Contains(objtype))
                                 {
-                                    iconData = new IconSymbol.IconSymbolData(new CreatureTemplate.Type(name), AbstractPhysicalObject.AbstractObjectType.Creature, 0);
+                                    iconData = new IconSymbol.IconSymbolData(new CreatureTemplate.Type(objtype), AbstractPhysicalObject.AbstractObjectType.Creature, 0);
                                     element = CreatureSymbol.SpriteNameOfCreature(iconData);
                                     color = CreatureSymbol.ColorOfCreature(iconData);
                                 }
