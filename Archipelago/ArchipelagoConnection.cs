@@ -419,8 +419,7 @@ namespace RainWorldRandomizer
                 && !(message is TagsChangedLogMessage) // Filter out tag change logs
                 && (!(message is ChatLogMessage chatMessage) || !chatMessage.Message.StartsWith("!"))) // Filter out chat commands
             {
-                Plugin.Singleton.notifQueue.Enqueue(message.ToString());
-                HudExtension.chatLog?.AddMessage(message);
+                Plugin.Singleton.notifQueueAP.Enqueue(message);
             }
         }
 

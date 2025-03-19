@@ -260,14 +260,28 @@ namespace RainWorldRandomizer
             if (self.GamePaused) return;
 
             // Display any pending notifications
-            if (Plugin.Singleton.notifQueue.Count > 0)
+            if (Plugin.Singleton.notifQueueAP.Count > 0)
+            {
+                if (Options.DisableNotificationQueue)
+                {
+                    Plugin.Singleton.notifQueueAP.Dequeue();
+                }
+                else if (HudExtension.chatLog != null)
+                {
+                    HudExtension.chatLog?.AddMessage(Plugin.Singleton.notifQueueAP.Dequeue());
+                }
+            }
+            // Display plain text messages last, as they tend to be more important
+            else if (Plugin.Singleton.notifQueue.Count > 0)
             {
                 if (Options.DisableNotificationQueue)
                 {
                     Plugin.Singleton.notifQueue.Dequeue();
                 }
-                else
+                else if (HudExtension.chatLog != null)
                 {
+                    HudExtension.chatLog?.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
+                    /*
                     // If there are several messages waiting, move through them quicker
                     bool hurry = Plugin.Singleton.notifQueue.Count > 3;
 
@@ -294,6 +308,7 @@ namespace RainWorldRandomizer
                             self.session.Players[0].realizedCreature.room.PlaySound(SoundID.MENU_Passage_Button, 0, 1f, 1f);
                         }
                     }
+                    */
                 }
             }
 
