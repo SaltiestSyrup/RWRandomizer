@@ -15,7 +15,7 @@ namespace RainWorldRandomizer
         public bool locationsLoaded = false;
         public bool gameCompleted = false;
 
-        private Dictionary<string, bool> locationsStatus = new Dictionary<string, bool>();
+        internal Dictionary<string, bool> locationsStatus = new Dictionary<string, bool>();
 
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {

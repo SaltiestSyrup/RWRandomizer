@@ -8,6 +8,8 @@ using RWCustom;
 using System.Text.RegularExpressions;
 using Menu.Remix;
 using System.Linq.Expressions;
+using System.Collections.Specialized;
+using Newtonsoft.Json.Linq;
 
 namespace RainWorldRandomizer
 {
@@ -199,11 +201,12 @@ namespace RainWorldRandomizer
         {
             public Dictionary<string, Node> nodes = new Dictionary<string, Node>();
             public Dictionary<string, Connector> connectors = new Dictionary<string, Connector>();
+            public IEnumerable<LocationInfo> locationInfos;
+            public Node highlightedNode;
             public static string Scug => Plugin.RandoManager.currentSlugcat?.value ?? "White";
             public static string CurrentRegion => (Custom.rainWorld.processManager.currentMainLoop as RainWorldGame)?.world.name;
             public static Color COLOR_ACCESSIBLE = Color.white;
             public static Color COLOR_INACCESSIBLE = new Color(0.2f, 0.2f, 0.2f);
-            public static Color COLOR_YOU_ARE_HERE = Color.cyan;
 
             public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
             {
@@ -213,6 +216,7 @@ namespace RainWorldRandomizer
                 // Nodes have to exist before the connectors, but we want the connectors to be behind the nodes.
                 CreateNodes();
                 CreateConnectors();
+                ParseLocationStatus();
                 foreach (Connector connector in connectors.Values) Container.AddChild(connector);
                 subObjects.AddRange(nodes.Values);
 
@@ -228,20 +232,97 @@ namespace RainWorldRandomizer
 
                 foreach (string nodeName in GetAccessibleNodes(gates.Where(x => x.Value).Select(x => x.Key)))
                 {
-                    if (nodes.TryGetValue(nodeName, out Node node))
-                    {
-                        node.Color = COLOR_ACCESSIBLE;
-                    }
-                }
-
-                if (nodes.TryGetValue(GetNodeName(CurrentRegion), out Node node2))
-                {
-                    node2.Color = COLOR_YOU_ARE_HERE;
+                    if (nodes.TryGetValue(nodeName, out Node node)) node.Accessible = true;
                 }
 
                 checkIconContainer = new CheckIconContainer();
                 Container.AddChild(checkIconContainer);
                 checkIconContainer.SetPosition(pos);
+
+                UpdateTrackerForRegion(CurrentRegion);
+            }
+
+            public void ParseLocationStatus()
+            {
+                if (Plugin.RandoManager is ManagerArchipelago manager)
+                {
+                    locationInfos = manager.locationsStatus.Select(x => new LocationInfo(x));
+                    foreach (KeyValuePair<string, Node> pair in nodes)
+                    {
+                        IEnumerable<LocationInfo> nodeInfos = locationInfos.Where(x => x.node == pair.Key);
+                        pair.Value.completion = nodeInfos.Count(x => x.collected) / (float)nodeInfos.Count();
+                    }
+                }
+            }
+
+            public readonly struct LocationInfo
+            {
+                public readonly LocationKind kind;
+                public readonly string name;
+                public readonly string region;
+                public readonly string node;
+                public readonly bool collected;
+
+                public LocationInfo(string location, bool collected)
+                {
+                    kind = KindOfLocation(location);
+                    region = RegionOfLocation(kind, location);
+                    node = GetNodeName(region);
+                    name = location;
+                    this.collected = collected;
+                }
+
+                public LocationInfo(KeyValuePair<string, bool> pair) : this(pair.Key, pair.Value) { }
+
+                public static string RegionOfLocation(LocationKind kind, string location)
+                {
+                    switch (kind)
+                    {
+                        case LocationKind.BlueToken:
+                        case LocationKind.RedToken:
+                        case LocationKind.GreenToken:
+                        case LocationKind.Broadcast:
+                        case LocationKind.Pearl:
+                            return location.Split('-')[2];
+
+                        case LocationKind.Echo:
+                            return location.Split('-')[1];
+
+                        case LocationKind.GoldToken:
+                            string third = location.Split('-')[2];
+                            switch (third)
+                            {
+                                case "GWold": return "GW";
+                                case "gutter": return "SB";
+                                default: return third;
+                            }
+
+                        case LocationKind.Shelter:
+                            return location.Substring(10, 2);
+
+                        case LocationKind.FoodQuest:
+                            return "<FQ>";
+                        case LocationKind.Passage:
+                            return "<P>";
+
+                        default: return null;
+                    }
+                }
+
+                public static LocationKind KindOfLocation(string location)
+                {
+                    if (location.StartsWith("Pearl-")) return LocationKind.Pearl;
+                    if (location.StartsWith("Shelter -")) return LocationKind.Shelter;
+                    if (location.StartsWith("Broadcast-")) return LocationKind.Broadcast;
+                    if (location.StartsWith("Echo-")) return LocationKind.Echo;
+                    if (location.StartsWith("Token-L-")) return LocationKind.GoldToken;
+                    if (location.StartsWith("Token-S-")) return LocationKind.RedToken;
+                    if (location.StartsWith("Token-")) return LocationKind.BlueToken;
+                    if (location.StartsWith("Passage-")) return LocationKind.Passage;
+                    if (location.StartsWith("Wanderer-")) return LocationKind.WandererPip;
+                    if (location.StartsWith("FoodQuest-")) return LocationKind.FoodQuest;
+                    return LocationKind.Other;
+                }
             }
 
             public void CreateNodes()
@@ -425,16 +506,25 @@ namespace RainWorldRandomizer
             public class Node : RoundedRect
             {
                 public MenuLabel label;
+                public RoundedRect outer;
                 public static Vector2 SIZE = new Vector2(30f, 20f);
+                public float completion;
+                public bool current;
 
-                public Node(Menu.Menu menu, MenuObject owner, Vector2 pos, string text) 
+                public Node(Menu.Menu menu, MenuObject owner, Vector2 pos, string text, float completion = 0f) 
                     : base(menu, owner, pos, SIZE, true)
                 {
                     fillAlpha = 1f;
                     label = new MenuLabel(menu, owner, text, pos + (SIZE / 2) + new Vector2(0.01f, 0.01f), default, false);
                     label.label.alignment = FLabelAlignment.Center;
                     subObjects.Add(label);
-                    Color = COLOR_INACCESSIBLE;
+                    outer = new RoundedRect(menu, owner, pos - new Vector2(4f, 4f), size + new Vector2(8f, 8f), false);
+                    subObjects.Add(outer);
+                    this.completion = completion;
+
+                    label.label.color = COLOR_INACCESSIBLE;
+                    Vector3 c = Custom.RGB2HSL(COLOR_INACCESSIBLE);
+                    borderColor = new HSLColor(c.x, c.y, c.z);
                 }
 
                 public Vector2 Bottom => pos + new Vector2(size.x / 2, 1f) + (owner as GateMapDisplay).pos;
@@ -446,15 +536,12 @@ namespace RainWorldRandomizer
                 public Vector2 TopRight => pos + new Vector2(size.x - 4f, size.y - 4f) + (owner as GateMapDisplay).pos;
                 public Vector2 TopLeft => pos + new Vector2(4f, size.y - 4f) + (owner as GateMapDisplay).pos;
 
-                public Color Color
+                public bool Accessible
                 {
                     set
-                    { 
-                        label.label.color = value; 
-                        var c = Custom.RGB2HSL(value);
-                        borderColor = new HSLColor(c.x, c.y, c.z);
+                    {
+                        label.label.color = value ? COLOR_ACCESSIBLE : COLOR_INACCESSIBLE;
                     }
-                    get => label.label.color;
                 }
 
                 public string ReadableName
@@ -488,6 +575,19 @@ namespace RainWorldRandomizer
                             default: return "huh";
                         }
                     }
+                }
+
+                public override void GrafUpdate(float timeStacker)
+                {
+                    base.GrafUpdate(timeStacker);
+                    for (int i = 0; i < 8; i++)
+                    {
+                        if (completion > i / 7f || completion >= 1f)
+                        {
+                            sprites[i % 2 == 0 ? CornerSprite(i / 2) : SideSprite(i / 2)].color = Color.green;
+                        }
+                    }
+                    foreach (FSprite sprite in outer.sprites) sprite.isVisible = current;
                 }
             }
 
@@ -616,46 +716,20 @@ namespace RainWorldRandomizer
             {
                 if (!(Plugin.RandoManager is ManagerArchipelago)) return;
 
-                IEnumerable<string> locs = Plugin.RandoManager.GetLocations().Where(x => LocationBelongsToThisRegion(region, x));
-                checkIconContainer.RemoveAllChildren();
-
-                foreach (string loc in locs)
-                {
-                    checkIconContainer.AddIcon(KindOfLocation(loc), loc, Plugin.RandoManager.IsLocationGiven(loc) == true);
-                }
-
-                checkIconContainer.Refresh();
+                if (highlightedNode != null) highlightedNode.current = false;
+                highlightedNode = nodes[GetNodeName(region)];
+                highlightedNode.current = true;
                 displayedRegion = region;
+
+                checkIconContainer.RemoveAllChildren();
+                foreach (LocationInfo info in locationInfos.Where(x => x.region == region)) 
+                    checkIconContainer.AddIcon(info.kind, info.name, info.collected);
+                checkIconContainer.Refresh();
                 //Plugin.Log.LogDebug($"Updating for region {region}: {string.Join(", ", locs)}");
                 //Plugin.Log.LogDebug($"All locations: {string.Join(", ", Plugin.RandoManager.GetLocations())}");
             }
 
-            public enum LocationKind { BlueToken, RedToken, GoldToken, GreenToken, Broadcast, Pearl, Echo, Shelter, Passage, WandererPip, FoodQuest }
-
-            public static LocationKind KindOfLocation(string location)
-            {
-                if (location.StartsWith("Pearl-")) return LocationKind.Pearl;
-                if (location.StartsWith("Shelter -")) return LocationKind.Shelter;
-                if (location.StartsWith("Broadcast-")) return LocationKind.Broadcast;
-                if (location.StartsWith("Echo-")) return LocationKind.Echo;
-                if (location.StartsWith("Token-L-")) return LocationKind.GoldToken;
-                if (location.StartsWith("Token-S-")) return LocationKind.RedToken;
-                if (location.StartsWith("Passage-")) return LocationKind.Passage;
-                if (location.StartsWith("Wanderer-")) return LocationKind.WandererPip;
-                if (location.StartsWith("FoodQuest-")) return LocationKind.FoodQuest;
-                return LocationKind.BlueToken;
-            }
-
-            public static bool LocationBelongsToThisRegion(string region, string location)
-            {
-                if (location.EndsWith($"-{region}")) return true;
-                if (location == "Token-L-gutter") return region == "SB";
-                if (location == "Token-L-GWold") return region == "GW";
-                if (location.StartsWith("Shelter -")) return location.Substring(10, 2) == region;
-                if (location.StartsWith("FoodQuest-")) return region == "<FQ>";
-                if (location.StartsWith("Passage-")) return region == "<P>";
-                return false;
-            }
+            public enum LocationKind { BlueToken, RedToken, GoldToken, GreenToken, Broadcast, Pearl, Echo, Shelter, Passage, WandererPip, FoodQuest, Other }
 
             public class CheckIconContainer : FContainer
             {
