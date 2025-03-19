@@ -60,10 +60,6 @@ namespace RainWorldRandomizer
         {
             this.container = container;
             pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X - (MSG_MARGIN * 2) + 0.01f, 30.01f);
-
-            AddMessage("This is a test message");
-            AddMessage("This is a second test message");
-            AddMessage("This is a third test message that is a lot longer than a message normally is. Messages will probably never be this long but they should work anyway.");
         }
 
         public void AddMessage(string text)
@@ -220,8 +216,6 @@ namespace RainWorldRandomizer
                     {
                         curOffset = chatLog.pos.x + MSG_MARGIN;
                     }
-
-                    Plugin.Log.LogDebug($"\"{message.Parts[i].Text}\"");
 
                     // Create the label
                     messageLabels[i] = new FLabel(Custom.GetFont(), message.Parts[i].Text)
