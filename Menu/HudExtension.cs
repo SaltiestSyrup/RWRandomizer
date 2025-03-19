@@ -1,5 +1,6 @@
 ﻿using Archipelago.MultiClient.Net.Colors;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
+using Archipelago.MultiClient.Net.MessageLog.Parts;
 using HUD;
 using Menu;
 using Menu.Remix.MixedUI;
@@ -36,7 +37,7 @@ namespace RainWorldRandomizer
 
     public class ChatLog : HudPart
     {
-        private const int MAX_MESSAGES = 5;
+        private const int MAX_MESSAGES = 10;
         protected const float MSG_SIZE_X = 300;
         protected const float MSG_SIZE_Y = 15f;
         protected const float MSG_MARGIN = 10f;
@@ -157,7 +158,6 @@ namespace RainWorldRandomizer
                 messageLabels = new FLabel[splitMessage.Length];
                 height = messageLabels.Length;
 
-                // TODO: Make backdrop stand out on map view
                 // Background
                 backgroundSprite = new FSprite("pixel")
                 {
@@ -193,7 +193,6 @@ namespace RainWorldRandomizer
 
                 messageLabels = new FLabel[message.Parts.Length];
 
-                // TODO: Make backdrop stand out on map view
                 // Background
                 backgroundSprite = new FSprite("pixel")
                 {
@@ -205,8 +204,9 @@ namespace RainWorldRandomizer
                 };
                 chatLog.container.AddChild(backgroundSprite);
 
-                // TODO: Smarter text wrapping
-                StringBuilder wrapText = new StringBuilder();
+                // Text wrapping
+                wrapIndices = CreateWrapIndices(message.Parts);
+
                 for (int i = 0; i < message.Parts.Length; i++)
                 {
                     // Running offset to position labels in a line
@@ -216,17 +216,9 @@ namespace RainWorldRandomizer
                         curOffset = messageLabels[i - 1].x + messageLabels[i - 1].textRect.width + 1f;
                     }
 
-                    // Detect when text should be wrapped
-                    wrapText.Append(message.Parts[i].Text);
-                    if (wrapText.ToString().WrapText(false, MSG_SIZE_X).Contains("\n"))
+                    if (wrapIndices.Contains(i))
                     {
-                        // Skip wrapping this step if this is just a closing bracket
-                        if (!message.Parts[i].Text.Equals(")"))
-                        {
-                            wrapIndices.Add(i);
-                            wrapText.Clear();
-                            curOffset = chatLog.pos.x + MSG_MARGIN;
-                        }
+                        curOffset = chatLog.pos.x + MSG_MARGIN;
                     }
 
                     Plugin.Log.LogDebug($"\"{message.Parts[i].Text}\"");
@@ -297,6 +289,42 @@ namespace RainWorldRandomizer
                 foreach (FLabel label in messageLabels)
                 {
                     label.RemoveFromContainer();
+                }
+            }
+
+            /// <summary>
+            /// Takes an array of <see cref="MessagePart"/>s and finds where text wrapping should occur
+            /// </summary>
+            /// <returns>A <see cref="List{T}"/> containing each index of <paramref name="message"/> where wrapping should occur</returns>
+            public static List<int> CreateWrapIndices(MessagePart[] message)
+            {
+                List<int> indices = new List<int>();
+                StringBuilder wrapText = new StringBuilder();
+
+                for (int i = 0; i < message.Length; i++)
+                {
+                    wrapText.Append(message[i].Text);
+                    // Is this string now too long for one line?
+                    if (wrapText.ToString().WrapText(false, MSG_SIZE_X).Contains("\n"))
+                    {
+                        indices.Add(RecursiveWrap(i, i));
+                        wrapText.Clear();
+                    }
+                }
+
+                return indices;
+
+                // If there was no space character between this and the last part, move a step back
+                int RecursiveWrap(int curLength, int i)
+                {
+                    if (i <= 0) return 0;
+
+                    if (!message[i - 1].Text.EndsWith(" ") && !message[i].Text.StartsWith(" "))
+                    {
+                        return RecursiveWrap(curLength, i - 1);
+                    }
+
+                    return i;
                 }
             }
         }
