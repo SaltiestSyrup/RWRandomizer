@@ -49,14 +49,25 @@ namespace RainWorldRandomizer
             // Extra offset if using Warp Menu
             float xOffset = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("LeeMoriya.Warp") ? 190f : 20f;
 
-            GateMapDisplay gateMapDisplay = new GateMapDisplay(self, self.pages[0],
-                new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 320f));
-            self.pages[0].subObjects.Add(gateMapDisplay);
+            RectangularMenuObject gateDisplay;
+
+            if (Options.useGateMap.Value && (Plugin.RandoManager is ManagerArchipelago || !Plugin.AnyThirdPartyRegions))
+            {
+                gateDisplay = new GateMapDisplay(self, self.pages[0],
+                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 320f));
+            }
+            else
+            {
+                gateDisplay = new GatesDisplay(self, self.pages[0],
+                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 20f));
+            }
+
+            self.pages[0].subObjects.Add(gateDisplay);
 
             if (Options.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
             {
                 pendingItemsDisplay = new PendingItemsDisplay(self, self.pages[0],
-                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateMapDisplay.size.y - 20f));
+                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));
                 self.pages[0].subObjects.Add(pendingItemsDisplay);
             }
         }
@@ -194,6 +205,40 @@ namespace RainWorldRandomizer
                     self.pages[0].RemoveSubObject(spoilerMenu);
                 }
                 spoilerMenu = null;
+            }
+        }
+
+        public class GatesDisplay : RectangularMenuObject
+        {
+            public RoundedRect roundedRect;
+            public MenuLabel[] menuLabels;
+
+            public GatesDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
+            {
+                List<string> openedGates = Plugin.RandoManager.GetGatesStatus().Where(g => g.Value == true).ToList().ConvertAll(g => g.Key);
+                menuLabels = new MenuLabel[openedGates.Count + 1];
+                size = new Vector2(300f, (menuLabels.Length * 15f) + 20f);
+
+                roundedRect = new RoundedRect(menu, this, new Vector2(0f, -size.y), size, true)
+                {
+                    fillAlpha = 1f
+                };
+                subObjects.Add(roundedRect);
+
+                menuLabels[0] = new MenuLabel(menu, this, "Currently Unlocked Gates:", new Vector2(10f, -13f), default, false, null);
+                menuLabels[0].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
+                menuLabels[0].label.alignment = FLabelAlignment.Left;
+                subObjects.Add(menuLabels[0]);
+
+                for (int i = 1; i < menuLabels.Length; i++)
+                {
+                    menuLabels[i] = new MenuLabel(menu, this,
+                        Plugin.GateToString(openedGates[i - 1], Plugin.RandoManager.currentSlugcat),
+                        new Vector2(10f, -15f - (15f * i)), default, false, null);
+                    menuLabels[i].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
+                    menuLabels[i].label.alignment = FLabelAlignment.Left;
+                    subObjects.Add(menuLabels[i]);
+                }
             }
         }
 

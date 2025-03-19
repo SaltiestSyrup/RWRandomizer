@@ -30,6 +30,8 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> disableNotificationQueue;
         internal static Configurable<bool> disableTokenText;
 
+        internal static Configurable<bool> useGateMap;
+
         // MSC
         internal static Configurable<bool> allowMetroForOthers;
         internal static Configurable<bool> allowSubmergedForOthers;

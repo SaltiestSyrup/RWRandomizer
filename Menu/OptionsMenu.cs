@@ -78,6 +78,10 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Prevent pop-up text and chatlogs from appearing when collecting tokens", null, "",
                 new object[] { "Disable token text" }));
 
+            Options.useGateMap = config.Bind<bool>("UseGateMap", true,
+                new ConfigurableInfo("Use a gate map instead of the gate key list", null, "",
+                new object[] { "Use gate map" }));
+
             // ----- MSC -----
             Options.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
                 new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (Where applicable)", null, "", 
@@ -589,6 +593,7 @@ namespace RainWorldRandomizer
                 Options.itemShelterDelivery,
                 Options.disableNotificationQueue,
                 Options.disableTokenText,
+                Options.useGateMap,
             };
 
             boolConfigOrderMSC = new Configurable<bool>[]
