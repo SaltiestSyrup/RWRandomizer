@@ -593,31 +593,13 @@ namespace RainWorldRandomizer
                 {
                     get
                     {
-                        switch (GetActualRegion(label.label.text))
+                        string text = label.label.text;
+                        if (Plugin.RegionNamesMap.TryGetValue(text, out string s)) return s;
+                        switch (label.label.text)
                         {
-                            case "CC": return "Chimney Canopy";
-                            case "DS": return "Drainage System";
-                            case "CL": return "Silent Construct";
-                            case "LC": return "Metropolis";
-                            case "SI": return "Sky Islands";
-                            case "SB": return "Subterranean";
-                            case "SL": return "Shoreline";
-                            case "LM": return "Waterfront Facility";
-                            case "DM": return "Looks to the Moon";
-                            case "RM": return "The Rot";
-                            case "OE": return "Outer Expanse";
-                            case "UG": return "Undergrowth";
-                            case "LF": return "Farm Arrays";
-                            case "SU": return "Outskirts";
-                            case "HI": return "Industrial Complex";
-                            case "MS": return "Submerged Superstructure";
-                            case "VS": return "Pipeyard";
-                            case "SS": return "Five Pebbles";
-                            case "UW": return "The Exterior";
-                            case "GW": return "Garbage Wastes";
                             case "<FQ>": return "Food Quest";
                             case "<P>": return "Passages";
-                            default: return "huh";
+                            default: return "Unknown region";
                         }
                     }
                 }
