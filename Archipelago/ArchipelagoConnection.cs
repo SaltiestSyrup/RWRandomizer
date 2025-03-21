@@ -143,6 +143,7 @@ namespace RainWorldRandomizer
                     // Log an error if slot data was not valid
                     string errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
                     Plugin.Log.LogError(errLog);
+                    Disconnect();
                     return errLog;
                 }
                 
