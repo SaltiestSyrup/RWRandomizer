@@ -6,6 +6,7 @@ using Menu;
 using Menu.Remix.MixedUI;
 using RWCustom;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -65,6 +66,8 @@ namespace RainWorldRandomizer
                 "or Icon{ScavengerBomb}. A check can display an icon to log what the player received, like \"Found Icon{EnergyCell}\"," +
                 " or a player who wants to for whatever reason can use them as well. If someone tries to type an invalid icon, it will display as a" +
                 " white square instead, like so: Icon{Fruit}");
+
+            AddMessage("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         }
 
         public void AddMessage(string text)
@@ -160,26 +163,43 @@ namespace RainWorldRandomizer
                 List<string> splitMessage = new List<string>();
 
                 // Find and split along every instance of an "Icon"
-                int j = 0;
-                string[] initialSplit = Regex.Split(message.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "\n");
-                for (int i = 0; i < initialSplit.Length; i++)
+                // Clear any instances of our temp replacement string already present
+                message = Regex.Replace(message, "_icon\\d{1,2}_", "");
+                List<string> capturedIDs = new List<string>();
+                if (Regex.IsMatch(message, "Icon{(\\S*)}"))
                 {
-                    int foundIcons = Regex.Matches(initialSplit[i], "Icon{\\S*}").Count;
-
-                    if (i > 0) wrapIndices.Add(j);
-                    if (foundIcons > 0)
+                    // normal wrapping
+                    splitMessage = Regex.Split(message.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "\n").ToList();
+                    for (int i = 1; i < splitMessage.Count; i++)
                     {
-                        string[] subsplit = Regex.Split(initialSplit[i], "(Icon{\\S*})");
-                        splitMessage.AddRange(subsplit);
-                        j += subsplit.Length;
-                    }
-                    else
-                    {
-                        splitMessage.Add(initialSplit[i]);
-                        j++;
+                        wrapIndices.Add(i);
                     }
                 }
+                else
+                {
+                    string[] split = Regex.Split(message, "(Icon{\\S*})");
 
+                    for (int i = 0; i < split.Length; i++)
+                    {
+                        if (i % 2 == 1)
+                        {
+                            capturedIDs.Add(Regex.Match(split[i], "Icon{(\\S*)}").Groups[1].Value);
+                            split[i] = $"_icon{i / 2}_";
+                            splitMessage.Add(split[i]);
+                        }
+                        else
+                        {
+                            // Split into chunks to help wrapping logic
+                            splitMessage.AddRange(Regex.Split(split[i], "(.+?\\s)"));
+                        }
+                    }
+                    // Clean up empty strings
+                    splitMessage.RemoveAll((s) => s.Equals(""));
+                    wrapIndices = CreateWrapIndices(splitMessage.ToArray());
+
+                    Plugin.Log.LogDebug(string.Join("\n", splitMessage));
+                }
+                
                 messageLabels = new FLabel[splitMessage.Count];
                 iconSymbols = new IconSymbol[splitMessage.Count];
                 height = wrapIndices.Count + 1;
@@ -205,11 +225,11 @@ namespace RainWorldRandomizer
                     }
 
                     // Create an Icon
-                    var iconMatch = Regex.Match(splitMessage[i], "Icon{(\\S*)}");
+                    var iconMatch = Regex.Match(splitMessage[i], "_icon(\\d{1,2})_");
                     if (iconMatch.Success)
                     {
                         // This should automatically default to the "Futile_White" sprite if data is invalid
-                        MultiplayerUnlocks.SandboxUnlockID iconData = new MultiplayerUnlocks.SandboxUnlockID(iconMatch.Groups[1].Value, false);
+                        MultiplayerUnlocks.SandboxUnlockID iconData = new MultiplayerUnlocks.SandboxUnlockID(capturedIDs[int.Parse(iconMatch.Groups[1].Value)], false);
                         iconSymbols[i] = IconSymbol.CreateIconSymbol(
                             MultiplayerUnlocks.SymbolDataForSandboxUnlock(iconData),
                             owner.hud.fContainers[1]);
@@ -243,12 +263,19 @@ namespace RainWorldRandomizer
 
                 messageLabels = new FLabel[message.Parts.Length];
 
+                // Make a string[] representation of message parts
+                string[] msgParts = new string[message.Parts.Length];
+                for (int i = 0; i < message.Parts.Length; i++)
+                {
+                    msgParts[i] = message.Parts[i].Text;
+                }
+
                 // Text wrapping
-                wrapIndices = CreateWrapIndices(message.Parts);
+                wrapIndices = CreateWrapIndices(msgParts);
                 height = wrapIndices.Count + 1;
                 CreateBackgroundSprite();
 
-                for (int i = 0; i < message.Parts.Length; i++)
+                for (int i = 0; i < msgParts.Length; i++)
                 {
                     // Running offset to position labels in a line
                     float curOffset = owner.pos.x + MSG_MARGIN;
@@ -263,7 +290,7 @@ namespace RainWorldRandomizer
                     }
 
                     // Create the label
-                    messageLabels[i] = new FLabel(Custom.GetFont(), message.Parts[i].Text)
+                    messageLabels[i] = new FLabel(Custom.GetFont(), msgParts[i])
                     {
                         color = ArchipelagoConnection.palette[message.Parts[i].PaletteColor],
                         x = curOffset,
@@ -331,29 +358,33 @@ namespace RainWorldRandomizer
             public void ClearSprites()
             {
                 backgroundSprite.RemoveFromContainer();
-                foreach (FLabel label in messageLabels)
+                for (int i = 0; i < messageLabels.Length; i++)
                 {
-                    label.RemoveFromContainer();
+                    messageLabels[i]?.RemoveFromContainer();
+                    iconSymbols[i]?.RemoveSprites();
                 }
             }
 
             /// <summary>
-            /// Takes an array of <see cref="MessagePart"/>s and finds where text wrapping should occur
+            /// Takes an array of <see cref="string"/>s and finds where text wrapping should occur
             /// </summary>
             /// <returns>A <see cref="List{T}"/> containing each index of <paramref name="message"/> where wrapping should occur</returns>
-            public static List<int> CreateWrapIndices(MessagePart[] message)
+            public static List<int> CreateWrapIndices(string[] message)
             {
                 List<int> indices = new List<int>();
                 StringBuilder wrapText = new StringBuilder();
 
                 for (int i = 0; i < message.Length; i++)
                 {
-                    wrapText.Append(message[i].Text);
+                    wrapText.Append(message[i]);
                     // Is this string now too long for one line?
                     if (wrapText.ToString().WrapText(false, MSG_SIZE_X).Contains("\n"))
                     {
-                        indices.Add(RecursiveWrap(i, i));
+                        int foundIndex = RecursiveWrap(i, i);
+                        indices.Add(foundIndex);
+                        Plugin.Log.LogDebug(wrapText.ToString());
                         wrapText.Clear();
+                        i = foundIndex - 1;
                     }
                 }
 
@@ -364,7 +395,7 @@ namespace RainWorldRandomizer
                 {
                     if (i <= 0) return 0;
 
-                    if (!message[i - 1].Text.EndsWith(" ") && !message[i].Text.StartsWith(" "))
+                    if (!message[i - 1].EndsWith(" ") && !message[i].StartsWith(" "))
                     {
                         return RecursiveWrap(curLength, i - 1);
                     }
