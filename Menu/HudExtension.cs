@@ -60,6 +60,11 @@ namespace RainWorldRandomizer
         {
             this.container = container;
             pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X - (MSG_MARGIN * 2) + 0.01f, 30.01f);
+
+            AddMessage("This is a message showcasing the new Icon system. I can display anything I want, such as Icon{BubbleGrass}, " +
+                "or Icon{ScavengerBomb}. A check can display an icon to log what the player received, like \"Found Icon{EnergyCell}\"," +
+                " or a player who wants to for whatever reason can use them as well. If someone tries to type an invalid icon, it will display as a" +
+                " white square instead, like so: Icon{Fruit}");
         }
 
         public void AddMessage(string text)
@@ -114,6 +119,7 @@ namespace RainWorldRandomizer
         private class ChatMessage
         {
             private readonly ChatLog owner;
+            private readonly FFont font;
 
             public int index;
             public int heightIndex;
@@ -138,43 +144,91 @@ namespace RainWorldRandomizer
 
             FSprite backgroundSprite;
             FLabel[] messageLabels;
+            IconSymbol[] iconSymbols;
 
             // Constructor for "simple" messages (Only one message part)
             public ChatMessage(ChatLog chatLog, string message)
             {
                 owner = chatLog;
+                font = Futile.atlasManager.GetFontWithName(Custom.GetFont());
                 index = 0;
                 text = message;
                 yPos = -MSG_SIZE_Y;
                 wrapIndices = new List<int>();
 
                 // Labels
-                string[] splitMessage = Regex.Split(message.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "\n");
+                List<string> splitMessage = new List<string>();
 
-                messageLabels = new FLabel[splitMessage.Length];
-                height = messageLabels.Length;
-
-                // Background
-                backgroundSprite = new FSprite("pixel")
+                // Find and split along every instance of an "Icon"
+                int j = 0;
+                string[] initialSplit = Regex.Split(message.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "\n");
+                for (int i = 0; i < initialSplit.Length; i++)
                 {
-                    color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black),
-                    x = chatLog.pos.x + (MSG_SIZE_X / 2),
-                    scaleX = MSG_SIZE_X + (MSG_MARGIN * 2),
-                    scaleY = (MSG_SIZE_Y * height) + (MSG_MARGIN * 2),
-                    anchorY = 0f
-                };
-                chatLog.container.AddChild(backgroundSprite);
+                    int foundIcons = Regex.Matches(initialSplit[i], "Icon{\\S*}").Count;
 
-                for (int i = 0; i < splitMessage.Length; i++)
+                    if (i > 0) wrapIndices.Add(j);
+                    if (foundIcons > 0)
+                    {
+                        string[] subsplit = Regex.Split(initialSplit[i], "(Icon{\\S*})");
+                        splitMessage.AddRange(subsplit);
+                        j += subsplit.Length;
+                    }
+                    else
+                    {
+                        splitMessage.Add(initialSplit[i]);
+                        j++;
+                    }
+                }
+
+                messageLabels = new FLabel[splitMessage.Count];
+                iconSymbols = new IconSymbol[splitMessage.Count];
+                height = wrapIndices.Count + 1;
+
+                CreateBackgroundSprite();
+
+                bool lastWasSprite = false;
+                for (int i = 0; i < splitMessage.Count; i++)
                 {
+                    // Running offset to position labels in a line
+                    float curOffset;
+                    if (i == 0 || wrapIndices.Contains(i))
+                    {
+                        curOffset = owner.pos.x + MSG_MARGIN;
+                    }
+                    else if (lastWasSprite)
+                    {
+                        curOffset = iconSymbols[i - 1].symbolSprite.x + iconSymbols[i - 1].symbolSprite.width + 1f;
+                    }
+                    else
+                    {
+                        curOffset = messageLabels[i - 1].x + messageLabels[i - 1].textRect.width + 1f;
+                    }
+
+                    // Create an Icon
+                    var iconMatch = Regex.Match(splitMessage[i], "Icon{(\\S*)}");
+                    if (iconMatch.Success)
+                    {
+                        // This should automatically default to the "Futile_White" sprite if data is invalid
+                        MultiplayerUnlocks.SandboxUnlockID iconData = new MultiplayerUnlocks.SandboxUnlockID(iconMatch.Groups[1].Value, false);
+                        iconSymbols[i] = IconSymbol.CreateIconSymbol(
+                            MultiplayerUnlocks.SymbolDataForSandboxUnlock(iconData),
+                            owner.hud.fContainers[1]);
+                        iconSymbols[i].Show(false);
+                        iconSymbols[i].symbolSprite.x = curOffset;
+                        iconSymbols[i].symbolSprite.anchorX = 0;
+                        lastWasSprite = true;
+                        continue;
+                    }
+
+                    // Create a text label
                     messageLabels[i] = new FLabel(Custom.GetFont(), splitMessage[i])
                     {
-                        x = chatLog.pos.x + MSG_MARGIN,
+                        x = curOffset,
                         alignment = FLabelAlignment.Left,
                         anchorY = 0f
                     };
-                    chatLog.container.AddChild(messageLabels[i]);
-                    wrapIndices.Add(i + 1);
+                    owner.container.AddChild(messageLabels[i]);
+                    lastWasSprite = false;
                 };
             }
 
@@ -182,31 +236,22 @@ namespace RainWorldRandomizer
             public ChatMessage(ChatLog chatLog, LogMessage message)
             {
                 owner = chatLog;
+                font = Futile.atlasManager.GetFontWithName(Custom.GetFont());
                 index = 0;
                 text = message.ToString();
                 yPos = -MSG_SIZE_Y;
-                wrapIndices = new List<int>();
 
                 messageLabels = new FLabel[message.Parts.Length];
 
-                // Background
-                backgroundSprite = new FSprite("pixel")
-                {
-                    color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black),
-                    x = chatLog.pos.x,
-                    scaleX = MSG_SIZE_X + (MSG_MARGIN * 2),
-                    anchorX = 0f,
-                    anchorY = 0f
-                };
-                chatLog.container.AddChild(backgroundSprite);
-
                 // Text wrapping
                 wrapIndices = CreateWrapIndices(message.Parts);
+                height = wrapIndices.Count + 1;
+                CreateBackgroundSprite();
 
                 for (int i = 0; i < message.Parts.Length; i++)
                 {
                     // Running offset to position labels in a line
-                    float curOffset = chatLog.pos.x + MSG_MARGIN;
+                    float curOffset = owner.pos.x + MSG_MARGIN;
                     if (i > 0)
                     {
                         curOffset = messageLabels[i - 1].x + messageLabels[i - 1].textRect.width + 1f;
@@ -214,7 +259,7 @@ namespace RainWorldRandomizer
 
                     if (wrapIndices.Contains(i))
                     {
-                        curOffset = chatLog.pos.x + MSG_MARGIN;
+                        curOffset = owner.pos.x + MSG_MARGIN;
                     }
 
                     // Create the label
@@ -225,11 +270,8 @@ namespace RainWorldRandomizer
                         alignment = FLabelAlignment.Left,
                         anchorY = 0f
                     };
-                    chatLog.container.AddChild(messageLabels[i]);
+                    owner.container.AddChild(messageLabels[i]);
                 }
-
-                height = wrapIndices.Count + 1;
-                backgroundSprite.scaleY = (MSG_SIZE_Y * height) + MSG_MARGIN * 2;
             }
 
             public void Update()
@@ -252,28 +294,37 @@ namespace RainWorldRandomizer
                 {
                     show = Mathf.Max(0f, show - 0.02f);
                 }
+
+                foreach (IconSymbol icon in iconSymbols)
+                {
+                    icon?.Update();
+                }
             }
 
             public void Draw(float timeStacker)
             {
-                // Position update
                 float newY = Mathf.Lerp(lastYPos, yPos, timeStacker);
+                float fade = Custom.SCurve(Mathf.Lerp(lastShow, show, timeStacker), 0.3f);
+                if (owner.GamePaused) fade = 0; // Don't display when game paused
+
                 backgroundSprite.y = newY;
+                backgroundSprite.alpha = fade;
+
                 int lineIndex = 0;
                 for (int i = 0; i < messageLabels.Length; i++)
                 {
                     if (wrapIndices.Contains(i)) lineIndex++;
-                    messageLabels[i].y = newY + (messageLabels[i].FontLineHeight * (height - 1 - lineIndex)) + MSG_MARGIN;
-                }
-
-                // Set alpha values
-                float fade = Custom.SCurve(Mathf.Lerp(lastShow, show, timeStacker), 0.3f);
-                if (owner.GamePaused) fade = 0; // Don't display when game paused
-
-                backgroundSprite.alpha = fade;
-                foreach (FLabel label in messageLabels)
-                {
-                    label.alpha = fade;
+                    if (messageLabels[i] != null)
+                    {
+                        messageLabels[i].y = newY + (font.lineHeight * (height - 1 - lineIndex)) + MSG_MARGIN;
+                        messageLabels[i].alpha = fade;
+                    }
+                    else
+                    {
+                        iconSymbols[i].Draw(timeStacker, 
+                            new Vector2(iconSymbols[i].symbolSprite.x, newY + (font.lineHeight * (height - 1 - lineIndex + 0.5f)) + MSG_MARGIN));
+                        iconSymbols[i].symbolSprite.alpha = fade;
+                    }
                 }
             }
 
@@ -320,6 +371,20 @@ namespace RainWorldRandomizer
 
                     return i;
                 }
+            }
+
+            private void CreateBackgroundSprite()
+            {
+                backgroundSprite = new FSprite("pixel")
+                {
+                    color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black),
+                    x = owner.pos.x,
+                    scaleX = MSG_SIZE_X + (MSG_MARGIN * 2),
+                    scaleY = (MSG_SIZE_Y * height) + (MSG_MARGIN * 2),
+                    anchorX = 0f,
+                    anchorY = 0f
+                };
+                owner.container.AddChild(backgroundSprite);
             }
         }
     }
