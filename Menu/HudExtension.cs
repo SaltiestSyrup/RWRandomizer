@@ -197,9 +197,9 @@ namespace RainWorldRandomizer
                     splitMessage.RemoveAll((s) => s.Equals(""));
                     wrapIndices = CreateWrapIndices(splitMessage.ToArray());
 
-                    Plugin.Log.LogDebug(string.Join("\n", splitMessage));
+                    //Plugin.Log.LogDebug(string.Join("\n", splitMessage));
                 }
-                
+
                 messageLabels = new FLabel[splitMessage.Count];
                 iconSymbols = new IconSymbol[splitMessage.Count];
                 height = wrapIndices.Count + 1;
@@ -228,26 +228,13 @@ namespace RainWorldRandomizer
                     var iconMatch = Regex.Match(splitMessage[i], "_icon(\\d{1,2})_");
                     if (iconMatch.Success)
                     {
-                        // This should automatically default to the "Futile_White" sprite if data is invalid
-                        MultiplayerUnlocks.SandboxUnlockID iconData = new MultiplayerUnlocks.SandboxUnlockID(capturedIDs[int.Parse(iconMatch.Groups[1].Value)], false);
-                        iconSymbols[i] = IconSymbol.CreateIconSymbol(
-                            MultiplayerUnlocks.SymbolDataForSandboxUnlock(iconData),
-                            owner.hud.fContainers[1]);
-                        iconSymbols[i].Show(false);
-                        iconSymbols[i].symbolSprite.x = curOffset;
-                        iconSymbols[i].symbolSprite.anchorX = 0;
+                        iconSymbols[i] = CreateIcon(capturedIDs[int.Parse(iconMatch.Groups[1].Value)], curOffset);
                         lastWasSprite = true;
                         continue;
                     }
 
                     // Create a text label
-                    messageLabels[i] = new FLabel(Custom.GetFont(), splitMessage[i])
-                    {
-                        x = curOffset,
-                        alignment = FLabelAlignment.Left,
-                        anchorY = 0f
-                    };
-                    owner.container.AddChild(messageLabels[i]);
+                    messageLabels[i] = CreateLabel(splitMessage[i], curOffset);
                     lastWasSprite = false;
                 };
             }
@@ -290,14 +277,7 @@ namespace RainWorldRandomizer
                     }
 
                     // Create the label
-                    messageLabels[i] = new FLabel(Custom.GetFont(), msgParts[i])
-                    {
-                        color = ArchipelagoConnection.palette[message.Parts[i].PaletteColor],
-                        x = curOffset,
-                        alignment = FLabelAlignment.Left,
-                        anchorY = 0f
-                    };
-                    owner.container.AddChild(messageLabels[i]);
+                    messageLabels[i] = CreateLabel(msgParts[i], curOffset, ArchipelagoConnection.palette[message.Parts[i].PaletteColor]);
                 }
             }
 
@@ -312,7 +292,7 @@ namespace RainWorldRandomizer
 
                 // Lifetime countdown
                 lifetime = Mathf.Max(0f, lifetime - 0.025f);
-                
+
                 if (forceDisplay)
                 {
                     show = Mathf.Min(show + 0.01f, 1f);
@@ -348,7 +328,7 @@ namespace RainWorldRandomizer
                     }
                     else
                     {
-                        iconSymbols[i].Draw(timeStacker, 
+                        iconSymbols[i].Draw(timeStacker,
                             new Vector2(iconSymbols[i].symbolSprite.x, newY + (font.lineHeight * (height - 1 - lineIndex + 0.5f)) + MSG_MARGIN));
                         iconSymbols[i].symbolSprite.alpha = fade;
                     }
@@ -382,7 +362,7 @@ namespace RainWorldRandomizer
                     {
                         int foundIndex = RecursiveWrap(i, i);
                         indices.Add(foundIndex);
-                        Plugin.Log.LogDebug(wrapText.ToString());
+                        //Plugin.Log.LogDebug(wrapText.ToString());
                         wrapText.Clear();
                         i = foundIndex - 1;
                     }
@@ -416,6 +396,34 @@ namespace RainWorldRandomizer
                     anchorY = 0f
                 };
                 owner.container.AddChild(backgroundSprite);
+            }
+
+            private IconSymbol CreateIcon(string iconID, float xOffset)
+            {
+                // This should automatically default to the "Futile_White" sprite if data is invalid
+                MultiplayerUnlocks.SandboxUnlockID iconData = new MultiplayerUnlocks.SandboxUnlockID(iconID, false);
+                IconSymbol icon = IconSymbol.CreateIconSymbol(
+                    MultiplayerUnlocks.SymbolDataForSandboxUnlock(iconData),
+                    owner.hud.fContainers[1]);
+                icon.Show(false);
+                icon.symbolSprite.x = xOffset;
+                icon.symbolSprite.anchorX = 0;
+
+                return icon;
+            }
+
+            private FLabel CreateLabel(string text, float xOffset, Color? color = null)
+            {
+                FLabel label = new FLabel(Custom.GetFont(), text)
+                {
+                    color = color == null ? new Color(1f, 1f, 1f) : (Color)color,
+                    x = xOffset,
+                    alignment = FLabelAlignment.Left,
+                    anchorY = 0f
+                };
+                owner.container.AddChild(label);
+
+                return label;
             }
         }
     }
