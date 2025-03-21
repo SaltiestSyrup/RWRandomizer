@@ -267,7 +267,7 @@ namespace RainWorldRandomizer
                 }
 
                 // Set alpha values
-                float fade = Mathf.Lerp(lastShow, show, timeStacker);
+                float fade = Custom.SCurve(Mathf.Lerp(lastShow, show, timeStacker), 0.3f);
                 if (owner.GamePaused) fade = 0; // Don't display when game paused
 
                 backgroundSprite.alpha = fade;
