@@ -1,4 +1,4 @@
-﻿using Archipelago.MultiClient.Net;
+using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
@@ -38,8 +38,9 @@ namespace RainWorldRandomizer
         public static string desiredStartDen = "";
         public static CompletionCondition completionCondition;
         public static Plugin.GateBehavior gateBehavior;
+        public static EchoLowKarmaDifficulty echoDifficulty;
         /// <summary> Passage Progress without Survivor </summary>
-        public static bool PPwS;
+        public static PPwSBehavior PPwS;
         public static FoodQuestBehavior foodQuest;
         /// <summary> A bitflag indicating the accessibility of each item in <see cref="MiscHooks.expanded"/>. </summary>
         public static long foodQuestAccessibility;
@@ -51,6 +52,7 @@ namespace RainWorldRandomizer
         public static string generationSeed;
 
         public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
+        public enum PPwSBehavior { Disabled = 0, Enabled = 1, Bypassed = 2 }
 
         public enum CompletionCondition
         {
@@ -60,6 +62,11 @@ namespace RainWorldRandomizer
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
             Messenger, // Spearmaster delivering the encoded pearl to Comms array
             Rubicon, // Saint Ascending in Rubicon
+        }
+
+        public enum EchoLowKarmaDifficulty
+        {
+            Impossible, WithFlower, MaxKarma, Vanilla
         }
 
         private static void CreateSession(string hostName, int port)
@@ -139,6 +146,7 @@ namespace RainWorldRandomizer
                     // Log an error if slot data was not valid
                     string errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
                     Plugin.Log.LogError(errLog);
+                    Disconnect();
                     return errLog;
                 }
                 
@@ -254,6 +262,7 @@ namespace RainWorldRandomizer
                 || !slotData.ContainsKey("checks_foodquest")
                 || !slotData.ContainsKey("which_gate_behavior")
                 || !slotData.ContainsKey("starting_room")
+                || !slotData.ContainsKey("difficulty_echo_low_karma")
                 )
             {
                 return false;
@@ -265,6 +274,7 @@ namespace RainWorldRandomizer
             long foodQuestAccess = (long)slotData["checks_foodquest"];
             long desiredGateBehavior = (long)slotData["which_gate_behavior"];
             string startingShelter = (string)slotData["starting_room"];
+            long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
             long foodQuestAccessibility = slotData.ContainsKey("checks_foodquest_accessibility") ? (long)slotData["checks_foodquest_accessibility"] : -1;
@@ -342,7 +352,9 @@ namespace RainWorldRandomizer
             // Set gate behavior
             gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
 
-            ArchipelagoConnection.PPwS = PPwS > 0;
+            ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
+
+            ArchipelagoConnection.echoDifficulty = (EchoLowKarmaDifficulty)echoDifficulty;
 
             DeathLinkHandler.Active = deathLink > 0;
 
