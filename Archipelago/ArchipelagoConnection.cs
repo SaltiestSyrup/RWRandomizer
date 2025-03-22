@@ -44,6 +44,7 @@ namespace RainWorldRandomizer
         public static FoodQuestBehavior foodQuest;
         /// <summary> A bitflag indicating the accessibility of each item in <see cref="MiscHooks.expanded"/>. </summary>
         public static long foodQuestAccessibility;
+        public static bool sheltersanity;
 
         public static ArchipelagoSession Session;
 
@@ -277,6 +278,7 @@ namespace RainWorldRandomizer
             long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
+            long sheltersanity = slotData.ContainsKey("checks_sheltersanity") ? (long)slotData["checks_sheltersanity"] : -1;
             long foodQuestAccessibility = slotData.ContainsKey("checks_foodquest_accessibility") ? (long)slotData["checks_foodquest_accessibility"] : -1;
 
             switch (worldStateIndex)
@@ -353,7 +355,7 @@ namespace RainWorldRandomizer
             gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
 
             ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
-
+            ArchipelagoConnection.sheltersanity = sheltersanity > 0;
             ArchipelagoConnection.echoDifficulty = (EchoLowKarmaDifficulty)echoDifficulty;
 
             DeathLinkHandler.Active = deathLink > 0;
