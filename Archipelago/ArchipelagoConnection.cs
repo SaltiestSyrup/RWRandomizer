@@ -53,7 +53,7 @@ namespace RainWorldRandomizer
         public static string generationSeed;
 
         public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
-        public enum PPwSBehavior { Disabled = 0, Enabled = 1, Bypassed = 2 }
+        public enum PPwSBehavior { Disabled, Enabled, Bypassed }
 
         public enum CompletionCondition
         {
@@ -264,6 +264,8 @@ namespace RainWorldRandomizer
                 || !slotData.ContainsKey("which_gate_behavior")
                 || !slotData.ContainsKey("starting_room")
                 || !slotData.ContainsKey("difficulty_echo_low_karma")
+                || !slotData.ContainsKey("checks_sheltersanity")
+                || !slotData.ContainsKey("checks_foodquest_accessibility")
                 )
             {
                 return false;
@@ -276,10 +278,10 @@ namespace RainWorldRandomizer
             long desiredGateBehavior = (long)slotData["which_gate_behavior"];
             string startingShelter = (string)slotData["starting_room"];
             long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
+            long sheltersanity = (long)slotData["checks_sheltersanity"];
+            long foodQuestAccessibility = (long)slotData["checks_foodquest_accessibility"];
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
-            long sheltersanity = slotData.ContainsKey("checks_sheltersanity") ? (long)slotData["checks_sheltersanity"] : -1;
-            long foodQuestAccessibility = slotData.ContainsKey("checks_foodquest_accessibility") ? (long)slotData["checks_foodquest_accessibility"] : -1;
 
             switch (worldStateIndex)
             {
