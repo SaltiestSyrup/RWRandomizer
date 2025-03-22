@@ -1,4 +1,4 @@
-﻿using Archipelago.MultiClient.Net;
+using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
@@ -41,7 +41,9 @@ namespace RainWorldRandomizer
         public static EchoLowKarmaDifficulty echoDifficulty;
         /// <summary> Passage Progress without Survivor </summary>
         public static PPwSBehavior PPwS;
-        public static bool foodQuestForAll;
+        public static FoodQuestBehavior foodQuest;
+        /// <summary> A bitflag indicating the accessibility of each item in <see cref="MiscHooks.expanded"/>. </summary>
+        public static long foodQuestAccessibility;
 
         public static ArchipelagoSession Session;
 
@@ -49,6 +51,7 @@ namespace RainWorldRandomizer
         public static string playerName;
         public static string generationSeed;
 
+        public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
         public enum PPwSBehavior { Disabled = 0, Enabled = 1, Bypassed = 2 }
 
         public enum CompletionCondition
@@ -274,6 +277,7 @@ namespace RainWorldRandomizer
             long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
+            long foodQuestAccessibility = slotData.ContainsKey("checks_foodquest_accessibility") ? (long)slotData["checks_foodquest_accessibility"] : -1;
 
             switch (worldStateIndex)
             {
@@ -354,8 +358,12 @@ namespace RainWorldRandomizer
 
             DeathLinkHandler.Active = deathLink > 0;
 
-            // We don't actually care if option is 0, the server can just ingore us sending Gourm's foods
-            foodQuestForAll = foodQuestAccess == 2;
+            foodQuest = IsMSC && (Slugcat.value == "Gourmand" || foodQuestAccess == 2) ? 
+                (foodQuestAccessibility > 0 ? FoodQuestBehavior.Expanded : FoodQuestBehavior.Enabled) : FoodQuestBehavior.Disabled;
+            ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
+            WinState.GourmandPassageTracker = foodQuest == FoodQuestBehavior.Expanded ? MiscHooks.expanded : MiscHooks.unexpanded;
+
+            Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
 
             return true;
         }

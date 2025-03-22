@@ -99,8 +99,7 @@ namespace RainWorldRandomizer
 
                     // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
                     if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
-                        && (ArchipelagoConnection.foodQuestForAll 
-                            || Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
+                        && Options.UseFoodQuest)
                     {
                         WinState.GourFeastTracker gourTracker = saveState.deathPersistentSaveData.winState.GetTracker(id, true) as WinState.GourFeastTracker;
 

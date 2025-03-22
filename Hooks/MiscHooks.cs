@@ -26,6 +26,8 @@ namespace RainWorldRandomizer
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
             On.Menu.KarmaLadder.ctor += OnKarmaLadderCtor;
+            On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
+            On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
 
             try
             {
@@ -85,6 +87,8 @@ namespace RainWorldRandomizer
             On.Menu.EndgameTokens.Passage -= DoPassage;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
+            On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
+            On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
@@ -843,6 +847,18 @@ namespace RainWorldRandomizer
                 c.MoveAfterLabels();
                 c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
             }
+
+            // Allow popcorn seeds to count as popcorn plants (argument interception at 0231).
+            c.GotoNext(x => x.MatchCallOrCallvirt(typeof(WinState).GetMethod(nameof(WinState.GourmandPassageRequirementAtIndex))));  // 0221
+            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(AbstractPhysicalObject).GetField(nameof(AbstractPhysicalObject.type))));  // 022c
+
+            AbstractPhysicalObject.AbstractObjectType TreatSeedsAsCobs(AbstractPhysicalObject.AbstractObjectType prev)
+            {
+                return (ModManager.MSC && prev == MoreSlugcatsEnums.AbstractObjectType.Seed) ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
+            }
+
+            c.EmitDelegate<Func<AbstractPhysicalObject.AbstractObjectType, AbstractPhysicalObject.AbstractObjectType>>(TreatSeedsAsCobs);
+
         }
 
         public static void WinStateCreateTrackerIL(ILContext il)
@@ -858,7 +874,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
         }
 
-        public static bool YesItIsMeGourmand(bool prev) => (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuestForAll) || prev;
+        public static bool YesItIsMeGourmand(bool prev) => Options.UseFoodQuest || prev;
 
         /// <summary>
         /// Allow Spearmaster to eat mushrooms for the food quest.
@@ -902,10 +918,70 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldloc_2); // i
             c.EmitDelegate<Func<int, bool>>((i) =>
             {
+                if (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuest == ArchipelagoConnection.FoodQuestBehavior.Expanded)
+                {
+                    return (ArchipelagoConnection.foodQuestAccessibility & (1L << i)) != 0;
+                }
                 // Returns whether or not the current slugcat can eat this food
                 return Constants.slugcatFoodQuestAccessibility[Plugin.RandoManager.currentSlugcat][i];
             });
             c.Emit(OpCodes.Brfalse, jump);
+        }
+
+        /// <summary>
+        /// Create two arrays of food quest items for normal and expanded food quest.
+        /// </summary>
+        private static void MoreSlugcats_OnInit(On.MoreSlugcats.MoreSlugcats.orig_OnInit orig)
+        {
+            orig();
+            // Order must match APWorld.
+            WinState.GourmandTrackerData[] data = new WinState.GourmandTrackerData[]
+            {
+                new WinState.GourmandTrackerData(AbstractPhysicalObject.AbstractObjectType.SeedCob, null),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.VultureGrub }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.SmallNeedleWorm, CreatureTemplate.Type.BigNeedleWorm }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.GreenLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BlueLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.PinkLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.WhiteLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.RedLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.SpitLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.ZoopLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.TrainLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BigSpider }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.SpitterSpider }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.MotherSpider }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Vulture }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.KingVulture }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.MirosVulture }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.LanternMouse }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.Yeek }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.DropBug }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.MirosBird }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Scavenger, MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, MoreSlugcatsEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.PoleMimic }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.TentaclePlant }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BigEel }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.Inspector }),
+            };
+
+            unexpanded = WinState.GourmandPassageTracker.ToArray();
+            expanded = unexpanded.Concat(data).ToArray();
+        }
+
+        internal static WinState.GourmandTrackerData[] unexpanded;
+        internal static WinState.GourmandTrackerData[] expanded;
+
+        /// <summary>
+        /// Add a sprite for SeedCobs to use in ItemSymbols.
+        /// </summary>
+        private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intData)
+        {
+            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
+            return orig(itemType, intData);
         }
     }
 }
