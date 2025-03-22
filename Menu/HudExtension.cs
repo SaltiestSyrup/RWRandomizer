@@ -67,12 +67,19 @@ namespace RainWorldRandomizer
                 " or a player who wants to for whatever reason can use them as well. If someone tries to type an invalid icon, it will display as a" +
                 " white square instead, like so: Icon{Fruit}");
 
-            AddMessage("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+            AddMessage("AAAAAAAAAAAAAAAAAAAAAAAAAAIcon{BubbleGrass}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         }
 
         public void AddMessage(string text)
         {
-            EnqueueMessage(new ChatMessage(this, text));
+            try
+            {
+                EnqueueMessage(new ChatMessage(this, text));
+            }
+            catch (System.Exception e)
+            {
+                Plugin.Log.LogError(e);
+            }
         }
 
         public void AddMessage(LogMessage logMessage)
@@ -166,7 +173,7 @@ namespace RainWorldRandomizer
                 // Clear any instances of our temp replacement string already present
                 message = Regex.Replace(message, "_icon\\d{1,2}_", "");
                 List<string> capturedIDs = new List<string>();
-                if (Regex.IsMatch(message, "Icon{(\\S*)}"))
+                if (!Regex.IsMatch(message, "Icon{(\\S*)}"))
                 {
                     // normal wrapping
                     splitMessage = Regex.Split(message.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "\n").ToList();
@@ -249,6 +256,7 @@ namespace RainWorldRandomizer
                 yPos = -MSG_SIZE_Y;
 
                 messageLabels = new FLabel[message.Parts.Length];
+                iconSymbols = new IconSymbol[0];
 
                 // Make a string[] representation of message parts
                 string[] msgParts = new string[message.Parts.Length];
@@ -357,12 +365,20 @@ namespace RainWorldRandomizer
                 for (int i = 0; i < message.Length; i++)
                 {
                     wrapText.Append(message[i]);
+
+                    if (message[i].WrapText(false, MSG_SIZE_X).Contains("\n"))
+                    {
+                        indices.Add(i);
+                        wrapText.Clear();
+                        continue;
+                    }
+
                     // Is this string now too long for one line?
                     if (wrapText.ToString().WrapText(false, MSG_SIZE_X).Contains("\n"))
                     {
                         int foundIndex = RecursiveWrap(i, i);
                         indices.Add(foundIndex);
-                        //Plugin.Log.LogDebug(wrapText.ToString());
+                        Plugin.Log.LogDebug(wrapText.ToString());
                         wrapText.Clear();
                         i = foundIndex - 1;
                     }
