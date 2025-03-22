@@ -376,7 +376,7 @@ namespace RainWorldRandomizer
                 }
             }
 
-            if (ModManager.MSC && Options.UseFoodQuest && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)
+            if (ModManager.MSC && Options.UseFoodQuest)
             {
                 foreach (WinState.GourmandTrackerData data in WinState.GourmandPassageTracker)
                 {

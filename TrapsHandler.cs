@@ -184,7 +184,7 @@ namespace RainWorldRandomizer
                 // For each realized creature in room
                 foreach (AbstractCreature creature in room.creatures.Where(e => e.realizedCreature != null))
                 {
-                    creature.abstractAI.RealAI.tracker.SeeCreature(player.abstractCreature);
+                    creature.abstractAI?.RealAI?.tracker?.SeeCreature(player.abstractCreature);
                 }
             }
         }
