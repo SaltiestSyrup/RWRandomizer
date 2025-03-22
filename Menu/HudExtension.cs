@@ -68,6 +68,7 @@ namespace RainWorldRandomizer
                 " white square instead, like so: Icon{Fruit}");
 
             AddMessage("AAAAAAAAAAAAAAAAAAAAAAAAAAIcon{BubbleGrass}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+            AddMessage("B AAAAAAAAAAAAAAAAAAAAAAAAAAIcon{BubbleGrass}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
         }
 
         public void AddMessage(string text)
@@ -188,23 +189,35 @@ namespace RainWorldRandomizer
 
                     for (int i = 0; i < split.Length; i++)
                     {
+                        // "¬" is used as a delimiter for where to re-seperate the string
                         if (i % 2 == 1)
                         {
                             capturedIDs.Add(Regex.Match(split[i], "Icon{(\\S*)}").Groups[1].Value);
-                            split[i] = $"_icon{i / 2}_";
-                            splitMessage.Add(split[i]);
+                            split[i] = $"_icon{i / 2}_¬";
+                        }
+                        else if(!split[i].Equals(""))
+                        {
+                            split[i] += "¬";
+                        }
+                    }
+
+                    string joinedWithBreaks = string.Join("", split);
+                    string[] splitWithBreaks = Regex.Split(joinedWithBreaks.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "¬|(\n)");
+                    int breakCount = 0;
+                    // There has to be a better way to do this part but I do not know it right now
+                    for (int i = 0; i < splitWithBreaks.Length; i++)
+                    {
+                        if (splitWithBreaks[i].Equals("\n"))
+                        { 
+                            wrapIndices.Add(i - breakCount);
+                            Plugin.Log.LogDebug(i - breakCount);
+                            breakCount++;
                         }
                         else
                         {
-                            // Split into chunks to help wrapping logic
-                            splitMessage.AddRange(Regex.Split(split[i], "(.+?\\s)"));
+                            splitMessage.Add(splitWithBreaks[i]);
                         }
                     }
-                    // Clean up empty strings
-                    splitMessage.RemoveAll((s) => s.Equals(""));
-                    wrapIndices = CreateWrapIndices(splitMessage.ToArray());
-
-                    //Plugin.Log.LogDebug(string.Join("\n", splitMessage));
                 }
 
                 messageLabels = new FLabel[splitMessage.Count];
@@ -366,13 +379,6 @@ namespace RainWorldRandomizer
                 {
                     wrapText.Append(message[i]);
 
-                    if (message[i].WrapText(false, MSG_SIZE_X).Contains("\n"))
-                    {
-                        indices.Add(i);
-                        wrapText.Clear();
-                        continue;
-                    }
-
                     // Is this string now too long for one line?
                     if (wrapText.ToString().WrapText(false, MSG_SIZE_X).Contains("\n"))
                     {
@@ -380,7 +386,7 @@ namespace RainWorldRandomizer
                         indices.Add(foundIndex);
                         Plugin.Log.LogDebug(wrapText.ToString());
                         wrapText.Clear();
-                        i = foundIndex - 1;
+                        for (int j = foundIndex; j <= i; j++) wrapText.Append(message[j]);
                     }
                 }
 
