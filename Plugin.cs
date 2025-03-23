@@ -1,3 +1,4 @@
+using Archipelago.MultiClient.Net.MessageLog.Messages;
 using BepInEx;
 using BepInEx.Logging;
 using MoreSlugcats;
@@ -34,6 +35,7 @@ namespace RainWorldRandomizer
         //public SlugcatStats.Name currentSlugcat; // -- Move to manager base
 
         public Queue<string> notifQueue = new Queue<string>(); // Queue of pending notifications to be sent to the player in-game
+        public Queue<LogMessage> notifQueueAP = new Queue<LogMessage>();
         // Queue of items that the player has recieved and not claimed
         public Queue<Unlock.Item> lastItemDeliveryQueue = new Queue<Unlock.Item>();
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
@@ -91,6 +93,7 @@ namespace RainWorldRandomizer
             {
                 collectTokenHandler.ApplyHooks();
                 seedViewer.ApplyHooks();
+                HudExtension.ApplyHooks();
 
                 GameLoopHooks.ApplyHooks();
                 PlayerHooks.ApplyHooks();
@@ -127,6 +130,7 @@ namespace RainWorldRandomizer
             {
                 collectTokenHandler.RemoveHooks();
                 seedViewer.RemoveHooks();
+                HudExtension.RemoveHooks();
 
                 GameLoopHooks.RemoveHooks();
                 PlayerHooks.RemoveHooks();

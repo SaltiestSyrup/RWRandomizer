@@ -1082,6 +1082,7 @@ namespace RainWorldRandomizer
             randomizerKey[location].GiveUnlock();
             Plugin.Singleton.notifQueue.Enqueue(randomizerKey[location].UnlockCompleteMessage());
             Plugin.Log.LogInfo($"Completed Check: {location}");
+
             return true;
         }
 

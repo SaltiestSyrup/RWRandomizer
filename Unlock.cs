@@ -292,7 +292,7 @@ namespace RainWorldRandomizer
         {
             if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), item.id, true, out _))
             {
-                return $"//{item.id}";
+                return $"Icon{{{item.id}}}";
             }
 
             return IDToString(item.name);
