@@ -116,6 +116,7 @@ namespace RainWorldRandomizer
             if (Plugin.RandoManager == null || !(Plugin.RandoManager is ManagerArchipelago))
             {
                 Plugin.RandoManager = new ManagerArchipelago();
+                (Plugin.RandoManager as ManagerArchipelago).Init();
             }
             playerName = slotName;
 
