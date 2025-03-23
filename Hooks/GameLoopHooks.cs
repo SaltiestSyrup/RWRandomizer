@@ -331,7 +331,7 @@ namespace RainWorldRandomizer
             {
                 if (Plugin.RandoManager is ManagerArchipelago 
                     && ArchipelagoConnection.sheltersanity
-                    && $"Shelter - {currentRoom.abstractRoom.name.ToUpper()}" is string checkName
+                    && $"Shelter-{currentRoom.abstractRoom.name.ToUpper()}" is string checkName
                     && Plugin.RandoManager.LocationExists(checkName))
                 {
                     Plugin.RandoManager.GiveLocation(checkName);
