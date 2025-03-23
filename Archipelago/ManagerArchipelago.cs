@@ -19,6 +19,8 @@ namespace RainWorldRandomizer
 
         public static Dictionary<string, string> NameToAPLocation = new Dictionary<string, string>();
         public static Dictionary<string, string> APLocationToName = new Dictionary<string, string>();
+        public static Dictionary<string, string> NameToAPItem = new Dictionary<string, string>();
+        public static Dictionary<string, string> APItemToName = new Dictionary<string, string>();
         private Dictionary<string, bool> locationsStatus = new Dictionary<string, bool>();
 
         public void Init()
@@ -166,6 +168,12 @@ namespace RainWorldRandomizer
 
         public void AquireItem(string item, bool printLog = true, bool isNew = true)
         {
+            // If this doesn't pass it will just try to parse the AP name
+            if (APItemToName.ContainsKey(item))
+            {
+                item = APItemToName[item];
+            }
+
             if (item.StartsWith("GATE_"))
             {
                 if (!gatesStatus.ContainsKey(item))
@@ -375,9 +383,21 @@ namespace RainWorldRandomizer
                 locationsStatus);
         }
 
+        private struct APReadableNames
+        {
+            public APReadableNames(Dictionary<string, string> locations, Dictionary<string, string> items)
+            {
+                this.locations = locations;
+                this.items = items;
+            }
+
+            public Dictionary<string, string> locations;
+            public Dictionary<string, string> items;
+        }
+
         private static void LoadAPLocationDicts()
         {
-            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_location_map.json");
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_names_map.json");
 
             if (!File.Exists(path))
             {
@@ -385,13 +405,20 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            NameToAPLocation = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(path));
+            APReadableNames names = JsonConvert.DeserializeObject<APReadableNames>(File.ReadAllText(path));
+
+            NameToAPLocation = names.locations;
+            NameToAPItem = names.items;
 
             foreach (var keyVal in NameToAPLocation)
             {
                 Plugin.Log.LogDebug($"{keyVal.Key} | {keyVal.Value}");
-                if (!APLocationToName.ContainsKey(keyVal.Value))
-                    APLocationToName.Add(keyVal.Value, keyVal.Key);
+                APLocationToName.Add(keyVal.Value, keyVal.Key);
+            }
+            foreach (var keyVal in NameToAPItem)
+            {
+                Plugin.Log.LogDebug($"{keyVal.Key} | {keyVal.Value}");
+                APItemToName.Add(keyVal.Value, keyVal.Key);
             }
         }
 
