@@ -923,7 +923,7 @@ namespace RainWorldRandomizer
                     return (ArchipelagoConnection.foodQuestAccessibility & (1L << i)) != 0;
                 }
                 // Returns whether or not the current slugcat can eat this food
-                return Constants.slugcatFoodQuestAccessibility[Plugin.RandoManager.currentSlugcat][i];
+                return Constants.SlugcatFoodQuestAccessibility[Plugin.RandoManager.currentSlugcat][i];
             });
             c.Emit(OpCodes.Brfalse, jump);
         }
