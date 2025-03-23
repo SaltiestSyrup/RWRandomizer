@@ -1,4 +1,4 @@
-﻿using Archipelago.MultiClient.Net;
+using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Colors;
 using Archipelago.MultiClient.Net.Enums;
@@ -39,9 +39,13 @@ namespace RainWorldRandomizer
         public static string desiredStartDen = "";
         public static CompletionCondition completionCondition;
         public static Plugin.GateBehavior gateBehavior;
+        public static EchoLowKarmaDifficulty echoDifficulty;
         /// <summary> Passage Progress without Survivor </summary>
-        public static bool PPwS;
-        public static bool foodQuestForAll;
+        public static PPwSBehavior PPwS;
+        public static FoodQuestBehavior foodQuest;
+        /// <summary> A bitflag indicating the accessibility of each item in <see cref="MiscHooks.expanded"/>. </summary>
+        public static long foodQuestAccessibility;
+        public static bool sheltersanity;
 
         public static ArchipelagoSession Session;
 
@@ -70,6 +74,9 @@ namespace RainWorldRandomizer
                     { PaletteColor.Yellow, new UnityEngine.Color(1f, 1f, 0f) }
                 }
             );
+            
+        public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
+        public enum PPwSBehavior { Disabled, Enabled, Bypassed }
 
         public enum CompletionCondition
         {
@@ -79,6 +86,11 @@ namespace RainWorldRandomizer
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
             Messenger, // Spearmaster delivering the encoded pearl to Comms array
             Rubicon, // Saint Ascending in Rubicon
+        }
+
+        public enum EchoLowKarmaDifficulty
+        {
+            Impossible, WithFlower, MaxKarma, Vanilla
         }
 
         private static void CreateSession(string hostName, int port)
@@ -158,6 +170,7 @@ namespace RainWorldRandomizer
                     // Log an error if slot data was not valid
                     string errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
                     Plugin.Log.LogError(errLog);
+                    Disconnect();
                     return errLog;
                 }
                 
@@ -273,6 +286,9 @@ namespace RainWorldRandomizer
                 || !slotData.ContainsKey("checks_foodquest")
                 || !slotData.ContainsKey("which_gate_behavior")
                 || !slotData.ContainsKey("starting_room")
+                || !slotData.ContainsKey("difficulty_echo_low_karma")
+                || !slotData.ContainsKey("checks_sheltersanity")
+                || !slotData.ContainsKey("checks_foodquest_accessibility")
                 )
             {
                 return false;
@@ -284,6 +300,9 @@ namespace RainWorldRandomizer
             long foodQuestAccess = (long)slotData["checks_foodquest"];
             long desiredGateBehavior = (long)slotData["which_gate_behavior"];
             string startingShelter = (string)slotData["starting_room"];
+            long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
+            long sheltersanity = (long)slotData["checks_sheltersanity"];
+            long foodQuestAccessibility = (long)slotData["checks_foodquest_accessibility"];
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
 
@@ -360,12 +379,18 @@ namespace RainWorldRandomizer
             // Set gate behavior
             gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
 
-            ArchipelagoConnection.PPwS = PPwS > 0;
+            ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
+            ArchipelagoConnection.sheltersanity = sheltersanity > 0;
+            ArchipelagoConnection.echoDifficulty = (EchoLowKarmaDifficulty)echoDifficulty;
 
             DeathLinkHandler.Active = deathLink > 0;
 
-            // We don't actually care if option is 0, the server can just ingore us sending Gourm's foods
-            foodQuestForAll = foodQuestAccess == 2;
+            foodQuest = IsMSC && (Slugcat.value == "Gourmand" || foodQuestAccess == 2) ? 
+                (foodQuestAccessibility > 0 ? FoodQuestBehavior.Expanded : FoodQuestBehavior.Enabled) : FoodQuestBehavior.Disabled;
+            ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
+            WinState.GourmandPassageTracker = foodQuest == FoodQuestBehavior.Expanded ? MiscHooks.expanded : MiscHooks.unexpanded;
+
+            Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
 
             return true;
         }
