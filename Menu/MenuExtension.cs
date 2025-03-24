@@ -252,10 +252,11 @@ namespace RainWorldRandomizer
             public static string CurrentRegion => (Custom.rainWorld.processManager.currentMainLoop as RainWorldGame)?.world.name;
             public static Color COLOR_ACCESSIBLE = Color.white;
             public static Color COLOR_INACCESSIBLE = new Color(0.2f, 0.2f, 0.2f);
+            public static Dictionary<string, string> regionCodeLookup = Plugin.RegionNamesMap.ToDictionary(x => x.Value, x => x.Key);
 
             public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
             {
-                size = new Vector2(320f, 270f);
+                size = new Vector2(320f, 310f);
                 fillAlpha = 1f;
 
                 // Nodes have to exist before the connectors, but we want the connectors to be behind the nodes.
@@ -311,7 +312,7 @@ namespace RainWorldRandomizer
                 public LocationInfo(string location, bool collected)
                 {
                     kind = KindOfLocation(location);
-                    region = RegionOfLocation(kind, location);
+                    region = RegionOfLocation(location);
                     node = GetNodeName(region);
                     name = location;
                     this.collected = collected;
@@ -319,53 +320,50 @@ namespace RainWorldRandomizer
 
                 public LocationInfo(KeyValuePair<string, bool> pair) : this(pair.Key, pair.Value) { }
 
-                public static string RegionOfLocation(LocationKind kind, string location)
+                public static string RegionOfLocation(string location)
                 {
-                    switch (kind)
-                    {
-                        case LocationKind.BlueToken:
-                        case LocationKind.RedToken:
-                        case LocationKind.GreenToken:
-                        case LocationKind.Broadcast:
-                        case LocationKind.Pearl:
-                            return location.Split('-')[2];
+                    if (location == "Eat a Neuron Fly") return "<P>";
+                    if (location.StartsWith("The Wanderer")) return null;
+                    if (location.StartsWith("Food Quest")) return "<FQ>";
+                    if (location.StartsWith("Passage")) return "<P>";
 
-                        case LocationKind.Echo:
-                            return location.Split('-')[1];
-
-                        case LocationKind.GoldToken:
-                            string third = location.Split('-')[2];
-                            switch (third)
-                            {
-                                case "GWold": return "GW";
-                                case "gutter": return "SB";
-                                default: return third;
-                            }
-
-                        case LocationKind.Shelter:
-                            return location.Substring(10, 2);
-
-                        case LocationKind.FoodQuest:
-                            return "<FQ>";
-                        case LocationKind.Passage:
-                            return "<P>";
-
-                        default: return null;
-                    }
+                    return regionCodeLookup.TryGetValue(location.Split('-')[0].Trim(), out string ret) ? ret : null;
                 }
 
                 public static LocationKind KindOfLocation(string location)
                 {
-                    if (location.StartsWith("Pearl-")) return LocationKind.Pearl;
-                    if (location.StartsWith("Shelter -")) return LocationKind.Shelter;
-                    if (location.StartsWith("Broadcast-")) return LocationKind.Broadcast;
-                    if (location.StartsWith("Echo-")) return LocationKind.Echo;
-                    if (location.StartsWith("Token-L-")) return LocationKind.GoldToken;
-                    if (location.StartsWith("Token-S-")) return LocationKind.RedToken;
-                    if (location.StartsWith("Token-")) return LocationKind.BlueToken;
-                    if (location.StartsWith("Passage-")) return LocationKind.Passage;
-                    if (location.StartsWith("Wanderer-")) return LocationKind.WandererPip;
-                    if (location.StartsWith("FoodQuest-")) return LocationKind.FoodQuest;
+                    string[] parts = location.Split('-').Select(x => x.Trim()).ToArray();
+
+                    switch (parts.Count())
+                    {
+                        case 3:
+                            switch (parts[1])
+                            {
+                                case "Arena Token": return LocationKind.BlueToken;
+                                case "Pearl": return LocationKind.Pearl;
+                                case "Broadcast": return LocationKind.Broadcast;
+                                case "Level Token": return LocationKind.GoldToken;
+                                case "Shelter": return LocationKind.Shelter;
+                                default: return LocationKind.Other;
+                            }
+
+                        case 2:
+                            switch (parts[1])
+                            {
+                                case "Echo": return LocationKind.Echo;
+                                case "Safari Token": return LocationKind.RedToken;
+                                default:
+                                    switch (parts[0])
+                                    {
+                                        case "Food Quest": return LocationKind.FoodQuest;
+                                        case "Passage": return LocationKind.Passage;
+                                        case "The Wanderer": return LocationKind.WandererPip;
+                                        default: return LocationKind.Other;
+                                    }
+                            }
+
+                    }
+
                     return LocationKind.Other;
                 }
             }
@@ -775,7 +773,7 @@ namespace RainWorldRandomizer
 
                 public void Refresh()
                 {
-                    Vector2 pos = new Vector2(20f, 240f);
+                    Vector2 pos = new Vector2(20f, 280f);
                     foreach (CheckIcon sprite in _childNodes.OfType<CheckIcon>())
                     {
                         sprite.SetPosition(pos + sprite.Adjustment);
@@ -811,13 +809,10 @@ namespace RainWorldRandomizer
                         switch (kind)
                         {
                             case LocationKind.Passage:
-                                element = name.Substring(8) + "A";
-                                if (name == "Gourmand")
-                                {
-                                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
-                                    element = CreatureSymbol.SpriteNameOfCreature(iconData);
-                                    color = PlayerGraphics.DefaultSlugcatColor(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
-                                }
+                                if (name == "Passage - The Dragon Slayer") name = "DragonSlayer";
+                                else if (name == "Passage - The Wanderer") name = "Traveller";
+                                else { name = name.Substring(14); }
+                                element = $"{name}A";
                                 break;
                             case LocationKind.Echo:
                                 element = "smallKarma9-9";
@@ -871,6 +866,14 @@ namespace RainWorldRandomizer
                                 break;
                             case LocationKind.Shelter:
                                 element = "ShelterMarker";
+                                break;
+                            case LocationKind.Other:
+                                if (name == "Eat a Neuron Fly")
+                                {
+                                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
+                                    element = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
+                                    color = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
+                                }
                                 break;
                             default:
                                 element = "EndGameCircle";
