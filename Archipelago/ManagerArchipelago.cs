@@ -21,7 +21,7 @@ namespace RainWorldRandomizer
         public static Dictionary<string, string> APLocationToName = new Dictionary<string, string>();
         public static Dictionary<string, string> NameToAPItem = new Dictionary<string, string>();
         public static Dictionary<string, string> APItemToName = new Dictionary<string, string>();
-        private Dictionary<string, bool> locationsStatus = new Dictionary<string, bool>();
+        internal Dictionary<string, bool> locationsStatus = new Dictionary<string, bool>();
 
         public void Init()
         {

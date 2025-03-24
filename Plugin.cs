@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using System.Linq;
 
 namespace RainWorldRandomizer
 {
@@ -47,6 +48,19 @@ namespace RainWorldRandomizer
         public static Dictionary<string, string> RegionNamesMap = new Dictionary<string, string>();
         // A map of the 'correct' region acronyms for each region depending on current slugcat
         public static Dictionary<string, string> ProperRegionMap = new Dictionary<string, string>();
+
+        /// <summary>Whether there are any third-party regions.</summary>
+        public static bool AnyThirdPartyRegions
+        {
+            get
+            {
+                return RegionNamesMap.Keys
+                    .Except(new string[] {
+                        "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS", 
+                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS" })
+                    .Any();
+            }
+        }
 
         // { GATE_NAME, IS_LEFT_TRAVEL }
         public static Dictionary<string, bool> OneWayGates = new Dictionary<string, bool>()
