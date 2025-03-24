@@ -517,7 +517,7 @@ namespace RainWorldRandomizer
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
                     $"{DeathLinkHandler.Active}\n" +
-                    $"{ArchipelagoConnection.foodQuest}" + 
+                    $"{ArchipelagoConnection.foodQuest}\n" + 
                     $"{ArchipelagoConnection.sheltersanity}";
             };
             // Disconnect from AP on click
