@@ -376,7 +376,7 @@ namespace RainWorldRandomizer
                 }
             }
 
-            if (ModManager.MSC && Options.UseFoodQuest && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)
+            if (ModManager.MSC && Options.UseFoodQuest)
             {
                 foreach (WinState.GourmandTrackerData data in WinState.GourmandPassageTracker)
                 {
@@ -1082,6 +1082,7 @@ namespace RainWorldRandomizer
             randomizerKey[location].GiveUnlock();
             Plugin.Singleton.notifQueue.Enqueue(randomizerKey[location].UnlockCompleteMessage());
             Plugin.Log.LogInfo($"Completed Check: {location}");
+
             return true;
         }
 

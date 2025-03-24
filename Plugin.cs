@@ -1,3 +1,4 @@
+using Archipelago.MultiClient.Net.MessageLog.Messages;
 using BepInEx;
 using BepInEx.Logging;
 using MoreSlugcats;
@@ -35,6 +36,7 @@ namespace RainWorldRandomizer
         //public SlugcatStats.Name currentSlugcat; // -- Move to manager base
 
         public Queue<string> notifQueue = new Queue<string>(); // Queue of pending notifications to be sent to the player in-game
+        public Queue<LogMessage> notifQueueAP = new Queue<LogMessage>();
         // Queue of items that the player has recieved and not claimed
         public Queue<Unlock.Item> lastItemDeliveryQueue = new Queue<Unlock.Item>();
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
@@ -105,6 +107,7 @@ namespace RainWorldRandomizer
             {
                 collectTokenHandler.ApplyHooks();
                 seedViewer.ApplyHooks();
+                HudExtension.ApplyHooks();
 
                 GameLoopHooks.ApplyHooks();
                 PlayerHooks.ApplyHooks();
@@ -117,6 +120,8 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
+                On.RainWorld.LoadModResources += LoadResources;
+                On.RainWorld.UnloadResources += UnloadResources;
 
                 if (ExtCollectibleTrackerComptability.Enabled)
                 {
@@ -139,6 +144,7 @@ namespace RainWorldRandomizer
             {
                 collectTokenHandler.RemoveHooks();
                 seedViewer.RemoveHooks();
+                HudExtension.RemoveHooks();
 
                 GameLoopHooks.RemoveHooks();
                 PlayerHooks.RemoveHooks();
@@ -151,6 +157,8 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
+                On.RainWorld.LoadModResources -= LoadResources;
+                On.RainWorld.UnloadResources -= UnloadResources;
             }
             catch (Exception e)
             {
@@ -162,6 +170,12 @@ namespace RainWorldRandomizer
         {
             orig(self);
             rainWorld = self;
+
+            //try
+            //{
+            //    Futile.atlasManager.LoadImage("atlases/rwrandomizer/ColoredSymbolSeedCob");
+            //}
+            //catch (Exception e) { Logger.LogError(e); }
 
             CompatibleSlugcats = new List<SlugcatStats.Name>()
             {
@@ -208,6 +222,18 @@ namespace RainWorldRandomizer
             {
                 RegionNamesMap.Add(regionShort, Region.GetRegionFullName(regionShort, null));
             }
+        }
+
+        public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
+        {
+            orig(self);
+            Futile.atlasManager.LoadAtlas("Atlases/randomizer");
+        }
+
+        public void UnloadResources(On.RainWorld.orig_UnloadResources orig, RainWorld self)
+        {
+            orig(self);
+            Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
         }
 
         /*

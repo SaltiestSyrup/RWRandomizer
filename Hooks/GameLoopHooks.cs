@@ -99,8 +99,7 @@ namespace RainWorldRandomizer
 
                     // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
                     if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
-                        && (ArchipelagoConnection.foodQuestForAll 
-                            || Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
+                        && Options.UseFoodQuest)
                     {
                         WinState.GourFeastTracker gourTracker = saveState.deathPersistentSaveData.winState.GetTracker(id, true) as WinState.GourFeastTracker;
 
@@ -260,14 +259,28 @@ namespace RainWorldRandomizer
             if (self.GamePaused) return;
 
             // Display any pending notifications
-            if (Plugin.Singleton.notifQueue.Count > 0)
+            if (Plugin.Singleton.notifQueueAP.Count > 0)
+            {
+                if (Options.DisableNotificationQueue)
+                {
+                    Plugin.Singleton.notifQueueAP.Dequeue();
+                }
+                else if (HudExtension.chatLog != null)
+                {
+                    HudExtension.chatLog?.AddMessage(Plugin.Singleton.notifQueueAP.Dequeue());
+                }
+            }
+            // Display plain text messages last, as they tend to be more important
+            else if (Plugin.Singleton.notifQueue.Count > 0)
             {
                 if (Options.DisableNotificationQueue)
                 {
                     Plugin.Singleton.notifQueue.Dequeue();
                 }
-                else
+                else if (HudExtension.chatLog != null)
                 {
+                    HudExtension.chatLog?.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
+                    /*
                     // If there are several messages waiting, move through them quicker
                     bool hurry = Plugin.Singleton.notifQueue.Count > 3;
 
@@ -294,6 +307,7 @@ namespace RainWorldRandomizer
                             self.session.Players[0].realizedCreature.room.PlaySound(SoundID.MENU_Passage_Button, 0, 1f, 1f);
                         }
                     }
+                    */
                 }
             }
 
@@ -315,6 +329,14 @@ namespace RainWorldRandomizer
             Room currentRoom = self.FirstRealizedPlayer?.room;
             if (currentRoom?.abstractRoom.shelter ?? false)
             {
+                if (Plugin.RandoManager is ManagerArchipelago 
+                    && ArchipelagoConnection.sheltersanity
+                    && $"Shelter-{currentRoom.abstractRoom.name.ToUpper()}" is string checkName
+                    && Plugin.RandoManager.LocationExists(checkName))
+                {
+                    Plugin.RandoManager.GiveLocation(checkName);
+                }
+
                 for (int j = 0; j < currentRoom.updateList.Count; j++)
                 {
                     if (currentRoom.updateList[j] is DataPearl pearl)
@@ -414,10 +436,25 @@ namespace RainWorldRandomizer
                 {
                     if (Plugin.RandoManager is ManagerArchipelago)
                     {
-                        return ArchipelagoConnection.PPwS;
+                        return ArchipelagoConnection.PPwS != ArchipelagoConnection.PPwSBehavior.Disabled;
                     }
                     return config;
                 });
+
+                // Conditionally remove the hardcoded Survivor checks on other passages
+                // (branch interception at 049f, 04ed, 0570, 0599, 05ea, 06e8, 07bb).
+                c.GotoNext(x => x.MatchRet());  // 0480
+                for (int i = 0; i < 7; i++)
+                {
+                    c.GotoNext(
+                        MoveType.After,
+                        x => x.MatchLdloc(12),
+                        x => x.MatchCallOrCallvirt(typeof(WinState.EndgameTracker).GetProperty(nameof(WinState.EndgameTracker.GoalAlreadyFullfilled)).GetGetMethod())
+                        );
+                    bool BypassHardcodedSurvivorRequirement(bool prev) =>
+                        prev || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.PPwS == ArchipelagoConnection.PPwSBehavior.Bypassed);
+                    c.EmitDelegate<Func<bool, bool>>(BypassHardcodedSurvivorRequirement);
+                }
             }
             catch (Exception e)
             {
