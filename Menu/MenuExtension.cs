@@ -886,6 +886,8 @@ namespace RainWorldRandomizer
                                     element = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                                     color = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                                 }
+                                else if (ModManager.MSC && name == "Kill_FP") { element = "GuidanceEnergyCell"; }
+                                else if (ModManager.MSC) { element = "GuidancePebbles"; }
                                 break;
                             default:
                                 element = "EndGameCircle";
