@@ -384,7 +384,6 @@ namespace RainWorldRandomizer
                     {
                         int foundIndex = RecursiveWrap(i, i);
                         indices.Add(foundIndex);
-                        Plugin.Log.LogDebug(wrapText.ToString());
                         wrapText.Clear();
                         for (int j = foundIndex; j <= i; j++) wrapText.Append(message[j]);
                     }

@@ -412,12 +412,12 @@ namespace RainWorldRandomizer
 
             foreach (var keyVal in NameToAPLocation)
             {
-                Plugin.Log.LogDebug($"{keyVal.Key} | {keyVal.Value}");
+                //Plugin.Log.LogDebug($"{keyVal.Key} | {keyVal.Value}");
                 APLocationToName.Add(keyVal.Value, keyVal.Key);
             }
             foreach (var keyVal in NameToAPItem)
             {
-                Plugin.Log.LogDebug($"{keyVal.Key} | {keyVal.Value}");
+                //Plugin.Log.LogDebug($"{keyVal.Key} | {keyVal.Value}");
                 APItemToName.Add(keyVal.Value, keyVal.Key);
             }
         }
