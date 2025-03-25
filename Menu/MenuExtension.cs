@@ -749,9 +749,10 @@ namespace RainWorldRandomizer
             public void UpdateTrackerForRegion(string region)
             {
                 if (!(Plugin.RandoManager is ManagerArchipelago)) return;
+                if (!nodes.TryGetValue(GetNodeName(region), out Node node)) return;
 
                 if (highlightedNode != null) highlightedNode.current = false;
-                highlightedNode = nodes[GetNodeName(region)];
+                highlightedNode = node;
                 highlightedNode.current = true;
                 displayedRegion = region;
 
