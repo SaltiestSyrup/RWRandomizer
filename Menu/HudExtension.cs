@@ -98,7 +98,7 @@ namespace RainWorldRandomizer
             }
 
             // Remove oldest message if reached message limit
-            if (messages.Count == MAX_MESSAGES)
+            if (messages.Count >= MAX_MESSAGES)
             {
                 messages.Dequeue().ClearSprites();
             }
@@ -210,7 +210,6 @@ namespace RainWorldRandomizer
                         if (splitWithBreaks[i].Equals("\n"))
                         { 
                             wrapIndices.Add(i - breakCount);
-                            Plugin.Log.LogDebug(i - breakCount);
                             breakCount++;
                         }
                         else
@@ -269,7 +268,7 @@ namespace RainWorldRandomizer
                 yPos = -MSG_SIZE_Y;
 
                 messageLabels = new FLabel[message.Parts.Length];
-                iconSymbols = new IconSymbol[0];
+                iconSymbols = new IconSymbol[message.Parts.Length];
 
                 // Make a string[] representation of message parts
                 string[] msgParts = new string[message.Parts.Length];
