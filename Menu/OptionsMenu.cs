@@ -78,7 +78,7 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Prevent pop-up text and chatlogs from appearing when collecting tokens", null, "",
                 new object[] { "Disable token text" }));
 
-            Options.useGateMap = config.Bind<bool>("UseGateMap", true,
+            Options.useGateMap = config.Bind<bool>("UseGateMap", false,
                 new ConfigurableInfo("Use a gate map instead of the gate key list", null, "",
                 new object[] { "Use gate map" }));
 
