@@ -120,8 +120,8 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
-                On.RainWorld.LoadModResources += LoadResources;
-                On.RainWorld.UnloadResources += UnloadResources;
+                //On.RainWorld.LoadModResources += LoadResources;
+                //On.RainWorld.UnloadResources += UnloadResources;
 
                 if (ExtCollectibleTrackerComptability.Enabled)
                 {
@@ -157,8 +157,8 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
-                On.RainWorld.LoadModResources -= LoadResources;
-                On.RainWorld.UnloadResources -= UnloadResources;
+                //On.RainWorld.LoadModResources -= LoadResources;
+                //On.RainWorld.UnloadResources -= UnloadResources;
             }
             catch (Exception e)
             {
@@ -224,6 +224,8 @@ namespace RainWorldRandomizer
             }
         }
 
+        // --- Not currently needed but may still be useful in the future ---
+        /*
         public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
         {
             orig(self);
@@ -234,29 +236,6 @@ namespace RainWorldRandomizer
         {
             orig(self);
             Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
-        }
-
-        /*
-        public bool IsCheckGiven(string check)
-        {
-            if (ArchipelagoConnection.IsConnected)
-            {
-                return true;
-            }
-            else
-            {
-                return ManagerVanilla.randomizerKey.ContainsKey(check) && ManagerVanilla.randomizerKey[check].IsGiven;
-            }
-        }
-
-        public bool GiveCheck(string check)
-        {
-            if (!ManagerVanilla.randomizerKey.ContainsKey(check) || ManagerVanilla.randomizerKey[check].IsGiven) return false;
-
-            ManagerVanilla.randomizerKey[check].GiveUnlock();
-            notifQueue.Enqueue(ManagerVanilla.randomizerKey[check].UnlockCompleteMessage());
-            Log.LogInfo($"Completed Check: {check}");
-            return true;
         }
         */
 

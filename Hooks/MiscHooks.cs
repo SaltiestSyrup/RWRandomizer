@@ -27,7 +27,7 @@ namespace RainWorldRandomizer
             On.SaveState.GhostEncounter += EchoEncounter;
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool += OnKarmaLadderCtor;
             On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
-            On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
+            //On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
 
             try
             {
@@ -979,9 +979,10 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Add a sprite for SeedCobs to use in ItemSymbols.
         /// </summary>
+        [Obsolete("Currently not needed since Watcher added their own version of sprites we had added")]
         private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intData)
         {
-            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
+            //if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
             return orig(itemType, intData);
         }
     }
