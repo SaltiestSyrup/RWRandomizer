@@ -145,11 +145,11 @@ namespace RainWorldRandomizer
 
             foreach (string region in Region.GetFullRegionOrder())
             {
-                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(slugcat, region));
+                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(slugcat), region));
 
                 // Remove alternate regions that don't apply to this slugcat
-                if (!(SlugcatStats.getSlugcatStoryRegions(slugcat).Contains(region)
-                    || SlugcatStats.getSlugcatOptionalRegions(slugcat).Contains(region)))
+                if (!(SlugcatStats.SlugcatStoryRegions(slugcat).Contains(region)
+                    || SlugcatStats.SlugcatOptionalRegions(slugcat).Contains(region)))
                 {
                     RegionBlacklists[slugcat].Add(region);
                     //Log.LogDebug($"Removed region {region}");

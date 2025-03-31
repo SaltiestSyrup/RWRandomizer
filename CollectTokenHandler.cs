@@ -335,7 +335,7 @@ namespace RainWorldRandomizer
                 {
                     return list3.Where(slugcat =>
                     {
-                        IEnumerable<string> regions = SlugcatStats.getSlugcatStoryRegions(slugcat).Union(SlugcatStats.getSlugcatOptionalRegions(slugcat));
+                        IEnumerable<string> regions = SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat));
                         return regions.Any(r => r.Equals(region, StringComparison.InvariantCultureIgnoreCase));
                     }).ToList();
                 });

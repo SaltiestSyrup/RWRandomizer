@@ -216,7 +216,7 @@ namespace RainWorldRandomizer
                     junkItemsMSC = new Dictionary<Item, int>()
                     {
                         { IDToItem("ElectricSpear"), 3 },
-                        { new Item("Singularity Bomb", MoreSlugcats.MoreSlugcatsEnums.AbstractObjectType.SingularityBomb), 1 }
+                        { new Item("Singularity Bomb", DLCSharedEnums.AbstractObjectType.SingularityBomb), 1 }
                     };
                 }
                 items.AddRange(junkItemsMSC.Keys);

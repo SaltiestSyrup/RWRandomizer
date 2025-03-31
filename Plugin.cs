@@ -311,7 +311,7 @@ namespace RainWorldRandomizer
                         item.id == "FireSpear" || item.id == "ExplosiveSpear", item.id == "ElectricSpear");
                 }
                 // Lillypuck is a consumable, but still needs its own constructor
-                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.LillyPuck)
+                if (ModManager.MSC && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
                 {
                     return new LillyPuck.AbstractLillyPuck(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
