@@ -8,6 +8,6 @@
     "requirements": ["rwremix"],
     "requirements_names": ["Rain World Remix"],
     "priorities": ["regionkit"],
-    "tags": ["Game Mechanics", "Game Modes"],
+    "tags": ["Game Mechanics", "Game Modes", "Base", "Downpour", "Watcher"],
     "checksum_override_version": false
 }
