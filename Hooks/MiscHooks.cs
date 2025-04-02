@@ -837,7 +837,11 @@ namespace RainWorldRandomizer
         public static void HUD_InitSinglePlayerHud(ILContext il)
         {
             ILCursor c = new ILCursor(il);
-            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality")));
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
+                x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
+                );
             c.MoveAfterLabels();
             c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
         }
@@ -850,7 +854,11 @@ namespace RainWorldRandomizer
             ILCursor c = new ILCursor(il);
             for (int i = 0; i < 2; i++)
             {
-                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality")));
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
+                    x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
+                    );
                 c.MoveAfterLabels();
                 c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
             }
