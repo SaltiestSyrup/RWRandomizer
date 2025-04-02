@@ -28,6 +28,7 @@ namespace RainWorldRandomizer
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool += OnKarmaLadderCtor;
             On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
             //On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
+            On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
 
             try
             {
@@ -89,12 +90,14 @@ namespace RainWorldRandomizer
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
             //On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
+            On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
+
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
-            IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
+            //IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
             IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
             IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
             IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
@@ -998,6 +1001,12 @@ namespace RainWorldRandomizer
         {
             //if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
             return orig(itemType, intData);
+        }
+
+        private static Color ItemSymbol_ColorForItem(On.ItemSymbol.orig_ColorForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intdata)
+        {
+            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return new Color(0.4117f, 0.1608f, 0.2275f);
+            return orig(itemType, intdata);
         }
     }
 }
