@@ -18,7 +18,7 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.2.1";
+        public const string PLUGIN_VERSION = "1.2.2";
 
         internal static ManualLogSource Log;
 
@@ -120,8 +120,8 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
-                On.RainWorld.LoadModResources += LoadResources;
-                On.RainWorld.UnloadResources += UnloadResources;
+                //On.RainWorld.LoadModResources += LoadResources;
+                //On.RainWorld.UnloadResources += UnloadResources;
 
                 if (ExtCollectibleTrackerComptability.Enabled)
                 {
@@ -157,8 +157,8 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
-                On.RainWorld.LoadModResources -= LoadResources;
-                On.RainWorld.UnloadResources -= UnloadResources;
+                //On.RainWorld.LoadModResources -= LoadResources;
+                //On.RainWorld.UnloadResources -= UnloadResources;
             }
             catch (Exception e)
             {
@@ -224,6 +224,8 @@ namespace RainWorldRandomizer
             }
         }
 
+        // --- Not currently needed but may still be useful in the future ---
+        /*
         public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
         {
             orig(self);
@@ -234,29 +236,6 @@ namespace RainWorldRandomizer
         {
             orig(self);
             Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
-        }
-
-        /*
-        public bool IsCheckGiven(string check)
-        {
-            if (ArchipelagoConnection.IsConnected)
-            {
-                return true;
-            }
-            else
-            {
-                return ManagerVanilla.randomizerKey.ContainsKey(check) && ManagerVanilla.randomizerKey[check].IsGiven;
-            }
-        }
-
-        public bool GiveCheck(string check)
-        {
-            if (!ManagerVanilla.randomizerKey.ContainsKey(check) || ManagerVanilla.randomizerKey[check].IsGiven) return false;
-
-            ManagerVanilla.randomizerKey[check].GiveUnlock();
-            notifQueue.Enqueue(ManagerVanilla.randomizerKey[check].UnlockCompleteMessage());
-            Log.LogInfo($"Completed Check: {check}");
-            return true;
         }
         */
 
@@ -311,7 +290,7 @@ namespace RainWorldRandomizer
                         item.id == "FireSpear" || item.id == "ExplosiveSpear", item.id == "ElectricSpear");
                 }
                 // Lillypuck is a consumable, but still needs its own constructor
-                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.LillyPuck)
+                if (ModManager.MSC && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
                 {
                     return new LillyPuck.AbstractLillyPuck(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);

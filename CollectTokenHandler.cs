@@ -335,7 +335,7 @@ namespace RainWorldRandomizer
                 {
                     return list3.Where(slugcat =>
                     {
-                        IEnumerable<string> regions = SlugcatStats.getSlugcatStoryRegions(slugcat).Union(SlugcatStats.getSlugcatOptionalRegions(slugcat));
+                        IEnumerable<string> regions = SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat));
                         return regions.Any(r => r.Equals(region, StringComparison.InvariantCultureIgnoreCase));
                     }).ToList();
                 });
@@ -372,23 +372,23 @@ namespace RainWorldRandomizer
 
                 c.GotoNext(
                     MoveType.After,
-                    x => x.MatchLdarg(0),
+                    //x => x.MatchLdarg(0),
+                    //x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility))),
+                    //x => x.MatchLdloc(0),
+                    //x => x.MatchLdfld(out _),
+                    //x => x.MatchCallOrCallvirt(out _),
+                    //x => x.MatchLdloc(35),
+                    //x => x.MatchLdarg(0),
+                    //x => x.MatchLdloc(29),
+                    //x => x.MatchLdfld(typeof(PlacedObject).GetField(nameof(PlacedObject.data))),
+                    //x => x.MatchIsinst(typeof(CollectToken.CollectTokenData)),
+                    //x => x.MatchLdfld(typeof(CollectToken.CollectTokenData).GetField(nameof(CollectToken.CollectTokenData.availableToPlayers))),
+                    //x => x.MatchLdarg(0),
                     x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility))),
                     x => x.MatchLdloc(0),
                     x => x.MatchLdfld(out _),
                     x => x.MatchCallOrCallvirt(out _),
-                    x => x.MatchLdloc(35),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdloc(29),
-                    x => x.MatchLdfld(typeof(PlacedObject).GetField(nameof(PlacedObject.data))),
-                    x => x.MatchIsinst(typeof(CollectToken.CollectTokenData)),
-                    x => x.MatchLdfld(typeof(CollectToken.CollectTokenData).GetField(nameof(CollectToken.CollectTokenData.availableToPlayers))),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility))),
-                    x => x.MatchLdloc(0),
-                    x => x.MatchLdfld(out _),
-                    x => x.MatchCallOrCallvirt(out _),
-                    x => x.MatchLdloc(35),
+                    x => x.MatchLdloc(43),
                     x => x.MatchCallOrCallvirt(out _),
                     x => x.MatchLdloc(12)
                     );

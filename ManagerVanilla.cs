@@ -121,7 +121,7 @@ namespace RainWorldRandomizer
             _givenRobo = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
-            customStartDen = "SU_S01";
+            customStartDen = "NONE";
 
             if (!RegionBlacklists.ContainsKey(slugcat) || !CheckBlacklists.ContainsKey(slugcat))
             {
@@ -145,11 +145,11 @@ namespace RainWorldRandomizer
 
             foreach (string region in Region.GetFullRegionOrder())
             {
-                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(slugcat, region));
+                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(slugcat), region));
 
                 // Remove alternate regions that don't apply to this slugcat
-                if (!(SlugcatStats.getSlugcatStoryRegions(slugcat).Contains(region)
-                    || SlugcatStats.getSlugcatOptionalRegions(slugcat).Contains(region)))
+                if (!(SlugcatStats.SlugcatStoryRegions(slugcat).Contains(region)
+                    || SlugcatStats.SlugcatOptionalRegions(slugcat).Contains(region)))
                 {
                     RegionBlacklists[slugcat].Add(region);
                     //Log.LogDebug($"Removed region {region}");
@@ -556,6 +556,13 @@ namespace RainWorldRandomizer
             if (Options.RandomizeSpawnLocation)
             {
                 customStartDen = FindRandomStart(currentSlugcat);
+
+                if (customStartDen.Equals("NONE"))
+                {
+                    Plugin.Log.LogError("Failed to find valid starting den");
+                    return false;
+                }
+
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
                 regionsAvailable.Add(Plugin.ProperRegionMap[Regex.Split(customStartDen, "_")[0]]);
             }
@@ -1028,7 +1035,7 @@ namespace RainWorldRandomizer
                 return contenders[selectedRegion][UnityEngine.Random.Range(0, contenders[selectedRegion].Count)];
             }
 
-            return "SU_S01";
+            return "NONE";
         }
 
         // Removes a region from a slugcat's blacklist

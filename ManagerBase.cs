@@ -67,7 +67,7 @@ namespace RainWorldRandomizer
         protected bool _givenPebblesOff = false;
         protected bool _givenSpearPearlRewrite = false;
 
-        public string customStartDen = "SU_S01";
+        public string customStartDen = "NONE";
 
         public ManagerBase() { }
 

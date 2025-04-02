@@ -25,9 +25,10 @@ namespace RainWorldRandomizer
             On.Menu.EndgameTokens.Passage += DoPassage;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
-            On.Menu.KarmaLadder.ctor += OnKarmaLadderCtor;
+            On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool += OnKarmaLadderCtor;
             On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
-            On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
+            //On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
+            On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
 
             try
             {
@@ -88,13 +89,15 @@ namespace RainWorldRandomizer
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
-            On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
+            //On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
+            On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
+
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
-            IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
+            //IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
             IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
             IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
             IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
@@ -110,7 +113,13 @@ namespace RainWorldRandomizer
 
             if (Options.RandomizeSpawnLocation)
             {
-               self.denPosition = Plugin.RandoManager.customStartDen;
+                if (Plugin.RandoManager.customStartDen.Equals("NONE"))
+                {
+                    Plugin.Log.LogError("Tried to set starting den while custom den unset");
+                    Plugin.Singleton.notifQueue.Enqueue("ERROR: Failed to set correct starting den");
+                    return;
+                }
+                self.denPosition = Plugin.RandoManager.customStartDen;
             }
         }
 
@@ -795,7 +804,8 @@ namespace RainWorldRandomizer
             Plugin.Singleton.game.rainWorld.progression.SaveProgressionAndDeathPersistentDataOfCurrentState(false, false);
         }
 
-        public static void OnKarmaLadderCtor(On.Menu.KarmaLadder.orig_ctor orig, KarmaLadder self, Menu.Menu menu, MenuObject owner, Vector2 pos, HUD.HUD hud, IntVector2 displayKarma, bool reinforced)
+        public static void OnKarmaLadderCtor(On.Menu.KarmaLadder.orig_ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool orig,
+            KarmaLadder self, Menu.Menu menu, MenuObject owner, Vector2 pos, HUD.HUD hud, IntVector2 displayKarma, bool reinforced)
         {
             (menu as KarmaLadderScreen).preGhostEncounterKarmaCap = Plugin.RandoManager.CurrentMaxKarma;
             orig(self, menu, owner, pos, hud, displayKarma, reinforced);
@@ -830,7 +840,11 @@ namespace RainWorldRandomizer
         public static void HUD_InitSinglePlayerHud(ILContext il)
         {
             ILCursor c = new ILCursor(il);
-            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality")));
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
+                x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
+                );
             c.MoveAfterLabels();
             c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
         }
@@ -843,7 +857,11 @@ namespace RainWorldRandomizer
             ILCursor c = new ILCursor(il);
             for (int i = 0; i < 2; i++)
             {
-                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality")));
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
+                    x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
+                    );
                 c.MoveAfterLabels();
                 c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
             }
@@ -854,7 +872,7 @@ namespace RainWorldRandomizer
 
             AbstractPhysicalObject.AbstractObjectType TreatSeedsAsCobs(AbstractPhysicalObject.AbstractObjectType prev)
             {
-                return (ModManager.MSC && prev == MoreSlugcatsEnums.AbstractObjectType.Seed) ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
+                return (ModManager.MSC && prev == DLCSharedEnums.AbstractObjectType.Seed) ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
             }
 
             c.EmitDelegate<Func<AbstractPhysicalObject.AbstractObjectType, AbstractPhysicalObject.AbstractObjectType>>(TreatSeedsAsCobs);
@@ -946,26 +964,26 @@ namespace RainWorldRandomizer
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.PinkLizard }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.WhiteLizard }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.RedLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.SpitLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.ZoopLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.SpitLizard }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.ZoopLizard }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.TrainLizard }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BigSpider }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.SpitterSpider }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.MotherSpider }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.MotherSpider }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Vulture }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.KingVulture }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.MirosVulture }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.MirosVulture }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.LanternMouse }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.Yeek }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.Yeek }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.DropBug }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.MirosBird }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Scavenger, MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, MoreSlugcatsEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Scavenger, DLCSharedEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, DLCSharedEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.PoleMimic }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.TentaclePlant }),
                 new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BigEel }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.Inspector }),
+                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.Inspector }),
             };
 
             unexpanded = WinState.GourmandPassageTracker.ToArray();
@@ -978,10 +996,17 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Add a sprite for SeedCobs to use in ItemSymbols.
         /// </summary>
+        [Obsolete("Currently not needed since Watcher added their own version of sprites we had added")]
         private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intData)
         {
-            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
+            //if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
             return orig(itemType, intData);
+        }
+
+        private static Color ItemSymbol_ColorForItem(On.ItemSymbol.orig_ColorForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intdata)
+        {
+            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return new Color(0.4117f, 0.1608f, 0.2275f);
+            return orig(itemType, intdata);
         }
     }
 }

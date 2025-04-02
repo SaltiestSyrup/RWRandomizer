@@ -73,7 +73,7 @@ namespace RainWorldRandomizer
             _givenRobo = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
-            customStartDen = "SU_S01";
+            customStartDen = "NONE";
             gameCompleted = false;
             locationsLoaded = false;
 
@@ -256,7 +256,7 @@ namespace RainWorldRandomizer
             foreach (string region in Region.GetFullRegionOrder())
             {
                 if (!Plugin.ProperRegionMap.ContainsKey(region))
-                    Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(slugcat, region));
+                    Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(slugcat), region));
             }
 
             return true;
