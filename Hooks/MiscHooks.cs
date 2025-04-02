@@ -88,7 +88,7 @@ namespace RainWorldRandomizer
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
-            On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
+            //On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
@@ -110,7 +110,13 @@ namespace RainWorldRandomizer
 
             if (Options.RandomizeSpawnLocation)
             {
-               self.denPosition = Plugin.RandoManager.customStartDen;
+                if (Plugin.RandoManager.customStartDen.Equals("NONE"))
+                {
+                    Plugin.Log.LogError("Tried to set starting den while custom den unset");
+                    Plugin.Singleton.notifQueue.Enqueue("ERROR: Failed to set correct starting den");
+                    return;
+                }
+                self.denPosition = Plugin.RandoManager.customStartDen;
             }
         }
 

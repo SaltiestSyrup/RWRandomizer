@@ -73,7 +73,7 @@ namespace RainWorldRandomizer
             _givenRobo = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
-            customStartDen = "SU_S01";
+            customStartDen = "NONE";
             gameCompleted = false;
             locationsLoaded = false;
 
