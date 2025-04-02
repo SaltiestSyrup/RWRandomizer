@@ -436,8 +436,9 @@ namespace RainWorldRandomizer
                 ILLabel jump = null;
                 c.GotoNext(
                     MoveType.After,
-                    x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveStateNumber))),
-                    x => x.MatchLdsfld(typeof(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer))),
+                    x => x.MatchCallOrCallvirt(typeof(RainWorldGame).GetProperty(nameof(RainWorldGame.StoryCharacter)).GetGetMethod()),
+                    //x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveStateNumber))),
+                    x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Artificer))),
                     x => x.MatchCallOrCallvirt(out _),
                     x => x.MatchBrfalse(out jump)
                     );
