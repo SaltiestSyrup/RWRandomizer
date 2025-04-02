@@ -2,7 +2,7 @@
     "id": "salty_syrup.check_randomizer",
     "name": "Check Randomizer",
     "version": "1.2.2",
-    "target_game_version": "v1.9.15b",
+    "target_game_version": "v1.10.1",
     "authors": "SaltySyrup",
     "description": "A randomizer game mode that forces you to complete 'checks' to unlock gates to other regions",
     "requirements": ["rwremix"],
