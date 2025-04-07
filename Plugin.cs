@@ -301,6 +301,12 @@ namespace RainWorldRandomizer
                     return new WaterNut.AbstractWaterNut(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false);
                 }
+                // Blue fruit too with 1.10...
+                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DangleFruit)
+                {
+                    return new DangleFruit.AbstractDangleFruit(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, false, null);
+                }
                 // Handles all "Consumables"
                 if (AbstractConsumable.IsTypeConsumable(itemObjectType))
                 {
