@@ -386,7 +386,7 @@ namespace RainWorldRandomizer
             runningY -= 35;
 
             // ----- Status Information -----
-            OpLabelLong connectResultLabel = new OpLabelLong(new Vector2(20f, runningY - 100f), new Vector2(200f, 100f), "");
+            OpLabelLong connectResultLabel = new OpLabelLong(new Vector2(20f, runningY - 100f), new Vector2(350f, 100f), "");
             OpLabelLong slotDataLabelLeft = new OpLabelLong(new Vector2(350f, runningY - 100f), new Vector2(200f, 100f), "", false);
             OpLabelLong slotDataLabelRight = new OpLabelLong(new Vector2(550f, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
 
@@ -505,6 +505,7 @@ namespace RainWorldRandomizer
                 slotDataLabelLeft.text =
                     $"Current Settings Information\n\n" +
                     $"Using MSC:\n" +
+                    $"Using Watcher:\n" +
                     $"Chosen Slugcat:\n" +
                     $"Using Random Start:\n" +
                     $"Chosen Starting Room:\n" +
@@ -515,6 +516,7 @@ namespace RainWorldRandomizer
                     $"Shelter-sanity:";
                 slotDataLabelRight.text = 
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
+                    $"{ArchipelagoConnection.IsWatcher}\n" +
                     $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
                     $"{ArchipelagoConnection.useRandomStart}\n" +
                     $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}\n" +

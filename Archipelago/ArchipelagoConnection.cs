@@ -22,8 +22,20 @@ namespace RainWorldRandomizer
 {
     public class ArchipelagoConnection : MonoBehaviour
     {
-        private const string AP_VERSION = "0.5.1";
+        private const string AP_VERSION = "0.6.1";
         public const string GAME_NAME = "Rain World";
+        private static readonly string[] REQUIRED_SLOT_DATA = new string[] 
+        {
+            "which_gamestate",
+            "passage_progress_without_survivor",
+            "which_victory_condition",
+            "checks_foodquest",
+            "which_gate_behavior",
+            "starting_room",
+            "difficulty_echo_low_karma",
+            "checks_sheltersanity",
+            "checks_foodquest_accessibility",
+        };
 
         public static bool Authenticated = false;
         public static bool CurrentlyConnecting = false;
@@ -33,6 +45,7 @@ namespace RainWorldRandomizer
 
         // Ported settings from slot data
         public static bool IsMSC;
+        public static bool IsWatcher;
         public static SlugcatStats.Name Slugcat;
         public static bool useRandomStart;
         //public static string desiredStartRegion;
@@ -166,16 +179,33 @@ namespace RainWorldRandomizer
 
             if (loginSuccess.SlotData != null)
             {
-                if (!ParseSlotData(loginSuccess.SlotData))
+                SlotDataResult slotDataResult = ParseSlotData(loginSuccess.SlotData);
+
+                string errLog = "";
+                switch (slotDataResult)
+                {
+                    case SlotDataResult.Success: 
+                        ReceivedSlotData = true;
+                        break;
+                    case SlotDataResult.MissingData:
+                        errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
+                        break;
+                    case SlotDataResult.InvalidDLC:
+                        errLog = "Currently enabled DLCs do not match those specified in your YAML. Please enable the correct DLC and try again.";
+                        break;
+                    // Currently don't need to ever return this error, as both possible versions are identical (logic-wise)
+                    case SlotDataResult.InvalidGameVersion:
+                        errLog = "The current game version you are running does not match the one specified in your YAML. Check your game version and try again.";
+                        break;
+                }
+
+                if (slotDataResult != SlotDataResult.Success)
                 {
                     // Log an error if slot data was not valid
-                    string errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
                     Plugin.Log.LogError(errLog);
                     Disconnect();
                     return errLog;
                 }
-                
-                ReceivedSlotData = true;
             }
             else if (!ReceivedSlotData)
             {
@@ -278,24 +308,36 @@ namespace RainWorldRandomizer
             }
         }
 
-        private static bool ParseSlotData(Dictionary<string, object> slotData)
+        private enum SlotDataResult { Success, MissingData, InvalidDLC, InvalidGameVersion }
+        private static SlotDataResult ParseSlotData(Dictionary<string, object> slotData)
         {
             // If any required slot data is missing, connection is invalid
-            if (!slotData.ContainsKey("which_gamestate")
-                || !slotData.ContainsKey("passage_progress_without_survivor")
-                || !slotData.ContainsKey("which_victory_condition")
-                || !slotData.ContainsKey("checks_foodquest")
-                || !slotData.ContainsKey("which_gate_behavior")
-                || !slotData.ContainsKey("starting_room")
-                || !slotData.ContainsKey("difficulty_echo_low_karma")
-                || !slotData.ContainsKey("checks_sheltersanity")
-                || !slotData.ContainsKey("checks_foodquest_accessibility")
-                )
+            foreach (string key in REQUIRED_SLOT_DATA)
             {
-                return false;
+                if (!slotData.ContainsKey(key)) return SlotDataResult.MissingData;
             }
 
+            // which_gamestate is the old value, and will be ignored in favor of which_campaign and others if present
             long worldStateIndex = (long)slotData["which_gamestate"];
+            long desiredGameVersion = -1;
+            long shouldHaveMSC = -1;
+            long shouldHaveWatcher = -1;
+            long campaignIndex = -1;
+            if (slotData.ContainsKey("which_campaign"))
+            {
+                if (!slotData.TryGetValue("which_game_version", out object v1)
+                    || !slotData.TryGetValue("is_msc_enabled", out object v2)
+                    || !slotData.TryGetValue("is_watcher_enabled", out object v3)
+                    || !slotData.TryGetValue("which_campaign", out object v4)) 
+                    return SlotDataResult.MissingData;
+
+                worldStateIndex = -1;
+                desiredGameVersion = (long)v1;
+                shouldHaveMSC = (long)v2;
+                shouldHaveWatcher = (long)v3;
+                campaignIndex = (long)v4;
+            }
+            
             long PPwS = (long)slotData["passage_progress_without_survivor"];
             long completionType = (long)slotData["which_victory_condition"];
             long foodQuestAccess = (long)slotData["checks_foodquest"];
@@ -307,6 +349,76 @@ namespace RainWorldRandomizer
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
 
+            // Check game version
+            // Only a warning for now until there's some actual logic difference between versions
+            // This version of the mod won't even load properly for 1.9
+            bool doGameVersionWarning = false;
+            switch (desiredGameVersion)
+            {
+                // I'm not sure how it was intended to parse these but here's what we've got for now
+                case -1:
+                    break;
+                case 1091503L:
+                    if (!RainWorld.GAME_VERSION_STRING.Equals("v1.9.15b")) doGameVersionWarning = true;
+                    break;
+                case 1100100L:
+                    if (!RainWorld.GAME_VERSION_STRING.Equals("v1.10.1")) doGameVersionWarning = true;
+                    break;
+                default:
+                    doGameVersionWarning = true;
+                    break;
+            }
+            if (doGameVersionWarning)
+            {
+                Plugin.Log.LogWarning($"Loaded YAML with incorrect game version: {RainWorld.GAME_VERSION_STRING}. Should be {desiredGameVersion}");
+            }
+
+            // Check DLC state
+            IsMSC = shouldHaveMSC > 0;
+            IsWatcher = shouldHaveWatcher > 0;
+            
+            // Choose campaign and ending
+            switch (campaignIndex)
+            {
+                case 0:
+                    Slugcat = SlugcatStats.Name.Yellow;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
+                    break;
+                case 1:
+                    Slugcat = SlugcatStats.Name.White;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
+                    break;
+                case 2:
+                    Slugcat = SlugcatStats.Name.Red;
+                    completionCondition = CompletionCondition.Ascension;
+                    break;
+                case 3:
+                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Gourmand;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
+                    break;
+                case 4:
+                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Artificer;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing;
+                    break;
+                case 5:
+                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Rivulet;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon;
+                    break;
+                case 6:
+                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Spear;
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger;
+                    break;
+                case 7:
+                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Saint;
+                    completionCondition = CompletionCondition.Rubicon;
+                    break;
+                case 8:
+                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
+                    completionCondition = CompletionCondition.Ascension;
+                    break;
+            }
+
+            // If the new slot data wasn't present this old logic will be used
             switch (worldStateIndex)
             {
                 case 0:
@@ -371,6 +483,13 @@ namespace RainWorldRandomizer
                     break;
             }
 
+            if (ModManager.MSC != IsMSC
+                || ModManager.Watcher != IsWatcher)
+            {
+                return SlotDataResult.InvalidDLC;
+            }
+
+            // Choose starting den
             if (!startingShelter.Equals(""))
             {
                 useRandomStart = true;
@@ -393,7 +512,7 @@ namespace RainWorldRandomizer
 
             //Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
 
-            return true;
+            return SlotDataResult.Success;
         }
 
         private static void InitializePlayer()
