@@ -58,6 +58,7 @@ namespace RainWorldRandomizer
                     .GetGetMethod(),
                     ProgressHook);
 
+                IL.Menu.MainMenu.ctor += MainMenuCtorIL;
                 IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
                 IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
                 IL.MoreSlugcats.CutsceneArtificerRobo.GetInput += ArtificerRoboIL;
@@ -92,6 +93,7 @@ namespace RainWorldRandomizer
             //On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
 
+            IL.Menu.MainMenu.ctor -= MainMenuCtorIL;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
@@ -105,6 +107,21 @@ namespace RainWorldRandomizer
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
             IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreenGetDataFromGameIL;
             IL.World.SpawnGhost -= ILSpawnGhost;
+        }
+
+        // Change button text on main menu to indicate randomizer is active
+        public static void MainMenuCtorIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdstr("STORY")
+                );
+
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldstr, Plugin.RandoManager == null ? "STORY" : "RANDOMIZER");
         }
 
         public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
