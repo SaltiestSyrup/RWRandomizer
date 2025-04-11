@@ -114,6 +114,7 @@ namespace RainWorldRandomizer
                 MiscHooks.ApplyHooks();
                 IteratorHooks.ApplyHooks();
                 SpearmasterCutscenes.ApplyHooks();
+                SleepScreenHooks.ApplyHooks();
 
                 TrapsHandler.ApplyHooks();
                 DeathLinkHandler.ApplyHooks();
@@ -151,6 +152,7 @@ namespace RainWorldRandomizer
                 MiscHooks.RemoveHooks();
                 IteratorHooks.RemoveHooks();
                 SpearmasterCutscenes.RemoveHooks();
+                SleepScreenHooks.RemoveHooks();
 
                 TrapsHandler.RemoveHooks();
                 DeathLinkHandler.RemoveHooks();

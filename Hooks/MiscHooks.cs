@@ -18,14 +18,9 @@ namespace RainWorldRandomizer
         public static void ApplyHooks()
         {
             On.RegionGate.customKarmaGateRequirements += GateRequirements;
-            On.WinState.GetNextEndGame += NextPassageToken;
-            On.WinState.ConsumeEndGame += ConsumePassageToken;
             On.PlayerProgression.ReloadLocksList += ReloadLocksList;
-            On.Menu.EndgameTokens.ctor += OnEndgameTokensCtor;
-            On.Menu.EndgameTokens.Passage += DoPassage;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
-            On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool += OnKarmaLadderCtor;
             On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
             //On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
@@ -60,17 +55,13 @@ namespace RainWorldRandomizer
 
                 IL.Menu.MainMenu.ctor += MainMenuCtorIL;
                 IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
-                IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
                 IL.MoreSlugcats.CutsceneArtificerRobo.GetInput += ArtificerRoboIL;
                 IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
                 IL.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
                 //IL.WinState.CreateAndAddTracker += WinStateCreateTrackerIL;
                 IL.Spear.HitSomethingWithoutStopping += SpearmasterMushroomAddEat;
-                IL.Menu.EndgameTokens.ctor += EngameTokensCtorIL;
-                IL.Menu.SleepAndDeathScreen.AddPassageButton += AddPassageButtonIL;
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
-                IL.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreenGetDataFromGameIL;
                 IL.World.SpawnGhost += ILSpawnGhost;
             }
             catch (Exception e)
@@ -82,11 +73,7 @@ namespace RainWorldRandomizer
         public static void RemoveHooks()
         {
             On.RegionGate.customKarmaGateRequirements -= GateRequirements;
-            On.WinState.GetNextEndGame -= NextPassageToken;
-            On.WinState.ConsumeEndGame -= ConsumePassageToken;
             On.PlayerProgression.ReloadLocksList -= ReloadLocksList;
-            On.Menu.EndgameTokens.ctor -= OnEndgameTokensCtor;
-            On.Menu.EndgameTokens.Passage -= DoPassage;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
@@ -95,22 +82,20 @@ namespace RainWorldRandomizer
 
             IL.Menu.MainMenu.ctor -= MainMenuCtorIL;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
-            IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
             //IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
             IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
-            IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
-            IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
-            IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreenGetDataFromGameIL;
             IL.World.SpawnGhost -= ILSpawnGhost;
         }
 
-        // Change button text on main menu to indicate randomizer is active
-        public static void MainMenuCtorIL(ILContext il)
+        /// <summary>
+        /// Change button text on main menu to indicate randomizer is active
+        /// </summary>
+        private static void MainMenuCtorIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
@@ -124,7 +109,10 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldstr, Plugin.RandoManager == null ? "STORY" : "RANDOMIZER");
         }
 
-        public static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
+        /// <summary>
+        /// Set a custom starting den when applicable
+        /// </summary>
+        private static void OnSetDenPosition(On.SaveState.orig_setDenPosition orig, SaveState self)
         {
             orig(self);
 
@@ -141,7 +129,7 @@ namespace RainWorldRandomizer
         }
 
         // TODO: Need explanation text for when start game button is greyed out
-        public static void SlugcatSelectMenuUpdateIL(ILContext il)
+        private static void SlugcatSelectMenuUpdateIL(ILContext il)
         {
             try
             {
@@ -185,238 +173,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static void CreateCollectiblesTrackerIL(ILContext il)
-        {
-            try
-            {
-                ILCursor c = new ILCursor(il);
-                // Modify all the collectible sprites to read from our data
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker>(nameof(MoreSlugcats.CollectiblesTracker.collectionData)),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker.SaveGameData>(nameof(MoreSlugcats.CollectiblesTracker.SaveGameData.unlockedGolds))
-                    );
-
-                c.Emit(OpCodes.Pop);
-                c.EmitDelegate<Func<List<MultiplayerUnlocks.LevelUnlockID>>>(() =>
-                {
-                    List<MultiplayerUnlocks.LevelUnlockID> output = new List<MultiplayerUnlocks.LevelUnlockID>();
-                    foreach (string loc in Plugin.RandoManager.GetLocations())
-                    {
-                        if (loc.StartsWith("Token-L-"))
-                        {
-                            // Trim region suffix if present
-                            //string[] split = Regex.Split(loc, "-");
-                            //string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
-
-                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.LevelUnlockID), loc.Substring(8), false, out ExtEnumBase value)
-                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
-                            {
-                                output.Add((MultiplayerUnlocks.LevelUnlockID)value);
-                            }
-                        }
-                    }
-                    return output;
-                });
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker>(nameof(MoreSlugcats.CollectiblesTracker.collectionData)),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker.SaveGameData>(nameof(MoreSlugcats.CollectiblesTracker.SaveGameData.unlockedBlues))
-                    );
-
-                c.Emit(OpCodes.Pop);
-                c.EmitDelegate<Func<List<MultiplayerUnlocks.SandboxUnlockID>>>(() =>
-                {
-                    List<MultiplayerUnlocks.SandboxUnlockID> output = new List<MultiplayerUnlocks.SandboxUnlockID>();
-                    foreach (string loc in Plugin.RandoManager.GetLocations())
-                    {
-                        if (loc.StartsWith("Token-"))
-                        {
-                            // Trim region suffix if present
-                            string[] split = Regex.Split(loc, "-");
-                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
-
-                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), trimmedLoc.Substring(6), false, out ExtEnumBase value)
-                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
-                            {
-                                output.Add((MultiplayerUnlocks.SandboxUnlockID)value);
-                            }
-                        }
-                    }
-                    return output;
-                });
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker>(nameof(MoreSlugcats.CollectiblesTracker.collectionData)),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker.SaveGameData>(nameof(MoreSlugcats.CollectiblesTracker.SaveGameData.unlockedGreens))
-                    );
-
-                c.Emit(OpCodes.Pop);
-                c.EmitDelegate<Func<List<MultiplayerUnlocks.SlugcatUnlockID>>>(() =>
-                {
-                    List<MultiplayerUnlocks.SlugcatUnlockID> output = new List<MultiplayerUnlocks.SlugcatUnlockID>();
-                    foreach (string loc in Plugin.RandoManager.GetLocations())
-                    {
-                        if (loc.StartsWith("Token-"))
-                        {
-                            // Trim region suffix if present
-                            string[] split = Regex.Split(loc, "-");
-                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
-
-                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SlugcatUnlockID), trimmedLoc.Substring(6), false, out ExtEnumBase value)
-                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
-                            {
-                                output.Add((MultiplayerUnlocks.SlugcatUnlockID)value);
-                            }
-                        }
-                    }
-                    return output;
-                });
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker>(nameof(MoreSlugcats.CollectiblesTracker.collectionData)),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker.SaveGameData>(nameof(MoreSlugcats.CollectiblesTracker.SaveGameData.unlockedGreys))
-                    );
-
-                c.Emit(OpCodes.Pop);
-                c.EmitDelegate<Func<List<MoreSlugcats.ChatlogData.ChatlogID>>>(() =>
-                {
-                    List<MoreSlugcats.ChatlogData.ChatlogID> output = new List<MoreSlugcats.ChatlogData.ChatlogID>();
-                    foreach (string loc in Plugin.RandoManager.GetLocations())
-                    {
-                        if (loc.StartsWith("Broadcast-")
-                            && ExtEnumBase.TryParse(typeof(MoreSlugcats.ChatlogData.ChatlogID), loc.Substring(12), false, out ExtEnumBase value)
-                            && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
-                        {
-                            output.Add((MoreSlugcats.ChatlogData.ChatlogID)value);
-                        }
-                    }
-                    return output;
-                });
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker>(nameof(MoreSlugcats.CollectiblesTracker.collectionData)),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker.SaveGameData>(nameof(MoreSlugcats.CollectiblesTracker.SaveGameData.unlockedReds))
-                    );
-
-                c.Emit(OpCodes.Pop);
-                c.EmitDelegate<Func<List<MultiplayerUnlocks.SafariUnlockID>>>(() =>
-                {
-                    List<MultiplayerUnlocks.SafariUnlockID> output = new List<MultiplayerUnlocks.SafariUnlockID>();
-                    foreach (string loc in Plugin.RandoManager.GetLocations())
-                    {
-                        if (loc.StartsWith("Token-S-"))
-                        {
-                            // Trim region suffix if present
-                            //string[] split = Regex.Split(loc, "-");
-                            //string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
-
-                            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SafariUnlockID), loc.Substring(8), false, out ExtEnumBase value)
-                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
-                            {
-                                output.Add((MultiplayerUnlocks.SafariUnlockID)value);
-                            }
-                        }
-                    }
-                    return output;
-                });
-
-                c.GotoNext(MoveType.After,
-                    x => x.MatchLdfld<RainWorld>(nameof(RainWorld.regionRedTokens)),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<MoreSlugcats.CollectiblesTracker>(nameof(MoreSlugcats.CollectiblesTracker.displayRegions)),
-                    x => x.MatchLdloc(out _),
-                    x => x.MatchCallOrCallvirt(out _),
-                    x => x.MatchCallOrCallvirt(out _),
-                    x => x.MatchCallOrCallvirt(out _),
-                    x => x.MatchBlt(out _)
-                    );
-
-                // Pearl tracker
-                // TODO: Figure out why there's an extra pearl displayed in future GW
-                c.Emit(OpCodes.Ldarg_0);
-                c.Emit(OpCodes.Ldloc_0);
-                c.Emit(OpCodes.Ldloc, 5);
-                c.Emit(OpCodes.Ldarg, 5);
-                c.EmitDelegate<Action<MoreSlugcats.CollectiblesTracker, RainWorld, int, SlugcatStats.Name>>((self, rainWorld, i, saveSlot) =>
-                {
-                    // Pearls
-                    List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = new List<DataPearl.AbstractDataPearl.DataPearlType>();
-                    List<GhostWorldPresence.GhostID> foundEchoes = new List<GhostWorldPresence.GhostID>();
-                    foreach (string loc in Plugin.RandoManager.GetLocations())
-                    {
-                        if (loc.StartsWith("Pearl-"))
-                        {
-                            // Trim region suffix if present
-                            string[] split = Regex.Split(loc, "-");
-                            string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
-
-                            if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), trimmedLoc.Substring(6), false, out ExtEnumBase value)
-                                && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
-                            {
-                                foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
-                            }
-                        }
-
-                        if (loc.StartsWith("Echo-")
-                            && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), loc.Substring(5), false, out ExtEnumBase value1)
-                            && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
-                        {
-                            foundEchoes.Add((GhostWorldPresence.GhostID)value1);
-                        }
-                    }
-
-                    if (!ExtCollectibleTrackerComptability.Enabled)
-                    {
-                        for (int j = 0; j < rainWorld.regionDataPearls[self.displayRegions[i]].Count; j++)
-                        {
-                            if (rainWorld.regionDataPearlsAccessibility[self.displayRegions[i]][j].Contains(saveSlot))
-                            {
-                                self.spriteColors[self.displayRegions[i]].Add(Color.white);
-                                if (foundPearls.Contains(rainWorld.regionDataPearls[self.displayRegions[i]][j]))
-                                {
-                                    self.sprites[self.displayRegions[i]].Add(new FSprite("ctOn", true));
-                                }
-                                else
-                                {
-                                    self.sprites[self.displayRegions[i]].Add(new FSprite("ctOff", true));
-                                }
-                            }
-                        }
-                    }
-
-                    if (GhostWorldPresence.GetGhostID(self.displayRegions[i].ToUpper()) != GhostWorldPresence.GhostID.NoGhost
-                        && World.CheckForRegionGhost(saveSlot, self.displayRegions[i].ToUpper()))
-                    {
-                        self.spriteColors[self.displayRegions[i]].Add(RainWorld.SaturatedGold);
-                        if (foundEchoes.Contains(GhostWorldPresence.GetGhostID(self.displayRegions[i].ToUpper())))
-                        {
-                            self.sprites[self.displayRegions[i]].Add(new FSprite("ctOn", true));
-                        }
-                        else
-                        {
-                            self.sprites[self.displayRegions[i]].Add(new FSprite("ctOff", true));
-                        }
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for CollectiblesTracker");
-                Plugin.Log.LogError(e);
-            }
-        }
-
-        public static void GateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
+        private static void GateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
         {
             if (!Plugin.RandoManager.isRandomizerActive)
             {
@@ -495,7 +252,7 @@ namespace RainWorldRandomizer
             orig(self);
         }
 
-        public static void CanUseUnlockedGatesIL(ILContext il)
+        private static void CanUseUnlockedGatesIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
@@ -521,7 +278,7 @@ namespace RainWorldRandomizer
 
         // Overwrites the default logic
         // Unless gateUnlocks hasn't been populated yet
-        public static void ReloadLocksList(On.PlayerProgression.orig_ReloadLocksList orig, PlayerProgression self)
+        private static void ReloadLocksList(On.PlayerProgression.orig_ReloadLocksList orig, PlayerProgression self)
         {
             if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager.GetGatesStatus().Count == 0)
             {
@@ -573,149 +330,7 @@ namespace RainWorldRandomizer
             self.karmaLocks = new string[0];
         }
 
-        #region Karma ladder hacking
-        public static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, Menu.EndgameTokens self, Menu.Menu menu, Menu.MenuObject owner, Vector2 pos, FContainer container, Menu.KarmaLadder ladder)
-        {
-            orig(self, menu, owner, pos, container, ladder);
-            if (!Options.GivePassageItems) return;
-
-            // We won't be needing these
-            foreach (Menu.EndgameTokens.Token token in self.tokens)
-            {
-                token.symbolSprite.RemoveFromContainer();
-                token.circleSprite.RemoveFromContainer();
-                token.glowSprite.RemoveFromContainer();
-            }
-
-            Plugin.Singleton.passageTokensUI = new List<FakeEndgameToken>();
-            int index = 0;
-            foreach (WinState.EndgameID id in Plugin.RandoManager.GetPassageTokensStatus().Keys)
-            {
-                if (id == MoreSlugcats.MoreSlugcatsEnums.EndgameID.Gourmand) continue;
-
-                if ((Plugin.RandoManager.HasPassageToken(id) ?? false)
-                    && (menu as KarmaLadderScreen).winState.GetTracker(id, true).consumed == false)
-                {
-                    Plugin.Singleton.passageTokensUI.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
-                    self.subObjects.Add(Plugin.Singleton.passageTokensUI.Last());
-                    index++;
-                }
-            }
-        }
-
-        public static void EngameTokensCtorIL(ILContext il)
-        {
-            ILCursor c = new ILCursor(il);
-
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdloc(0),
-                x => x.MatchBrfalse(out _)
-                );
-
-            c.Index--;
-
-            c.EmitDelegate<Func<bool, bool>>((flag) =>
-            {
-                // Make passage button appear if any token has been found
-                return flag || Plugin.RandoManager.GetPassageTokensStatus().Values.Any(v => v);
-            });
-        }
-
-        public static void AddPassageButtonIL(ILContext il)
-        {
-            ILCursor c = new ILCursor(il);
-
-            // Remove check for Hunter / Saint to let them use passages
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld(typeof(KarmaLadderScreen).GetField(nameof(KarmaLadderScreen.saveState))),
-                x => x.MatchBrfalse(out _)
-                );
-            
-            c.Index--;
-            c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldc_I4, 0);
-        }
-
-        public static void SleepAndDeathScreenGetDataFromGameIL(ILContext il)
-        {
-            ILCursor c = new ILCursor(il);
-
-            // Remove check for Hunter to let them use passages
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Red))),
-                x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Inequality"))
-                );
-
-            c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldc_I4, 1);
-        }
-
-        public static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, Menu.EndgameTokens self, WinState.EndgameID ID)
-        {
-            orig(self, ID);
-            if (!Options.GivePassageItems) return;
-
-            // I said NO!
-            foreach (Menu.EndgameTokens.Token token in self.tokens)
-            {
-                token.symbolSprite.RemoveFromContainer();
-                token.circleSprite.RemoveFromContainer();
-                token.glowSprite.RemoveFromContainer();
-            }
-
-            // I'm doing MY tokens instead!
-            for (int i = 0; i < Plugin.Singleton.passageTokensUI.Count; i++)
-            {
-                if (Plugin.Singleton.passageTokensUI[i].id == ID)
-                {
-                    Plugin.Singleton.passageTokensUI[i].Activate();
-                    return;
-                }
-            }
-        }
-        #endregion
-
-        // Overwrites the default logic
-        public static WinState.EndgameID NextPassageToken(On.WinState.orig_GetNextEndGame orig, WinState self)
-        {
-            if (!Plugin.RandoManager.isRandomizerActive || !Options.GivePassageItems) return orig(self);
-
-            foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
-            {
-                if (passage.Value
-                    && !self.GetTracker(passage.Key, true).consumed)
-                {
-                    return passage.Key;
-                }
-            }
-            return null;
-        }
-
-        // Overwrites the default logic
-        public static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
-        {
-            if (!Plugin.RandoManager.isRandomizerActive || !Options.GivePassageItems)
-            {
-                orig(self);
-                return;
-            }
-
-            foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
-            {
-                if (passage.Value
-                    && !self.GetTracker(passage.Key, true).consumed)
-                {
-                    self.GetTracker(passage.Key, true).consumed = true;
-                    return;
-                }
-            }
-        }
-
-        public static void ILSpawnGhost(ILContext il)
+        private static void ILSpawnGhost(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
@@ -808,7 +423,7 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldarg_0); // We interuppted after a ldarg_0, so put that back before we leave
         }
 
-        public static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
+        private static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
         {
             orig(self, ghost, rainWorld);
             if (!Plugin.RandoManager.isRandomizerActive) return;
@@ -821,14 +436,7 @@ namespace RainWorldRandomizer
             Plugin.Singleton.game.rainWorld.progression.SaveProgressionAndDeathPersistentDataOfCurrentState(false, false);
         }
 
-        public static void OnKarmaLadderCtor(On.Menu.KarmaLadder.orig_ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool orig,
-            KarmaLadder self, Menu.Menu menu, MenuObject owner, Vector2 pos, HUD.HUD hud, IntVector2 displayKarma, bool reinforced)
-        {
-            (menu as KarmaLadderScreen).preGhostEncounterKarmaCap = Plugin.RandoManager.CurrentMaxKarma;
-            orig(self, menu, owner, pos, hud, displayKarma, reinforced);
-        }
-
-        public static void ArtificerRoboIL(ILContext il)
+        private static void ArtificerRoboIL(ILContext il)
         {
             try
             {
@@ -854,7 +462,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Allow the food quest to appear on the HUD for any Slugcat.
         /// </summary>
-        public static void HUD_InitSinglePlayerHud(ILContext il)
+        private static void HUD_InitSinglePlayerHud(ILContext il)
         {
             ILCursor c = new ILCursor(il);
             c.GotoNext(
@@ -869,7 +477,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// All non-Gourmands to progress the food quest and collect the relevant checks.
         /// </summary>
-        public static void PlayerSessionRecord_AddEat(ILContext il)
+        private static void PlayerSessionRecord_AddEat(ILContext il)
         {
             ILCursor c = new ILCursor(il);
             for (int i = 0; i < 2; i++)
@@ -896,7 +504,7 @@ namespace RainWorldRandomizer
 
         }
 
-        public static void WinStateCreateTrackerIL(ILContext il)
+        private static void WinStateCreateTrackerIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
             c.GotoNext(
@@ -909,7 +517,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
         }
 
-        public static bool YesItIsMeGourmand(bool prev) => Options.UseFoodQuest || prev;
+        private static bool YesItIsMeGourmand(bool prev) => Options.UseFoodQuest || prev;
 
         /// <summary>
         /// Allow Spearmaster to eat mushrooms for the food quest.
@@ -934,9 +542,9 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldarg_1);
             c.EmitDelegate<Action<Spear, PhysicalObject>>(Delegate);
         }
-        
+
         // Filter the next predicted food item to be accessible to the current slugcat
-        public static void ILFoodQuestUpdateNextPredictedItem(ILContext il)
+        private static void ILFoodQuestUpdateNextPredictedItem(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
