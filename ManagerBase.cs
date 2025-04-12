@@ -212,7 +212,7 @@ namespace RainWorldRandomizer
                 CurrentMaxKarma++;
             }
 
-            try { (Plugin.Singleton.game.session as StoryGameSession).saveState.deathPersistentSaveData.karmaCap = CurrentMaxKarma; }
+            try { Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = CurrentMaxKarma; }
             catch { };
         }
     }

@@ -122,11 +122,11 @@ namespace RainWorldRandomizer
                     Plugin.RandoManager.IncreaseKarma();
                     break;
                 case UnlockType.Glow:
-                    Plugin.Singleton.game.GetStorySession.saveState.theGlow = true;
+                    Plugin.Singleton.Game.GetStorySession.saveState.theGlow = true;
                     Plugin.RandoManager.GivenNeuronGlow = true;
                     break;
                 case UnlockType.Mark:
-                    Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
+                    Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
                     Plugin.RandoManager.GivenMark = true;
                     break;
                 case UnlockType.Item:
@@ -161,15 +161,15 @@ namespace RainWorldRandomizer
                     Plugin.RandoManager.HunterBonusCyclesGiven++;
                     break;
                 case UnlockType.IdDrone:
-                    Plugin.Singleton.game.GetStorySession.saveState.hasRobo = true;
+                    Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
                     Plugin.RandoManager.GivenRobo = true;
                     break;
                 case UnlockType.DisconnectFP:
-                    Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
+                    Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
                     Plugin.RandoManager.GivenPebblesOff = true;
                     break;
                 case UnlockType.RewriteSpearPearl:
-                    Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
+                    Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
                     Plugin.RandoManager.GivenSpearPearlRewrite = true;
                     break;
             }

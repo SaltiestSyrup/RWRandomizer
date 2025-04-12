@@ -213,32 +213,32 @@ namespace RainWorldRandomizer
             else if (item == "The Glow")
             {
                 _givenNeuronGlow = true;
-                if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
-                    Plugin.Singleton.game.GetStorySession.saveState.theGlow = true;
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                    Plugin.Singleton.Game.GetStorySession.saveState.theGlow = true;
             }
             else if (item == "The Mark")
             {
                 _givenMark = true;
-                if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
-                    Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                    Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
             }
             else if (item == "IdDrone")
             {
                 _givenRobo = true;
-                if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
-                    Plugin.Singleton.game.GetStorySession.saveState.hasRobo = true;
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                    Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
             }
             else if (item == "Disconnect_FP")
             {
                 _givenPebblesOff = true;
-                if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
-                    Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                    Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
             }
             else if (item == "Rewrite_Spear_Pearl")
             {
                 _givenSpearPearlRewrite = true;
-                if (Plugin.Singleton.game?.GetStorySession?.saveState != null)
-                    Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                    Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
             }
 
             Plugin.Log.LogInfo($"Received item: {item}");

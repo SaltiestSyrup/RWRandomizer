@@ -30,10 +30,20 @@ namespace RainWorldRandomizer
 
         private OptionsMenu options;
 
-        //public static bool isRandomizerActive = false; // -- Move to manager base
         public RainWorld rainWorld;
-        public RainWorldGame game;
-        //public SlugcatStats.Name currentSlugcat; // -- Move to manager base
+        public WeakReference<RainWorldGame> _game;
+        public RainWorldGame Game
+        {
+            get
+            {
+                if (_game.TryGetTarget(out RainWorldGame g)) return g;
+                else return null;
+            }
+            set
+            {
+                _game = new WeakReference<RainWorldGame>(value);
+            }
+        }
 
         public Queue<string> notifQueue = new Queue<string>(); // Queue of pending notifications to be sent to the player in-game
         public Queue<LogMessage> notifQueueAP = new Queue<LogMessage>();

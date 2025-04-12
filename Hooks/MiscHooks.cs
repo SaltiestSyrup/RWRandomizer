@@ -448,7 +448,7 @@ namespace RainWorldRandomizer
 
             Plugin.RandoManager.GiveLocation("Echo-" + ghost.value);
 
-            Plugin.Singleton.game.rainWorld.progression.SaveProgressionAndDeathPersistentDataOfCurrentState(false, false);
+            Plugin.Singleton.rainWorld.progression.SaveProgressionAndDeathPersistentDataOfCurrentState(false, false);
         }
 
         /// <summary>

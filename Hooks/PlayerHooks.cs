@@ -233,9 +233,9 @@ namespace RainWorldRandomizer
             // Remove cycle limit completely for Archipelago
             if (Plugin.RandoManager is ManagerArchipelago)
             {
-                if (Plugin.Singleton.game != null)
+                if (Plugin.Singleton.Game != null)
                 {
-                    return Plugin.Singleton.game.GetStorySession.saveState.cycleNumber + 1;
+                    return Plugin.Singleton.Game.GetStorySession.saveState.cycleNumber + 1;
                 }
                 // If this is isn't in game there's not an easy way to get the cycle count
                 // Will need to hook individual cases to fix this

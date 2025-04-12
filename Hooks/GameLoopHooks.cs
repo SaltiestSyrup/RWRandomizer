@@ -153,7 +153,7 @@ namespace RainWorldRandomizer
         public static void OnRainWorldGameCtor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
             orig(self, manager);
-            Plugin.Singleton.game = self;
+            Plugin.Singleton.Game = self;
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
             

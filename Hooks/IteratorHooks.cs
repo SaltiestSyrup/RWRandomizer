@@ -93,7 +93,7 @@ namespace RainWorldRandomizer
             // Remove unearned glowing effect
             if (!Plugin.RandoManager.GivenNeuronGlow)
             {
-                (Plugin.Singleton.game.session as StoryGameSession).saveState.theGlow = false;
+                player.room.game.GetStorySession.saveState.theGlow = false;
                 player.glowing = false;
             }
 
@@ -129,17 +129,17 @@ namespace RainWorldRandomizer
             {
                 //Logger.LogDebug($"Gave the mark! Iterator ID: {self.oracle.ID}");
                 // No karma increases >:(
-                Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
-                Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.karma = Plugin.RandoManager.CurrentMaxKarma;
-                for (int num2 = 0; num2 < Plugin.Singleton.game.cameras.Length; num2++)
+                self.oracle.room.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
+                self.oracle.room.game.GetStorySession.saveState.deathPersistentSaveData.karma = Plugin.RandoManager.CurrentMaxKarma;
+                for (int num2 = 0; num2 < self.oracle.room.game.cameras.Length; num2++)
                 {
-                    Plugin.Singleton.game.cameras[num2].hud.karmaMeter?.UpdateGraphic();
+                    self.oracle.room.game.cameras[num2].hud.karmaMeter?.UpdateGraphic();
                 }
 
                 // Reset the mark if not unlocked yet
                 if (!Plugin.RandoManager.GivenMark)
                 {
-                    Plugin.Singleton.game.GetStorySession.saveState.deathPersistentSaveData.theMark = false;
+                    self.oracle.room.game.GetStorySession.saveState.deathPersistentSaveData.theMark = false;
                     //self.afterGiveMarkAction = SSOracleBehavior.Action.ThrowOut_ThrowOut;
                 }
 
@@ -384,7 +384,7 @@ namespace RainWorldRandomizer
             if (!Plugin.RandoManager.isRandomizerActive) return;
 
             // Meeting for the first time
-            if (Plugin.Singleton.game.GetStorySession.saveState.miscWorldSaveData.SLOracleState.playerEncountersWithMark > 0)
+            if (self.oracle.room.game.GetStorySession.saveState.miscWorldSaveData.SLOracleState.playerEncountersWithMark > 0)
             {
                 Plugin.RandoManager.GiveLocation("Meet_LttM");
             }
@@ -450,7 +450,7 @@ namespace RainWorldRandomizer
                 return hasMark ||
                     (ModManager.MSC
                     && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet
-                    && Plugin.Singleton.game.IsMoonActive());
+                    && Plugin.Singleton.Game.IsMoonActive());
             });
         }
 
@@ -531,7 +531,7 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            Room room = Plugin.Singleton.game.session.Players[0].realizedCreature.room;
+            Room room = Plugin.Singleton.Game.session.Players[0].realizedCreature.room;
             for (int i = 0; i < room.physicalObjects.Length; i++)
             {
                 for (int j = 0; j < room.physicalObjects[i].Count; j++)
