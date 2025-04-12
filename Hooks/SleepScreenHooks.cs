@@ -284,6 +284,9 @@ namespace RainWorldRandomizer
         }
 
         // ----- PASSAGE TOKENS -----
+        
+        // TODO: This currently doesn't have a cleanup. Isn't a huge deal as it's cleared to refresh every sleep screen, but isn't ideal
+        private static List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>();
 
         /// <summary>
         /// Replace normal passage token list with custom one that contains tokens collected from items rather than tokens from completed passages
@@ -301,7 +304,7 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            Plugin.Singleton.passageTokensUI = new List<FakeEndgameToken>();
+            passageTokensUI = new List<FakeEndgameToken>();
             int index = 0;
             foreach (WinState.EndgameID id in Plugin.RandoManager.GetPassageTokensStatus().Keys)
             {
@@ -310,8 +313,8 @@ namespace RainWorldRandomizer
                 if ((Plugin.RandoManager.HasPassageToken(id) ?? false)
                     && (menu as KarmaLadderScreen).winState.GetTracker(id, true).consumed == false)
                 {
-                    Plugin.Singleton.passageTokensUI.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
-                    self.subObjects.Add(Plugin.Singleton.passageTokensUI.Last());
+                    passageTokensUI.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
+                    self.subObjects.Add(passageTokensUI.Last());
                     index++;
                 }
             }
@@ -390,11 +393,11 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            for (int i = 0; i < Plugin.Singleton.passageTokensUI.Count; i++)
+            for (int i = 0; i < passageTokensUI.Count; i++)
             {
-                if (Plugin.Singleton.passageTokensUI[i].id == ID)
+                if (passageTokensUI[i].id == ID)
                 {
-                    Plugin.Singleton.passageTokensUI[i].Activate();
+                    passageTokensUI[i].Activate();
                     return;
                 }
             }

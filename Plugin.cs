@@ -41,9 +41,6 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> lastItemDeliveryQueue = new Queue<Unlock.Item>();
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
 
-        // Values for currently unlocked features
-        public List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>(); // Used for karma ladder screen. Maybe move to Misc hooks class?
-
         // A map of every region to it's display name
         public static Dictionary<string, string> RegionNamesMap = new Dictionary<string, string>();
         // A map of the 'correct' region acronyms for each region depending on current slugcat
