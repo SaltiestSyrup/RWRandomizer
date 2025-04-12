@@ -53,12 +53,14 @@ namespace RainWorldRandomizer
             IL.Player.InitChatLog -= Player_InitChatLog;
         }
 
+        /// <summary>
+        /// Constructs a list of all tokens that can be collected for a given slugcat
+        /// </summary>
         public void LoadAvailableTokens(RainWorld rainWorld, SlugcatStats.Name slugcat)
         {
             availableTokens.Clear();
             List<string> allRegions = Region.GetFullRegionOrder();
             
-
             for (int i = 0; i < allRegions.Count; i++)
             {
                 List<string> idsToAdd = new List<string>();
@@ -97,11 +99,12 @@ namespace RainWorldRandomizer
                 }
 
                 availableTokens.Add(allRegions[i], idsToAdd.ToArray());
-
             }
         }
 
-        // Make tokens spawn as Inv
+        /// <summary>
+        /// Make tokens spawn as Inv
+        /// </summary>
         public bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
         {
             return orig(self) || (ModManager.MSC 
@@ -110,6 +113,9 @@ namespace RainWorldRandomizer
                 && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
         }
 
+        /// <summary>
+        /// Detect token collection
+        /// </summary>
         public void OnTokenPop(On.CollectToken.orig_Pop orig, CollectToken self, Player player)
         {
             orig(self, player);
@@ -152,7 +158,9 @@ namespace RainWorldRandomizer
             }
         }
 
-        // Make Sandbox tokens spawn regardless of meta unlocks
+        /// <summary>
+        /// Make Sandbox tokens spawn regardless of meta unlocks
+        /// </summary>
         public void ILRoomLoaded(ILContext il)
         {
             bool DoTokenOverride(Room room, int index)
@@ -228,6 +236,9 @@ namespace RainWorldRandomizer
             c.EmitDelegate((Func<Room, int, bool>)DoTokenOverride);
         }
 
+        /// <summary>
+        /// Various fixes to BuildTokenCache, making it more accurate
+        /// </summary>
         public void ILBuildTokenCache(ILContext il)
         {
             try
@@ -411,7 +422,7 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// If <see cref="Plugin.disableTokenText"/> is enabled, prevent chatlogs from happening.
+        /// If <see cref="Options.DisableTokenPopUps"/> is enabled, prevent chatlogs from happening.
         /// </summary>
         private void Player_ProcessChatLog(ILContext il)
         {
@@ -429,7 +440,7 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// If <see cref="Plugin.disableTokenText"/> is enabled, prevent Slugcat from being stopped by touching a chatlog token.
+        /// If <see cref="Options.DisableTokenPopUps"/> is enabled, prevent Slugcat from being stopped by touching a chatlog token.
         /// </summary>
         private void Player_InitChatLog(ILContext il)
         {
@@ -441,6 +452,9 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<int, int>>(PreventStop);
         }
 
+        /// <summary>
+        /// Fetch all rooms in region and which slugcats can reach them
+        /// </summary>
         public static Dictionary<string, List<SlugcatStats.Name>> GetRoomAccessibility(string regionName)
         {
             regionName = regionName.ToLowerInvariant();
@@ -452,15 +466,19 @@ namespace RainWorldRandomizer
             return roomAccessibilities[regionName];
         }
 
+        /// <summary>
+        /// Erases cached room accessibility dicts
+        /// </summary>
         public static void ClearRoomAccessibilities()
         {
             roomAccessibilities.Clear();
         }
 
-        // Adapted code from WorldLoader to just find which rooms are accessible to each slugcat
+        /// <summary>
+        /// Adapted code from WorldLoader to just find which rooms are accessible to each slugcat
+        /// </summary>
         private static Dictionary<string, List<SlugcatStats.Name>> LoadRoomAccessibility(string regionName)
         {
-            
             string worldFilePath = AssetManager.ResolveFilePath(string.Concat(new string[]
             {
                 "World",
@@ -676,6 +694,7 @@ namespace RainWorldRandomizer
             return accessibility;
         }
 
+        [Obsolete("Previously used to compare generated token cache to manually entered source of truth, which no longer exists")]
         public static void CompareToTokenCache()
         {
             string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"chkrand_arena_unlocks{(ModManager.MSC ? "_MSC" : "")}.txt");

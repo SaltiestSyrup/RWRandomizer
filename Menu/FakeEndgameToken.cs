@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace RainWorldRandomizer
 {
+    /// <summary>
+    /// Mostly copies functionality of EndgameTokens, but allows for full control over their behavior
+    /// </summary>
     public class FakeEndgameToken : PositionedMenuObject
     {
         public EndgameTokens Tokens
