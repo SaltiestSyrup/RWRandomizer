@@ -13,7 +13,7 @@ namespace RainWorldRandomizer
             On.OracleSwarmer.BitByPlayer += OnEatNeuron;
             On.SLOracleSwarmer.BitByPlayer += OnEatNeuron;
             On.SLOracleBehavior.ConvertingSSSwarmer += OnGiftNeuron;
-            On.SSOracleBehavior.Update += PebblesUpdate;
+            On.SSOracleBehavior.Update += OnSSOracleBehaviorUpdate;
             On.SLOracleBehaviorHasMark.Update += MoonMarkUpdate;
             On.SLOracleWakeUpProcedure.Update += MoonWakeUpUpdate;
             On.SLOracleBehaviorHasMark.SpecialEvent += OnMoonSpecialEvent;
@@ -22,8 +22,8 @@ namespace RainWorldRandomizer
             try
             {
                 IL.SSOracleBehavior.SSOracleMeetWhite.Update += PebblesMeetWhiteUpdateIL;
-                IL.SSOracleBehavior.SSOracleMeetYellow.Update += PebblesMeetYellowUpdateIL;
-                IL.SSOracleBehavior.SSOracleMeetGourmand.Update += PebblesMeetYellowUpdateIL;
+                IL.SSOracleBehavior.SSOracleMeetYellow.Update += PebblesMeetYellowOrGourmandUpdateIL;
+                IL.SSOracleBehavior.SSOracleMeetGourmand.Update += PebblesMeetYellowOrGourmandUpdateIL;
                 IL.SSOracleBehavior.SSOracleMeetArty.Update += PebblesMeetArtiUpdateIL;
                 IL.SSOracleBehavior.ThrowOutBehavior.Update += IteratorThrowOutBehaviorIL;
                 IL.SLOracleWakeUpProcedure.Update += ILMoonWakeUpUpdate;
@@ -41,15 +41,15 @@ namespace RainWorldRandomizer
             On.OracleSwarmer.BitByPlayer -= OnEatNeuron;
             On.SLOracleSwarmer.BitByPlayer -= OnEatNeuron;
             On.SLOracleBehavior.ConvertingSSSwarmer -= OnGiftNeuron;
-            On.SSOracleBehavior.Update -= PebblesUpdate;
+            On.SSOracleBehavior.Update -= OnSSOracleBehaviorUpdate;
             On.SLOracleBehaviorHasMark.Update -= MoonMarkUpdate;
             On.SLOracleWakeUpProcedure.Update -= MoonWakeUpUpdate;
             On.SLOracleBehaviorHasMark.SpecialEvent -= OnMoonSpecialEvent;
             On.HUD.DialogBox.NewMessage_string_float_float_int -= DialogueAddMessage;
 
             IL.SSOracleBehavior.SSOracleMeetWhite.Update -= PebblesMeetWhiteUpdateIL;
-            IL.SSOracleBehavior.SSOracleMeetYellow.Update -= PebblesMeetYellowUpdateIL;
-            IL.SSOracleBehavior.SSOracleMeetGourmand.Update -= PebblesMeetYellowUpdateIL;
+            IL.SSOracleBehavior.SSOracleMeetYellow.Update -= PebblesMeetYellowOrGourmandUpdateIL;
+            IL.SSOracleBehavior.SSOracleMeetGourmand.Update -= PebblesMeetYellowOrGourmandUpdateIL;
             IL.SSOracleBehavior.SSOracleMeetArty.Update -= PebblesMeetArtiUpdateIL;
             IL.SSOracleBehavior.ThrowOutBehavior.Update -= IteratorThrowOutBehaviorIL;
             IL.SLOracleWakeUpProcedure.Update -= ILMoonWakeUpUpdate;
@@ -57,6 +57,9 @@ namespace RainWorldRandomizer
             IL.Oracle.ctor -= OracleCtorIL;
         }
 
+        /// <summary>
+        /// Detect eating of generic neuron
+        /// </summary>
         static void OnEatNeuron(On.OracleSwarmer.orig_BitByPlayer orig, OracleSwarmer self, Creature.Grasp grasp, bool eu)
         {
             orig(self, grasp, eu);
@@ -68,6 +71,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Detect eating of LttM neuron
+        /// </summary>
         static void OnEatNeuron(On.SLOracleSwarmer.orig_BitByPlayer orig, SLOracleSwarmer self, Creature.Grasp grasp, bool eu)
         {
             orig(self, grasp, eu);
@@ -79,6 +85,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Revert the normal effects of eating a neuron and award check
+        /// </summary>
         static void EatenNeuron(Player player)
         {
             // Remove unearned glowing effect
@@ -91,6 +100,9 @@ namespace RainWorldRandomizer
             Plugin.RandoManager.GiveLocation("Eat_Neuron");
         }
 
+        /// <summary>
+        /// Detect gifting a neuron to LttM
+        /// </summary>
         static void OnGiftNeuron(On.SLOracleBehavior.orig_ConvertingSSSwarmer orig, SLOracleBehavior self)
         {
             orig(self);
@@ -99,7 +111,10 @@ namespace RainWorldRandomizer
             Plugin.RandoManager.GiveLocation("Gift_Neuron");
         }
 
-        static void PebblesUpdate(On.SSOracleBehavior.orig_Update orig, SSOracleBehavior self, bool eu)
+        /// <summary>
+        /// Detect Pebbles (and intact LttM) giving mark and revert effects of such
+        /// </summary>
+        static void OnSSOracleBehaviorUpdate(On.SSOracleBehavior.orig_Update orig, SSOracleBehavior self, bool eu)
         {
             if (!Plugin.RandoManager.isRandomizerActive)
             {
@@ -139,6 +154,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Hack Pebbles to give the mark when he otherwise wouldn't
+        /// </summary>
         static void PebblesMeetWhiteUpdateIL(ILContext il)
         {
             try
@@ -184,8 +202,10 @@ namespace RainWorldRandomizer
             }
         }
 
-        // Also applies to Gourmand
-        static void PebblesMeetYellowUpdateIL(ILContext il)
+        /// <summary>
+        /// Hack Pebbles to give the mark when he otherwise wouldn't for Monk / Gourm
+        /// </summary>
+        static void PebblesMeetYellowOrGourmandUpdateIL(ILContext il)
         {
             try
             {
@@ -209,6 +229,10 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Hack Pebbles to behave properly in strange randomizer circumstances for Artificer
+        /// </summary>
+        /// <param name="il"></param>
         static void PebblesMeetArtiUpdateIL(ILContext il)
         {
             try
@@ -267,6 +291,10 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Detect Rivulet taking Energy Cell from Pebbles and handle randomizer weirdness in certain conditions
+        /// </summary>
+        /// <param name="il"></param>
         static void RotCoreRoomUpdateIL(ILContext il)
         {
             try
@@ -347,6 +375,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Detect meeting LttM for the first time with the mark
+        /// </summary>
         static void MoonMarkUpdate(On.SLOracleBehaviorHasMark.orig_Update orig, SLOracleBehaviorHasMark self, bool eu)
         {
             orig(self, eu);
@@ -359,6 +390,10 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Fix LttM wake up cutscene for Hunter to not break without the mark
+        /// </summary>
+        /// <param name="il"></param>
         static void ILMoonWakeUpUpdate(ILContext il)
         {
             try
@@ -383,7 +418,9 @@ namespace RainWorldRandomizer
             }
         }
 
-        // Hunter revives LttM
+        /// <summary>
+        /// Detect Hunter reviving LttM
+        /// </summary>
         static void MoonWakeUpUpdate(On.SLOracleWakeUpProcedure.orig_Update orig, SLOracleWakeUpProcedure self, bool eu)
         {
             if (self.phase == SLOracleWakeUpProcedure.Phase.Done)
@@ -394,6 +431,10 @@ namespace RainWorldRandomizer
             orig(self, eu);
         }
 
+        /// <summary>
+        /// Fix Riv ending cutscene to behave properly without the mark
+        /// </summary>
+        /// <param name="il"></param>
         static void OracleCtorIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
@@ -413,6 +454,9 @@ namespace RainWorldRandomizer
             });
         }
 
+        /// <summary>
+        /// Detect Rivulet LttM ending trigger
+        /// </summary>
         static void OnMoonSpecialEvent(On.SLOracleBehaviorHasMark.orig_SpecialEvent orig, SLOracleBehaviorHasMark self, string eventName)
         {
             orig(self, eventName);
@@ -426,6 +470,10 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Allow Pebbles to do a violence on Arty if they don't have the drone, and detect Pebbles killing Inv
+        /// </summary>
+        /// <param name="il"></param>
         static void IteratorThrowOutBehaviorIL(ILContext il)
         {
             try
@@ -470,6 +518,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Modify Iterators to use speech sounds if mark is not aquired
+        /// </summary>
         static void DialogueAddMessage(On.HUD.DialogBox.orig_NewMessage_string_float_float_int orig, HUD.DialogBox self, string text, float xOrientation, float yPos, int extraLinger)
         {
             // Swap Pebbles dialogue for gibberish if mark not obtained

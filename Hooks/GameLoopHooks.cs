@@ -1,14 +1,8 @@
-﻿using Archipelago.MultiClient.Net.Helpers;
-using Mono.Cecil.Cil;
+﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -17,10 +11,10 @@ namespace RainWorldRandomizer
         public static void ApplyHooks()
         {
             On.ProcessManager.PostSwitchMainProcess += OnPostSwitchMainProcess;
-            On.RainWorldGame.Update += Update;
+            On.RainWorldGame.Update += OnRainWorldGameUpdate;
             On.PlayerProgression.SaveToDisk += OnSaveGame;
             On.SaveState.SessionEnded += OnSessionEnded;
-            On.RainWorldGame.ctor += OnStartSession;
+            On.RainWorldGame.ctor += OnRainWorldGameCtor;
             On.HardmodeStart.Update += OnHardmodeStart;
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update += OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update += OnLCEndingScriptUpdate;
@@ -40,10 +34,10 @@ namespace RainWorldRandomizer
         public static void RemoveHooks()
         {
             On.ProcessManager.PostSwitchMainProcess -= OnPostSwitchMainProcess;
-            On.RainWorldGame.Update -= Update;
+            On.RainWorldGame.Update -= OnRainWorldGameUpdate;
             On.PlayerProgression.SaveToDisk -= OnSaveGame;
             On.SaveState.SessionEnded -= OnSessionEnded;
-            On.RainWorldGame.ctor -= OnStartSession;
+            On.RainWorldGame.ctor -= OnRainWorldGameCtor;
             On.HardmodeStart.Update -= OnHardmodeStart;
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update -= OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update -= OnLCEndingScriptUpdate;
@@ -52,6 +46,9 @@ namespace RainWorldRandomizer
             IL.WinState.CycleCompleted -= ILCycleCompleted;
         }
 
+        /// <summary>
+        /// Handle various events triggered by game process changing
+        /// </summary>
         public static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
         {
             if (ID == ProcessManager.ProcessID.Game 
@@ -150,7 +147,10 @@ namespace RainWorldRandomizer
             orig(self, ID);
         }
 
-        public static void OnStartSession(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
+        /// <summary>
+        /// Set story state flags at the start of each session
+        /// </summary>
+        public static void OnRainWorldGameCtor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
             orig(self, manager);
             Plugin.Singleton.game = self;
@@ -168,6 +168,9 @@ namespace RainWorldRandomizer
             self.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
         }
 
+        /// <summary>
+        /// Spawn pending delivery items on session start if shelter delivery is set
+        /// </summary>
         public static void RainWorldGameCtorIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
@@ -204,7 +207,9 @@ namespace RainWorldRandomizer
             });
         }
 
-        // Remove Hunter's starting macguffins
+        /// <summary>
+        /// Remove Hunter's starting macguffins
+        /// </summary>
         public static void OnHardmodeStart(On.HardmodeStart.orig_Update orig, HardmodeStart self, bool eu)
         {
             if (!Plugin.RandoManager.isRandomizerActive
@@ -253,7 +258,10 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static void Update(On.RainWorldGame.orig_Update orig, RainWorldGame self)
+        /// <summary>
+        /// Various processes that need to be handled in an update loop
+        /// </summary>
+        public static void OnRainWorldGameUpdate(On.RainWorldGame.orig_Update orig, RainWorldGame self)
         {
             orig(self);
             if (self.GamePaused) return;
@@ -371,6 +379,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Save randomizer state when game is saved
+        /// </summary>
         public static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
             if (Plugin.RandoManager.isRandomizerActive)
@@ -381,6 +392,9 @@ namespace RainWorldRandomizer
             return orig(self, saveCurrentState, saveMaps, saveMiscProg);
         }
 
+        /// <summary>
+        /// Update item delivery queue on session end
+        /// </summary>
         public static void OnSessionEnded(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished)
         {
             orig(self, game, survived, newMalnourished);
@@ -398,6 +412,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Hacking for passage progress changes under certain settings
+        /// </summary>
         public static void ILCycleCompleted(ILContext il)
         {
             try
@@ -463,6 +480,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Detect Outer Expanse ending trigger
+        /// </summary>
         public static void OnOEEndingScriptUpdate(On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.orig_Update orig, MSCRoomSpecificScript.OE_GourmandEnding self, bool eu)
         {
             orig(self, eu);
@@ -476,6 +496,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Detect Artificer Metropolis ending trigger
+        /// </summary>
         public static void OnLCEndingScriptUpdate(On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.orig_Update orig, MSCRoomSpecificScript.LC_FINAL self, bool eu)
         {
             orig(self, eu);
@@ -489,6 +512,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Detect Spearmaster Sky Islands ending trigger
+        /// </summary>
         public static void OnSpearEndingUpdate(On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.orig_Update orig, MSCRoomSpecificScript.SpearmasterEnding self, bool eu)
         {
             orig(self, eu);

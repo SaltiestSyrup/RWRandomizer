@@ -19,7 +19,7 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.SpearMasterPearl.AbstractSpearMasterPearl.ctor += ILAbstractSpearMasterPearlctor;
                 IL.Player.Regurgitate += ILRegurgitate;
                 IL.SSOracleBehavior.SSSleepoverBehavior.Update += ILMoonUpdate;
-                IL.SSOracleBehavior.Update += ILIteratorUpdate;
+                IL.SSOracleBehavior.Update += ILSSOracleBehaviorUpdate;
             }
             catch (Exception e)
             {
@@ -36,10 +36,12 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.SpearMasterPearl.AbstractSpearMasterPearl.ctor -= ILAbstractSpearMasterPearlctor;
             IL.Player.Regurgitate -= ILRegurgitate;
             IL.SSOracleBehavior.SSSleepoverBehavior.Update -= ILMoonUpdate;
-            IL.SSOracleBehavior.Update -= ILIteratorUpdate;
+            IL.SSOracleBehavior.Update -= ILSSOracleBehaviorUpdate;
         }
 
-        // Make the fake pearl count as misc
+        /// <summary>
+        /// Make the fake pearl count as a misc pearl
+        /// </summary>
         public static bool OnPearlIsNotMisc(On.DataPearl.orig_PearlIsNotMisc orig, DataPearl.AbstractDataPearl.DataPearlType pearlType)
         {
             bool origResult = orig(pearlType);
@@ -47,6 +49,9 @@ namespace RainWorldRandomizer
             return origResult && pearlType != RandomizerEnums.DataPearlType.SpearmasterpearlFake;
         }
 
+        /// <summary>
+        /// Add realizer case for fake pearl
+        /// </summary>
         public static void OnMSCItemsRealizer(On.AbstractPhysicalObject.orig_MSCItemsRealizer orig, AbstractPhysicalObject self)
         {
             orig(self);
@@ -57,6 +62,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Make LttM give mark and fix flags to make her behave properly
+        /// </summary>
         public static void OnMoonUpdate(On.SSOracleBehavior.SSSleepoverBehavior.orig_Update orig, SSOracleBehavior.SSSleepoverBehavior self)
         {
             if (!(Plugin.RandoManager.IsLocationGiven("Meet_LttM") ?? true))
@@ -77,7 +85,10 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static void ILIteratorUpdate(ILContext il)
+        /// <summary>
+        /// Fix flags for Pebbles to make him behave properly
+        /// </summary>
+        public static void ILSSOracleBehaviorUpdate(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
@@ -99,11 +110,13 @@ namespace RainWorldRandomizer
             });
         }
 
+        /// <summary>
+        /// Revert LttM writing to the pearl
+        /// </summary>
         public static void ILMoonUpdate(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
-            // Revert writing of spearmaster's pearl
             for (int i = 0; i < 2; i++)
             {
                 c.GotoNext(
@@ -120,9 +133,11 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Replace AbstractSpearMasterPearl creation with AbstractFakeSpearMasterPearl
+        /// </summary>
         public static void ILRegurgitate(ILContext il)
         {
-            // Replace AbstractSpearMasterPearl creation with AbstractFakeSpearMasterPearl
             ILCursor c = new ILCursor(il);
 
             c.GotoNext(
@@ -155,9 +170,11 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Br, jump);
         }
 
+        /// <summary>
+        /// Change AbstractObjectType and DataPearlType of special pearl depending on if it's a fake pearl
+        /// </summary>
         public static void ILAbstractSpearMasterPearlctor(ILContext il)
         {
-            // Change AbstractObjectType and DataPearlType depending on if this is a fake pearl
             ILCursor c = new ILCursor(il);
 
             c.GotoNext(
@@ -198,6 +215,9 @@ namespace RainWorldRandomizer
         }
     }
 
+    /// <summary>
+    /// Fake decoy SpearMasterPearl for use in cutscenes where the player shouldn't actually have the pearl yet
+    /// </summary>
     public class FakeSpearMasterPearl : SpearMasterPearl
     {
         public FakeSpearMasterPearl(AbstractPhysicalObject abstractPhysicalObject, World world) : base(abstractPhysicalObject, world)

@@ -129,6 +129,9 @@ namespace RainWorldRandomizer
         }
 
         // TODO: Need explanation text for when start game button is greyed out
+        /// <summary>
+        /// Disable start game button if proper conditions are not met
+        /// </summary>
         private static void SlugcatSelectMenuUpdateIL(ILContext il)
         {
             try
@@ -173,6 +176,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Sets gate requirements based on currently found gate items
+        /// </summary>
         private static void GateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
         {
             if (!Plugin.RandoManager.isRandomizerActive)
@@ -252,32 +258,9 @@ namespace RainWorldRandomizer
             orig(self);
         }
 
-        private static void CanUseUnlockedGatesIL(ILContext il)
-        {
-            ILCursor c = new ILCursor(il);
-
-            // Act as if Monk style karma gates is set if player YAML needs it
-            ILLabel jump = null;
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Yellow))),
-                x => x.MatchCallOrCallvirt(out _),
-                x => x.MatchBrtrue(out jump)
-                );
-
-            c.EmitDelegate<Func<bool>>(() =>
-            {
-                if (Plugin.RandoManager is ManagerArchipelago)
-                {
-                    return ArchipelagoConnection.gateBehavior != Plugin.GateBehavior.OnlyKey;
-                }
-                return false;
-            });
-            c.Emit(OpCodes.Brtrue, jump);
-        }
-
-        // Overwrites the default logic
-        // Unless gateUnlocks hasn't been populated yet
+        /// <summary>
+        /// Sets gate requirements for map data based on currently found gate items
+        /// </summary>
         private static void ReloadLocksList(On.PlayerProgression.orig_ReloadLocksList orig, PlayerProgression self)
         {
             if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager.GetGatesStatus().Count == 0)
@@ -330,6 +313,35 @@ namespace RainWorldRandomizer
             self.karmaLocks = new string[0];
         }
 
+        /// <summary>
+        /// Act as if Monk style karma gates is set if player YAML needs it
+        /// </summary>
+        private static void CanUseUnlockedGatesIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            ILLabel jump = null;
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Yellow))),
+                x => x.MatchCallOrCallvirt(out _),
+                x => x.MatchBrtrue(out jump)
+                );
+
+            c.EmitDelegate<Func<bool>>(() =>
+            {
+                if (Plugin.RandoManager is ManagerArchipelago)
+                {
+                    return ArchipelagoConnection.gateBehavior != Plugin.GateBehavior.OnlyKey;
+                }
+                return false;
+            });
+            c.Emit(OpCodes.Brtrue, jump);
+        }
+
+        /// <summary>
+        /// Modify Echo spawning conditions based on setting
+        /// </summary>
         private static void ILSpawnGhost(ILContext il)
         {
             ILCursor c = new ILCursor(il);
@@ -346,6 +358,8 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldloc_2); // flag for if echo should be spawned
             c.EmitDelegate<Func<World, GhostWorldPresence.GhostID, bool, bool>>(CustomEchoLogic);
             c.Emit(OpCodes.Stloc_2);
+
+            c.Emit(OpCodes.Ldarg_0); // We interuppted after a ldarg_0, so put that back before we leave
 
             bool CustomEchoLogic(World self, GhostWorldPresence.GhostID ghostID, bool spawnEcho)
             {
@@ -419,10 +433,11 @@ namespace RainWorldRandomizer
                         return spawnEcho;
                 }
             }
-
-            c.Emit(OpCodes.Ldarg_0); // We interuppted after a ldarg_0, so put that back before we leave
         }
 
+        /// <summary>
+        /// Reset karma increase from Echo encounter and give location
+        /// </summary>
         private static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
         {
             orig(self, ghost, rainWorld);
@@ -436,6 +451,9 @@ namespace RainWorldRandomizer
             Plugin.Singleton.game.rainWorld.progression.SaveProgressionAndDeathPersistentDataOfCurrentState(false, false);
         }
 
+        /// <summary>
+        /// Prevent Artificer's drone from activating in the starting cutscene
+        /// </summary>
         private static void ArtificerRoboIL(ILContext il)
         {
             try
@@ -444,13 +462,13 @@ namespace RainWorldRandomizer
                 c.GotoNext(
                     MoveType.After,
                     x => x.MatchLdarg(0),
-                    x => x.MatchLdsfld(typeof(MoreSlugcats.CutsceneArtificerRobo.Phase).GetField(nameof(MoreSlugcats.CutsceneArtificerRobo.Phase.ActivateRobo))),
-                    x => x.MatchStfld(typeof(MoreSlugcats.CutsceneArtificerRobo).GetField(nameof(MoreSlugcats.CutsceneArtificerRobo.phase)))
+                    x => x.MatchLdsfld(typeof(CutsceneArtificerRobo.Phase).GetField(nameof(CutsceneArtificerRobo.Phase.ActivateRobo))),
+                    x => x.MatchStfld(typeof(CutsceneArtificerRobo).GetField(nameof(CutsceneArtificerRobo.phase)))
                     );
 
                 c.Index--;
                 c.Emit(OpCodes.Pop);
-                c.Emit(OpCodes.Ldsfld, typeof(MoreSlugcats.CutsceneArtificerRobo.Phase).GetField(nameof(MoreSlugcats.CutsceneArtificerRobo.Phase.End)));
+                c.Emit(OpCodes.Ldsfld, typeof(CutsceneArtificerRobo.Phase).GetField(nameof(CutsceneArtificerRobo.Phase.End)));
             }
             catch (Exception e)
             {
@@ -475,7 +493,7 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// All non-Gourmands to progress the food quest and collect the relevant checks.
+        /// Allows all non-Gourmands to progress the food quest and collect the relevant checks.
         /// </summary>
         private static void PlayerSessionRecord_AddEat(ILContext il)
         {
@@ -504,6 +522,7 @@ namespace RainWorldRandomizer
 
         }
 
+        [Obsolete("Not currently applied")]
         private static void WinStateCreateTrackerIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
@@ -543,7 +562,9 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Action<Spear, PhysicalObject>>(Delegate);
         }
 
-        // Filter the next predicted food item to be accessible to the current slugcat
+        /// <summary>
+        /// Filter the next predicted food quest item to be accessible to the current slugcat
+        /// </summary>
         private static void ILFoodQuestUpdateNextPredictedItem(ILContext il)
         {
             ILCursor c = new ILCursor(il);
@@ -628,6 +649,9 @@ namespace RainWorldRandomizer
             return orig(itemType, intData);
         }
 
+        /// <summary>
+        /// Add color definitions for symbols that need them
+        /// </summary>
         private static Color ItemSymbol_ColorForItem(On.ItemSymbol.orig_ColorForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intdata)
         {
             if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return new Color(0.4117f, 0.1608f, 0.2275f);

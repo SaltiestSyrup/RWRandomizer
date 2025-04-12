@@ -38,6 +38,9 @@ namespace RainWorldRandomizer
             IL.PlayerGraphics.Update -= ILPlayerGraphicsUpdate;
         }
 
+        /// <summary>
+        /// Swap regurgitate item for queued item if applicable
+        /// </summary>
         public static void OnRegurgitate(On.Player.orig_Regurgitate orig, Player self)
         {
             if (!Plugin.RandoManager.isRandomizerActive
@@ -70,6 +73,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Detect Void Sea ending trigger
+        /// </summary>
         public static void OnPlayerUpdate(On.Player.orig_Update orig, Player self, bool eu)
         {
             orig(self, eu);
@@ -93,6 +99,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Convince game we have an item in stomach if there is a queued item
+        /// </summary>
         public static void ILPlayerGrabUpdate(ILContext il)
         {
             try
@@ -173,6 +182,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Convince graphics we have an item in stomach if there is a queued item
+        /// </summary>
         public static void ILPlayerGraphicsUpdate(ILContext il)
         {
             try
@@ -211,6 +223,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Modify Hunter's remaining cycle count
+        /// </summary>
         public static int OnRedsCycles(On.RedsIllness.orig_RedsCycles orig, bool extracycles)
         {
             int origResult = orig(extracycles);
@@ -246,6 +261,9 @@ namespace RainWorldRandomizer
             return baseCycles + (Plugin.RandoManager.HunterBonusCyclesGiven * bonusCycles);
         }
 
+        /// <summary>
+        /// Detect Saint ascending iterators
+        /// </summary>
         public static void OnClassMechanicsSaint(On.Player.orig_ClassMechanicsSaint orig, Player self)
         {
             orig(self);
