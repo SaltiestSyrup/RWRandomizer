@@ -224,7 +224,6 @@ namespace RainWorldRandomizer
 
                 gatesStatus.Add(gate, false);
                 AllUnlocks.Add(new Unlock(Unlock.UnlockType.Gate, gate));
-
             }
 
             // Populate Passage Unlocks
@@ -445,6 +444,7 @@ namespace RainWorldRandomizer
                     break;
             }
 
+            CollectTokenHandler.ClearRoomAccessibilities();
             return true;
         }
 
