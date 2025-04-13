@@ -55,6 +55,7 @@ namespace RainWorldRandomizer
         public static Dictionary<string, string> RegionNamesMap = new Dictionary<string, string>();
         // A map of the 'correct' region acronyms for each region depending on current slugcat
         public static Dictionary<string, string> ProperRegionMap = new Dictionary<string, string>();
+        public static Dictionary<string, RegionGate.GateRequirement[]> defaultGateRequirements = new Dictionary<string, RegionGate.GateRequirement[]>();
 
         /// <summary>Whether there are any third-party regions.</summary>
         public static bool AnyThirdPartyRegions
@@ -361,6 +362,105 @@ namespace RainWorldRandomizer
 
             Log.LogError($"Item type \"{item.type}\" is not a valid object type");
             return null;
+        }
+
+        /// <summary>
+        /// Returns the requirements for a gate based on found items and settings
+        /// </summary>
+        /// <param name="gateName">The gate to get the requirements of</param>
+        public static RegionGate.GateRequirement[] GetGateRequirement(string gateName)
+        {
+            bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
+            RegionGate.GateRequirement[] newRequirements = 
+                defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v) 
+                ? v : new RegionGate.GateRequirement[2] {
+                    RegionGate.GateRequirement.OneKarma, 
+                    RegionGate.GateRequirement.OneKarma
+                };
+
+            if (gateName.Equals("GATE_OE_SU")) hasKeyForGate = true;
+            if (gateName.Equals("GATE_SL_MS") 
+                && ModManager.MSC 
+                && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
+            {
+                hasKeyForGate = true;
+            }
+
+            // Change default Metropolis gate karma
+            if (gateName.Equals("GATE_UW_LC") && Options.ForceOpenMetropolis)
+            {
+                newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
+                newRequirements[1] = RegionGate.GateRequirement.FiveKarma;
+            }
+
+            // Decide gate behavior
+            GateBehavior gateBehavior;
+            if (RandoManager is ManagerArchipelago)
+            {
+                gateBehavior = ArchipelagoConnection.gateBehavior;
+            }
+            else if (Options.StartMinimumKarma)
+            {
+                gateBehavior = GateBehavior.OnlyKey;
+            }
+            else
+            {
+                gateBehavior = GateBehavior.KeyAndKarma;
+            }
+
+            // Apply behavior
+            switch (gateBehavior)
+            {
+                case GateBehavior.OnlyKey:
+                    if (hasKeyForGate)
+                    {
+                        newRequirements[0] = RegionGate.GateRequirement.OneKarma;
+                        newRequirements[1] = RegionGate.GateRequirement.OneKarma;
+                    }
+                    else
+                    {
+                        newRequirements[0] = RegionGate.GateRequirement.DemoLock;
+                        newRequirements[1] = RegionGate.GateRequirement.DemoLock;
+                    }
+                    break;
+                case GateBehavior.KeyAndKarma:
+                    if (!hasKeyForGate)
+                    {
+                        newRequirements[0] = RegionGate.GateRequirement.DemoLock;
+                        newRequirements[1] = RegionGate.GateRequirement.DemoLock;
+                    }
+                    break;
+                case GateBehavior.KeyOrKarma:
+                    if (hasKeyForGate)
+                    {
+                        newRequirements[0] = RegionGate.GateRequirement.OneKarma;
+                        newRequirements[1] = RegionGate.GateRequirement.OneKarma;
+                    }
+                    break;
+                case GateBehavior.OnlyKarma:
+                    // Nothing to be done here, use vanilla mechanics
+                    break;
+            }
+
+            return newRequirements;
+        }
+
+        /// <summary>
+        /// Update <see cref="PlayerProgression.karmaLocks"></see> to accurately reflect current randomizer state.
+        /// Used for <see cref="HUD.Map"/> displaying karma gates
+        /// </summary>
+        public static void UpdateKarmaLocks()
+        {
+            for (int i = 0; i < Singleton.rainWorld.progression.karmaLocks.Length; i++)
+            {
+                string[] split = Regex.Split(Singleton.rainWorld.progression.karmaLocks[i], " : ");
+
+                RegionGate.GateRequirement[] newRequirements = GetGateRequirement(split[0]);
+                split[1] = newRequirements[0].value;
+                split[2] = newRequirements[1].value;
+
+                Singleton.rainWorld.progression.karmaLocks[i] = string.Join(" : ", split);
+            }
         }
 
         public static string GateToString(string gate, SlugcatStats.Name slugcat)

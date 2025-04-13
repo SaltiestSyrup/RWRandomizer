@@ -157,7 +157,7 @@ namespace RainWorldRandomizer
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
             
-            self.rainWorld.progression.ReloadLocksList();
+            Plugin.UpdateKarmaLocks();
             self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
 
             // Ensure found state triggers are set

@@ -17,8 +17,8 @@ namespace RainWorldRandomizer
     {
         public static void ApplyHooks()
         {
-            On.RegionGate.customKarmaGateRequirements += GateRequirements;
-            On.PlayerProgression.ReloadLocksList += ReloadLocksList;
+            On.RegionGate.customKarmaGateRequirements += OnGateRequirements;
+            On.PlayerProgression.ReloadLocksList += OnReloadLocksList;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
@@ -72,8 +72,8 @@ namespace RainWorldRandomizer
 
         public static void RemoveHooks()
         {
-            On.RegionGate.customKarmaGateRequirements -= GateRequirements;
-            On.PlayerProgression.ReloadLocksList -= ReloadLocksList;
+            On.RegionGate.customKarmaGateRequirements -= OnGateRequirements;
+            On.PlayerProgression.ReloadLocksList -= OnReloadLocksList;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
@@ -179,138 +179,36 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Sets gate requirements based on currently found gate items
         /// </summary>
-        private static void GateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
+        private static void OnGateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive)
+            if (Plugin.RandoManager.isRandomizerActive)
             {
-                orig(self);
-                return;
+                self.karmaRequirements = Plugin.GetGateRequirement(self.room.abstractRoom.name);
             }
-
-            string gateName = self.room.abstractRoom.name;
-            bool hasKeyForGate = Plugin.RandoManager.IsGateOpen(gateName) ?? false;
-
-            // Consider these gates as always unlocked
-            if (gateName == "GATE_OE_SU"
-                || (gateName == "GATE_SL_MS"
-                    && ModManager.MSC
-                    && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet))
-            {
-                hasKeyForGate = true;
-            }
-
-            // Change default Metropolis gate karma
-            if (gateName == "GATE_UW_LC" && Options.ForceOpenMetropolis)
-            {
-                self.karmaRequirements[0] = RegionGate.GateRequirement.FiveKarma;
-                self.karmaRequirements[1] = RegionGate.GateRequirement.FiveKarma;
-            }
-
-            // Decide gate behavior
-            Plugin.GateBehavior gateBehavior;
-            if (Plugin.RandoManager is ManagerArchipelago)
-            {
-                gateBehavior = ArchipelagoConnection.gateBehavior;
-            }
-            else if (Options.StartMinimumKarma)
-            {
-                gateBehavior = Plugin.GateBehavior.OnlyKey;
-            }
-            else
-            {
-                gateBehavior = Plugin.GateBehavior.KeyAndKarma;
-            }
-
-            // Apply behavior
-            switch (gateBehavior)
-            {
-                case Plugin.GateBehavior.OnlyKey:
-                    if (hasKeyForGate)
-                    {
-                        self.karmaRequirements[0] = RegionGate.GateRequirement.OneKarma;
-                        self.karmaRequirements[1] = RegionGate.GateRequirement.OneKarma;
-                    }
-                    else
-                    {
-                        self.karmaRequirements[0] = RegionGate.GateRequirement.DemoLock;
-                        self.karmaRequirements[1] = RegionGate.GateRequirement.DemoLock;
-                    }
-                    break;
-                case Plugin.GateBehavior.KeyAndKarma:
-                    if (!hasKeyForGate)
-                    {
-                        self.karmaRequirements[0] = RegionGate.GateRequirement.DemoLock;
-                        self.karmaRequirements[1] = RegionGate.GateRequirement.DemoLock;
-                    }
-                    break;
-                case Plugin.GateBehavior.KeyOrKarma:
-                    if (hasKeyForGate)
-                    {
-                        self.karmaRequirements[0] = RegionGate.GateRequirement.OneKarma;
-                        self.karmaRequirements[1] = RegionGate.GateRequirement.OneKarma;
-                    }
-                    break;
-                case Plugin.GateBehavior.OnlyKarma:
-                    // Nothing to be done here, use vanilla mechanics
-                    break;
-            }
-
             orig(self);
         }
 
         /// <summary>
         /// Sets gate requirements for map data based on currently found gate items
         /// </summary>
-        private static void ReloadLocksList(On.PlayerProgression.orig_ReloadLocksList orig, PlayerProgression self)
+        private static void OnReloadLocksList(On.PlayerProgression.orig_ReloadLocksList orig, PlayerProgression self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager.GetGatesStatus().Count == 0)
+            orig(self);
+            if (Plugin.defaultGateRequirements.Count == 0)
             {
-                orig(self);
-                return;
-            }
-
-            string[] vanillaLocks;
-
-            string path = AssetManager.ResolveFilePath(string.Concat(new string[]
-            {
-                "World",
-                Path.DirectorySeparatorChar.ToString(),
-                "Gates",
-                Path.DirectorySeparatorChar.ToString(),
-                "locks.txt"
-            }));
-
-            if (File.Exists(path))
-            {
-                vanillaLocks = File.ReadAllLines(path);
-
-                for (int i = 0; i < vanillaLocks.Length; i++)
+                foreach (string gate in self.karmaLocks)
                 {
-                    // If we don't have the gate stored, or it should be locked, lock it
-                    if (!(Plugin.RandoManager.IsGateOpen(Regex.Split(vanillaLocks[i], " : ")[0]) ?? false)
-                            && Regex.Split(vanillaLocks[i], " : ")[0] != "GATE_OE_SU") // OE_SU needs to stay open to avoid softlocks
+                    string[] split = Regex.Split(gate, " : ");
+                    
+                    if (Plugin.defaultGateRequirements.ContainsKey(split[0])) continue;
+                    
+                    Plugin.defaultGateRequirements.Add(split[0], new RegionGate.GateRequirement[2]
                     {
-                        // Split the gate apart and set the values to locked
-                        string[] split = Regex.Split(vanillaLocks[i], " : ");
-
-                        split[1] = RegionGate.GateRequirement.DemoLock.value;
-                        split[2] = RegionGate.GateRequirement.DemoLock.value;
-
-                        // Rejoin the string and assign it
-                        vanillaLocks[i] = "";
-                        foreach (string s in split)
-                        {
-                            vanillaLocks[i] += s + " : ";
-                        }
-                        vanillaLocks[i] = vanillaLocks[i].Substring(0, vanillaLocks[i].Length - 3);
-                    }
+                        new RegionGate.GateRequirement(split[1]),
+                        new RegionGate.GateRequirement(split[2])
+                    });
                 }
-
-                self.karmaLocks = vanillaLocks;
-                return;
             }
-
-            self.karmaLocks = new string[0];
         }
 
         /// <summary>
