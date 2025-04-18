@@ -30,6 +30,8 @@ namespace RainWorldRandomizer
 
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
+            isNewGame = !continueSaved;
+
             if (!ArchipelagoConnection.Session.Socket.Connected)
             {
                 Plugin.Log.LogError("Tried to start AP campaign without first connecting to server");
@@ -89,7 +91,6 @@ namespace RainWorldRandomizer
 
         public void LoadSave(string saveId)
         {
-            isNewGame = false;
             SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
             ArchipelagoConnection.lastItemIndex = save.lastIndex;
             locationsStatus = save.locationsStatus;
