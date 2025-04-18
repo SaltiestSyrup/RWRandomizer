@@ -31,7 +31,7 @@ namespace RainWorldRandomizer
         private OptionsMenu options;
 
         public RainWorld rainWorld;
-        public WeakReference<RainWorldGame> _game;
+        public WeakReference<RainWorldGame> _game = new WeakReference<RainWorldGame>(null);
         public RainWorldGame Game
         {
             get
