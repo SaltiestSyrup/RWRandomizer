@@ -968,7 +968,7 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
-                    if (item.id == "FireSpear")
+                    if (item.id == "FireSpear" || item.id == "ExplosiveSpear")
                     {
                         iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
                     }
