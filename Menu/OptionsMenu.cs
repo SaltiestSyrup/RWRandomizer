@@ -386,7 +386,7 @@ namespace RainWorldRandomizer
             runningY -= 35;
 
             // ----- Status Information -----
-            OpLabelLong connectResultLabel = new OpLabelLong(new Vector2(20f, runningY - 100f), new Vector2(350f, 100f), "");
+            OpLabelLong connectResultLabel = new OpLabelLong(new Vector2(20f, runningY - 100f), new Vector2(320f, 100f), "");
             OpLabelLong slotDataLabelLeft = new OpLabelLong(new Vector2(350f, runningY - 100f), new Vector2(200f, 100f), "", false);
             OpLabelLong slotDataLabelRight = new OpLabelLong(new Vector2(550f, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
 
