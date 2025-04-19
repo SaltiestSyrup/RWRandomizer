@@ -424,14 +424,14 @@ namespace RainWorldRandomizer
                 connectors["GATE_SB_SL"] = new Connector(true, nodes["SB"].Bottom, -10, 180, 90);
                 connectors["GATE_SH_SL"] = new Connector(nodes["SH"].Right, nodes["SL"].Left);
                 connectors["GATE_SI_CC"] = new Connector(nodes["SI"].Right, nodes["CC"].Left);
-                connectors["GATE_SS_UW"] = new Connector(nodes["UW"].TopRight, nodes["SS"].TopLeft);
-                connectors["GATE_UW_SS"] = new Connector(nodes["UW"].BottomRight, nodes["SS"].BottomLeft);
 
 
                 if (Scug != "Saint")
                 {
                     connectors["GATE_CC_UW"] = new Connector(nodes["CC"].Right, nodes["UW"].Left);
                     connectors["GATE_SH_UW"] = new Connector(nodes["UW"].Bottom, nodes["SH"].Top);
+                    connectors["GATE_SS_UW"] = new Connector(nodes["UW"].TopRight, nodes["SS"].TopLeft);
+                    connectors["GATE_UW_SS"] = new Connector(nodes["UW"].BottomRight, nodes["SS"].BottomLeft);
                 }
 
                 if (ModManager.MSC)
