@@ -273,6 +273,10 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Singleton.notifQueueAP.Dequeue();
                 }
+                else if (Options.legacyNotifications.Value)
+                {
+                    Plugin.Singleton.DisplayLegacyNotification(true);
+                }
                 else if (HudExtension.chatLog != null)
                 {
                     HudExtension.chatLog?.AddMessage(Plugin.Singleton.notifQueueAP.Dequeue());
@@ -284,6 +288,10 @@ namespace RainWorldRandomizer
                 if (Options.DisableNotificationQueue)
                 {
                     Plugin.Singleton.notifQueue.Dequeue();
+                }
+                else if (Options.legacyNotifications.Value)
+                {
+                    Plugin.Singleton.DisplayLegacyNotification(false);
                 }
                 else if (HudExtension.chatLog != null)
                 {

@@ -29,6 +29,7 @@ namespace RainWorldRandomizer
 
         internal static Configurable<bool> disableNotificationQueue;
         internal static Configurable<bool> disableTokenText;
+        internal static Configurable<bool> legacyNotifications;
 
         internal static Configurable<bool> useGateMap;
 

@@ -463,6 +463,39 @@ namespace RainWorldRandomizer
             }
         }
 
+        public void DisplayLegacyNotification(bool fromAP)
+        {
+            if (Game == null) return;
+
+            // If there are several messages waiting, move through them quicker
+            bool hurry = notifQueue.Count + notifQueueAP.Count > 3;
+            // If we have any pending messages and are in the actual game loop
+
+            if (Game.session.Players[0]?.realizedCreature?.room != null
+                && Game.cameras[0].hud?.textPrompt != null
+                && Game.cameras[0].hud.textPrompt.messages.Count < 1
+                && Game.manager.currentMainLoop.ID == ProcessManager.ProcessID.Game)
+
+            {
+                string message = fromAP ? notifQueueAP.Dequeue().ToString() : notifQueue.Dequeue();
+                if (message.Contains("//"))
+                {
+                    string[] split = Regex.Split(message, "//");
+                    Game.cameras[0].hud.textPrompt.AddMessage(split[0], 0, hurry ? 60 : 120, false, true, 100f,
+                        new List<MultiplayerUnlocks.SandboxUnlockID>() { new MultiplayerUnlocks.SandboxUnlockID(split[1]) });
+                }
+                else
+                {
+                    Game.cameras[0].hud.textPrompt.AddMessage(message, 0, hurry ? 60 : 120, false, false);
+                }
+
+                if (!hurry)
+                {
+                    Game.session.Players[0].realizedCreature.room.PlaySound(SoundID.MENU_Passage_Button, 0, 1f, 1f);
+                }
+            }
+        }
+
         public static string GateToString(string gate, SlugcatStats.Name slugcat)
         {
             string[] gateSplit = Regex.Split(gate, "_");

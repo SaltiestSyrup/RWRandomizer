@@ -78,6 +78,10 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Prevent pop-up text and chatlogs from appearing when collecting tokens", null, "",
                 new object[] { "Disable token text" }));
 
+            Options.legacyNotifications = config.Bind<bool>("LegacyNotifications", false,
+                new ConfigurableInfo("Disable new notification system in favor of old one using tutorial text", null, "",
+                new object[] { "Enable Legacy notifications" }));
+
             Options.useGateMap = config.Bind<bool>("UseGateMap", false,
                 new ConfigurableInfo("Use a gate map instead of the gate key list", null, "",
                 new object[] { "Use gate map" }));
@@ -599,6 +603,7 @@ namespace RainWorldRandomizer
                 Options.itemShelterDelivery,
                 Options.disableNotificationQueue,
                 Options.disableTokenText,
+                Options.legacyNotifications,
                 Options.useGateMap,
             };
 
