@@ -42,6 +42,7 @@ namespace RainWorldRandomizer
         protected const float MSG_SIZE_X = 300;
         protected const float MSG_SIZE_Y = 15f;
         protected const float MSG_MARGIN = 10f;
+        protected const float MAX_ALPHA = 0.6f;
 
         public bool forceDisplay = false;
         private bool GamePaused
@@ -140,8 +141,8 @@ namespace RainWorldRandomizer
             public bool forceDisplay = false;
             private List<int> wrapIndices;
 
-            private float show = 1;
-            private float lastShow = 1;
+            private float show = MAX_ALPHA;
+            private float lastShow = MAX_ALPHA;
 
             private float yPos;
             private float lastYPos;
@@ -315,7 +316,7 @@ namespace RainWorldRandomizer
 
                 if (forceDisplay)
                 {
-                    show = Mathf.Min(show + 0.01f, 1f);
+                    show = Mathf.Min(show + 0.01f, MAX_ALPHA);
                 }
                 else if (lifetime == 0f)
                 {
@@ -413,7 +414,7 @@ namespace RainWorldRandomizer
                     scaleX = MSG_SIZE_X + (MSG_MARGIN * 2),
                     scaleY = (MSG_SIZE_Y * height) + (MSG_MARGIN * 2),
                     anchorX = 0f,
-                    anchorY = 0f
+                    anchorY = 0f,
                 };
                 owner.container.AddChild(backgroundSprite);
             }
@@ -439,7 +440,7 @@ namespace RainWorldRandomizer
                     color = color == null ? new Color(1f, 1f, 1f) : (Color)color,
                     x = xOffset,
                     alignment = FLabelAlignment.Left,
-                    anchorY = 0f
+                    anchorY = 0f,
                 };
                 owner.container.AddChild(label);
 
