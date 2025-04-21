@@ -97,6 +97,11 @@
     <Compile Include="Archipelago\ArchipelagoConnection.cs" />
     <Compile Include="CollectTokenHandler.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Generation\AccessRule.cs" />
+    <Compile Include="Generation\Item.cs" />
+    <Compile Include="Generation\Location.cs" />
+    <Compile Include="Generation\State.cs" />
+    <Compile Include="Generation\VanillaGenerator.cs" />
     <Compile Include="Hooks\SleepScreenHooks.cs" />
     <Compile Include="Menu\HudExtension.cs" />
     <Compile Include="ModCompat\CustomRegionCompatability.cs" />
