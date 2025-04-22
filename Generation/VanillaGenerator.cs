@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Random = UnityEngine.Random;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -14,39 +15,75 @@ namespace RainWorldRandomizer.Generation
     {
         private SlugcatStats.Name slugcat;
         private SlugcatStats.Timeline timeline;
-        private long generationSeed;
+        private int generationSeed;
 
         public enum GenerationStep
         {
             NotStarted,
             InitializingState,
+            BalancingItems,
             PlacingProgGates,
             PlacingOtherProg,
             PlacingFillerGates,
             PlacingFiller,
-            Complete
+            Complete,
+            FailedGen
         }
         public GenerationStep CurrentStage { get; private set; }
+        public bool InProgress
+        { 
+            get 
+            {
+                return CurrentStage > GenerationStep.NotStarted
+                    && CurrentStage < GenerationStep.Complete;
+            } 
+        }
+
+        private Task generationThread;
 
         private State state;
-        private List<Item> ItemsToPlace;
-        private HashSet<string> AllRegions;
+        private List<Item> ItemsToPlace = new List<Item>();
+        private HashSet<string> AllRegions = new HashSet<string>();
         public HashSet<string> AllGates { get; private set; }
+        public HashSet<string> UnplacedGates { get; private set; }
         public HashSet<string> AllPassages { get; private set; }
+        public Dictionary<Location, Item> RandomizedGame { get; private set; }
+
+        public StringBuilder generationLog;
+        public string customStartDen = "NONE";
 
 
-        public VanillaGenerator(long generationSeed, SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline)
+        public VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int generationSeed = 0)
         {
-            this.generationSeed = generationSeed;
             this.slugcat = slugcat;
             this.timeline = timeline;
             CurrentStage = GenerationStep.NotStarted;
 
             AllGates = new HashSet<string>();
+            UnplacedGates = new HashSet<string>();
             AllPassages = new HashSet<string>();
+            RandomizedGame = new Dictionary<Location, Item>();
+
+            // Initialize RNG
+            this.generationSeed = generationSeed == 0 ? Random.Range(0, int.MaxValue) : generationSeed;
+            Random.InitState(generationSeed);
         }
 
-        public void InitializeState()
+        public void BeginGeneration()
+        {
+            generationThread = new Task(Generate);
+            generationThread.Start();
+        }
+
+        private void Generate()
+        {
+            InitializeState();
+            CustomLocationRules();
+            BalanceItems();
+            PlaceProgGates();
+        }
+
+        private void InitializeState()
         {
             CurrentStage = GenerationStep.InitializingState;
             HashSet<Location> locations = new HashSet<Location>();
@@ -54,15 +91,7 @@ namespace RainWorldRandomizer.Generation
             // Load Tokens
             if (Options.UseSandboxTokenChecks)
             {
-                try
-                {
-                    Plugin.Singleton.collectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
-                }
-                catch (Exception e)
-                {
-                    Plugin.Log.LogError("Failed loading sandbox tokens");
-                    Plugin.Log.LogError(e);
-                }
+                Plugin.Singleton.collectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
             }
 
             // Regions loop
@@ -71,27 +100,50 @@ namespace RainWorldRandomizer.Generation
             bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && Options.UseSMBroadcasts;
             foreach (string region in Region.GetFullRegionOrder(timeline))
             {
+                AccessRule regionAccessRule = new RegionAccessRule(region);
                 if (ModManager.MSC)
                 {
                     // Limit OE access as timeline filtering isn't enough
-                    if (region.Equals("OE")
-                        && !(slugcat == SlugcatStats.Name.White 
-                        || slugcat == SlugcatStats.Name.Yellow
-                        || slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
+                    if (region.Equals("OE"))
                     {
-                        continue;
+                        switch (slugcat.value)
+                        {
+                            case "Gourmand":
+                                regionAccessRule = new CompoundAccessRule(new AccessRule[]
+                                {
+                                    regionAccessRule,
+                                    new AccessRule("The_Mark")
+                                }, CompoundAccessRule.CompoundOperation.All);
+                                break;
+                            case "White":
+                            case "Yellow":
+                                break;
+                            default:
+                                continue;
+                        }
                     }
 
                     // Limit LC access unless option chosen to allow it
-                    if (region.Equals("LC") 
-                        && !(Options.ForceOpenMetropolis
-                        || slugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer))
+                    if (region.Equals("LC"))
                     {
-                        continue;
+                        if (!(Options.ForceOpenMetropolis
+                            || slugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer))
+                        {
+                            continue;
+                        }
+                        
+                        if (slugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+                        {
+                            regionAccessRule = new CompoundAccessRule(new AccessRule[]
+                            {
+                                regionAccessRule,
+                                new AccessRule("The_Mark"),
+                                new AccessRule("IdDrone")
+                            }, CompoundAccessRule.CompoundOperation.All);
+                        }
                     }
                 }
                 AllRegions.Add(region);
-                RegionAccessRule regionAccessRule = new RegionAccessRule(region);
                 string regionLower = region.ToLowerInvariant();
 
                 // Add Echoes from RegionKit if present
@@ -160,12 +212,15 @@ namespace RainWorldRandomizer.Generation
                     {
                         skipThisGate = true;
                     }
+
+                    // Gates that have to always be open to avoid softlocks
+                    if (Constants.ForceOpenGates.Contains(gate)) skipThisGate = true;
                 }
 
                 if (skipThisGate) continue;
 
                 AllGates.Add(gate);
-                ItemsToPlace.Add(new Item(gate, Item.Type.Progression));
+                ItemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
             }
 
             // Create Passage locations and items
@@ -290,7 +345,7 @@ namespace RainWorldRandomizer.Generation
                 if (Options.GivePassageItems && passage != "Gourmand")
                 {
                     AllPassages.Add(passage);
-                    ItemsToPlace.Add(new Item(passage, Item.Type.Filler));
+                    ItemsToPlace.Add(new Item(passage, Item.Type.Passage, Item.Importance.Filler));
                 }
             }
 
@@ -314,7 +369,7 @@ namespace RainWorldRandomizer.Generation
             // TODO: Add a setting to change the amount of Karma increases in pool
             for (int i = 0; i < 10; i++)
             {
-                ItemsToPlace.Add(new Item("Karma", Item.Type.Progression));
+                ItemsToPlace.Add(new Item("Karma", Item.Type.Karma, Item.Importance.Progression));
             }
 
             // TODO: Add support for expanded food quest
@@ -360,7 +415,11 @@ namespace RainWorldRandomizer.Generation
                     case "Gourmand":
                     case "Sofanthiel":
                         locations.Add(new Location("Meet_LttM", Location.Type.Story,
-                            new RegionAccessRule("SL")));
+                            new CompoundAccessRule(new AccessRule[]
+                            {
+                                new RegionAccessRule("SL"),
+                                new AccessRule("The_Mark")
+                            }, CompoundAccessRule.CompoundOperation.All)));
                         locations.Add(new Location("Meet_FP", Location.Type.Story,
                             new RegionAccessRule("SS")));
                         break;
@@ -390,7 +449,11 @@ namespace RainWorldRandomizer.Generation
                     // Rivulet does a murder in RM, seperate check
                     case "Rivulet":
                         locations.Add(new Location("Meet_LttM", Location.Type.Story,
-                            new RegionAccessRule("SL")));
+                            new CompoundAccessRule(new AccessRule[]
+                            {
+                                new RegionAccessRule("SL"),
+                                new AccessRule("The_Mark")
+                            }, CompoundAccessRule.CompoundOperation.All)));
                         if (Options.UseEnergyCell)
                         {
                             locations.Add(new Location("Kill_FP", Location.Type.Story,
@@ -410,35 +473,176 @@ namespace RainWorldRandomizer.Generation
             // Create Special items
             if (!ModManager.MSC || slugcat != MoreSlugcatsEnums.SlugcatStatsName.Saint)
             {
-                ItemsToPlace.Add(new Item("Neuron_Glow", Item.Type.Progression));
-                ItemsToPlace.Add(new Item("The_Mark", Item.Type.Progression));
+                ItemsToPlace.Add(new Item("Neuron_Glow", Item.Type.Story, Item.Importance.Progression));
+                ItemsToPlace.Add(new Item("The_Mark", Item.Type.Story, Item.Importance.Progression));
             }
 
             switch (slugcat.value)
             {
                 case "Red":
-                    ItemsToPlace.Add(new Item("NSHSwarmer", Item.Type.Progression));
-                    ItemsToPlace.Add(new Item("Red_stomach", Item.Type.Progression));
+                    ItemsToPlace.Add(new Item("NSHSwarmer", Item.Type.Story, Item.Importance.Progression));
+                    ItemsToPlace.Add(new Item("Red_stomach", Item.Type.Story, Item.Importance.Progression));
                     break;
                 case "Artificer":
-                    ItemsToPlace.Add(new Item("IdDrone", Item.Type.Progression));
+                    ItemsToPlace.Add(new Item("IdDrone", Item.Type.Story, Item.Importance.Progression));
                     break;
                 case "Rivulet":
                     if (Options.UseEnergyCell)
                     {
-                        ItemsToPlace.Add(new Item("EnergyCell", Item.Type.Progression));
-                        ItemsToPlace.Add(new Item("FP_Disconnected", Item.Type.Progression));
+                        ItemsToPlace.Add(new Item("EnergyCell", Item.Type.Story, Item.Importance.Progression));
+                        ItemsToPlace.Add(new Item("FP_Disconnected", Item.Type.Story, Item.Importance.Progression));
                     }
                     break;
                 case "Spear":
-                    ItemsToPlace.Add(new Item("Spearmasterpearl", Item.Type.Progression));
-                    ItemsToPlace.Add(new Item("Rewrite_Spear_Pearl", Item.Type.Progression));
+                    ItemsToPlace.Add(new Item("Spearmasterpearl", Item.Type.Story, Item.Importance.Progression));
+                    ItemsToPlace.Add(new Item("Rewrite_Spear_Pearl", Item.Type.Story, Item.Importance.Progression));
                     break;
             }
 
             CollectTokenHandler.ClearRoomAccessibilities();
 
             state = new State(locations, Options.StartMinimumKarma ? 1 : 5);
+        }
+
+        /// <summary>
+        /// Hook this function to modify rules for specific locations
+        /// </summary>
+        private void CustomLocationRules()
+        {
+            if (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel)
+            {
+                Location loc = state.AllLocations.First(l => l.id == "Token-BrotherLongLegs");
+                loc.accessRule = new AccessRule("IMPOSSIBLE");
+            }
+        }
+
+        private void BalanceItems()
+        {
+            CurrentStage = GenerationStep.BalancingItems;
+            // Manage case where there are not enough locations for the amount of items in pool
+            while (state.AllLocations.Count < ItemsToPlace.Count)
+            {
+                // Remove a passage token
+                IEnumerable<Item> passageTokens = ItemsToPlace.Where(i => i.type == Item.Type.Passage);
+                if (passageTokens.Count() > ManagerVanilla.MIN_PASSAGE_TOKENS)
+                {
+                    ItemsToPlace.Remove(passageTokens.First());
+                    continue;
+                }
+
+                // Cannot remove more passages, unlock gates
+                IEnumerable<Item> gateItems = ItemsToPlace.Where(i => i.type == Item.Type.Gate);
+                if (gateItems.Count() > 0)
+                {
+                    Item item = gateItems.ElementAt(Random.Range(0, gateItems.Count()));
+                    ItemsToPlace.Remove(item);
+                    UnplacedGates.Add(item.ToString());
+                    state.AddGate(item.ToString());
+                    continue;
+                }
+
+                generationLog.AppendLine("Too few locations present to make a valid seed");
+                generationLog.AppendLine("Generation Failed");
+                CurrentStage = GenerationStep.FailedGen;
+                throw new GenerationFailureException();
+            }
+
+            List<Item> itemsToAdd = new List<Item>();
+            int hunterCyclesAdded = 0;
+            while(state.AllLocations.Count > ItemsToPlace.Count + itemsToAdd.Count)
+            {
+                if (slugcat == SlugcatStats.Name.Red
+                    && hunterCyclesAdded < state.AllLocations.Count * Options.HunterCycleIncreaseDensity)
+                {
+                    // Add cycle increases for Hunter
+                    itemsToAdd.Add(new Item("HunterCycles", Item.Type.Other, Item.Importance.Filler));
+                    hunterCyclesAdded++;
+                }
+                else if (Options.GiveObjectItems)
+                {
+                    // Add junk items
+                    itemsToAdd.Add(Item.RandomJunkItem()); 
+                }
+                else
+                {
+                    // Duplicate a random gate item
+                    IEnumerable<Item> gateItems = ItemsToPlace.Where(i => i.type == Item.Type.Gate);
+                    itemsToAdd.Add(gateItems.ElementAt(Random.Range(0, gateItems.Count())));
+                }
+            }
+
+            if (itemsToAdd.Count > 0)
+            {
+                ItemsToPlace.AddRange(itemsToAdd);
+            }
+        }
+        
+        private void PlaceProgGates()
+        {
+            CurrentStage = GenerationStep.PlacingProgGates;
+            // Determine starting region
+            if (Options.RandomizeSpawnLocation)
+            {
+                customStartDen = Expedition.ExpeditionGame.ExpeditionRandomStarts(
+                    Plugin.Singleton.rainWorld, slugcat);
+                generationLog.AppendLine($"Using custom start den: {customStartDen}");
+                state.AddRegion(Plugin.ProperRegionMap[Regex.Split(customStartDen, "_")[0]]);
+            }
+            else
+            {
+                state.AddRegion(Constants.SlugcatStartingRegion[slugcat]);
+            }
+
+            // Continue until all regions are accessible
+            // Note that a region is considered "accessible" by state regardless of
+            // if there is some other rule blocking access to checks in that region
+            while (state.Regions.Count != AllRegions.Count)
+            {
+                // All gates adjacent to exactly one of the currently accessible regions
+                List<Item> adjacentGates = ItemsToPlace.Where(i =>
+                {
+                    if (i.type == Item.Type.Gate && i.importance == Item.Importance.Progression)
+                    {
+                        string[] gate = Regex.Split(i.id, "_");
+                        if (state.Gates.Contains(i.id)) return false;
+
+                        if (state.Regions.Contains(gate[1]) ^ state.Regions.Contains(gate[2]))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }).ToList();
+
+                // Check if we have failed
+                if (state.AvailableLocations.Count == 0 || adjacentGates.Count == 0)
+                {
+                    generationLog.AppendLine($"ERROR: Ran out of " +
+                        $"{(adjacentGates.Count == 0 ? "adjacent gates" : "possible locations")}.");
+
+                    generationLog.AppendLine("Failed to connect to:");
+                    foreach (string region in AllRegions.Except(state.Regions))
+                    {
+                        generationLog.AppendLine($"\t{Plugin.RegionNamesMap[region]}");
+                    }
+                    // TODO: Print full final state on error
+                    CurrentStage = GenerationStep.FailedGen;
+                    throw new GenerationFailureException();
+                }
+
+                Location chosenLocation = state.PopRandomLocation();
+                Item chosenGate = adjacentGates[Random.Range(0, adjacentGates.Count)];
+                RandomizedGame.Add(chosenLocation, chosenGate);
+                state.AddGate(chosenGate.id);
+                ItemsToPlace.Remove(chosenGate);
+            }
+        }
+
+        public class GenerationFailureException : Exception
+        {
+            public GenerationFailureException() : base() { }
+
+            public GenerationFailureException(string error) : base(error) { }
         }
     }
 }

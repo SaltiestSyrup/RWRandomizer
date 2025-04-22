@@ -1,4 +1,5 @@
 ﻿using MoreSlugcats;
+using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -54,6 +55,7 @@ namespace RainWorldRandomizer
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
+            stopwatch.Restart();
             // Attempt to initialize session
             if (!InitializeSession(storyGameCharacter))
             {
@@ -63,7 +65,7 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            Plugin.Log.LogDebug($"Initialized session in {stopwatch.ElapsedMilliseconds}");
+            Plugin.Log.LogDebug($"Initialized session in {stopwatch.ElapsedMilliseconds} ms");
             stopwatch.Stop();
 
             if (Input.GetKey("o"))
@@ -88,6 +90,12 @@ namespace RainWorldRandomizer
             }
             else
             {
+                stopwatch.Restart();
+                VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat));
+                generator.BeginGeneration();
+                Plugin.Log.LogDebug($"Ran Gen 2.0 in {stopwatch.ElapsedMilliseconds} ms");
+                stopwatch.Stop();
+
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
                 stopwatch.Restart();

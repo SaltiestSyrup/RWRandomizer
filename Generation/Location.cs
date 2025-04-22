@@ -22,7 +22,7 @@ namespace RainWorldRandomizer.Generation
 
         public string id;
         public Type type;
-        protected AccessRule accessRule;
+        public AccessRule accessRule;
 
         public Location(string id, Type type, AccessRule accessRule)
         {
@@ -32,6 +32,8 @@ namespace RainWorldRandomizer.Generation
         }
 
         public bool CanReach(State state) => accessRule.IsMet(state);
+
+        public override string ToString() => id;
     }
 
     //public class PearlLocation : Location
