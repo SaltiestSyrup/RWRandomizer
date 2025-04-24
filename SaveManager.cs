@@ -25,6 +25,7 @@ namespace RainWorldRandomizer
         {
             StreamWriter file = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
+            file.WriteLine($"StartingDen->{Plugin.RandoManager.customStartDen}");
             file.WriteLine(Plugin.RandoManager.currentSeed);
             foreach (var item in game)
             {
@@ -55,8 +56,19 @@ namespace RainWorldRandomizer
 
             string[] file = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
-            Plugin.RandoManager.currentSeed = int.Parse(file[0]);
-            file = file.Skip(1).ToArray();
+            if (int.TryParse(file[0], out int seed))
+            {
+                Plugin.RandoManager.currentSeed = seed;
+                file = file.Skip(1).ToArray();
+            }
+            else
+            {
+                // New save file includes additional line to store starting den
+                Plugin.RandoManager.customStartDen = Regex.Split(file[0], "->")[1]; // StartingDen->SU_S01
+                Plugin.RandoManager.currentSeed = int.Parse(file[1]);
+                file = file.Skip(2).ToArray();
+            }
+            
             foreach (string line in file)
             {
                 string[] keyValue = Regex.Split(line, "->");

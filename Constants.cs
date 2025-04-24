@@ -1,5 +1,7 @@
-﻿using MoreSlugcats;
+﻿using MonoMod.Utils;
+using MoreSlugcats;
 using System.Collections.Generic;
+using Watcher;
 
 namespace RainWorldRandomizer
 {
@@ -132,5 +134,34 @@ namespace RainWorldRandomizer
             }}
         };
 
+        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatDefaultStartingDen = new Dictionary<SlugcatStats.Name, string>()
+        {
+            { SlugcatStats.Name.White, "SU_S01" },
+            { SlugcatStats.Name.Yellow, "SU_S01" },
+            { SlugcatStats.Name.Red, "LF_S02" },
+        };
+
+        public static void InitializeConstants()
+        {
+            // Add constant entries that require MSC
+            if (ModManager.MSC)
+            {
+                SlugcatDefaultStartingDen.AddRange(new Dictionary<SlugcatStats.Name, string>()
+                {
+                    { MoreSlugcatsEnums.SlugcatStatsName.Gourmand, "SH_S02" },
+                    { MoreSlugcatsEnums.SlugcatStatsName.Artificer, "GW_S09" },
+                    { MoreSlugcatsEnums.SlugcatStatsName.Rivulet, "DS_S02l" },
+                    { MoreSlugcatsEnums.SlugcatStatsName.Spear, "SU_S05" },
+                    { MoreSlugcatsEnums.SlugcatStatsName.Saint, "SI_S04" },
+                    { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, "SH_S09" },
+                });
+            }
+
+            // Add Constant entries that require Watcher
+            if (ModManager.Watcher)
+            {
+                SlugcatDefaultStartingDen.Add(WatcherEnums.SlugcatStatsName.Watcher, "HI_WS01");
+            }
+        }
     }
 }

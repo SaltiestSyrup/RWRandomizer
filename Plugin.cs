@@ -109,6 +109,7 @@ namespace RainWorldRandomizer
             // Register Enums
             RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
+            Constants.InitializeConstants();
 
             // Create hooks
             try
