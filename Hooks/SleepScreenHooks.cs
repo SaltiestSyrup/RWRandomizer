@@ -24,7 +24,7 @@ namespace RainWorldRandomizer
             try
             {
                 IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
-                IL.Menu.EndgameTokens.ctor += EngameTokensCtorIL;
+                IL.Menu.EndgameTokens.ctor += EndgameTokensCtorIL;
                 IL.Menu.SleepAndDeathScreen.AddPassageButton += AddPassageButtonIL;
                 IL.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreenGetDataFromGameIL;
             }
@@ -43,7 +43,7 @@ namespace RainWorldRandomizer
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool -= OnKarmaLadderCtor;
 
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
-            IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
+            IL.Menu.EndgameTokens.ctor -= EndgameTokensCtorIL;
             IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
             IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreenGetDataFromGameIL;
         }
@@ -329,7 +329,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Make passage button appear if any token items have been found
         /// </summary>
-        private static void EngameTokensCtorIL(ILContext il)
+        private static void EndgameTokensCtorIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
