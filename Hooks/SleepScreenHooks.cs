@@ -5,6 +5,7 @@ using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -285,8 +286,10 @@ namespace RainWorldRandomizer
 
         // ----- PASSAGE TOKENS -----
         
-        // TODO: This currently doesn't have a cleanup. Isn't a huge deal as it's cleared to refresh every sleep screen, but isn't ideal
-        private static List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>();
+        /// <summary>
+        /// Stores fake passage token UI elements
+        /// </summary>
+        private static ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>> passageTokensUI = new ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>>();
 
         /// <summary>
         /// Replace normal passage token list with custom one that contains tokens collected from items rather than tokens from completed passages
@@ -304,7 +307,7 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            passageTokensUI = new List<FakeEndgameToken>();
+            List<FakeEndgameToken> fakePassageTokens = new List<FakeEndgameToken>();
             int index = 0;
             foreach (WinState.EndgameID id in Plugin.RandoManager.GetPassageTokensStatus().Keys)
             {
@@ -313,11 +316,14 @@ namespace RainWorldRandomizer
                 if ((Plugin.RandoManager.HasPassageToken(id) ?? false)
                     && (menu as KarmaLadderScreen).winState.GetTracker(id, true).consumed == false)
                 {
-                    passageTokensUI.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
-                    self.subObjects.Add(passageTokensUI.Last());
+                    fakePassageTokens.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
+                    self.subObjects.Add(fakePassageTokens.Last());
                     index++;
                 }
             }
+            passageTokensUI.Add(self, fakePassageTokens);
+
+            
         }
 
         /// <summary>
@@ -393,11 +399,12 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            for (int i = 0; i < passageTokensUI.Count; i++)
+            List<FakeEndgameToken> fakePassageTokens = passageTokensUI.GetOrCreateValue(self);
+            for (int i = 0; i < fakePassageTokens.Count; i++)
             {
-                if (passageTokensUI[i].id == ID)
+                if (fakePassageTokens[i].id == ID)
                 {
-                    passageTokensUI[i].Activate();
+                    fakePassageTokens[i].Activate();
                     return;
                 }
             }
