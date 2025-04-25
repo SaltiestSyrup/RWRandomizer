@@ -1,6 +1,7 @@
 ﻿using Menu;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MoreSlugcats;
 using RWCustom;
 using System;
 using System.Collections.Generic;
@@ -346,6 +347,16 @@ namespace RainWorldRandomizer
                 }
             }
             passageTokensUI.Add(self, fakePassageTokens);
+
+            // Skip adding button if Riv in Bitter Aerie
+            SaveState state = (menu as SleepAndDeathScreen).saveState;
+            if (ModManager.MSC 
+                && state.saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Rivulet
+                && state.miscWorldSaveData.moonHeartRestored
+                && !state.deathPersistentSaveData.altEnding)
+            {
+                return;
+            }
 
             // Add passage to home button
             (menu as SleepAndDeathScreen).CreatePassageHomeButton();
