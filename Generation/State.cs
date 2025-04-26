@@ -33,11 +33,18 @@ namespace RainWorldRandomizer.Generation
         {
             AllLocations = allLocs;
             UnreachedLocations = allLocs;
+            AvailableLocations = new HashSet<Location>();
             MaxKarma = startKarma;
+
+            SpecialProg = new HashSet<string>();
+            Regions = new HashSet<string>();
+            Gates = new HashSet<string>();
+            Creatures = new HashSet<CreatureTemplate.Type>();
+            Objects = new HashSet<AbstractPhysicalObject.AbstractObjectType>();
 
             foreach (Location loc in AllLocations)
             {
-                Plugin.Log.LogDebug(loc.ToString());
+                //Plugin.Log.LogDebug(loc.ToString());
             }
         }
 
@@ -82,7 +89,7 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         private void RecalculateState()
         {
-            IEnumerable<Location> newLocs = UnreachedLocations.Where(r => r.CanReach(this));
+            List<Location> newLocs = UnreachedLocations.Where(r => r.CanReach(this)).ToList();
             UnreachedLocations.ExceptWith(newLocs);
             AvailableLocations.UnionWith(newLocs);
 

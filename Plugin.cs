@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using System.Linq;
+using RainWorldRandomizer.Generation;
 
 namespace RainWorldRandomizer
 {
@@ -109,6 +110,8 @@ namespace RainWorldRandomizer
             // Register Enums
             RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
+            AccessRuleConstants.InitConstants();
+            VanillaGenerator.GenerateCustomRules();
 
             // Create hooks
             try

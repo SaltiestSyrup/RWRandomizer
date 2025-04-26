@@ -11,6 +11,8 @@ namespace RainWorldRandomizer.Generation
     /// </summary>
     public class AccessRule
     {
+        public const string IMPOSSIBLE_ID = "IMPOSSIBLE";
+
         public enum AccessRuleType
         {
             Wildcard,

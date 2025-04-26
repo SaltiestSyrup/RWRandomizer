@@ -13,6 +13,8 @@ namespace RainWorldRandomizer.Generation
 {
     public class VanillaGenerator
     {
+        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> RuleOverrides = new Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>>();
+
         private SlugcatStats.Name slugcat;
         private SlugcatStats.Timeline timeline;
         private int generationSeed;
@@ -49,7 +51,7 @@ namespace RainWorldRandomizer.Generation
         public HashSet<string> AllPassages { get; private set; }
         public Dictionary<Location, Item> RandomizedGame { get; private set; }
 
-        public StringBuilder generationLog;
+        public StringBuilder generationLog = new StringBuilder();
         public string customStartDen = "NONE";
 
 
@@ -73,12 +75,25 @@ namespace RainWorldRandomizer.Generation
         {
             generationThread = new Task(Generate);
             generationThread.Start();
+
+            try
+            {
+                generationThread.Wait();
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError(e);
+            }
+            finally
+            {
+                Plugin.Log.LogDebug(generationLog);
+            }
         }
 
         private void Generate()
         {
             InitializeState();
-            CustomLocationRules();
+            ApplyCustomRuleOverrides();
             BalanceItems();
             PlaceProgGates();
         }
@@ -208,7 +223,7 @@ namespace RainWorldRandomizer.Generation
                     if (CollectTokenHandler
                         .GetRoomAccessibility(region)
                         .TryGetValue(gate.ToLowerInvariant(), out List<SlugcatStats.Name> accessibleTo)
-                        && accessibleTo.Contains(slugcat))
+                        && !accessibleTo.Contains(slugcat))
                     {
                         skipThisGate = true;
                     }
@@ -505,14 +520,27 @@ namespace RainWorldRandomizer.Generation
         }
 
         /// <summary>
-        /// Hook this function to modify rules for specific locations
+        /// Applies custom location rules defined in <see cref="RuleOverrides"/>
         /// </summary>
-        private void CustomLocationRules()
+        private void ApplyCustomRuleOverrides()
         {
-            if (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel)
+            Dictionary<string, AccessRule> customRules = RuleOverrides[slugcat];
+            foreach (var rule in customRules)
             {
-                Location loc = state.AllLocations.First(l => l.id == "Token-BrotherLongLegs");
-                loc.accessRule = new AccessRule("IMPOSSIBLE");
+                // Find the location by id and set its rule to the override
+                Location loc = state.AllLocations.FirstOrDefault(l => l.id == rule.Key);
+                if (loc != null)
+                {
+                    // Locations defined as impossible by custom rules are removed from state
+                    if (rule.Value.ReqName.Equals(AccessRule.IMPOSSIBLE_ID))
+                    {
+                        state.AllLocations.Remove(loc);
+                    }
+                    else
+                    {
+                        loc.accessRule = rule.Value;
+                    }
+                }
             }
         }
 
@@ -583,8 +611,7 @@ namespace RainWorldRandomizer.Generation
             // Determine starting region
             if (Options.RandomizeSpawnLocation)
             {
-                customStartDen = Expedition.ExpeditionGame.ExpeditionRandomStarts(
-                    Plugin.Singleton.rainWorld, slugcat);
+                customStartDen = ManagerVanilla.FindRandomStart(slugcat);
                 generationLog.AppendLine($"Using custom start den: {customStartDen}");
                 state.AddRegion(Plugin.ProperRegionMap[Regex.Split(customStartDen, "_")[0]]);
             }
@@ -592,6 +619,8 @@ namespace RainWorldRandomizer.Generation
             {
                 state.AddRegion(Constants.SlugcatStartingRegion[slugcat]);
             }
+
+            generationLog.AppendLine($"First region: {state.Regions.First()}");
 
             // Continue until all regions are accessible
             // Note that a region is considered "accessible" by state regardless of
@@ -635,6 +664,24 @@ namespace RainWorldRandomizer.Generation
                 RandomizedGame.Add(chosenLocation, chosenGate);
                 state.AddGate(chosenGate.id);
                 ItemsToPlace.Remove(chosenGate);
+                generationLog.AppendLine($"Placed Prog gate {chosenGate.id} at {chosenLocation.id}");
+            }
+        }
+
+        public static void GenerateCustomRules()
+        {
+            RuleOverrides.Add(SlugcatStats.Name.White, new Dictionary<string, AccessRule>());
+            RuleOverrides.Add(SlugcatStats.Name.Yellow, new Dictionary<string, AccessRule>());
+            RuleOverrides.Add(SlugcatStats.Name.Red, new Dictionary<string, AccessRule>());
+
+            if (ModManager.MSC)
+            {
+                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Gourmand, new Dictionary<string, AccessRule>());
+                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Artificer, new Dictionary<string, AccessRule>());
+                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, new Dictionary<string, AccessRule>());
+                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Spear, new Dictionary<string, AccessRule>());
+                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Saint, new Dictionary<string, AccessRule>());
+                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, new Dictionary<string, AccessRule>());
             }
         }
 
