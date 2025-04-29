@@ -109,7 +109,6 @@ namespace RainWorldRandomizer
             // Register Enums
             RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
-            Constants.InitializeConstants();
 
             // Create hooks
             try
@@ -221,6 +220,7 @@ namespace RainWorldRandomizer
                 ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Saint);
             }
 
+            Constants.InitializeConstants();
             CustomRegionCompatability.Init();
         }
 
