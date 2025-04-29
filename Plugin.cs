@@ -23,6 +23,7 @@ namespace RainWorldRandomizer
 
         internal static ManualLogSource Log;
 
+        public bool hasInitialized = false;
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new ArchipelagoConnection();
         public static ManagerBase RandoManager = null;
@@ -111,7 +112,6 @@ namespace RainWorldRandomizer
             RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
             AccessRuleConstants.InitConstants();
-            VanillaGenerator.GenerateCustomRules();
 
             // Create hooks
             try
@@ -182,6 +182,8 @@ namespace RainWorldRandomizer
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
+            if (hasInitialized) return;
+
             rainWorld = self;
 
             //try
@@ -224,6 +226,9 @@ namespace RainWorldRandomizer
             }
 
             CustomRegionCompatability.Init();
+            VanillaGenerator.GenerateCustomRules();
+
+            hasInitialized = true;
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)

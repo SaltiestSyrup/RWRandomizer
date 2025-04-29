@@ -22,6 +22,8 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public HashSet<Location> AvailableLocations { get; private set; }
 
+        public SlugcatStats.Name Slugcat { get; private set; }
+        public SlugcatStats.Timeline Timeline { get; private set; }
         public int MaxKarma { get; private set; }
         public HashSet<string> SpecialProg { get; private set; }
         public HashSet<string> Regions { get; private set; }
@@ -29,11 +31,10 @@ namespace RainWorldRandomizer.Generation
         public HashSet<CreatureTemplate.Type> Creatures { get; private set; }
         public HashSet<AbstractPhysicalObject.AbstractObjectType> Objects { get; private set; }
         
-        public State(HashSet<Location> allLocs, int startKarma)
+        public State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int startKarma)
         {
-            AllLocations = allLocs;
-            UnreachedLocations = allLocs;
-            AvailableLocations = new HashSet<Location>();
+            Slugcat = slugcat;
+            Timeline = timeline;
             MaxKarma = startKarma;
 
             SpecialProg = new HashSet<string>();
@@ -41,11 +42,13 @@ namespace RainWorldRandomizer.Generation
             Gates = new HashSet<string>();
             Creatures = new HashSet<CreatureTemplate.Type>();
             Objects = new HashSet<AbstractPhysicalObject.AbstractObjectType>();
+        }
 
-            foreach (Location loc in AllLocations)
-            {
-                //Plugin.Log.LogDebug(loc.ToString());
-            }
+        public void DefineLocs(HashSet<Location> allLocs)
+        {
+            AllLocations = allLocs;
+            UnreachedLocations = allLocs;
+            AvailableLocations = new HashSet<Location>();
         }
 
         /// <summary>

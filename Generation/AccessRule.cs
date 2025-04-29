@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -49,6 +50,11 @@ namespace RainWorldRandomizer.Generation
             if (ReqName.Equals("")) return true;
             return state.SpecialProg.Contains(ReqName);
         }
+
+        public virtual bool IsPossible(State state)
+        {
+            return ReqName != IMPOSSIBLE_ID;
+        }
     }
 
     /// <summary>
@@ -65,6 +71,11 @@ namespace RainWorldRandomizer.Generation
         public override bool IsMet(State state)
         {
             return ReqName != null && state.Regions.Contains(ReqName);
+        }
+
+        public override bool IsPossible(State state)
+        {
+            return Region.GetFullRegionOrder(state.Timeline).Contains(ReqName);
         }
     }
 
@@ -85,6 +96,11 @@ namespace RainWorldRandomizer.Generation
         public override bool IsMet(State state)
         {
             return state.MaxKarma >= reqAmount;
+        }
+
+        public override bool IsPossible(State state)
+        {
+            return reqAmount > 0 && reqAmount <= 10;
         }
     }
 
@@ -158,6 +174,100 @@ namespace RainWorldRandomizer.Generation
     }
 
     /// <summary>
+    /// Determines if a location can ever be reached for a given slugcat
+    /// </summary>
+    public class SlugcatAccessRule : AccessRule
+    {
+        private SlugcatStats.Name slugcat;
+
+        public SlugcatAccessRule(SlugcatStats.Name slugcat)
+        {
+            this.slugcat = slugcat;
+        }
+
+        public override bool IsPossible(State state)
+        {
+            return state.Slugcat == slugcat;
+        }
+    }
+
+    /// <summary>
+    /// Determines if a location can ever be reached at a spot in the timeline
+    /// </summary>
+    public class TimelineAccessRule : AccessRule
+    {
+        public enum TimelineOperation
+        {
+            At,
+            AtOrBefore,
+            AtOrAfter,
+        }
+
+        private TimelineOperation operation;
+        private SlugcatStats.Timeline timeline;
+
+        public TimelineAccessRule(SlugcatStats.Timeline timeline, TimelineOperation operation)
+        {
+            this.timeline = timeline;
+            this.operation = operation;
+        }
+
+        public override bool IsPossible(State state)
+        {
+            switch (operation)
+            {
+                case TimelineOperation.At:
+                    return state.Timeline == timeline;
+                case TimelineOperation.AtOrBefore:
+                    return SlugcatStats.AtOrBeforeTimeline(state.Timeline, timeline);
+                case TimelineOperation.AtOrAfter:
+                    return SlugcatStats.AtOrAfterTimeline(state.Timeline, timeline);
+                default:
+                    return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Determines if a location can ever be reached under current options.
+    /// </summary>
+    public class OptionAccessRule : AccessRule
+    {
+        private PropertyInfo optionProperty;
+
+        /// <summary>
+        /// Will throw an <see cref="ArgumentException"/> if <paramref name="optionName"/> does not exactly match a static <see cref="bool"/> property in <see cref="Options"/>
+        /// </summary>
+        /// <exception cref="ArgumentException"></exception>
+        public OptionAccessRule(string optionName)
+        {
+            ReqName = $"Option-{optionName}";
+
+            optionProperty = typeof(Options).GetProperty(optionName, BindingFlags.Public | BindingFlags.Static, null, typeof(bool), new Type[0], null);
+
+            if (optionProperty == null)
+            {
+                throw new ArgumentException("Given option does not exist in Options class", "optionName");
+            }
+        }
+
+        public override bool IsPossible(State state)
+        {
+            // This should always succeed due to check in constructor, but catch exception just in case
+            try
+            {
+                return (bool)optionProperty.GetValue(null);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError($"OptionAccessRule tried to fetch invalid Option: {ReqName}");
+                Plugin.Log.LogError(e);
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
     /// Rule used for any location with requirements more complex than a single state check. 
     /// Most notably applies to Passages and Story locations.
     /// These can be chained together to create arbitrarily complex rules for any situation.
@@ -180,9 +290,9 @@ namespace RainWorldRandomizer.Generation
             AtLeast
         }
 
-        private CompoundOperation operation;
-        private AccessRule[] accessRules;
-        private int valAmount;
+        protected CompoundOperation operation;
+        protected AccessRule[] accessRules;
+        protected int valAmount;
 
         /// <param name="rules">Array of rules that this rule will reference</param>
         /// <param name="operation">The type of operation used to determine if given rules are met</param>
@@ -209,6 +319,30 @@ namespace RainWorldRandomizer.Generation
                     return false;
             }
         }
+
+        public override bool IsPossible(State state)
+        {
+            switch (operation)
+            {
+                case CompoundOperation.All:
+                    return accessRules.All(r => r.IsPossible(state));
+                case CompoundOperation.Any:
+                    return accessRules.Any(r => r.IsPossible(state));
+                case CompoundOperation.AtLeast:
+                    int count = accessRules.Sum((r) => { return r.IsPossible(state) ? 1 : 0; });
+                    return count >= valAmount;
+                default:
+                    return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Shorthand for a rule allowing any of the given slugcats to be used
+    /// </summary>
+    public class MultiSlugcatAccessRule : CompoundAccessRule
+    {
+        public MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats) : base(slugcats.Select((scug) => new SlugcatAccessRule(scug)).ToArray(), CompoundOperation.Any) { }
     }
 
     public static class AccessRuleConstants

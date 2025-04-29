@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using MonoMod.Utils;
 using MoreSlugcats;
 using RegionKit.Modules.CustomProjections;
 using System;
@@ -13,7 +14,20 @@ namespace RainWorldRandomizer.Generation
 {
     public class VanillaGenerator
     {
-        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> RuleOverrides = new Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>>();
+        /// <summary>
+        /// Used to override rules for locations. To modify the rules of a location, add its location ID to this dict with the new rule it should follow.
+        /// </summary>
+        public static Dictionary<string, AccessRule> GlobalRuleOverrides = new Dictionary<string, AccessRule>();
+        /// <summary>
+        /// Used to override rules for locations as specific slugcats. Applies on top of <see cref="GlobalRuleOverrides"/>, taking priority over all if playing as the relevant slugcat
+        /// </summary>
+        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> SlugcatRuleOverrides = new Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>>();
+        
+        /// <summary>
+        /// Combination of <see cref="GlobalRuleOverrides"/> and <see cref="SlugcatRuleOverrides"/> populated in instance constructor.
+        /// Any additions to rule overrides must be completed by the time the generator instance is created
+        /// </summary>
+        private Dictionary<string, AccessRule> RuleOverrides = new Dictionary<string, AccessRule>();
 
         private SlugcatStats.Name slugcat;
         private SlugcatStats.Timeline timeline;
@@ -69,6 +83,21 @@ namespace RainWorldRandomizer.Generation
             // Initialize RNG
             this.generationSeed = generationSeed == 0 ? Random.Range(0, int.MaxValue) : generationSeed;
             Random.InitState(generationSeed);
+
+            // Combine custom rules together
+            RuleOverrides = GlobalRuleOverrides;
+            // Slugcat specific rules take priority over global ones
+            foreach (var slugcatRule in SlugcatRuleOverrides[slugcat])
+            {
+                if (RuleOverrides.ContainsKey(slugcatRule.Key))
+                {
+                    RuleOverrides[slugcatRule.Key] = slugcatRule.Value;
+                }
+                else
+                {
+                    RuleOverrides.Add(slugcatRule.Key, slugcatRule.Value);
+                }
+            }
         }
 
         public void BeginGeneration()
@@ -92,15 +121,18 @@ namespace RainWorldRandomizer.Generation
 
         private void Generate()
         {
+            generationLog.AppendLine("Begin Generation");
             InitializeState();
-            ApplyCustomRuleOverrides();
+            ApplyRuleOverrides();
             BalanceItems();
             PlaceProgGates();
         }
 
         private void InitializeState()
         {
+            generationLog.AppendLine("INITIALIZE STATE");
             CurrentStage = GenerationStep.InitializingState;
+            state = new State(slugcat, timeline, Options.StartMinimumKarma ? 1 : 5);
             HashSet<Location> locations = new HashSet<Location>();
 
             // Load Tokens
@@ -116,48 +148,23 @@ namespace RainWorldRandomizer.Generation
             foreach (string region in Region.GetFullRegionOrder(timeline))
             {
                 AccessRule regionAccessRule = new RegionAccessRule(region);
-                if (ModManager.MSC)
-                {
-                    // Limit OE access as timeline filtering isn't enough
-                    if (region.Equals("OE"))
-                    {
-                        switch (slugcat.value)
-                        {
-                            case "Gourmand":
-                                regionAccessRule = new CompoundAccessRule(new AccessRule[]
-                                {
-                                    regionAccessRule,
-                                    new AccessRule("The_Mark")
-                                }, CompoundAccessRule.CompoundOperation.All);
-                                break;
-                            case "White":
-                            case "Yellow":
-                                break;
-                            default:
-                                continue;
-                        }
-                    }
 
-                    // Limit LC access unless option chosen to allow it
-                    if (region.Equals("LC"))
+                // Apply any overrides that should modify the rules of the entire region
+                if (RuleOverrides.TryGetValue($"Region-{region}", out AccessRule newRules))
+                {
+                    if (!newRules.IsPossible(state))
                     {
-                        if (!(Options.ForceOpenMetropolis
-                            || slugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer))
-                        {
-                            continue;
-                        }
-                        
-                        if (slugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
-                        {
-                            regionAccessRule = new CompoundAccessRule(new AccessRule[]
-                            {
-                                regionAccessRule,
-                                new AccessRule("The_Mark"),
-                                new AccessRule("IdDrone")
-                            }, CompoundAccessRule.CompoundOperation.All);
-                        }
+                        generationLog.AppendLine($"Skip adding locations for impossible region: {region}");
+                        continue;
                     }
+                    regionAccessRule = new CompoundAccessRule(new AccessRule[]
+                    {
+                        regionAccessRule,
+                        newRules
+                    }, CompoundAccessRule.CompoundOperation.All);
+                    generationLog.AppendLine($"Applied custom rules for region: {region}");
                 }
+                
                 AllRegions.Add(region);
                 string regionLower = region.ToLowerInvariant();
 
@@ -516,36 +523,47 @@ namespace RainWorldRandomizer.Generation
 
             CollectTokenHandler.ClearRoomAccessibilities();
 
-            state = new State(locations, Options.StartMinimumKarma ? 1 : 5);
+            state.DefineLocs(locations);
         }
 
+        // TODO: Pearl-LC is filtered out by token cache (rightfully), but needs to be present if setting enabled
         /// <summary>
-        /// Applies custom location rules defined in <see cref="RuleOverrides"/>
+        /// Applies special location rules defined by <see cref="GlobalRuleOverrides"/> and <see cref="SlugcatRuleOverrides"/>
         /// </summary>
-        private void ApplyCustomRuleOverrides()
+        private void ApplyRuleOverrides()
         {
-            Dictionary<string, AccessRule> customRules = RuleOverrides[slugcat];
-            foreach (var rule in customRules)
+            generationLog.AppendLine("APPLY SPECIAL RULES");
+            foreach (var rule in RuleOverrides)
             {
                 // Find the location by id and set its rule to the override
                 Location loc = state.AllLocations.FirstOrDefault(l => l.id == rule.Key);
                 if (loc != null)
                 {
-                    // Locations defined as impossible by custom rules are removed from state
-                    if (rule.Value.ReqName.Equals(AccessRule.IMPOSSIBLE_ID))
+                    if (rule.Value.IsPossible(state))
                     {
-                        state.AllLocations.Remove(loc);
+                        loc.accessRule = rule.Value;
+                        generationLog.AppendLine($"Applied custom rule to {rule.Key}");
                     }
                     else
                     {
-                        loc.accessRule = rule.Value;
+                        // Impossible locations are removed from state
+                        state.AllLocations.Remove(loc);
+                        generationLog.AppendLine($"Removed impossible location: {rule.Key}");
                     }
                 }
             }
+
+            generationLog.AppendLine("Final location list:");
+            foreach (Location loc in state.AllLocations)
+            {
+                generationLog.AppendLine($"\t{loc.id}");
+            }
+            generationLog.AppendLine();
         }
 
         private void BalanceItems()
         {
+            generationLog.AppendLine("BALANCE ITEMS");
             CurrentStage = GenerationStep.BalancingItems;
             // Manage case where there are not enough locations for the amount of items in pool
             while (state.AllLocations.Count < ItemsToPlace.Count)
@@ -566,6 +584,7 @@ namespace RainWorldRandomizer.Generation
                     ItemsToPlace.Remove(item);
                     UnplacedGates.Add(item.ToString());
                     state.AddGate(item.ToString());
+                    generationLog.AppendLine($"Pre-open gate: {item}");
                     continue;
                 }
 
@@ -595,7 +614,9 @@ namespace RainWorldRandomizer.Generation
                 {
                     // Duplicate a random gate item
                     IEnumerable<Item> gateItems = ItemsToPlace.Where(i => i.type == Item.Type.Gate);
-                    itemsToAdd.Add(gateItems.ElementAt(Random.Range(0, gateItems.Count())));
+                    Item gate = gateItems.ElementAt(Random.Range(0, gateItems.Count()));
+                    itemsToAdd.Add(gate);
+                    generationLog.AppendLine($"Added duplicate gate item: {gate}");
                 }
             }
 
@@ -607,6 +628,7 @@ namespace RainWorldRandomizer.Generation
         
         private void PlaceProgGates()
         {
+            generationLog.AppendLine("PLACE PROGRESSION");
             CurrentStage = GenerationStep.PlacingProgGates;
             // Determine starting region
             if (Options.RandomizeSpawnLocation)
@@ -670,18 +692,61 @@ namespace RainWorldRandomizer.Generation
 
         public static void GenerateCustomRules()
         {
-            RuleOverrides.Add(SlugcatStats.Name.White, new Dictionary<string, AccessRule>());
-            RuleOverrides.Add(SlugcatStats.Name.Yellow, new Dictionary<string, AccessRule>());
-            RuleOverrides.Add(SlugcatStats.Name.Red, new Dictionary<string, AccessRule>());
+            Plugin.Log.LogDebug("Add custom rules");
+
+            SlugcatRuleOverrides.Add(SlugcatStats.Name.White, new Dictionary<string, AccessRule>());
+            SlugcatRuleOverrides.Add(SlugcatStats.Name.Yellow, new Dictionary<string, AccessRule>());
+            SlugcatRuleOverrides.Add(SlugcatStats.Name.Red, new Dictionary<string, AccessRule>());
 
             if (ModManager.MSC)
             {
-                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Gourmand, new Dictionary<string, AccessRule>());
-                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Artificer, new Dictionary<string, AccessRule>());
-                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, new Dictionary<string, AccessRule>());
-                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Spear, new Dictionary<string, AccessRule>());
-                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Saint, new Dictionary<string, AccessRule>());
-                RuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, new Dictionary<string, AccessRule>());
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Gourmand, new Dictionary<string, AccessRule>());
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Artificer, new Dictionary<string, AccessRule>());
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, new Dictionary<string, AccessRule>());
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Spear, new Dictionary<string, AccessRule>());
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Saint, new Dictionary<string, AccessRule>());
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, new Dictionary<string, AccessRule>());
+            }
+
+            // MSC specific rules
+            if (ModManager.MSC)
+            {
+                Plugin.Log.LogDebug("Add MSC rules");
+                // OE isn't filtered out by timeline so it needs a manual rule here
+                GlobalRuleOverrides.Add("Region-OE", new MultiSlugcatAccessRule(new SlugcatStats.Name[]
+                {
+                    SlugcatStats.Name.White,
+                    SlugcatStats.Name.Yellow,
+                    MoreSlugcatsEnums.SlugcatStatsName.Gourmand
+                }));
+                // Outer Expanse requires the Mark for Gourmand
+                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Gourmand].Add("Region-OE", new AccessRule("The_Mark"));
+
+                // if Arty, require drone and mark
+                // else require option
+                GlobalRuleOverrides.Add("Region-LC", new OptionAccessRule("ForceOpenMetropolis"));
+                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Artificer].Add("Region-LC", new CompoundAccessRule(new AccessRule[]
+                {
+                    new AccessRule("The_Mark"),
+                    new AccessRule("IdDrone")
+                }, CompoundAccessRule.CompoundOperation.All));
+
+                // Submerged Superstructure should only be open if playing Riv or setting allows it
+                GlobalRuleOverrides.Add("Region-MS", new CompoundAccessRule(new AccessRule[]
+                {
+                    new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet),
+                    new OptionAccessRule("ForceOpenSubmerged")
+                }, CompoundAccessRule.CompoundOperation.Any));
+
+                // Filtration pearl only reachable from OE
+                GlobalRuleOverrides.Add("Pearl-SU_filt", new CompoundAccessRule(new AccessRule[]
+                {
+                    new RegionAccessRule("OE"),
+                    new RegionAccessRule("SU")
+                }, CompoundAccessRule.CompoundOperation.All));
+
+                // Token cache fails to filter this pearl to only Past GW
+                GlobalRuleOverrides.Add("Pearl-MS", new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore));
             }
         }
 
