@@ -67,7 +67,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void OnMoonUpdate(On.SSOracleBehavior.SSSleepoverBehavior.orig_Update orig, SSOracleBehavior.SSSleepoverBehavior self)
         {
-            if (!(Plugin.RandoManager.IsLocationGiven("Meet_LttM") ?? true))
+            if (!(Plugin.RandoManager.IsLocationGiven("Meet_LttM_Spear") ?? true))
             {
                 self.owner.NewAction(SSOracleBehavior.Action.General_GiveMark);
                 return;
@@ -106,7 +106,7 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate<Func<bool, bool>>(broadcastTagged =>
             {
-                return broadcastTagged || (Plugin.RandoManager.IsLocationGiven("Meet_LttM") ?? false);
+                return broadcastTagged || (Plugin.RandoManager.IsLocationGiven("Meet_LttM_Spear") ?? false);
             });
         }
 
@@ -128,7 +128,7 @@ namespace RainWorldRandomizer
 
                 c.EmitDelegate<Func<bool, bool>>(hasMark =>
                 {
-                    return hasMark || (Plugin.RandoManager.IsLocationGiven("Meet_LttM") ?? false);
+                    return hasMark || (Plugin.RandoManager.IsLocationGiven("Meet_LttM_Spear") ?? false);
                 });
             }
         }
