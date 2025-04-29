@@ -220,6 +220,7 @@ namespace RainWorldRandomizer
                 ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Saint);
             }
 
+            Constants.InitializeConstants();
             CustomRegionCompatability.Init();
         }
 

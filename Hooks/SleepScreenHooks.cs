@@ -1,10 +1,12 @@
 ﻿using Menu;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MoreSlugcats;
 using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -17,13 +19,16 @@ namespace RainWorldRandomizer
             On.WinState.GetNextEndGame += NextPassageToken;
             On.WinState.ConsumeEndGame += ConsumePassageToken;
             On.Menu.EndgameTokens.ctor += OnEndgameTokensCtor;
+            On.Menu.SleepAndDeathScreen.Update += OnSleepAndDeathScreenUpdate;
+            On.Menu.SleepAndDeathScreen.UpdateInfoText += OnSleepAndDeathScreenUpdateInfoText;
+            On.Menu.SleepAndDeathScreen.Singal += OnSleepAndDeathScreenSingal;
             On.Menu.EndgameTokens.Passage += DoPassage;
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool += OnKarmaLadderCtor;
 
             try
             {
                 IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
-                IL.Menu.EndgameTokens.ctor += EngameTokensCtorIL;
+                IL.Menu.EndgameTokens.ctor += EndgameTokensCtorIL;
                 IL.Menu.SleepAndDeathScreen.AddPassageButton += AddPassageButtonIL;
                 IL.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreenGetDataFromGameIL;
             }
@@ -38,11 +43,14 @@ namespace RainWorldRandomizer
             On.WinState.GetNextEndGame -= NextPassageToken;
             On.WinState.ConsumeEndGame -= ConsumePassageToken;
             On.Menu.EndgameTokens.ctor -= OnEndgameTokensCtor;
-            On.Menu.EndgameTokens.Passage += DoPassage;
+            On.Menu.SleepAndDeathScreen.Update -= OnSleepAndDeathScreenUpdate;
+            On.Menu.SleepAndDeathScreen.UpdateInfoText -= OnSleepAndDeathScreenUpdateInfoText;
+            On.Menu.SleepAndDeathScreen.Singal -= OnSleepAndDeathScreenSingal;
+            On.Menu.EndgameTokens.Passage -= DoPassage;
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool -= OnKarmaLadderCtor;
 
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
-            IL.Menu.EndgameTokens.ctor -= EngameTokensCtorIL;
+            IL.Menu.EndgameTokens.ctor -= EndgameTokensCtorIL;
             IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
             IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreenGetDataFromGameIL;
         }
@@ -284,12 +292,34 @@ namespace RainWorldRandomizer
         }
 
         // ----- PASSAGE TOKENS -----
-        
-        // TODO: This currently doesn't have a cleanup. Isn't a huge deal as it's cleared to refresh every sleep screen, but isn't ideal
-        private static List<FakeEndgameToken> passageTokensUI = new List<FakeEndgameToken>();
 
         /// <summary>
-        /// Replace normal passage token list with custom one that contains tokens collected from items rather than tokens from completed passages
+        /// Stores fake passage token UI elements
+        /// </summary>
+        private static ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>> passageTokensUI = new ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>>();
+        
+        // Add a button to SleepAndDeathScreen allowing free passage to the starting shelter
+        private static ConditionalWeakTable<SleepAndDeathScreen, SimpleButton> passageHomeButton = new ConditionalWeakTable<SleepAndDeathScreen, SimpleButton>();
+        public static SimpleButton GetPassageHomeButton(this SleepAndDeathScreen self)
+        {
+            if (passageHomeButton.TryGetValue(self, out SimpleButton button))
+            {
+                return button;
+            }
+            return null;
+        }
+        public static void CreatePassageHomeButton(this SleepAndDeathScreen self)
+        {
+            SimpleButton button = new SimpleButton(self, self.pages[0], self.Translate("RETURN HOME"), "RETURN_HOME",
+                new Vector2(self.LeftHandButtonsPosXAdd, 60f), new Vector2(110f, 30f));
+            passageHomeButton.Add(self, button);
+            self.pages[0].subObjects.Add(button);
+            button.lastPos = button.pos;
+        }
+
+        /// <summary>
+        /// Replace normal passage token list with custom one that contains tokens collected from items rather than tokens from completed passages.
+        /// Also adds the "Passage to Home" button
         /// </summary>
         private static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, EndgameTokens self, Menu.Menu menu, MenuObject owner, Vector2 pos, FContainer container, KarmaLadder ladder)
         {
@@ -304,7 +334,7 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            passageTokensUI = new List<FakeEndgameToken>();
+            List<FakeEndgameToken> fakePassageTokens = new List<FakeEndgameToken>();
             int index = 0;
             foreach (WinState.EndgameID id in Plugin.RandoManager.GetPassageTokensStatus().Keys)
             {
@@ -313,17 +343,87 @@ namespace RainWorldRandomizer
                 if ((Plugin.RandoManager.HasPassageToken(id) ?? false)
                     && (menu as KarmaLadderScreen).winState.GetTracker(id, true).consumed == false)
                 {
-                    passageTokensUI.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
-                    self.subObjects.Add(passageTokensUI.Last());
+                    fakePassageTokens.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
+                    self.subObjects.Add(fakePassageTokens.Last());
                     index++;
                 }
+            }
+            passageTokensUI.Add(self, fakePassageTokens);
+
+            // Skip adding button if Riv in Bitter Aerie
+            SaveState state = (menu as SleepAndDeathScreen).saveState;
+            if (ModManager.MSC 
+                && state.saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Rivulet
+                && state.miscWorldSaveData.moonHeartRestored
+                && !state.deathPersistentSaveData.altEnding)
+            {
+                return;
+            }
+
+            // Add passage to home button
+            (menu as SleepAndDeathScreen).CreatePassageHomeButton();
+        }
+
+        /// <summary>
+        /// Update "Passage to Home" button on menu update
+        /// </summary>
+        private static void OnSleepAndDeathScreenUpdate(On.Menu.SleepAndDeathScreen.orig_Update orig, SleepAndDeathScreen self)
+        {
+            orig(self);
+            SimpleButton button = self.GetPassageHomeButton();
+            if (button != null)
+            {
+                button.buttonBehav.greyedOut = self.ButtonsGreyedOut || self.goalMalnourished;
+                button.black = Mathf.Max(0f, button.black - 0.0125f);
+            }
+        }
+
+        private static string OnSleepAndDeathScreenUpdateInfoText(On.Menu.SleepAndDeathScreen.orig_UpdateInfoText orig, SleepAndDeathScreen self)
+        {
+            string origResult = orig(self);
+
+            if (self.selectedObject is SimpleButton button)
+            {
+                if (button.signalText.Equals("RETURN_HOME"))
+                {
+                    return self.Translate("Fast travel to the shelter you started the campaign in");
+                }
+            }
+
+            return origResult;
+        }
+
+        /// <summary>
+        /// Detect "Passage to Home" button signal and initiate passage
+        /// </summary>
+        private static void OnSleepAndDeathScreenSingal(On.Menu.SleepAndDeathScreen.orig_Singal orig, SleepAndDeathScreen self, MenuObject sender, string message)
+        {
+            orig(self, sender, message);
+
+            if (message != null && message.Equals("RETURN_HOME"))
+            {
+                // Return home
+                self.manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.StartWithFastTravel;
+
+                string customDen = Plugin.RandoManager.customStartDen;
+                if (!Options.RandomizeSpawnLocation || customDen.Equals("NONE"))
+                {
+                    customDen = Constants.SlugcatDefaultStartingDen[self.saveState.saveStateNumber];
+                }
+
+                self.manager.menuSetup.regionSelectRoom = customDen;
+                self.manager.rainWorld.progression.miscProgressionData.menuRegion = Regex.Split(customDen, "_")[0];
+
+                RainWorld.ShelterAfterPassage = self.manager.menuSetup.regionSelectRoom;
+                self.manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
+                self.PlaySound(SoundID.MENU_Passage_Button);
             }
         }
 
         /// <summary>
         /// Make passage button appear if any token items have been found
         /// </summary>
-        private static void EngameTokensCtorIL(ILContext il)
+        private static void EndgameTokensCtorIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
 
@@ -393,11 +493,12 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            for (int i = 0; i < passageTokensUI.Count; i++)
+            List<FakeEndgameToken> fakePassageTokens = passageTokensUI.GetOrCreateValue(self);
+            for (int i = 0; i < fakePassageTokens.Count; i++)
             {
-                if (passageTokensUI[i].id == ID)
+                if (fakePassageTokens[i].id == ID)
                 {
-                    passageTokensUI[i].Activate();
+                    fakePassageTokens[i].Activate();
                     return;
                 }
             }
