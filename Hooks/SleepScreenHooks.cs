@@ -20,6 +20,7 @@ namespace RainWorldRandomizer
             On.WinState.ConsumeEndGame += ConsumePassageToken;
             On.Menu.EndgameTokens.ctor += OnEndgameTokensCtor;
             On.Menu.SleepAndDeathScreen.Update += OnSleepAndDeathScreenUpdate;
+            On.Menu.SleepAndDeathScreen.UpdateInfoText += OnSleepAndDeathScreenUpdateInfoText;
             On.Menu.SleepAndDeathScreen.Singal += OnSleepAndDeathScreenSingal;
             On.Menu.EndgameTokens.Passage += DoPassage;
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool += OnKarmaLadderCtor;
@@ -43,6 +44,7 @@ namespace RainWorldRandomizer
             On.WinState.ConsumeEndGame -= ConsumePassageToken;
             On.Menu.EndgameTokens.ctor -= OnEndgameTokensCtor;
             On.Menu.SleepAndDeathScreen.Update -= OnSleepAndDeathScreenUpdate;
+            On.Menu.SleepAndDeathScreen.UpdateInfoText -= OnSleepAndDeathScreenUpdateInfoText;
             On.Menu.SleepAndDeathScreen.Singal -= OnSleepAndDeathScreenSingal;
             On.Menu.EndgameTokens.Passage -= DoPassage;
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool -= OnKarmaLadderCtor;
@@ -374,6 +376,21 @@ namespace RainWorldRandomizer
                 button.buttonBehav.greyedOut = self.ButtonsGreyedOut || self.goalMalnourished;
                 button.black = Mathf.Max(0f, button.black - 0.0125f);
             }
+        }
+
+        private static string OnSleepAndDeathScreenUpdateInfoText(On.Menu.SleepAndDeathScreen.orig_UpdateInfoText orig, SleepAndDeathScreen self)
+        {
+            string origResult = orig(self);
+
+            if (self.selectedObject is SimpleButton button)
+            {
+                if (button.signalText.Equals("RETURN_HOME"))
+                {
+                    return self.Translate("Fast travel to the shelter you started the campaign in");
+                }
+            }
+
+            return origResult;
         }
 
         /// <summary>
