@@ -12,6 +12,7 @@ namespace RainWorldRandomizer
 {
     [BepInDependency("rwmodding.coreorg.rk", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("franklygd.extendedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("aissurtievos.improvedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
     //[BepInDependency("aissurtievos.improvedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
@@ -22,6 +23,7 @@ namespace RainWorldRandomizer
 
         internal static ManualLogSource Log;
 
+        public bool hasInitialized = false;
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new ArchipelagoConnection();
         public static ManagerBase RandoManager = null;
@@ -136,6 +138,11 @@ namespace RainWorldRandomizer
                 {
                     ExtCollectibleTrackerComptability.ApplyHooks();
                 }
+
+                if (ImprovedCollectibleTrackerCompat.Enabled)
+                {
+                    ImprovedCollectibleTrackerCompat.ApplyHooks();
+                }
             }
             catch (Exception e)
             {
@@ -179,6 +186,8 @@ namespace RainWorldRandomizer
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
+            if (hasInitialized) return;
+
             rainWorld = self;
 
             //try
@@ -222,6 +231,8 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
+
+            hasInitialized = true;
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)

@@ -56,6 +56,9 @@
     <Reference Include="HOOKS-Assembly-CSharp">
       <HintPath>bin\References\HOOKS-Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="ImprovedCollectiblesTracker">
+      <HintPath>bin\References\ImprovedCollectiblesTracker.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>bin\References\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -111,6 +114,7 @@
     <Compile Include="Hooks\SpearmasterCutscenes.cs" />
     <Compile Include="Hooks\IteratorHooks.cs" />
     <Compile Include="Menu\OptionsMenu.cs" />
+    <Compile Include="ModCompat\ImprovedCollectibleTrackerCompat.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="RandomizerEnums.cs" />
     <Compile Include="Hooks\MiscHooks.cs" />
