@@ -2,7 +2,7 @@
 using MonoMod.Cil;
 using MoreSlugcats;
 using System;
-using System.Xml.Schema;
+using System.Reflection;
 
 namespace RainWorldRandomizer
 {
@@ -20,6 +20,7 @@ namespace RainWorldRandomizer
                 IL.Player.Regurgitate += ILRegurgitate;
                 IL.SSOracleBehavior.SSSleepoverBehavior.Update += ILMoonUpdate;
                 IL.SSOracleBehavior.Update += ILSSOracleBehaviorUpdate;
+                IL.SSOracleBehavior.SSOracleMeetPurple.Update += ILSSOracleMeetPurpleUpdate;
             }
             catch (Exception e)
             {
@@ -37,6 +38,7 @@ namespace RainWorldRandomizer
             IL.Player.Regurgitate -= ILRegurgitate;
             IL.SSOracleBehavior.SSSleepoverBehavior.Update -= ILMoonUpdate;
             IL.SSOracleBehavior.Update -= ILSSOracleBehaviorUpdate;
+            IL.SSOracleBehavior.SSOracleMeetPurple.Update -= ILSSOracleMeetPurpleUpdate;
         }
 
         /// <summary>
@@ -107,6 +109,33 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<bool, bool>>(broadcastTagged =>
             {
                 return broadcastTagged || (Plugin.RandoManager.IsLocationGiven("Meet_LttM_Spear") ?? false);
+            });
+        }
+
+        /// <summary>
+        /// Explode the fake pearl along with the overseer
+        /// </summary>
+        public static void ILSSOracleMeetPurpleUpdate(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // After 0B83
+            c.GotoNext(MoveType.After,
+                x => x.MatchLdnull(),
+                x => x.MatchStfld(typeof(SSOracleBehavior.SSOracleMeetPurple).GetField(nameof(SSOracleBehavior.SSOracleMeetPurple.lockedOverseer), 
+                    BindingFlags.NonPublic | BindingFlags.Instance))
+                );
+
+            // Explode the pearl
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate<Action<SSOracleBehavior.SSOracleMeetPurple>>((self) =>
+            {
+                for (int i = 0; i < 20; i++)
+                {
+                    self.oracle.room.AddObject(new Spark(self.MySMcore.firstChunk.pos,
+                        RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, UnityEngine.Color.white, null, 30, 120));
+                }
+                self.MySMcore.Destroy();
             });
         }
 
