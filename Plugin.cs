@@ -23,7 +23,6 @@ namespace RainWorldRandomizer
 
         internal static ManualLogSource Log;
 
-        public bool hasInitialized = false;
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new ArchipelagoConnection();
         public static ManagerBase RandoManager = null;
@@ -78,8 +77,6 @@ namespace RainWorldRandomizer
             { "GATE_OE_SU", false },
             { "GATE_LF_SB", false },
         };
-
-        public static List<SlugcatStats.Name> CompatibleSlugcats = new List<SlugcatStats.Name>();
 
         public enum GateBehavior
         {
@@ -186,8 +183,6 @@ namespace RainWorldRandomizer
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
-            if (hasInitialized) return;
-
             rainWorld = self;
 
             //try
@@ -195,18 +190,6 @@ namespace RainWorldRandomizer
             //    Futile.atlasManager.LoadImage("atlases/rwrandomizer/ColoredSymbolSeedCob");
             //}
             //catch (Exception e) { Logger.LogError(e); }
-
-            CompatibleSlugcats = new List<SlugcatStats.Name>()
-            {
-                SlugcatStats.Name.White,
-                SlugcatStats.Name.Yellow,
-                SlugcatStats.Name.Red,
-                MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
-                MoreSlugcatsEnums.SlugcatStatsName.Artificer,
-                MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
-                MoreSlugcatsEnums.SlugcatStatsName.Spear,
-                MoreSlugcatsEnums.SlugcatStatsName.Saint
-            };
 
             try
             {
@@ -231,8 +214,6 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
-
-            hasInitialized = true;
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)

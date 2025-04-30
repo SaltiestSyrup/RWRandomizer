@@ -44,7 +44,7 @@ namespace RainWorldRandomizer
         {
             base.StartNewGameSession(storyGameCharacter, continueSaved);
 
-            if (!Plugin.CompatibleSlugcats.Contains(storyGameCharacter))
+            if (!Constants.CompatibleSlugcats.Contains(storyGameCharacter))
             {
                 Plugin.Log.LogWarning("Selected incompatible save, disabling randomizer");
                 isRandomizerActive = false;

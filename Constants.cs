@@ -7,72 +7,98 @@ namespace RainWorldRandomizer
 {
     public static class Constants
     {
+        public static readonly List<SlugcatStats.Name> CompatibleSlugcats = new List<SlugcatStats.Name>();
+
         /// <summary>
         /// Describes which food quest items can be eaten by each slugcat. Matches order of <see cref="WinState.GourmandPassageTracker"/>
         /// </summary>
-        public static readonly Dictionary<SlugcatStats.Name, bool[]> SlugcatFoodQuestAccessibility = new Dictionary<SlugcatStats.Name, bool[]>
-        {
-            // SlimeMold, DangleFruit, BatFly, Mushroom, BlackLizard, WaterNut, JellyFish, JetFish, GlowWeed, Salamander, Snail,
-            // Hazer, EggBug, LillyPuck, YellowLizard, GrappleWorm, Neuron, Centiwing, DandelionPeach, CyanLizard, GooieDuck, RedCenti
+        public static readonly Dictionary<SlugcatStats.Name, bool[]> SlugcatFoodQuestAccessibility = new Dictionary<SlugcatStats.Name, bool[]>();
+        // SlimeMold, DangleFruit, BatFly, Mushroom, BlackLizard, WaterNut, JellyFish, JetFish, GlowWeed, Salamander, Snail,
+        // Hazer, EggBug, LillyPuck, YellowLizard, GrappleWorm, Neuron, Centiwing, DandelionPeach, CyanLizard, GooieDuck, RedCenti
 
-            // Centipede, SmallCentipede, VultureGrub, SmallNeedleWorm,
-            // GreenLizard, BlueLizard, PinkLizard, WhiteLizard, RedLizard, SpitLizard, ZoopLizard, TrainLizard,
-            // BigSpider, SpitterSpider, MotherSpider,
-            // Vulture, KingVulture, MirosVulture,
-            // LanternMouse, CicadaA, CicadaB, Yeek, BigNeedleWorm,
-            // DropBug, MirosBird, Scavenger, ScavengerElite,
-            // DaddyLongLegs, BrotherLongLegs, TerrorLongLegs,
-            // PoleMimic, TentaclePlant, BigEel, Inspector
-            { SlugcatStats.Name.White, new bool[] { 
-                true, true, true, true, false, true, true, false, true, false, false, 
-                true, false, true, false, false, true, false, true, false, true, true,
-                true, true, true, true,
-                false, false, false, false, false, false, false, false,
-                false, false, false,
-                false, false, false,
-                false, false, false, false, false,
-                false, false, false, false,
-                false, false, false,
-                false, false, false, false,
-            }},
-            { SlugcatStats.Name.Yellow, new bool[] {
-                true, true, true, true, false, true, true, false, true, false, false,
-                true, false, true, false, false, true, false, true, false, true, true,
-                true, true, true, true,
-                false, false, false, false, false, false, false, false,
-                false, false, false,
-                false, false, false,
-                false, false, false, false, false,
-                false, false, false, false,
-                false, false, false,
-                false, false, false, false
-            }},
-            { SlugcatStats.Name.Red, new bool[] {
-                true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true,
-                true, true, true, true, true, true, true, true,
-                true, true, true,
-                true, true, true,
-                true, true, true, true, true,
-                true, true, true, true,
-                true, true, true,
-                false, false, false, false,
-            }},
-        };
+        // Centipede, SmallCentipede, VultureGrub, SmallNeedleWorm,
+        // GreenLizard, BlueLizard, PinkLizard, WhiteLizard, RedLizard, SpitLizard, ZoopLizard, TrainLizard,
+        // BigSpider, SpitterSpider, MotherSpider,
+        // Vulture, KingVulture, MirosVulture,
+        // LanternMouse, CicadaA, CicadaB, Yeek, BigNeedleWorm,
+        // DropBug, MirosBird, Scavenger, ScavengerElite,
+        // DaddyLongLegs, BrotherLongLegs, TerrorLongLegs,
+        // PoleMimic, TentaclePlant, BigEel, Inspector
 
-        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatDefaultStartingDen = new Dictionary<SlugcatStats.Name, string>()
-        {
-            { SlugcatStats.Name.White, "SU_S01" },
-            { SlugcatStats.Name.Yellow, "SU_S01" },
-            { SlugcatStats.Name.Red, "LF_S02" },
-        };
+        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatDefaultStartingDen = new Dictionary<SlugcatStats.Name, string>();
 
         public static void InitializeConstants()
         {
+            CompatibleSlugcats.Clear();
+            SlugcatFoodQuestAccessibility.Clear();
+            SlugcatDefaultStartingDen.Clear();
+
+            CompatibleSlugcats.AddRange(new List<SlugcatStats.Name>()
+            {
+                SlugcatStats.Name.White,
+                SlugcatStats.Name.Yellow,
+                SlugcatStats.Name.Red,
+            });
+
+            SlugcatFoodQuestAccessibility.AddRange(new Dictionary<SlugcatStats.Name, bool[]>
+            {
+                { SlugcatStats.Name.White, new bool[] {
+                    true, true, true, true, false, true, true, false, true, false, false,
+                    true, false, true, false, false, true, false, true, false, true, true,
+                    true, true, true, true,
+                    false, false, false, false, false, false, false, false,
+                    false, false, false,
+                    false, false, false,
+                    false, false, false, false, false,
+                    false, false, false, false,
+                    false, false, false,
+                    false, false, false, false,
+                }},
+                { SlugcatStats.Name.Yellow, new bool[] {
+                    true, true, true, true, false, true, true, false, true, false, false,
+                    true, false, true, false, false, true, false, true, false, true, true,
+                    true, true, true, true,
+                    false, false, false, false, false, false, false, false,
+                    false, false, false,
+                    false, false, false,
+                    false, false, false, false, false,
+                    false, false, false, false,
+                    false, false, false,
+                    false, false, false, false
+                }},
+                { SlugcatStats.Name.Red, new bool[] {
+                    true, true, true, true, true, true, true, true, true, true, true,
+                    true, true, true, true, true, true, true, true, true, true, true,
+                    true, true, true, true,
+                    true, true, true, true, true, true, true, true,
+                    true, true, true,
+                    true, true, true,
+                    true, true, true, true, true,
+                    true, true, true, true,
+                    true, true, true,
+                    false, false, false, false,
+                }},
+            });
+
+            SlugcatDefaultStartingDen.AddRange(new Dictionary<SlugcatStats.Name, string>
+            {
+                { SlugcatStats.Name.White, "SU_S01" },
+                { SlugcatStats.Name.Yellow, "SU_S01" },
+                { SlugcatStats.Name.Red, "LF_S02" },
+            });
+
             // Add constant entries that require MSC
             if (ModManager.MSC)
             {
+                CompatibleSlugcats.AddRange(new List<SlugcatStats.Name>
+                {
+                    MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
+                    MoreSlugcatsEnums.SlugcatStatsName.Artificer,
+                    MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
+                    MoreSlugcatsEnums.SlugcatStatsName.Spear,
+                    MoreSlugcatsEnums.SlugcatStatsName.Saint
+                });
+
                 SlugcatFoodQuestAccessibility.AddRange(new Dictionary<SlugcatStats.Name, bool[]>
                 {
                     { MoreSlugcatsEnums.SlugcatStatsName.Gourmand, new bool[] {
