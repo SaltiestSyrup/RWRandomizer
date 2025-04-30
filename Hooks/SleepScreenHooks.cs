@@ -1,14 +1,11 @@
 ﻿using Menu;
-using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MoreSlugcats;
 using RWCustom;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -66,57 +63,34 @@ namespace RainWorldRandomizer
         private static void CreateCollectiblesTrackerIL(ILContext il)
         {
             ILCursor c = new ILCursor(il);
-            // Modify all the collectible sprites to read from our data
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld<CollectiblesTracker>(nameof(CollectiblesTracker.collectionData)),
-                x => x.MatchLdfld<CollectiblesTracker.SaveGameData>(nameof(CollectiblesTracker.SaveGameData.unlockedGolds))
+
+            // After label at 0071
+            c.GotoNext(MoveType.After,
+                x => x.MatchNewobj(typeof(List<string>)),
+                x => x.MatchStfld(typeof(CollectiblesTracker.SaveGameData).GetField(nameof(CollectiblesTracker.SaveGameData.regionsVisited)))
                 );
+            c.MoveAfterLabels();
 
-            c.Emit(OpCodes.Pop);
-            c.EmitDelegate<Func<List<MultiplayerUnlocks.LevelUnlockID>>>(() => FoundTokensOfType<MultiplayerUnlocks.LevelUnlockID>().Cast<MultiplayerUnlocks.LevelUnlockID>().ToList());
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldfld, typeof(CollectiblesTracker).GetField(nameof(CollectiblesTracker.collectionData)));
+            // Overwrite mined save data info with our own
+            c.EmitDelegate<Action<CollectiblesTracker.SaveGameData>>((collectionData) =>
+            {
+                collectionData.unlockedGolds = FoundTokensOfType<MultiplayerUnlocks.LevelUnlockID>().Cast<MultiplayerUnlocks.LevelUnlockID>().ToList();
+                collectionData.unlockedBlues = FoundTokensOfType<MultiplayerUnlocks.SandboxUnlockID>().Cast<MultiplayerUnlocks.SandboxUnlockID>().ToList();
+                if (ModManager.MSC)
+                {
+                    collectionData.unlockedGreens = FoundTokensOfType<MultiplayerUnlocks.SlugcatUnlockID>().Cast<MultiplayerUnlocks.SlugcatUnlockID>().ToList();
+                    collectionData.unlockedGreys = FoundTokensOfType<ChatlogData.ChatlogID>().Cast<ChatlogData.ChatlogID>().ToList();
+                    collectionData.unlockedReds = FoundTokensOfType<MultiplayerUnlocks.SafariUnlockID>().Cast<MultiplayerUnlocks.SafariUnlockID>().ToList();
+                }
+            });
 
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld<CollectiblesTracker>(nameof(CollectiblesTracker.collectionData)),
-                x => x.MatchLdfld<CollectiblesTracker.SaveGameData>(nameof(CollectiblesTracker.SaveGameData.unlockedBlues))
-                );
-
-            c.Emit(OpCodes.Pop);
-            c.EmitDelegate<Func<List<MultiplayerUnlocks.SandboxUnlockID>>>(() => FoundTokensOfType<MultiplayerUnlocks.SandboxUnlockID>().Cast<MultiplayerUnlocks.SandboxUnlockID>().ToList());
-
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld<CollectiblesTracker>(nameof(CollectiblesTracker.collectionData)),
-                x => x.MatchLdfld<CollectiblesTracker.SaveGameData>(nameof(CollectiblesTracker.SaveGameData.unlockedGreens))
-                );
-
-            c.Emit(OpCodes.Pop);
-            c.EmitDelegate<Func<List<MultiplayerUnlocks.SlugcatUnlockID>>>(() => FoundTokensOfType<MultiplayerUnlocks.SlugcatUnlockID>().Cast<MultiplayerUnlocks.SlugcatUnlockID>().ToList());
-
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld<CollectiblesTracker>(nameof(CollectiblesTracker.collectionData)),
-                x => x.MatchLdfld<CollectiblesTracker.SaveGameData>(nameof(CollectiblesTracker.SaveGameData.unlockedGreys))
-                );
-
-            c.Emit(OpCodes.Pop);
-            c.EmitDelegate<Func<List<ChatlogData.ChatlogID>>>(() => FoundTokensOfType<ChatlogData.ChatlogID>().Cast<ChatlogData.ChatlogID>().ToList());
-
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld<CollectiblesTracker>(nameof(CollectiblesTracker.collectionData)),
-                x => x.MatchLdfld<CollectiblesTracker.SaveGameData>(nameof(CollectiblesTracker.SaveGameData.unlockedReds))
-                );
-
-            c.Emit(OpCodes.Pop);
-            c.EmitDelegate<Func<List<MultiplayerUnlocks.SafariUnlockID>>>(() => FoundTokensOfType<MultiplayerUnlocks.SafariUnlockID>().Cast<MultiplayerUnlocks.SafariUnlockID>().ToList());
-
+            // After label at 07FA
+            //  The entry into the for loop here is pointed to multiple times,
+            //  all the way up after the "has visited region?" check.
+            //  But we need to move after the label to avoid getting caught in the MSC requirement,
+            //  so the EmitDelegate re-does some checks to compensate.
             c.GotoNext(MoveType.After,
                 x => x.MatchLdfld<RainWorld>(nameof(RainWorld.regionRedTokens)),
                 x => x.MatchLdarg(0),
@@ -127,8 +101,9 @@ namespace RainWorldRandomizer
                 x => x.MatchCallOrCallvirt(out _),
                 x => x.MatchBlt(out _)
                 );
+            c.MoveAfterLabels();
 
-            // Pearl tracker
+            // Pearl and Echo tracker
             // TODO: Figure out why there's an extra pearl displayed in future GW
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldloc_0);
@@ -189,7 +164,13 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void AddPearlsAndEchoesToTracker(CollectiblesTracker self, RainWorld rainWorld, int i, SlugcatStats.Name saveSlot)
         {
-            // Pearls
+            // The position in IL this is placed necessitates a duplicate check for if the region has been visited
+            if (self.collectionData == null || !self.collectionData.regionsVisited.Contains(self.displayRegions[i]))
+            {
+                return;
+            }
+
+            // Find pearls and Echoes to place on tracker
             List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = new List<DataPearl.AbstractDataPearl.DataPearlType>();
             List<GhostWorldPresence.GhostID> foundEchoes = new List<GhostWorldPresence.GhostID>();
             foreach (string loc in Plugin.RandoManager.GetLocations())
@@ -215,6 +196,8 @@ namespace RainWorldRandomizer
                 }
             }
 
+            // Add Pearls
+            // Extended Collectibles Tracker has its own pearl implementation, prefer that one
             if (!ExtCollectibleTrackerComptability.Enabled)
             {
                 for (int j = 0; j < rainWorld.regionDataPearls[self.displayRegions[i]].Count; j++)
@@ -234,6 +217,7 @@ namespace RainWorldRandomizer
                 }
             }
 
+            // Add Echoes
             if (GhostWorldPresence.GetGhostID(self.displayRegions[i].ToUpper()) != GhostWorldPresence.GhostID.NoGhost
                 && World.CheckForRegionGhost(saveSlot, self.displayRegions[i].ToUpper()))
             {
