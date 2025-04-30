@@ -1,59 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
-using System.Security.Permissions;
-using System.Text;
-using System.Threading.Tasks;
-using BepInEx;
-using ImprovedCollectiblesTracker;
+using System.Text.RegularExpressions;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
-using MonoMod.RuntimeDetour.HookGen;
 using MoreSlugcats;
 using UnityEngine;
 
 namespace RainWorldRandomizer
 {
-    
     public class ImprovedCollectibleTrackerCompat
     {
         private static bool? _enabled;
-        private static BaseUnityPlugin pluginInstance;
-        private delegate void orig_CollectiblesTrackerCtorHook(
-            On.MoreSlugcats.CollectiblesTracker.orig_ctor o_orig, 
-            CollectiblesTracker self, 
-            Menu.Menu menu, 
-            Menu.MenuObject owner, 
-            Vector2 pos, 
-            FContainer container, 
-            SlugcatStats.Name saveSlot);
-        private delegate void hook_CollectiblesTrackerCtorHook(
-            orig_CollectiblesTrackerCtorHook orig, 
-            BaseUnityPlugin plugin, 
-            On.MoreSlugcats.CollectiblesTracker.orig_ctor o_orig, 
-            CollectiblesTracker self, 
-            Menu.Menu menu, 
-            Menu.MenuObject owner, 
-            Vector2 pos, 
-            FContainer container, 
-            SlugcatStats.Name saveSlot);
-
-        // pluginInstance doesn't exist before ApplyHooks
-        private static event hook_CollectiblesTrackerCtorHook TrackerCtorHook
-        {
-            add
-            {
-                HookEndpointManager.Add<hook_CollectiblesTrackerCtorHook>(MethodBase.GetMethodFromHandle(
-                    pluginInstance.GetType().GetMethod("CollectiblesTracker_ctor", BindingFlags.NonPublic | BindingFlags.Instance).MethodHandle), value);
-            }
-            remove
-            {
-                HookEndpointManager.Remove<hook_CollectiblesTrackerCtorHook>(MethodBase.GetMethodFromHandle(
-                    pluginInstance.GetType().GetMethod("CollectiblesTracker_ctor", BindingFlags.NonPublic | BindingFlags.Instance).MethodHandle), value);
-            }
-        }
 
         public static bool Enabled
         {
@@ -69,42 +27,85 @@ namespace RainWorldRandomizer
 
         public static void ApplyHooks()
         {
-            pluginInstance = BepInEx.Bootstrap.Chainloader.PluginInfos["aissurtievos.improvedcollectiblestracker"].Instance;
-
-            foreach(var p in pluginInstance.GetType().GetMethod("CollectiblesTracker_ctor", BindingFlags.NonPublic | BindingFlags.Instance).GetParameters())
+            try
             {
-                Plugin.Log.LogDebug(p);
+                _ = new ILHook(typeof(ImprovedCollectiblesTracker.Plugin).GetMethod(nameof(ImprovedCollectiblesTracker.Plugin.GenerateRegionTokens)), GenerateRegionTokensIL);
             }
-            Plugin.Log.LogDebug("\n");
-            //Plugin.Log.LogDebug(pluginInstance.GetType().GetMethod("CollectiblesTracker_ctor", BindingFlags.NonPublic | BindingFlags.Instance).GetParameters());
-
-            foreach (var p in typeof(ImprovedCollectibleTrackerCompat).GetMethod(nameof(OnCollectiblesTracker_ctor), BindingFlags.NonPublic | BindingFlags.Static).GetParameters())
+            catch (Exception e)
             {
-                Plugin.Log.LogDebug(p);
+                Plugin.Log.LogError(e);
             }
-
-            Plugin.Log.LogDebug(pluginInstance.GetType().GetNestedType("<>c__DisplayClass18_2"));
-            Plugin.Log.LogDebug(pluginInstance.GetType().GetNestedType("<>c__DisplayClass18_2")?.GetMethod("<CollectiblesTracker_ctor>b__5"));
-
-            //_ = new ILHook(pluginInstance.GetType().GetNestedType("<>c__DisplayClass18_2").GetMethod("<CollectiblesTracker_ctor>b__5"), ILDelegateb__5);
-
-            //TrackerCtorHook += OnCollectiblesTracker_ctor;
-
-            //_ = new Hook(pluginInstance.GetType().GetMethod("CollectiblesTracker_ctor", BindingFlags.NonPublic | BindingFlags.Instance),
-            //    typeof(ImprovedCollectibleTrackerCompat).GetMethod(nameof(OnCollectiblesTracker_ctor), BindingFlags.NonPublic | BindingFlags.Static));
         }
 
-        private static void ILDelegateb__5(ILContext il)
+        /// <summary>
+        /// Add Pearls and Echoes to Improved Collectibles Tracker
+        /// </summary>
+        private static void GenerateRegionTokensIL(ILContext il)
         {
-            Plugin.Log.LogDebug("IL HOOK!!!!");
+            ILCursor c = new ILCursor(il);
+
+            // After label at 004A
+            c.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(ImprovedCollectiblesTracker.Plugin).GetMethod(nameof(ImprovedCollectiblesTracker.Plugin.PopulateRedTokens)))
+                );
+            c.MoveAfterLabels();
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldarg_2);
+            c.Emit(OpCodes.Ldarg, 4);
+            c.Emit(OpCodes.Ldarg_3);
+            c.EmitDelegate<Action<CollectiblesTracker, SlugcatStats.Name, RainWorld, string>>(AddPearlsAndEchoesToTracker);
         }
 
-        private static void OnCollectiblesTracker_ctor(orig_CollectiblesTrackerCtorHook orig, BaseUnityPlugin plugin,
-            On.MoreSlugcats.CollectiblesTracker.orig_ctor o_orig, CollectiblesTracker self, Menu.Menu menu, Menu.MenuObject owner, Vector2 pos, FContainer container, SlugcatStats.Name saveSlot)
+        private static void AddPearlsAndEchoesToTracker(CollectiblesTracker self, SlugcatStats.Name saveSlot, RainWorld rainWorld, string region)
         {
-            orig(o_orig, self, menu, owner, pos, container, saveSlot);
-            //o_orig(self, menu, owner, pos, container, saveSlot);
-            Plugin.Log.LogDebug("Success!!!");
+            // Find pearls and Echoes to place on tracker
+            List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = new List<DataPearl.AbstractDataPearl.DataPearlType>();
+            List<GhostWorldPresence.GhostID> foundEchoes = new List<GhostWorldPresence.GhostID>();
+            foreach (string loc in Plugin.RandoManager.GetLocations())
+            {
+                if (loc.StartsWith("Pearl-"))
+                {
+                    // Trim region suffix if present
+                    string[] split = Regex.Split(loc, "-");
+                    string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
+
+                    if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), trimmedLoc.Substring(6), false, out ExtEnumBase value)
+                        && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                    {
+                        foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
+                    }
+                }
+
+                if (loc.StartsWith("Echo-")
+                    && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), loc.Substring(5), false, out ExtEnumBase value1)
+                    && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                {
+                    foundEchoes.Add((GhostWorldPresence.GhostID)value1);
+                }
+            }
+
+            // Add Pearls
+            for (int j = 0; j < rainWorld.regionDataPearls[region].Count; j++)
+            {
+                if (rainWorld.regionDataPearlsAccessibility[region][j].Contains(saveSlot))
+                {
+                    self.sprites[region].Add(new FSprite(foundPearls.Contains(rainWorld.regionDataPearls[region][j]) ? "ctOn" : "ctOff", true)
+                    {
+                        color = Color.white
+                    });
+                }
+            }
+
+            // Add Echoes
+            if (GhostWorldPresence.GetGhostID(region.ToUpper()) != GhostWorldPresence.GhostID.NoGhost
+                && World.CheckForRegionGhost(saveSlot, region.ToUpper()))
+            {
+                self.sprites[region].Add(new FSprite(foundEchoes.Contains(GhostWorldPresence.GetGhostID(region.ToUpper())) ? "ctOn" : "ctOff", true)
+                {
+                    color = RainWorld.SaturatedGold
+                });
+            }
         }
     }
 }
