@@ -277,9 +277,9 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Singleton.DisplayLegacyNotification(true);
                 }
-                else if (HudExtension.chatLog != null)
+                else if (HudExtension.CurrentChatLog != null)
                 {
-                    HudExtension.chatLog?.AddMessage(Plugin.Singleton.notifQueueAP.Dequeue());
+                    HudExtension.CurrentChatLog?.AddMessage(Plugin.Singleton.notifQueueAP.Dequeue());
                 }
             }
             // Display plain text messages last, as they tend to be more important
@@ -293,9 +293,9 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Singleton.DisplayLegacyNotification(false);
                 }
-                else if (HudExtension.chatLog != null)
+                else if (HudExtension.CurrentChatLog != null)
                 {
-                    HudExtension.chatLog?.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
+                    HudExtension.CurrentChatLog?.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
                     /*
                     // If there are several messages waiting, move through them quicker
                     bool hurry = Plugin.Singleton.notifQueue.Count > 3;
