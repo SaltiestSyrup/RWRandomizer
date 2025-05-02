@@ -393,8 +393,7 @@ namespace RainWorldRandomizer
                     case "White":
                     case "Yellow":
                     case "Gourmand":
-                    case "Spear":
-                        randomizerKey.Add("Meet_LttM_Spear", null);
+                        randomizerKey.Add("Meet_LttM", null);
                         randomizerKey.Add("Meet_FP", null);
                         break;
                     case "Red":
@@ -407,6 +406,10 @@ namespace RainWorldRandomizer
                     case "Rivulet":
                         randomizerKey.Add("Meet_LttM", null);
                         if (Options.UseEnergyCell) randomizerKey.Add("Kill_FP", null);
+                        break;
+                    case "Spear":
+                        randomizerKey.Add("Meet_LttM_Spear", null);
+                        randomizerKey.Add("Meet_FP", null);
                         break;
                     case "Saint":
                         randomizerKey.Add("Ascend_LttM", null);
