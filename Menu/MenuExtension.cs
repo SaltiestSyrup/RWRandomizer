@@ -457,7 +457,7 @@ namespace RainWorldRandomizer
                     }
                     if (Scug != "Saint")
                     {
-                        connectors["GATE_SL_UW"] = new Connector(nodes["SL"].TopLeft, nodes["UW"].BottomRight);
+                        connectors["GATE_UW_SL"] = new Connector(nodes["SL"].TopLeft, nodes["UW"].BottomRight);
                     }
                     if (Scug == "White" || Scug == "Yellow" || Scug == "Gourmand")
                     {
