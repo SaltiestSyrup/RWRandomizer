@@ -481,7 +481,7 @@ namespace RainWorldRandomizer
         private static bool YesItIsMeGourmand(bool prev) => Options.UseFoodQuest || prev;
 
         /// <summary>
-        /// Allow Spearmaster to eat mushrooms for the food quest.
+        /// Allow Spearmaster to eat mushrooms for the food quest, and detect spearing a neuron for Eat Neuron check
         /// </summary>
         private static void SpearmasterMushroomAddEat(ILContext il)
         {
@@ -502,6 +502,16 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldarg_1);
             c.EmitDelegate<Action<Spear, PhysicalObject>>(Delegate);
+
+            // Detect spearing neuron for Eat_Neuron check
+            c.GotoNext(x => x.MatchIsinst<OracleSwarmer>());
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate<Action<Spear>>((self) =>
+            {
+                IteratorHooks.EatenNeuron(self.thrownBy as Player);
+            });
         }
 
         /// <summary>
