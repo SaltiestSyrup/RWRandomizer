@@ -450,7 +450,12 @@ namespace RainWorldRandomizer
                     connectors["GATE_SL_VS"] = Connector.Wrapping(nodes["VS"].Left, new Vector2(-30f, 0f), nodes["SL"].Right, new Vector2(30f, 0f));
 
                     if (Scug == "Artificer") connectors["GATE_UW_LC"] = new Connector(nodes["UW"].Top, nodes["LC"].Bottom);
-                    if (Scug != "Artificer")
+                    if (Scug == "Spear")
+                    {
+                        connectors["GATE_DM_SL"] = new Connector(nodes["SL"].TopRight, nodes["MS"].Bottom);
+                        connectors["GATE_SL_DM"] = new Connector(nodes["SL"].Top, nodes["MS"].BottomLeft);
+                    }
+                    if (Scug != "Artificer" && Scug != "Spear")
                     {
                         connectors["GATE_MS_SL"] = new Connector(nodes["SL"].TopRight, nodes["MS"].Bottom);
                         connectors["GATE_SL_MS"] = new Connector(nodes["SL"].Top, nodes["MS"].BottomLeft);
