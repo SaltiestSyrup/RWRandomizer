@@ -303,7 +303,8 @@ namespace RainWorldRandomizer
             }
 
             // Add passage to home button
-            (menu as SleepAndDeathScreen).CreatePassageHomeButton();
+            // TODO: Fix Return Home to not reset save file aspects (why does it do that)
+            //(menu as SleepAndDeathScreen).CreatePassageHomeButton();
         }
 
         /// <summary>
