@@ -261,12 +261,13 @@ namespace RainWorldRandomizer
                     HandleItemsPacket(itemPacket);
                     return;
                 }
-
+                /*
                 if (packet is BouncedPacket bouncedPacket)
                 {
                     string data = bouncedPacket.Data.TryGetValue($"RW_{playerName}_room", out JToken v) ? v.ToObject<string>() : "INVALID_KEY";
                     Plugin.Log.LogDebug($"Got Bounced packet for room {data}");
                 }
+                */
             }
             catch (Exception e)
             {
@@ -570,11 +571,10 @@ namespace RainWorldRandomizer
             Session.Socket.SendPacketAsync(new BouncePacket()
             {
                 Games = new List<string> { GAME_NAME },
+                Tags = new List<string> { "Tracker" },
+                Slots = new List<int> { Session.Players.ActivePlayer.Slot },
                 Data = new Dictionary<string, JToken> { { dataKey, JToken.FromObject(info) } }
             });
-
-            // Set the datastorage key
-            Session.DataStorage[dataKey] = info;
 
             Plugin.Log.LogDebug($"Sent packet for room {info}");
         }
