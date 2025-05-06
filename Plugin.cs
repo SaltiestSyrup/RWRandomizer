@@ -13,13 +13,12 @@ namespace RainWorldRandomizer
     [BepInDependency("rwmodding.coreorg.rk", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("franklygd.extendedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("aissurtievos.improvedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
-    //[BepInDependency("aissurtievos.improvedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.2.5";
+        public const string PLUGIN_VERSION = "1.2.6";
 
         internal static ManualLogSource Log;
 
