@@ -73,6 +73,7 @@ namespace RainWorldRandomizer
                     }
                     catch (Exception e)
                     {
+                        Plugin.Singleton.notifQueue.Enqueue("Failed to start randomizer game. More details found in BepInEx/LogOutput.log");
                         Plugin.Log.LogError("Encountered exception while starting game session");
                         Plugin.Log.LogError(e);
                     }
