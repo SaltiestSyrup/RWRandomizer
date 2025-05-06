@@ -1,20 +1,13 @@
-﻿using BepInEx;
-using BepInEx.Logging;
-using Mono.Cecil;
+﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
-using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 using RWCustom;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -163,53 +156,22 @@ namespace RainWorldRandomizer
         /// </summary>
         public void ILRoomLoaded(ILContext il)
         {
-            bool DoTokenOverride(Room room, int index)
-            {
-                CollectToken.CollectTokenData data = room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData;
-                string tokenString = data.tokenString;
-
-                if (data.isRed
-                    && data.SafariUnlock != null)
-                {
-                    tokenString = $"S-{tokenString}";
-                }
-                else if (!data.isBlue
-                    && data.LevelUnlock != null)
-                {
-                    tokenString = $"L-{tokenString}";
-                }
-                else if (Plugin.RandoManager is ManagerArchipelago)
-                {
-                    // Add region acronym to location name if using AP
-                    tokenString = $"{tokenString}-{room.abstractRoom.name.Substring(0, 2)}";
-                }
-
-                tokenString = $"Token-{tokenString}";
-                
-                if (!(Plugin.RandoManager.IsLocationGiven(tokenString) ?? true))
-                {
-                    return false;
-                }
-
-                return true;
-            }
-
             ILCursor c = new ILCursor(il);
+            
+            // Fetch the local variable index of "num11", which represents the index within placedObjects the loop is processing
+            int localVarIndex = -1;
+            c.GotoNext(
+                x => x.MatchLdfld(typeof(RoomSettings).GetField(nameof(RoomSettings.placedObjects))),
+                x => x.MatchLdloc(out localVarIndex)
+                );
+
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
                     .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), new Type[] { typeof(string), typeof(bool) }))
                 );
 
-            c.Index -= 6;
-            object localVarIndex = c.Next.Operand;
-            c.Index += 6;
-
-            c.Emit(OpCodes.Brfalse, c.Next.Next);
-
-            c.Emit(OpCodes.Ldarg_0);
-            c.Emit(OpCodes.Ldloc_S, localVarIndex);
-            c.EmitDelegate((Func<Room, int, bool>)DoTokenOverride);
+            InjectHasTokenCheck();
 
             c.GotoNext(
                 MoveType.After,
@@ -217,11 +179,20 @@ namespace RainWorldRandomizer
                     .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), new Type[] { typeof(MultiplayerUnlocks.SlugcatUnlockID) }))
                 );
 
-            c.Emit(OpCodes.Brfalse, c.Next.Next);
+            InjectHasTokenCheck();
+
+            // broadcasts
+            ILLabel broadcastJump = null;
+            c.GotoNext(x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.chatlogsRead))));
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchBrfalse(out broadcastJump)
+                );
 
             c.Emit(OpCodes.Ldarg_0);
-            c.Emit(OpCodes.Ldloc_S, localVarIndex);
-            c.EmitDelegate((Func<Room, int, bool>)DoTokenOverride);
+            c.Emit(OpCodes.Ldloc, localVarIndex);
+            c.EmitDelegate((Func<Room, int, bool>)AlreadyHasToken);
+            c.Emit(OpCodes.Brfalse, broadcastJump);
 
             c.GotoNext(
                 MoveType.After,
@@ -229,11 +200,47 @@ namespace RainWorldRandomizer
                     .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), new Type[] { typeof(MultiplayerUnlocks.SafariUnlockID) }))
                 );
 
-            c.Emit(OpCodes.Brfalse, c.Next.Next);
+            InjectHasTokenCheck();
 
-            c.Emit(OpCodes.Ldarg_0);
-            c.Emit(OpCodes.Ldloc_S, localVarIndex);
-            c.EmitDelegate((Func<Room, int, bool>)DoTokenOverride);
+            void InjectHasTokenCheck()
+            {
+                c.Emit(OpCodes.Brfalse, c.Next.Next);
+
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Ldloc, localVarIndex);
+                c.EmitDelegate((Func<Room, int, bool>)AlreadyHasToken);
+            }
+        }
+
+        private bool AlreadyHasToken(Room room, int index)
+        {
+            CollectToken.CollectTokenData data = room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData;
+            string tokenString = data.tokenString;
+
+            if (data.isRed && data.SafariUnlock != null)
+            {
+                tokenString = $"S-{tokenString}";
+            }
+            else if (!data.isBlue && data.LevelUnlock != null)
+            {
+                tokenString = $"L-{tokenString}";
+            }
+            else if (Plugin.RandoManager is ManagerArchipelago)
+            {
+                // Add region acronym to location name if using AP
+                tokenString = $"{tokenString}-{room.abstractRoom.name.Substring(0, 2)}";
+            }
+
+            if (data.isWhite && data.ChatlogCollect != null)
+            {
+                tokenString = $"Broadcast-{tokenString}";
+            }
+            else
+            {
+                tokenString = $"Token-{tokenString}";
+            }
+
+            return Plugin.RandoManager.IsLocationGiven(tokenString) ?? true;
         }
 
         /// <summary>
