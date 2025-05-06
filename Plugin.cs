@@ -365,7 +365,7 @@ namespace RainWorldRandomizer
             bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
             RegionGate.GateRequirement[] newRequirements = 
                 defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v) 
-                ? v : new RegionGate.GateRequirement[2] {
+                ? (RegionGate.GateRequirement[])v.Clone() : new RegionGate.GateRequirement[2] {
                     RegionGate.GateRequirement.OneKarma, 
                     RegionGate.GateRequirement.OneKarma
                 };
