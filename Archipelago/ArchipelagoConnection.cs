@@ -7,6 +7,7 @@ using Archipelago.MultiClient.Net.MessageLog.Messages;
 using Archipelago.MultiClient.Net.Models;
 using Archipelago.MultiClient.Net.Packets;
 using MoreSlugcats;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -260,6 +261,13 @@ namespace RainWorldRandomizer
                     HandleItemsPacket(itemPacket);
                     return;
                 }
+                /*
+                if (packet is BouncedPacket bouncedPacket)
+                {
+                    string data = bouncedPacket.Data.TryGetValue($"RW_{playerName}_room", out JToken v) ? v.ToObject<string>() : "INVALID_KEY";
+                    Plugin.Log.LogDebug($"Got Bounced packet for room {data}");
+                }
+                */
             }
             catch (Exception e)
             {
@@ -552,6 +560,23 @@ namespace RainWorldRandomizer
             {
                 (Plugin.RandoManager as ManagerArchipelago).AquireItem(Session.Items.GetItemName(newInventory.Items[i].Item));
             }
+        }
+
+        public static void TrySendCurrentRoomPacket(string info)
+        {
+            if (!(Session?.Socket.Connected ?? false)) return;
+            string dataKey = $"RW_{playerName}_room";
+            
+            // Send a bounce packet
+            Session.Socket.SendPacketAsync(new BouncePacket()
+            {
+                Games = new List<string> { GAME_NAME },
+                Tags = new List<string> { "Tracker" },
+                Slots = new List<int> { Session.Players.ActivePlayer.Slot },
+                Data = new Dictionary<string, JToken> { { dataKey, JToken.FromObject(info) } }
+            });
+
+            Plugin.Log.LogDebug($"Sent packet for room {info}");
         }
 
         private static void MessageReceived(LogMessage message)
