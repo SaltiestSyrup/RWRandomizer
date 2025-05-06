@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -18,18 +15,15 @@ namespace RainWorldRandomizer
         private class Trap
         {
             public string id;
-            public float duration;
-            private readonly Action<RainWorldGame> onActivate = (game) => { };
-            private readonly Action<RainWorldGame> onUpdate = (game) => { };
-            private readonly Action<RainWorldGame> onDeactivate = (game) => { };
+            public TrapDefinition definition;
+            public int timer;
 
             public Trap(string id)
             {
                 this.id = id;
-
-                if (trapActions.ContainsKey(id))
+                if (trapDefinitions.ContainsKey(id))
                 {
-                    onActivate += trapActions[id];
+                    definition = trapDefinitions[id];
                 }
                 else
                 {
@@ -41,46 +35,104 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogDebug($"Trap Triggered! ({id})");
                 Plugin.Singleton.notifQueue.Enqueue($"Trap Triggered! ({id})");
-                onActivate(game);
+                definition.onTrigger(game);
+                timer = definition.duration;
 
-                if (duration > 0f)
-                {
-                    // No duration traps yet
-                }
+                if (definition.duration > 0) activeTraps.Add(this);
+            }
+
+            public void Update(RainWorldGame game)
+            {
+                definition.onUpdate(game);
+
+                if (definition.duration <= 0f) return;
+
+                if (timer > 0f) timer--;
+                else Deactivate(game);
+            }
+
+            public void Deactivate(RainWorldGame game)
+            {
+                definition.onDeactivate(game);
+                activeTraps.Remove(this);
+            }
+            public void NewRoom(RainWorldGame game) => definition.onNewRoom(game);
+        }
+
+        public readonly struct TrapDefinition
+        {
+            /// <summary>
+            /// How many game ticks (40/s) the effect should last. 0 for single activation traps
+            /// </summary>
+            public readonly int duration;
+            /// <summary>
+            /// Action called when the trap first triggers
+            /// </summary>
+            public readonly Action<RainWorldGame> onTrigger;
+            /// <summary>
+            /// Action called every update while active
+            /// </summary>
+            public readonly Action<RainWorldGame> onUpdate;
+            /// <summary>
+            /// Action called when the duration expires. Trap is deleted right after
+            /// </summary>
+            public readonly Action<RainWorldGame> onDeactivate;
+            /// <summary>
+            /// Action called when a player enters a new room. Useful for room-only effects that need re-triggering
+            /// </summary>
+            public readonly Action<RainWorldGame> onNewRoom;
+
+            public TrapDefinition(Action<RainWorldGame> TriggerAction, Action<RainWorldGame> DisableAction = null,
+                Action<RainWorldGame> UpdateAction = null, Action<RainWorldGame> NewRoomAction = null, int duration = 0)
+            {
+                onTrigger = TriggerAction;
+                onDeactivate = DisableAction ?? ((game) => { });
+                onUpdate = UpdateAction ?? ((game) => { });
+                onNewRoom = NewRoomAction ?? ((game) => { });
+                this.duration = duration;
             }
         }
 
-        private static readonly Dictionary<string, Action<RainWorldGame>> trapActions = new Dictionary<string, Action<RainWorldGame>>()
+        private static readonly Dictionary<string, TrapDefinition> trapDefinitions = new Dictionary<string, TrapDefinition>()
         {
-            { "Stun", TrapStun },
-            { "Timer", game => { TrapCycleTimer(game); } },
-            { "Zoomies", TrapZoomiesPlayer },
-            { "Flood", game => { throw new NotImplementedException("Trap not implemented yet"); } },
-            { "Rain", game => { throw new NotImplementedException("Trap not implemented yet"); } },
-            { "Gravity", game => { throw new NotImplementedException("Trap not implemented yet"); } },
-            { "Fog", game => { throw new NotImplementedException("Trap not implemented yet"); } },
-            { "KillSquad", game => { throw new NotImplementedException("Trap not implemented yet"); } },
-            { "Alarm", TrapAlarm },
+            { "Stun", new TrapDefinition(TrapStun) },
+            { "Timer", new TrapDefinition(game => { TrapCycleTimer(game); }) },
+            { "Zoomies", new TrapDefinition(TrapZoomiesPlayer, TrapDisableZoomies, null, TrapZoomiesPlayer, 1200) },
+            //{ "Flood", game => { throw new NotImplementedException("Trap not implemented yet"); } },
+            //{ "Rain", game => { throw new NotImplementedException("Trap not implemented yet"); } },
+            //{ "Gravity", game => { throw new NotImplementedException("Trap not implemented yet"); } },
+            //{ "Fog", game => { throw new NotImplementedException("Trap not implemented yet"); } },
+            //{ "KillSquad", game => { throw new NotImplementedException("Trap not implemented yet"); } },
+            { "Alarm", new TrapDefinition(TrapAlarm) },
 
-            { "RedLizard", game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); } },
-            { "RedCentipede", game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedCentipede); } },
-            { "SpitterSpider", game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider); } },
-            { "BrotherLongLegs", game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.BrotherLongLegs); } },
-            { "DaddyLongLegs", game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.DaddyLongLegs); } },
+            { "RedLizard", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); }) },
+            { "RedCentipede", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedCentipede); }) },
+            { "SpitterSpider", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider); }) },
+            { "BrotherLongLegs", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.BrotherLongLegs); }) },
+            { "DaddyLongLegs", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.DaddyLongLegs); }) },
         };
 
         private static int currentCooldown = 0;
         // TODO: Save pending traps like we do items
+        /// <summary>
+        /// Traps waiting to be activated
+        /// </summary>
         private static Queue<Trap> pendingTrapQueue = new Queue<Trap>();
+        /// <summary>
+        /// Traps with a duration that are currently active
+        /// </summary>
+        private static HashSet<Trap> activeTraps = new HashSet<Trap>();
 
         public static void ApplyHooks()
         {
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
+            On.Player.NewRoom += OnPlayerNewRoom;
         }
 
         public static void RemoveHooks()
         {
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
+            On.Player.NewRoom -= OnPlayerNewRoom;
         }
 
         public static void EnqueueTrap(string itemId)
@@ -106,6 +158,11 @@ namespace RainWorldRandomizer
                 currentCooldown--;
             }
 
+            foreach (Trap trap in activeTraps)
+            {
+                trap.Update(self);
+            }
+
             if (pendingTrapQueue.Count == 0) return;
             
             if (currentCooldown == 0)
@@ -123,6 +180,18 @@ namespace RainWorldRandomizer
                 pendingTrapQueue.Dequeue().Activate(self);
                 
                 ResetCooldown();
+            }
+        }
+
+        public static void OnPlayerNewRoom(On.Player.orig_NewRoom orig, Player self, Room newRoom)
+        {
+            orig(self, newRoom);
+            if (self == newRoom.game.FirstAlivePlayer?.realizedCreature)
+            {
+                foreach (Trap trap in activeTraps)
+                {
+                    trap.NewRoom(newRoom.game);
+                }
             }
         }
 
@@ -145,6 +214,18 @@ namespace RainWorldRandomizer
         {
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
             player.room.updateList.Add(player);
+        }
+
+        private static void TrapDisableZoomies(this RainWorldGame game)
+        {
+            Player player = game.FirstAlivePlayer?.realizedCreature as Player;
+            int sumUpdates = player.room.updateList.Count((c) => c == player);
+
+            // Safety check to ensure we never completely remove player from updateList
+            if (sumUpdates > 1)
+            {
+                player.room.updateList.Remove(player);
+            }
         }
 
         /// <summary>Spawns the desired creature in an adjacent room</summary>
