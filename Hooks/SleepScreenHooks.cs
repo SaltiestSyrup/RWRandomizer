@@ -303,8 +303,7 @@ namespace RainWorldRandomizer
             }
 
             // Add passage to home button
-            // TODO: Fix Return Home to not reset save file aspects (why does it do that)
-            //(menu as SleepAndDeathScreen).CreatePassageHomeButton();
+            (menu as SleepAndDeathScreen).CreatePassageHomeButton();
         }
 
         /// <summary>
@@ -345,19 +344,23 @@ namespace RainWorldRandomizer
 
             if (message != null && message.Equals("RETURN_HOME"))
             {
-                // Return home
-                self.manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.StartWithFastTravel;
+                // Set startup condition
+                self.manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.FastTravel;
 
+                // Find den to travel to
                 string customDen = Plugin.RandoManager.customStartDen;
                 if (!Options.RandomizeSpawnLocation || customDen.Equals("NONE"))
                 {
                     customDen = Constants.SlugcatDefaultStartingDen[self.saveState.saveStateNumber];
                 }
 
+                // Set required fields to ensure proper transition
                 self.manager.menuSetup.regionSelectRoom = customDen;
                 self.manager.rainWorld.progression.miscProgressionData.menuRegion = Regex.Split(customDen, "_")[0];
-
+                RainWorld.ShelterBeforePassage = self.manager.rainWorld.progression.ShelterOfSaveGame(self.saveState.saveStateNumber);
                 RainWorld.ShelterAfterPassage = self.manager.menuSetup.regionSelectRoom;
+                
+                // Initiate proccess switch
                 self.manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
                 self.PlaySound(SoundID.MENU_Passage_Button);
             }
