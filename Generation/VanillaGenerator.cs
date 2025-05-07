@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -37,9 +38,7 @@ namespace RainWorldRandomizer.Generation
             NotStarted,
             InitializingState,
             BalancingItems,
-            PlacingProgGates,
-            PlacingOtherProg,
-            PlacingFillerGates,
+            PlacingProg,
             PlacingFiller,
             Complete,
             FailedGen
@@ -125,6 +124,7 @@ namespace RainWorldRandomizer.Generation
             ApplyRuleOverrides();
             BalanceItems();
             PlaceProgression();
+            PlaceFiller();
         }
 
         private void InitializeState()
@@ -342,7 +342,7 @@ namespace RainWorldRandomizer.Generation
                         case "Scholar":
                             List<AccessRule> rules = new List<AccessRule>()
                             {
-                                new AccessRule("The Mark"),
+                                new AccessRule("The_Mark"),
                                 new CompoundAccessRule(AccessRuleConstants.Regions, 
                                     CompoundAccessRule.CompoundOperation.AtLeast, 3)
                             };
@@ -646,8 +646,7 @@ namespace RainWorldRandomizer.Generation
             // Continue until all regions are accessible
             // Note that a region is considered "accessible" by state regardless of
             // if there is some other rule blocking access to checks in that region
-            bool progLeftToPlace = true;
-            while (state.Regions.Count != AllRegions.Count || progLeftToPlace)
+            while (state.Regions.Count != AllRegions.Count)
             {
                 // All gates adjacent to exactly one of the currently accessible regions
                 // Additionally includes other progression to spread them throughout play
@@ -682,13 +681,6 @@ namespace RainWorldRandomizer.Generation
                 // Check if we have failed
                 if (state.AvailableLocations.Count == 0 || placeableProg.Count == 0)
                 {
-                    // If we're already done then just exit
-                    if (state.Regions.Count == AllRegions.Count)
-                    {
-                        progLeftToPlace = false;
-                        continue;
-                    }
-
                     generationLog.AppendLine($"ERROR: Ran out of " +
                         $"{(placeableProg.Count == 0 ? "placeable progression" : "possible locations")}.");
 
@@ -715,9 +707,74 @@ namespace RainWorldRandomizer.Generation
                     state.AddOtherProgItem(chosenItem.id);
                 }
 
-                progLeftToPlace = placeableGates.Count + placeableOtherProg.Count > 1;
                 ItemsToPlace.Remove(chosenItem);
                 generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.id}");
+            }
+
+            generationLog.AppendLine("PROGRESSION STEP 2");
+
+            // Place the remaining progression items indiscriminately
+            int progLeftToPlace;
+            do
+            {
+                List<Item> placeableProg = ItemsToPlace.Where((i) =>
+                {
+                    return i.importance == Item.Importance.Progression;
+                }).ToList();
+
+                // Detect possible failure
+                if (state.AvailableLocations.Count == 0)
+                {
+                    generationLog.AppendLine($"ERROR: Ran out of possible locations");
+
+                    generationLog.AppendLine("Failed to aquire access to:");
+                    foreach (Location loc in state.UnreachedLocations)
+                    {
+                        generationLog.AppendLine($"\t{loc.id}");
+                    }
+                    CurrentStage = GenerationStep.FailedGen;
+                    throw new GenerationFailureException();
+                }
+
+                Location chosenLocation = state.PopRandomLocation();
+                Item chosenItem = placeableProg[Random.Range(0, placeableProg.Count)];
+                RandomizedGame.Add(chosenLocation, chosenItem);
+
+                if (chosenItem.type == Item.Type.Gate) state.AddGate(chosenItem.id);
+                else state.AddOtherProgItem(chosenItem.id);
+
+                progLeftToPlace = placeableProg.Count - 1;
+                ItemsToPlace.Remove(chosenItem);
+                generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.id}");
+            }
+            while (progLeftToPlace > 0);
+
+            if (state.UnreachedLocations.Count > 0)
+            {
+                generationLog.AppendLine($"ERROR: Progression step ended with impossible locations");
+                generationLog.AppendLine("Failed to aquire access to:");
+                foreach (Location loc in state.UnreachedLocations)
+                {
+                    generationLog.AppendLine($"\t{loc.id}");
+                }
+                // TODO: Re-enable this failure state
+                //CurrentStage = GenerationStep.FailedGen;
+                //throw new GenerationFailureException();
+            }
+        }
+
+        private void PlaceFiller()
+        {
+            // It is assumed there is no more progression in the pool
+            // State should have full access by this point
+            generationLog.AppendLine("PLACE FILLER");
+
+            while (state.AvailableLocations.Count > 0)
+            {
+                Location chosenLocation = state.PopRandomLocation();
+                Item chosenItem = ItemsToPlace[Random.Range(0, ItemsToPlace.Count)];
+                RandomizedGame.Add(chosenLocation, chosenItem);
+                ItemsToPlace.Remove(chosenItem);
             }
         }
 
@@ -773,8 +830,16 @@ namespace RainWorldRandomizer.Generation
                 GlobalRuleOverrides.Add("Pearl-SU_filt", new CompoundAccessRule(new AccessRule[]
                 {
                     new RegionAccessRule("OE"),
-                    new RegionAccessRule("SU")
+                    new RegionAccessRule("SU"),
+                    new MultiSlugcatAccessRule(new SlugcatStats.Name[]
+                    {
+                        SlugcatStats.Name.White,
+                        SlugcatStats.Name.Yellow,
+                        MoreSlugcatsEnums.SlugcatStatsName.Gourmand
+                    })
                 }, CompoundAccessRule.CompoundOperation.All));
+                // Spearmaster can easily reach SU_filt if spawn is not randomized
+                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Spear].Add("Pearl-SU_filt", new OptionAccessRule("RandomizeSpawnLocation", true));
 
                 // Token cache fails to filter this pearl to only Past GW
                 GlobalRuleOverrides.Add("Pearl-MS", new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore));

@@ -236,10 +236,12 @@ namespace RainWorldRandomizer.Generation
         private PropertyInfo optionProperty;
 
         /// <summary>
+        /// Set location possiblity based on if <paramref name="optionName"/> is enabled.
         /// Will throw an <see cref="ArgumentException"/> if <paramref name="optionName"/> does not exactly match a static <see cref="bool"/> property in <see cref="Options"/>
         /// </summary>
+        /// <param name="inverted">If true, will instead check if option is disabled</param>
         /// <exception cref="ArgumentException"></exception>
-        public OptionAccessRule(string optionName)
+        public OptionAccessRule(string optionName, bool inverted = false)
         {
             ReqName = $"Option-{optionName}";
 

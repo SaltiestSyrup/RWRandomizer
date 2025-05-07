@@ -82,6 +82,8 @@ namespace RainWorldRandomizer.Generation
 
         public Location PopRandomLocation()
         {
+            if (AvailableLocations.Count == 0) return null;
+
             Location chosen = AvailableLocations.ElementAt(UnityEngine.Random.Range(0, AvailableLocations.Count));
             AvailableLocations.Remove(chosen);
             return chosen;
