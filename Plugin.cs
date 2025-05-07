@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using System.Linq;
+using RainWorldRandomizer.Generation;
 
 namespace RainWorldRandomizer
 {
@@ -22,6 +23,7 @@ namespace RainWorldRandomizer
 
         internal static ManualLogSource Log;
 
+        public bool hasInitialized = false;
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new ArchipelagoConnection();
         public static ManagerBase RandoManager = null;
@@ -107,6 +109,7 @@ namespace RainWorldRandomizer
             // Register Enums
             RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
+            AccessRuleConstants.InitConstants();
 
             // Create hooks
             try
@@ -182,6 +185,8 @@ namespace RainWorldRandomizer
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
+            if (hasInitialized) return;
+
             rainWorld = self;
 
             //try
@@ -213,6 +218,9 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
+            VanillaGenerator.GenerateCustomRules();
+
+            hasInitialized = true;
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)

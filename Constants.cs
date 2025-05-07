@@ -1,4 +1,4 @@
-﻿using MonoMod.Utils;
+using MonoMod.Utils;
 using MoreSlugcats;
 using System.Collections.Generic;
 using Watcher;
@@ -193,5 +193,33 @@ namespace RainWorldRandomizer
                 SlugcatDefaultStartingDen.Add(WatcherEnums.SlugcatStatsName.Watcher, "HI_WS01");
             }
         }
+      
+        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatStartingRegion = new Dictionary<SlugcatStats.Name, string>()
+        {
+            { SlugcatStats.Name.White, "SU" },
+            { SlugcatStats.Name.Yellow, "SU" },
+            { SlugcatStats.Name.Red, "LF" },
+            { MoreSlugcatsEnums.SlugcatStatsName.Gourmand, "SH" },
+            { MoreSlugcatsEnums.SlugcatStatsName.Artificer, "GW" },
+            { MoreSlugcatsEnums.SlugcatStatsName.Spear, "SU" },
+            { MoreSlugcatsEnums.SlugcatStatsName.Rivulet, "DS" },
+            { MoreSlugcatsEnums.SlugcatStatsName.Saint, "SI" },
+            { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, "SH" },
+        };
+
+        // { GATE_NAME, IS_LEFT_TRAVEL }
+        public static readonly Dictionary<string, bool> OneWayGates = new Dictionary<string, bool>()
+        {
+            { "GATE_OE_SU", false },
+            { "GATE_LF_SB", false },
+        };
+
+        /// <summary>
+        /// These gates must always be open to avoid softlock scenarios
+        /// </summary>
+        public static readonly HashSet<string> ForceOpenGates = new HashSet<string>()
+        {
+            "GATE_OE_SU", "GATE_SL_MS"
+        };
     }
 }
