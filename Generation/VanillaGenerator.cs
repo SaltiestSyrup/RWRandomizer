@@ -1,7 +1,4 @@
-﻿using Mono.Cecil;
-using MonoMod.Utils;
-using MoreSlugcats;
-using RegionKit.Modules.CustomProjections;
+﻿using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +11,8 @@ namespace RainWorldRandomizer.Generation
 {
     public class VanillaGenerator
     {
+        public const float OTHER_PROG_PLACEMENT_CHANCE = 0.6f;
+
         /// <summary>
         /// Used to override rules for locations. To modify the rules of a location, add its location ID to this dict with the new rule it should follow.
         /// </summary>
@@ -125,7 +124,7 @@ namespace RainWorldRandomizer.Generation
             InitializeState();
             ApplyRuleOverrides();
             BalanceItems();
-            PlaceProgGates();
+            PlaceProgression();
         }
 
         private void InitializeState()
@@ -626,7 +625,7 @@ namespace RainWorldRandomizer.Generation
             }
         }
         
-        private void PlaceProgGates()
+        private void PlaceProgression()
         {
             generationLog.AppendLine("PLACE PROGRESSION");
             CurrentStage = GenerationStep.PlacingProgGates;
@@ -647,29 +646,51 @@ namespace RainWorldRandomizer.Generation
             // Continue until all regions are accessible
             // Note that a region is considered "accessible" by state regardless of
             // if there is some other rule blocking access to checks in that region
-            while (state.Regions.Count != AllRegions.Count)
+            bool progLeftToPlace = true;
+            while (state.Regions.Count != AllRegions.Count || progLeftToPlace)
             {
                 // All gates adjacent to exactly one of the currently accessible regions
-                List<Item> adjacentGates = ItemsToPlace.Where(i =>
+                // Additionally includes other progression to spread them throughout play
+                List<Item> placeableGates = new List<Item>();
+                List<Item> placeableOtherProg = new List<Item>();
+                foreach (Item i in ItemsToPlace)
                 {
-                    if (i.type == Item.Type.Gate && i.importance == Item.Importance.Progression)
+                    if (i.importance == Item.Importance.Progression)
                     {
-                        string[] gate = Regex.Split(i.id, "_");
-                        if (state.Gates.Contains(i.id)) return false;
-
-                        if (state.Regions.Contains(gate[1]) ^ state.Regions.Contains(gate[2]))
+                        if (i.type == Item.Type.Gate)
                         {
-                            return true;
+                            string[] gate = Regex.Split(i.id, "_");
+                            if (state.Gates.Contains(i.id)) continue;
+                            if (state.Regions.Contains(gate[1]) ^ state.Regions.Contains(gate[2]))
+                            {
+                                placeableGates.Add(i);
+                            }
+                        }
+                        else
+                        {
+                            placeableOtherProg.Add(i);
                         }
                     }
-                    return false;
-                }).ToList();
+                }
+                // Determine which type of prog to place
+                bool useOtherProgThisCycle;
+                if (placeableOtherProg.Count == 0) useOtherProgThisCycle = false;
+                else if (placeableGates.Count == 0) useOtherProgThisCycle = true;
+                else useOtherProgThisCycle = Random.value < OTHER_PROG_PLACEMENT_CHANCE;
+                List<Item> placeableProg = useOtherProgThisCycle ? placeableOtherProg : placeableGates;
 
                 // Check if we have failed
-                if (state.AvailableLocations.Count == 0 || adjacentGates.Count == 0)
+                if (state.AvailableLocations.Count == 0 || placeableProg.Count == 0)
                 {
+                    // If we're already done then just exit
+                    if (state.Regions.Count == AllRegions.Count)
+                    {
+                        progLeftToPlace = false;
+                        continue;
+                    }
+
                     generationLog.AppendLine($"ERROR: Ran out of " +
-                        $"{(adjacentGates.Count == 0 ? "adjacent gates" : "possible locations")}.");
+                        $"{(placeableProg.Count == 0 ? "placeable progression" : "possible locations")}.");
 
                     generationLog.AppendLine("Failed to connect to:");
                     foreach (string region in AllRegions.Except(state.Regions))
@@ -682,11 +703,21 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 Location chosenLocation = state.PopRandomLocation();
-                Item chosenGate = adjacentGates[Random.Range(0, adjacentGates.Count)];
-                RandomizedGame.Add(chosenLocation, chosenGate);
-                state.AddGate(chosenGate.id);
-                ItemsToPlace.Remove(chosenGate);
-                generationLog.AppendLine($"Placed Prog gate {chosenGate.id} at {chosenLocation.id}");
+                Item chosenItem = placeableProg[Random.Range(0, placeableProg.Count)];
+                RandomizedGame.Add(chosenLocation, chosenItem);
+
+                if (chosenItem.type == Item.Type.Gate)
+                {
+                    state.AddGate(chosenItem.id);
+                }
+                else
+                {
+                    state.AddOtherProgItem(chosenItem.id);
+                }
+
+                progLeftToPlace = placeableGates.Count + placeableOtherProg.Count > 1;
+                ItemsToPlace.Remove(chosenItem);
+                generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.id}");
             }
         }
 
