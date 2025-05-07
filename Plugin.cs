@@ -13,13 +13,13 @@ namespace RainWorldRandomizer
 {
     [BepInDependency("rwmodding.coreorg.rk", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("franklygd.extendedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
-    //[BepInDependency("aissurtievos.improvedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("aissurtievos.improvedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.2.4";
+        public const string PLUGIN_VERSION = "1.2.7";
 
         internal static ManualLogSource Log;
 
@@ -79,8 +79,6 @@ namespace RainWorldRandomizer
             { "GATE_LF_SB", false },
         };
 
-        public static List<SlugcatStats.Name> CompatibleSlugcats = new List<SlugcatStats.Name>();
-
         public enum GateBehavior
         {
             OnlyKey, // Only keys matter, karma not required
@@ -139,6 +137,11 @@ namespace RainWorldRandomizer
                 {
                     ExtCollectibleTrackerComptability.ApplyHooks();
                 }
+
+                if (ImprovedCollectibleTrackerCompat.Enabled)
+                {
+                    ImprovedCollectibleTrackerCompat.ApplyHooks();
+                }
             }
             catch (Exception e)
             {
@@ -192,18 +195,6 @@ namespace RainWorldRandomizer
             //}
             //catch (Exception e) { Logger.LogError(e); }
 
-            CompatibleSlugcats = new List<SlugcatStats.Name>()
-            {
-                SlugcatStats.Name.White,
-                SlugcatStats.Name.Yellow,
-                SlugcatStats.Name.Red,
-                MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
-                MoreSlugcatsEnums.SlugcatStatsName.Artificer,
-                MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
-                MoreSlugcatsEnums.SlugcatStatsName.Spear,
-                MoreSlugcatsEnums.SlugcatStatsName.Saint
-            };
-
             try
             {
                 MachineConnector.SetRegisteredOI(PLUGIN_GUID, options);
@@ -225,6 +216,7 @@ namespace RainWorldRandomizer
                 ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Saint);
             }
 
+            Constants.InitializeConstants();
             CustomRegionCompatability.Init();
             VanillaGenerator.GenerateCustomRules();
 
@@ -381,7 +373,7 @@ namespace RainWorldRandomizer
             bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
             RegionGate.GateRequirement[] newRequirements = 
                 defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v) 
-                ? v : new RegionGate.GateRequirement[2] {
+                ? (RegionGate.GateRequirement[])v.Clone() : new RegionGate.GateRequirement[2] {
                     RegionGate.GateRequirement.OneKarma, 
                     RegionGate.GateRequirement.OneKarma
                 };

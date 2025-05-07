@@ -247,7 +247,7 @@ namespace RainWorldRandomizer
 
         public bool InitializeSession(SlugcatStats.Name slugcat)
         {
-            if (isNewGame && ArchipelagoConnection.useRandomStart)
+            if (ArchipelagoConnection.useRandomStart)
             {
                 customStartDen = ArchipelagoConnection.desiredStartDen;
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");

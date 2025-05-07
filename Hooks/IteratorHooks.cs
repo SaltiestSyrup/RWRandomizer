@@ -88,7 +88,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Revert the normal effects of eating a neuron and award check
         /// </summary>
-        static void EatenNeuron(Player player)
+        public static void EatenNeuron(Player player)
         {
             // Remove unearned glowing effect
             if (!Plugin.RandoManager.GivenNeuronGlow)

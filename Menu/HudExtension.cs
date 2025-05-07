@@ -5,6 +5,7 @@ using HUD;
 using Menu;
 using Menu.Remix.MixedUI;
 using RWCustom;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,20 @@ namespace RainWorldRandomizer
 {
     public static class HudExtension
     {
-        public static ChatLog chatLog;
+        public static WeakReference<ChatLog> _chatLog;
+        public static ChatLog CurrentChatLog
+        {
+            get
+            {
+                if (_chatLog.TryGetTarget(out ChatLog g)) return g;
+                else return null;
+            }
+            set
+            {
+                _chatLog = new WeakReference<ChatLog>(value);
+            }
+        }
+
 
         public static void ApplyHooks()
         {
@@ -31,8 +45,8 @@ namespace RainWorldRandomizer
         {
             orig(self, cam);
 
-            chatLog = new ChatLog(self, self.fContainers[1]);
-            self.AddPart(chatLog);
+            CurrentChatLog = new ChatLog(self, self.fContainers[1]);
+            self.AddPart(CurrentChatLog);
         }
     }
 

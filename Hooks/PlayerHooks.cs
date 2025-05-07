@@ -14,6 +14,7 @@ namespace RainWorldRandomizer
         {
             On.Player.Regurgitate += OnRegurgitate;
             On.Player.Update += OnPlayerUpdate;
+            On.Player.NewRoom += OnNewRoom;
             On.RedsIllness.RedsCycles += OnRedsCycles;
             On.Player.ClassMechanicsSaint += OnClassMechanicsSaint;
 
@@ -32,6 +33,7 @@ namespace RainWorldRandomizer
         {
             On.Player.Regurgitate -= OnRegurgitate;
             On.Player.Update -= OnPlayerUpdate;
+            On.Player.NewRoom -= OnNewRoom;
             On.RedsIllness.RedsCycles -= OnRedsCycles;
             On.Player.ClassMechanicsSaint -= OnClassMechanicsSaint;
             IL.Player.GrabUpdate -= ILPlayerGrabUpdate;
@@ -221,6 +223,13 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogError("Failed Hooking for PlayerGraphicsUpdate");
                 Plugin.Log.LogError(e);
             }
+        }
+
+        public static void OnNewRoom(On.Player.orig_NewRoom orig, Player self, Room newRoom)
+        {
+            orig(self, newRoom);
+
+            ArchipelagoConnection.TrySendCurrentRoomPacket(newRoom.abstractRoom.name);
         }
 
         /// <summary>

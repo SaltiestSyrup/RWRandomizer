@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -55,6 +56,8 @@ namespace RainWorldRandomizer
 
                 IL.Menu.MainMenu.ctor += MainMenuCtorIL;
                 IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
+                IL.Menu.SlugcatSelectMenu.ContinueStartedGame += SlugcatSelectOverrideDeadCheckIL;
+                IL.Menu.SlugcatSelectMenu.UpdateStartButtonText += SlugcatSelectOverrideDeadCheckIL;
                 IL.MoreSlugcats.CutsceneArtificerRobo.GetInput += ArtificerRoboIL;
                 IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
                 IL.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
@@ -82,6 +85,8 @@ namespace RainWorldRandomizer
 
             IL.Menu.MainMenu.ctor -= MainMenuCtorIL;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
+            IL.Menu.SlugcatSelectMenu.ContinueStartedGame -= SlugcatSelectOverrideDeadCheckIL;
+            IL.Menu.SlugcatSelectMenu.UpdateStartButtonText -= SlugcatSelectOverrideDeadCheckIL;
             IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
@@ -125,6 +130,45 @@ namespace RainWorldRandomizer
                     return;
                 }
                 self.denPosition = Plugin.RandoManager.customStartDen;
+            }
+        }
+
+        /// <summary>
+        /// Stop game from going to statistics page instead of the game if there is a randomizer save.
+        /// This hook is applied to both <see cref="SlugcatSelectMenu.UpdateStartButtonText"/> and <see cref="SlugcatSelectMenu.ContinueStartedGame"/>
+        /// </summary>
+        private static void SlugcatSelectOverrideDeadCheckIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            FieldInfo[] flags = new FieldInfo[3]
+            {
+                typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.redIsDead)),
+                typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.artificerIsDead)),
+                typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.saintIsDead))
+            };
+
+            // The check is the same for all 3 cases, so just loop through them
+            for (int i = 0; i < flags.Length; i++)
+            {
+                ILLabel jump = null;
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld(flags[i]),
+                    x => x.MatchBrfalse(out jump)
+                    );
+
+                c.Emit(OpCodes.Ldarg_0);
+                c.EmitDelegate<Func<SlugcatSelectMenu, bool>>(OverrideIsDead);
+                c.Emit(OpCodes.Brfalse, jump);
+            }
+
+            bool OverrideIsDead(SlugcatSelectMenu menu)
+            {
+                SlugcatStats.Name slugcat = menu.slugcatPages[menu.slugcatPageIndex].slugcatNumber;
+                int saveSlot = menu.manager.rainWorld.options.saveSlot;
+                return !((Plugin.RandoManager is ManagerArchipelago) || SaveManager.IsThereASavedGame(slugcat, saveSlot));
             }
         }
 
@@ -437,7 +481,7 @@ namespace RainWorldRandomizer
         private static bool YesItIsMeGourmand(bool prev) => Options.UseFoodQuest || prev;
 
         /// <summary>
-        /// Allow Spearmaster to eat mushrooms for the food quest.
+        /// Allow Spearmaster to eat mushrooms for the food quest, and detect spearing a neuron for Eat Neuron check
         /// </summary>
         private static void SpearmasterMushroomAddEat(ILContext il)
         {
@@ -458,6 +502,16 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldarg_1);
             c.EmitDelegate<Action<Spear, PhysicalObject>>(Delegate);
+
+            // Detect spearing neuron for Eat_Neuron check
+            c.GotoNext(x => x.MatchIsinst<OracleSwarmer>());
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate<Action<Spear>>((self) =>
+            {
+                IteratorHooks.EatenNeuron(self.thrownBy as Player);
+            });
         }
 
         /// <summary>
