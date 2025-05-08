@@ -104,6 +104,7 @@
     <Compile Include="CollectTokenHandler.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Generation\AccessRule.cs" />
+    <Compile Include="Generation\TokenCachePatcher.cs" />
     <Compile Include="Generation\Item.cs" />
     <Compile Include="Generation\Location.cs" />
     <Compile Include="Generation\State.cs" />

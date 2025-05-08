@@ -216,10 +216,10 @@ namespace RainWorldRandomizer
                 }
 
                 // Check if this gate room is not accessible to the current slugcat)
-                if (CollectTokenHandler.GetRoomAccessibility(split[1]).ContainsKey(gate.ToLowerInvariant())
-                    && CollectTokenHandler.GetRoomAccessibility(split[2]).ContainsKey(gate.ToLowerInvariant())
-                    && !(CollectTokenHandler.GetRoomAccessibility(split[1])[gate.ToLowerInvariant()].Contains(slugcat)
-                        && CollectTokenHandler.GetRoomAccessibility(split[2])[gate.ToLowerInvariant()].Contains(slugcat)))
+                if (TokenCachePatcher.GetRoomAccessibility(split[1]).ContainsKey(gate.ToLowerInvariant())
+                    && TokenCachePatcher.GetRoomAccessibility(split[2]).ContainsKey(gate.ToLowerInvariant())
+                    && !(TokenCachePatcher.GetRoomAccessibility(split[1])[gate.ToLowerInvariant()].Contains(slugcat)
+                        && TokenCachePatcher.GetRoomAccessibility(split[2])[gate.ToLowerInvariant()].Contains(slugcat)))
                 {
                     isBlacklisted = true;
                 }
@@ -451,7 +451,7 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            CollectTokenHandler.ClearRoomAccessibilities();
+            TokenCachePatcher.ClearRoomAccessibilities();
             return true;
         }
 
@@ -745,7 +745,7 @@ namespace RainWorldRandomizer
                         {
                             if (u.Type == Unlock.UnlockType.Gate)
                             {
-                                if (Plugin.OneWayGates.ContainsKey(u.ID)
+                                if (Constants.OneWayGates.ContainsKey(u.ID)
                                 || LogicBlacklist.Contains(u.ID))
                                     return false;
 

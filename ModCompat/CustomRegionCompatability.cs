@@ -1,9 +1,4 @@
-﻿using MonoMod.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
 namespace RainWorldRandomizer
 {
@@ -15,7 +10,7 @@ namespace RainWorldRandomizer
         {
             if (hasInit) return;
 
-            Plugin.OneWayGates.Add("GATE_PA_FR", false);
+            Constants.OneWayGates.Add("GATE_PA_FR", false);
 
             hasInit = true;
         }

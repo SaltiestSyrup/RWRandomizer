@@ -228,7 +228,7 @@ namespace RainWorldRandomizer.Generation
                     }
 
                     // If this gate is impossible to reach for the current slugcat, skip it
-                    if (CollectTokenHandler
+                    if (TokenCachePatcher
                         .GetRoomAccessibility(region)
                         .TryGetValue(gate.ToLowerInvariant(), out List<SlugcatStats.Name> accessibleTo)
                         && !accessibleTo.Contains(slugcat))
@@ -522,7 +522,7 @@ namespace RainWorldRandomizer.Generation
                     break;
             }
 
-            CollectTokenHandler.ClearRoomAccessibilities();
+            TokenCachePatcher.ClearRoomAccessibilities();
 
             state.DefineLocs(locations);
         }
