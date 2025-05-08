@@ -5,6 +5,11 @@ namespace RainWorldRandomizer
 {
     public class RandomizerEnums
     {
+        public static void InitExtEnumTypes()
+        {
+            Unlock.UnlockType gate = Unlock.UnlockType.Gate;
+        }
+
         public static void RegisterAllValues()
         {
             SliderId.RegisterValues();

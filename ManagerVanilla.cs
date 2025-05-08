@@ -53,24 +53,26 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            Plugin.ProperRegionMap.Clear();
 
-            stopwatch.Restart();
-            // Attempt to initialize session
-            if (!InitializeSession(storyGameCharacter))
+            // Reset tracking variables
+            _currentMaxKarma = 4;
+            _hunterBonusCyclesGiven = 0;
+            _givenNeuronGlow = false;
+            _givenMark = false;
+            _givenRobo = false;
+            _givenPebblesOff = false;
+            _givenSpearPearlRewrite = false;
+            customStartDen = "NONE";
+
+            foreach (string region in Region.GetFullRegionOrder())
             {
-                Plugin.Log.LogError("Failed to initialize randomizer.");
-                isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to initialize. Check logs for details.");
-                return;
+                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(storyGameCharacter), region));
             }
-
-            Plugin.Log.LogDebug($"Initialized session in {stopwatch.ElapsedMilliseconds} ms");
-            stopwatch.Stop();
 
             if (Input.GetKey("o"))
             {
-                DebugBulkGeneration(100);
+                //DebugBulkGeneration(100);
             }
 
             if (continueSaved)
@@ -90,28 +92,22 @@ namespace RainWorldRandomizer
             }
             else
             {
-                stopwatch.Restart();
-                VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat));
-                generator.BeginGeneration();
-                Plugin.Log.LogDebug($"Ran Gen 2.0 in {stopwatch.ElapsedMilliseconds} ms");
-                stopwatch.Stop();
-
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
-                stopwatch.Restart();
-                if (GenerateRandomizer())
+                VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat));
+                generator.BeginGeneration();
+
+                if (generator.CurrentStage == VanillaGenerator.GenerationStep.Complete)
                 {
+                    randomizerKey = generator.GetCompletedSeed();
+                    customStartDen = generator.customStartDen;
                     SaveManager.WriteSavedGameToFile(randomizerKey, storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot);
                 }
                 else
                 {
-                    Plugin.Log.LogError("Failed to generate randomizer. See above for details.");
-                    isRandomizerActive = false;
                     Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
                     return;
                 }
-                Plugin.Log.LogDebug($"Gen complete in {stopwatch.ElapsedMilliseconds} ms");
-                stopwatch.Stop();
             }
 
             isRandomizerActive = true;
@@ -914,36 +910,43 @@ namespace RainWorldRandomizer
             // Set unlocked gates and passage tokens
             foreach (Unlock item in randomizerKey.Values)
             {
-                switch (item.Type)
+                switch (item.Type.value)
                 {
-                    case Unlock.UnlockType.Gate:
+                    case "Gate":
                         if (gatesStatus.ContainsKey(item.ID))
                         {
                             gatesStatus[item.ID] = gatesStatus[item.ID] || item.IsGiven; // If the gate was already opened by an identical unlock, keep it open
                         }
                         break;
-                    case Unlock.UnlockType.Token:
+                    case "Token":
                         if (passageTokensStatus.ContainsKey(new WinState.EndgameID(item.ID)))
                         {
                             passageTokensStatus[new WinState.EndgameID(item.ID)] = item.IsGiven;
                         }
                         break;
-                    case Unlock.UnlockType.Karma:
+                    case "Karma":
                         if (item.IsGiven) IncreaseKarma();
                         break;
-                    case Unlock.UnlockType.Glow:
+                    case "Neuron_Glow":
                         if (item.IsGiven) _givenNeuronGlow = true;
                         break;
-                    case Unlock.UnlockType.Mark:
+                    case "The_Mark":
                         if (item.IsGiven) _givenMark = true;
                         break;
-                    case Unlock.UnlockType.HunterCycles:
+                    case "HunterCycles":
                         if (item.IsGiven) _hunterBonusCyclesGiven++;
                         break;
-                    case Unlock.UnlockType.IdDrone:
+                    case "IdDrone":
                         if (item.IsGiven) _givenRobo = true;
                         break;
+                    case "DisconnectFP":
+                        if (item.IsGiven) _givenPebblesOff = true;
+                        break;
+                    case "RewriteSpearPearl":
+                        if (item.IsGiven) _givenSpearPearlRewrite = true;
+                        break;
                 }
+                
             }
 
             Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, saveSlot);

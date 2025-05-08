@@ -14,7 +14,6 @@ namespace RainWorldRandomizer.Generation
             Passage,
             Karma,
             Object,
-            Story,
             Other
         }
         public enum Importance

@@ -1577,20 +1577,20 @@ namespace RainWorldRandomizer
                     Color spriteColor = Futile.white;
 
                     IconSymbol.IconSymbolData iconData;
-                    switch (unlock.Type)
+                    switch (unlock.Type.value)
                     {
-                        case Unlock.UnlockType.Gate:
+                        case "Gate":
                             spriteName = "smallKarmaNoRingD";
                             spriteScale = 0.75f;
                             break;
-                        case Unlock.UnlockType.Token:
+                        case "Token":
                             spriteName = unlock.ID + "A";
                             break;
-                        case Unlock.UnlockType.Karma:
+                        case "Karma":
                             spriteName = "smallKarma9-9";
                             spriteScale = 0.5f;
                             break;
-                        case Unlock.UnlockType.Item:
+                        case "Item":
                             if (unlock.item.Value.id == "KarmaFlower")
                             {
                                 spriteName = "FlowerMarker";
@@ -1619,21 +1619,21 @@ namespace RainWorldRandomizer
                                 spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                             }
                             break;
-                        case Unlock.UnlockType.ItemPearl:
+                        case "ItemPearl":
                             iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.DataPearl, 0);
                             spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                             spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                             break;
-                        case Unlock.UnlockType.HunterCycles:
+                        case "HunterCycles":
                             iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
                             spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
                             spriteColor = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.Red);
                             break;
-                        case Unlock.UnlockType.Mark:
-                        case Unlock.UnlockType.Glow:
-                        case Unlock.UnlockType.IdDrone:
-                        case Unlock.UnlockType.DisconnectFP:
-                        case Unlock.UnlockType.RewriteSpearPearl:
+                        case "The_Mark":
+                        case "Neuron_Glow":
+                        case "IdDrone":
+                        case "DisconnectFP":
+                        case "RewriteSpearPearl":
                             iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.NSHSwarmer, 0);
                             spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                             break;

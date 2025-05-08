@@ -130,6 +130,7 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
+                On.ExtEnumInitializer.InitTypes += OnInitExtEnumTypes;
                 //On.RainWorld.LoadModResources += LoadResources;
                 //On.RainWorld.UnloadResources += UnloadResources;
 
@@ -173,6 +174,7 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
+                On.ExtEnumInitializer.InitTypes -= OnInitExtEnumTypes;
                 //On.RainWorld.LoadModResources -= LoadResources;
                 //On.RainWorld.UnloadResources -= UnloadResources;
             }
@@ -232,6 +234,12 @@ namespace RainWorldRandomizer
             {
                 RegionNamesMap.Add(regionShort, Region.GetRegionFullName(regionShort, null));
             }
+        }
+
+        public void OnInitExtEnumTypes(On.ExtEnumInitializer.orig_InitTypes orig)
+        {
+            orig();
+            RandomizerEnums.InitExtEnumTypes();
         }
 
         // --- Not currently needed but may still be useful in the future ---

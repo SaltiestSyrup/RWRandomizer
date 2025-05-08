@@ -125,6 +125,8 @@ namespace RainWorldRandomizer.Generation
             BalanceItems();
             PlaceProgression();
             PlaceFiller();
+            generationLog.AppendLine("Generation complete!");
+            CurrentStage = GenerationStep.Complete;
         }
 
         private void InitializeState()
@@ -494,29 +496,29 @@ namespace RainWorldRandomizer.Generation
             // Create Special items
             if (!ModManager.MSC || slugcat != MoreSlugcatsEnums.SlugcatStatsName.Saint)
             {
-                ItemsToPlace.Add(new Item("Neuron_Glow", Item.Type.Story, Item.Importance.Progression));
-                ItemsToPlace.Add(new Item("The_Mark", Item.Type.Story, Item.Importance.Progression));
+                ItemsToPlace.Add(new Item("Neuron_Glow", Item.Type.Other, Item.Importance.Progression));
+                ItemsToPlace.Add(new Item("The_Mark", Item.Type.Other, Item.Importance.Progression));
             }
 
             switch (slugcat.value)
             {
                 case "Red":
-                    ItemsToPlace.Add(new Item("NSHSwarmer", Item.Type.Story, Item.Importance.Progression));
-                    ItemsToPlace.Add(new Item("Red_stomach", Item.Type.Story, Item.Importance.Progression));
+                    ItemsToPlace.Add(new Item("Object-NSHSwarmer", Item.Type.Object, Item.Importance.Progression));
+                    ItemsToPlace.Add(new Item("PearlObject-Red_stomach", Item.Type.Object, Item.Importance.Progression));
                     break;
                 case "Artificer":
-                    ItemsToPlace.Add(new Item("IdDrone", Item.Type.Story, Item.Importance.Progression));
+                    ItemsToPlace.Add(new Item("IdDrone", Item.Type.Other, Item.Importance.Progression));
                     break;
                 case "Rivulet":
                     if (Options.UseEnergyCell)
                     {
-                        ItemsToPlace.Add(new Item("EnergyCell", Item.Type.Story, Item.Importance.Progression));
-                        ItemsToPlace.Add(new Item("FP_Disconnected", Item.Type.Story, Item.Importance.Progression));
+                        ItemsToPlace.Add(new Item("Object-EnergyCell", Item.Type.Object, Item.Importance.Progression));
+                        ItemsToPlace.Add(new Item("FP_Disconnected", Item.Type.Other, Item.Importance.Progression));
                     }
                     break;
                 case "Spear":
-                    ItemsToPlace.Add(new Item("Spearmasterpearl", Item.Type.Story, Item.Importance.Progression));
-                    ItemsToPlace.Add(new Item("Rewrite_Spear_Pearl", Item.Type.Story, Item.Importance.Progression));
+                    ItemsToPlace.Add(new Item("PearlObject-Spearmasterpearl", Item.Type.Object, Item.Importance.Progression));
+                    ItemsToPlace.Add(new Item("Rewrite_Spear_Pearl", Item.Type.Other, Item.Importance.Progression));
                     break;
             }
 
@@ -628,7 +630,7 @@ namespace RainWorldRandomizer.Generation
         private void PlaceProgression()
         {
             generationLog.AppendLine("PLACE PROGRESSION");
-            CurrentStage = GenerationStep.PlacingProgGates;
+            CurrentStage = GenerationStep.PlacingProg;
             // Determine starting region
             if (Options.RandomizeSpawnLocation)
             {
@@ -768,6 +770,7 @@ namespace RainWorldRandomizer.Generation
             // It is assumed there is no more progression in the pool
             // State should have full access by this point
             generationLog.AppendLine("PLACE FILLER");
+            CurrentStage = GenerationStep.PlacingFiller;
 
             while (state.AvailableLocations.Count > 0)
             {
@@ -776,6 +779,67 @@ namespace RainWorldRandomizer.Generation
                 RandomizedGame.Add(chosenLocation, chosenItem);
                 ItemsToPlace.Remove(chosenItem);
             }
+        }
+
+        public Dictionary<string, Unlock> GetCompletedSeed()
+        {
+            if (CurrentStage != GenerationStep.Complete) return null;
+
+            Dictionary<string, Unlock> output = new Dictionary<string, Unlock>();
+            foreach (var placement in RandomizedGame)
+            {
+                if (!output.ContainsKey(placement.Key.id))
+                {
+                    output.Add(placement.Key.id, ItemToUnlock(placement.Value));
+                }
+                else
+                {
+                    Plugin.Log.LogWarning($"Tried to place double location: {placement.Key.id}");
+                }
+            }
+            return output;
+        }
+
+        public static Unlock ItemToUnlock(Item item)
+        {
+            Unlock.UnlockType outputType = null;
+            switch (item.type)
+            {
+                case Item.Type.Gate:
+                    outputType = Unlock.UnlockType.Gate;
+                    break;
+                case Item.Type.Passage:
+                    outputType = Unlock.UnlockType.Token;
+                    break;
+                case Item.Type.Karma:
+                    outputType = Unlock.UnlockType.Karma;
+                    break;
+                case Item.Type.Object:
+                    if (item.id.StartsWith("PearlObject-")) outputType = Unlock.UnlockType.ItemPearl;
+                    else outputType = Unlock.UnlockType.Item;
+                    break;
+                case Item.Type.Other:
+                    if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), item.id, false, out ExtEnumBase type))
+                    {
+                        outputType = (Unlock.UnlockType)type;
+                    }
+                    else
+                    {
+                        Plugin.Log.LogError($"ItemToUnlock could not find matching UnlockType for {item.id}");
+                        return null;
+                    }
+                    break;
+            }
+
+            if (outputType == Unlock.UnlockType.Item)
+            {
+                return new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id.Substring(7)));
+            }
+            if (outputType == Unlock.UnlockType.ItemPearl)
+            {
+                return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id.Substring(12), true));
+            }
+            return new Unlock(outputType, item.id);
         }
 
         public static void GenerateCustomRules()

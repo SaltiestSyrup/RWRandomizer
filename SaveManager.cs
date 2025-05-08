@@ -29,7 +29,8 @@ namespace RainWorldRandomizer
             file.WriteLine(Plugin.RandoManager.currentSeed);
             foreach (var item in game)
             {
-                string serializedUnlock = $"{{{(int)item.Value.Type},{item.Value.ID},{item.Value.IsGiven}}}";
+                // TODO: Rewrite saves to use new ExtEnum
+                string serializedUnlock = $"{{{item.Value.Type.value},{item.Value.ID},{item.Value.IsGiven}}}";
 
                 file.Write($"{item.Key}->{serializedUnlock}");
                 file.WriteLine();
@@ -77,8 +78,18 @@ namespace RainWorldRandomizer
                     .TrimStart('{')
                     .TrimEnd('}'), ",");
 
+                Unlock.UnlockType type = Unlock.UnlockType.Item;
+                if (int.TryParse(unlockString[0], out int typeIndex))
+                {
+                    type = Unlock.UnlockType.typeOrder[typeIndex];
+                }
+                else if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), unlockString[0], true, out ExtEnumBase t))
+                {
+                    type = (Unlock.UnlockType)t;
+                }
+
                 Unlock unlock = new Unlock(
-                    (Unlock.UnlockType)int.Parse(unlockString[0]),
+                    type,
                     unlockString[1],
                     bool.Parse(unlockString[2]));
 
@@ -111,7 +122,7 @@ namespace RainWorldRandomizer
                     .Split(',');
 
                 Unlock unlock = new Unlock(
-                    (Unlock.UnlockType)int.Parse(unlockString[1]),
+                    Unlock.UnlockType.typeOrder[int.Parse(unlockString[1])],
                     unlockString[0],
                     bool.Parse(unlockString[2]));
 
