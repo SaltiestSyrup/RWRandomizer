@@ -120,6 +120,28 @@ namespace RainWorldRandomizer.Generation
         {
             string[] gate = Regex.Split(gateName, "_");
 
+            // One way gate logic
+            if (Constants.OneWayGates.ContainsKey(gateName))
+            {
+                // If the gate only travels right, check for left region access
+                if (Regions.Contains(gate[1])
+                    && !Constants.OneWayGates[gateName]
+                    && !Regions.Contains(gate[2]))
+                {
+                    Regions.Add(gate[2]);
+                    return true;
+                }
+                // If the gate only travels left, check for right region access
+                if (Regions.Contains(gate[2])
+                    && Constants.OneWayGates[gateName]
+                    && !Regions.Contains(gate[1]))
+                {
+                    Regions.Add(gate[1]);
+                    return true;
+                }
+                return false;
+            }
+
             if (Regions.Contains(gate[1]) ^ Regions.Contains(gate[2]))
             {
                 Regions.Add(gate[1]);

@@ -25,13 +25,38 @@ namespace RainWorldRandomizer
         // DaddyLongLegs, BrotherLongLegs, TerrorLongLegs,
         // PoleMimic, TentaclePlant, BigEel, Inspector
 
+        /// <summary>
+        /// The fallback starting den for each slugcat. 
+        /// Most slugcats start in an intro scene instead of a den, so this defines the closest den to that starting point
+        /// </summary>
         public static readonly Dictionary<SlugcatStats.Name, string> SlugcatDefaultStartingDen = new Dictionary<SlugcatStats.Name, string>();
+
+        /// <summary>
+        /// The normal starting region for each slugcat
+        /// </summary>
+        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatStartingRegion = new Dictionary<SlugcatStats.Name, string>();
+
+        // { GATE_NAME, IS_LEFT_TRAVEL }
+        public static readonly Dictionary<string, bool> OneWayGates = new Dictionary<string, bool>()
+        {
+            //{ "GATE_OE_SU", false }, This doesn't matter because it should always be unlocked
+            { "GATE_LF_SB", false },
+        };
+
+        /// <summary>
+        /// These gates must always be open to avoid softlock scenarios
+        /// </summary>
+        public static readonly HashSet<string> ForceOpenGates = new HashSet<string>()
+        {
+            "GATE_OE_SU", "GATE_SL_MS"
+        };
 
         public static void InitializeConstants()
         {
             CompatibleSlugcats.Clear();
             SlugcatFoodQuestAccessibility.Clear();
             SlugcatDefaultStartingDen.Clear();
+            SlugcatStartingRegion.Clear();
 
             CompatibleSlugcats.AddRange(new List<SlugcatStats.Name>()
             {
@@ -192,34 +217,12 @@ namespace RainWorldRandomizer
             {
                 SlugcatDefaultStartingDen.Add(WatcherEnums.SlugcatStatsName.Watcher, "HI_WS01");
             }
+
+            // Infer starting regions from starting dens
+            foreach (var pair in SlugcatDefaultStartingDen)
+            {
+                SlugcatStartingRegion.Add(pair.Key, pair.Value.Split('_')[0]);
+            }
         }
-      
-        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatStartingRegion = new Dictionary<SlugcatStats.Name, string>()
-        {
-            { SlugcatStats.Name.White, "SU" },
-            { SlugcatStats.Name.Yellow, "SU" },
-            { SlugcatStats.Name.Red, "LF" },
-            { MoreSlugcatsEnums.SlugcatStatsName.Gourmand, "SH" },
-            { MoreSlugcatsEnums.SlugcatStatsName.Artificer, "GW" },
-            { MoreSlugcatsEnums.SlugcatStatsName.Spear, "SU" },
-            { MoreSlugcatsEnums.SlugcatStatsName.Rivulet, "DS" },
-            { MoreSlugcatsEnums.SlugcatStatsName.Saint, "SI" },
-            { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, "SH" },
-        };
-
-        // { GATE_NAME, IS_LEFT_TRAVEL }
-        public static readonly Dictionary<string, bool> OneWayGates = new Dictionary<string, bool>()
-        {
-            { "GATE_OE_SU", false },
-            { "GATE_LF_SB", false },
-        };
-
-        /// <summary>
-        /// These gates must always be open to avoid softlock scenarios
-        /// </summary>
-        public static readonly HashSet<string> ForceOpenGates = new HashSet<string>()
-        {
-            "GATE_OE_SU", "GATE_SL_MS"
-        };
     }
 }

@@ -72,13 +72,6 @@ namespace RainWorldRandomizer
             }
         }
 
-        // { GATE_NAME, IS_LEFT_TRAVEL }
-        public static Dictionary<string, bool> OneWayGates = new Dictionary<string, bool>()
-        {
-            { "GATE_OE_SU", false },
-            { "GATE_LF_SB", false },
-        };
-
         public enum GateBehavior
         {
             OnlyKey, // Only keys matter, karma not required
@@ -529,10 +522,10 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            if (OneWayGates.ContainsKey(gate))
+            if (Constants.OneWayGates.ContainsKey(gate))
             {
                 output = $"{name1}" +
-                    $" {(OneWayGates[gate] ? "<-" : "->")} " +
+                    $" {(Constants.OneWayGates[gate] ? "<-" : "->")} " +
                     $"{name2}";
             }
 
@@ -546,9 +539,9 @@ namespace RainWorldRandomizer
 
             output = $"{gateSplit[1]} <-> {gateSplit[2]}";
 
-            if (OneWayGates.ContainsKey(gate))
+            if (Constants.OneWayGates.ContainsKey(gate))
             {
-                output = $"{gateSplit[1]} {(OneWayGates[gate] ? "<-" : "->")} {gateSplit[2]}";
+                output = $"{gateSplit[1]} {(Constants.OneWayGates[gate] ? "<-" : "->")} {gateSplit[2]}";
             }
 
             return output;
