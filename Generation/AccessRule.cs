@@ -157,7 +157,9 @@ namespace RainWorldRandomizer.Generation
 
         public override bool IsMet(State state)
         {
-            return state.Objects.Contains(item);
+            // TODO: Figure out how to convert PlacedObjects to AbstractPhysicalObjects
+            return true;
+            //return state.Objects.Contains(item);
         }
     }
 

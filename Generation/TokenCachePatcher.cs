@@ -16,8 +16,10 @@ namespace RainWorldRandomizer.Generation
     public static class TokenCachePatcher
     {
         private static Dictionary<string, Dictionary<string, List<SlugcatStats.Name>>> roomAccessibilities = new Dictionary<string, Dictionary<string, List<SlugcatStats.Name>>>();
-        public static Dictionary<string, HashSet<CreatureTemplate.Type>> regionCreatures = new Dictionary<string, HashSet<CreatureTemplate.Type>>();
-        public static Dictionary<string, HashSet<PlacedObject.Type>> regionObjects = new Dictionary<string, HashSet<PlacedObject.Type>>();
+        public static Dictionary<string, List<CreatureTemplate.Type>> regionCreatures = new Dictionary<string, List<CreatureTemplate.Type>>();
+        public static Dictionary<string, List<List<SlugcatStats.Name>>> regionCreaturesAccessibility = new Dictionary<string, List<List<SlugcatStats.Name>>>();
+        public static Dictionary<string, List<PlacedObject.Type>> regionObjects = new Dictionary<string, List<PlacedObject.Type>>();
+        public static Dictionary<string, List<List<SlugcatStats.Name>>> regionObjectsAccessibility = new Dictionary<string, List<List<SlugcatStats.Name>>>();
 
         public static void ApplyHooks()
         {
@@ -221,7 +223,8 @@ namespace RainWorldRandomizer.Generation
             {
                 lock (regionObjects)
                 {
-                    regionObjects[region] = new HashSet<PlacedObject.Type>();
+                    regionObjects[region] = new List<PlacedObject.Type>();
+                    regionObjectsAccessibility[region] = new List<List<SlugcatStats.Name>>();
                 }
             });
 
@@ -235,13 +238,33 @@ namespace RainWorldRandomizer.Generation
                 );
             c2.MoveAfterLabels();
 
+            c2.Emit(OpCodes.Ldarg_0); // this
+
+            c2.Emit(OpCodes.Ldarg_2); // region
+
+            // get room name
+            c2.Emit(OpCodes.Ldloc_3); // list
+            c2.Emit(OpCodes.Ldloc, 11); // j
+            c2.Emit(OpCodes.Callvirt, typeof(List<string>).GetMethod("get_Item")); // []
+
+            c2.Emit(OpCodes.Ldloc, 12); // list3
+
+            c2.Emit(OpCodes.Ldloc, localPlacedObjectIndex); // placedObject
+            c2.EmitDelegate<Action<RainWorld, string, string, List<SlugcatStats.Name>, PlacedObject>>(AddToRegionObjects);
             // Add placedObject type to set
-            c2.Emit(OpCodes.Ldarg_2);
-            c2.Emit(OpCodes.Ldloc, localPlacedObjectIndex);
-            c2.EmitDelegate<Action<string, PlacedObject>>((region, placedObject) =>
+            void AddToRegionObjects(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, PlacedObject placedObject)
             {
-                regionObjects[region].Add(placedObject.type);
-            });
+                if (!regionObjects[region].Contains(placedObject.type))
+                {
+                    regionObjects[region].Add(placedObject.type);
+                    regionObjectsAccessibility[region].Add(self.FilterTokenClearance(list3, new List<SlugcatStats.Name>(), IntersectClearance(list3, region, room)));
+                }
+                else
+                {
+                    int index = regionObjects[region].IndexOf(placedObject.type);
+                    regionObjectsAccessibility[region][index] = self.FilterTokenClearance(list3, regionObjectsAccessibility[region][index], IntersectClearance(list3, region, room));
+                }
+            }
 
             // After file write at 13D1
             c2.GotoNext(
@@ -257,8 +280,17 @@ namespace RainWorldRandomizer.Generation
             c2.Emit(OpCodes.Ldarg_2);
             c2.EmitDelegate<Action<string, string>>((path, region) =>
             {
-                string text = string.Join(",", regionObjects[region]);
-                File.WriteAllText($"{path}randomizercache{region.ToLowerInvariant()}.txt", text);
+                StringBuilder text = new StringBuilder();
+                for (int i = 0; i < regionObjects[region].Count; i++)
+                {
+                    string filter = string.Join("|", regionObjectsAccessibility[region][i]);
+                    text.Append($"{regionObjects[region][i]}~{filter}");
+                    if (i != regionObjects[region].Count - 1)
+                    {
+                        text.Append(",");
+                    }
+                }
+                File.WriteAllText($"{path}randomizercache{region.ToLowerInvariant()}.txt", text.ToString());
             });
             #endregion
         }
@@ -271,7 +303,8 @@ namespace RainWorldRandomizer.Generation
             string[] regions = File.ReadAllLines(AssetManager.ResolveFilePath("World" + Path.DirectorySeparatorChar.ToString() + "regions.txt"));
             foreach (string region in regions)
             {
-                regionObjects[region] = new HashSet<PlacedObject.Type>();
+                regionObjects[region] = new List<PlacedObject.Type>();
+                regionObjectsAccessibility[region] = new List<List<SlugcatStats.Name>>();
                 string path = AssetManager.ResolveFilePath(string.Concat(new string[]
                 {
                     "World",
@@ -287,14 +320,14 @@ namespace RainWorldRandomizer.Generation
                 {
                     string file = File.ReadAllText(path);
 
-                    regionObjects[region] = file.Split(',').Select((o) =>
+                    string[] entries = Regex.Split(file, ",");
+
+                    foreach (string entry in entries)
                     {
-                        if (ExtEnumBase.TryParse(typeof(PlacedObject.Type), o, false, out ExtEnumBase t))
-                        {
-                            return (PlacedObject.Type)t;
-                        }
-                        return PlacedObject.Type.None;
-                    }).ToHashSet();
+                        string[] split = Regex.Split(entry, "~");
+                        regionObjects[region].Add(new PlacedObject.Type(split[0]));
+                        regionObjectsAccessibility[region].Add(split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
+                    }
                 }
             }
         }
@@ -359,6 +392,8 @@ namespace RainWorldRandomizer.Generation
             int conditionalLinksEnd = -1;
             int roomsStart = -1;
             int roomsEnd = -1;
+            int creaturesStart = -1;
+            int creaturesEnd = -1;
 
             // Find indices for points of intrest in file
             for (int i = 0; i < worldFile.Length; i++)
@@ -376,6 +411,12 @@ namespace RainWorldRandomizer.Generation
                         break;
                     case "END ROOMS":
                         roomsEnd = i - 1;
+                        break;
+                    case "CREATURES":
+                        creaturesStart = i + 1;
+                        break;
+                    case "END CREATURES":
+                        creaturesEnd = i - 1;
                         break;
                 }
             }
@@ -537,6 +578,29 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
             }
+
+            /*
+            if (creaturesStart != -1)
+            {
+                for (int m = roomsStart; m <= roomsEnd; m++)
+                {
+                    if (worldFile[m] == "" || worldFile[m].StartsWith("//")) continue;
+                    string[] split = Regex.Split(worldFile[m], " : ");
+
+                    // Manage whitelists
+                    if (split[0].StartsWith("("))
+                    {
+                        bool isBlacklist = split[0].StartsWith("(X-");
+                        string[] slugcatStrings = split[0].Substring(isBlacklist ? 2 : 0).Trim(new char[] { '(', ')'}).Split(',');
+
+                        if (isBlacklist)
+                        {
+
+                        }
+                    }
+                }
+            }
+            */
 
             return accessibility;
         }
