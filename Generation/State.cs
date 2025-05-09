@@ -29,7 +29,7 @@ namespace RainWorldRandomizer.Generation
         public HashSet<string> Regions { get; private set; }
         public HashSet<string> Gates { get; private set; }
         public HashSet<CreatureTemplate.Type> Creatures { get; private set; }
-        public HashSet<AbstractPhysicalObject.AbstractObjectType> Objects { get; private set; }
+        public HashSet<PlacedObject.Type> Objects { get; private set; }
         
         public State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int startKarma)
         {
@@ -41,7 +41,7 @@ namespace RainWorldRandomizer.Generation
             Regions = new HashSet<string>();
             Gates = new HashSet<string>();
             Creatures = new HashSet<CreatureTemplate.Type>();
-            Objects = new HashSet<AbstractPhysicalObject.AbstractObjectType>();
+            Objects = new HashSet<PlacedObject.Type>();
         }
 
         public void DefineLocs(HashSet<Location> allLocs)
@@ -94,10 +94,6 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         private void RecalculateState()
         {
-            List<Location> newLocs = UnreachedLocations.Where(r => r.CanReach(this)).ToList();
-            UnreachedLocations.ExceptWith(newLocs);
-            AvailableLocations.UnionWith(newLocs);
-
             // Loop through and update every gate in state
             bool madeProgress = false;
             do
@@ -109,6 +105,19 @@ namespace RainWorldRandomizer.Generation
             }
             // If the last loop added a region, it must be searched again
             while (madeProgress);
+
+            // Add any new region's placed objects
+            foreach (string region in Regions)
+            {
+                foreach (PlacedObject.Type type in TokenCachePatcher.regionObjects[region])
+                {
+                    Objects.Add(type);
+                }
+            }
+
+            List<Location> newLocs = UnreachedLocations.Where(r => r.CanReach(this)).ToList();
+            UnreachedLocations.ExceptWith(newLocs);
+            AvailableLocations.UnionWith(newLocs);
         }
 
         /// <summary>
