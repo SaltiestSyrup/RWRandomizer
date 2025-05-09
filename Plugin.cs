@@ -110,6 +110,7 @@ namespace RainWorldRandomizer
                 collectTokenHandler.ApplyHooks();
                 seedViewer.ApplyHooks();
                 HudExtension.ApplyHooks();
+                TokenCachePatcher.ApplyHooks();
 
                 GameLoopHooks.ApplyHooks();
                 PlayerHooks.ApplyHooks();
@@ -154,6 +155,7 @@ namespace RainWorldRandomizer
                 collectTokenHandler.RemoveHooks();
                 seedViewer.RemoveHooks();
                 HudExtension.RemoveHooks();
+                TokenCachePatcher.RemoveHooks();
 
                 GameLoopHooks.RemoveHooks();
                 PlayerHooks.RemoveHooks();

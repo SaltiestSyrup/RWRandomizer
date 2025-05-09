@@ -17,10 +17,12 @@ namespace RainWorldRandomizer.Generation
     {
         private static Dictionary<string, Dictionary<string, List<SlugcatStats.Name>>> roomAccessibilities = new Dictionary<string, Dictionary<string, List<SlugcatStats.Name>>>();
         public static Dictionary<string, HashSet<CreatureTemplate.Type>> regionCreatures = new Dictionary<string, HashSet<CreatureTemplate.Type>>();
-        public static Dictionary<string, HashSet<AbstractPhysicalObject.AbstractObjectType>> regionObjects = new Dictionary<string, HashSet<AbstractPhysicalObject.AbstractObjectType>>();
+        public static Dictionary<string, HashSet<PlacedObject.Type>> regionObjects = new Dictionary<string, HashSet<PlacedObject.Type>>();
 
         public static void ApplyHooks()
         {
+            On.RainWorld.ReadTokenCache += OnReadTokenCache;
+
             try
             {
                 IL.RainWorld.BuildTokenCache += ILBuildTokenCache;
@@ -33,6 +35,7 @@ namespace RainWorldRandomizer.Generation
 
         public static void RemoveHooks()
         {
+            On.RainWorld.ReadTokenCache -= OnReadTokenCache;
             IL.RainWorld.BuildTokenCache -= ILBuildTokenCache;
         }
 
@@ -200,8 +203,101 @@ namespace RainWorldRandomizer.Generation
             c.EmitDelegate<Func<List<SlugcatStats.Name>, string, string, List<SlugcatStats.Name>>>(IntersectClearance);
             #endregion
 
+            #region Extra caching
+            ILCursor c2 = new ILCursor(il);
+
+            // Right before starting lock statement at 00FC
+            int localObjIndex = -1;
+            c2.GotoNext(
+                MoveType.After,
+                x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokens))),
+                x => x.MatchStloc(out localObjIndex)
+                );
+
+            // Instantiate Hashset for region entry
+            c2.Emit(OpCodes.Ldloc, localObjIndex);
+            c2.Emit(OpCodes.Ldarg_2);
+            c2.EmitDelegate<Action<string>>((region) =>
+            {
+                lock (regionObjects)
+                {
+                    regionObjects[region] = new HashSet<PlacedObject.Type>();
+                }
+            });
+
+            // Before checking placed object type at 050E
+            int localPlacedObjectIndex = -1;
+            c2.GotoNext(
+                MoveType.Before,
+                x => x.MatchLdloc(out localPlacedObjectIndex),
+                x => x.MatchLdfld(typeof(PlacedObject).GetField(nameof(PlacedObject.type))),
+                x => x.MatchLdsfld(typeof(PlacedObject.Type).GetField(nameof(PlacedObject.Type.DataPearl), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public))
+                );
+            c2.MoveAfterLabels();
+
+            // Add placedObject type to set
+            c2.Emit(OpCodes.Ldarg_2);
+            c2.Emit(OpCodes.Ldloc, localPlacedObjectIndex);
+            c2.EmitDelegate<Action<string, PlacedObject>>((region, placedObject) =>
+            {
+                regionObjects[region].Add(placedObject.type);
+            });
+
+            // After file write at 13D1
+            c2.GotoNext(
+                MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(File).GetMethod(nameof(File.WriteAllText), new Type[]
+                {
+                    typeof(string), typeof(string)
+                }))
+                );
+
+            // Write set to file
+            c2.Emit(OpCodes.Ldloc_1);
+            c2.Emit(OpCodes.Ldarg_2);
+            c2.EmitDelegate<Action<string, string>>((path, region) =>
+            {
+                string text = string.Join(",", regionObjects[region]);
+                File.WriteAllText($"{path}randomizercache{region.ToLowerInvariant()}.txt", text);
+            });
+            #endregion
         }
 
+        public static void OnReadTokenCache(On.RainWorld.orig_ReadTokenCache orig, RainWorld self)
+        {
+            orig(self);
+            regionObjects.Clear();
+
+            string[] regions = File.ReadAllLines(AssetManager.ResolveFilePath("World" + Path.DirectorySeparatorChar.ToString() + "regions.txt"));
+            foreach (string region in regions)
+            {
+                regionObjects[region] = new HashSet<PlacedObject.Type>();
+                string path = AssetManager.ResolveFilePath(string.Concat(new string[]
+                {
+                    "World",
+                    Path.DirectorySeparatorChar.ToString(),
+                    "indexmaps",
+                    Path.DirectorySeparatorChar.ToString(),
+                    "randomizercache",
+                    region.ToLowerInvariant(),
+                    ".txt"
+                }));
+
+                if (File.Exists(path))
+                {
+                    string file = File.ReadAllText(path);
+
+                    regionObjects[region] = file.Split(',').Select((o) =>
+                    {
+                        if (ExtEnumBase.TryParse(typeof(PlacedObject.Type), o, false, out ExtEnumBase t))
+                        {
+                            return (PlacedObject.Type)t;
+                        }
+                        return PlacedObject.Type.None;
+                    }).ToHashSet();
+                }
+            }
+        }
 
         /// <summary>
         /// Fetch all rooms in region and which slugcats can reach them
