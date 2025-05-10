@@ -29,7 +29,7 @@ namespace RainWorldRandomizer.Generation
         public HashSet<string> Regions { get; private set; }
         public HashSet<string> Gates { get; private set; }
         public HashSet<CreatureTemplate.Type> Creatures { get; private set; }
-        public HashSet<PlacedObject.Type> Objects { get; private set; }
+        public HashSet<AbstractPhysicalObject.AbstractObjectType> Objects { get; private set; }
         
         public State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int startKarma)
         {
@@ -41,7 +41,7 @@ namespace RainWorldRandomizer.Generation
             Regions = new HashSet<string>();
             Gates = new HashSet<string>();
             Creatures = new HashSet<CreatureTemplate.Type>();
-            Objects = new HashSet<PlacedObject.Type>();
+            Objects = new HashSet<AbstractPhysicalObject.AbstractObjectType>();
         }
 
         public void DefineLocs(HashSet<Location> allLocs)
@@ -109,7 +109,7 @@ namespace RainWorldRandomizer.Generation
             // Add any new region's placed objects
             foreach (string region in Regions)
             {
-                foreach (PlacedObject.Type type in TokenCachePatcher.regionObjects[region])
+                foreach (AbstractPhysicalObject.AbstractObjectType type in TokenCachePatcher.regionObjects[region])
                 {
                     Objects.Add(type);
                 }

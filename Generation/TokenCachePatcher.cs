@@ -18,7 +18,7 @@ namespace RainWorldRandomizer.Generation
         private static Dictionary<string, Dictionary<string, List<SlugcatStats.Name>>> roomAccessibilities = new Dictionary<string, Dictionary<string, List<SlugcatStats.Name>>>();
         public static Dictionary<string, List<CreatureTemplate.Type>> regionCreatures = new Dictionary<string, List<CreatureTemplate.Type>>();
         public static Dictionary<string, List<List<SlugcatStats.Name>>> regionCreaturesAccessibility = new Dictionary<string, List<List<SlugcatStats.Name>>>();
-        public static Dictionary<string, List<PlacedObject.Type>> regionObjects = new Dictionary<string, List<PlacedObject.Type>>();
+        public static Dictionary<string, List<AbstractPhysicalObject.AbstractObjectType>> regionObjects = new Dictionary<string, List<AbstractPhysicalObject.AbstractObjectType>>();
         public static Dictionary<string, List<List<SlugcatStats.Name>>> regionObjectsAccessibility = new Dictionary<string, List<List<SlugcatStats.Name>>>();
 
         public static void ApplyHooks()
@@ -223,7 +223,7 @@ namespace RainWorldRandomizer.Generation
             {
                 lock (regionObjects)
                 {
-                    regionObjects[region] = new List<PlacedObject.Type>();
+                    regionObjects[region] = new List<AbstractPhysicalObject.AbstractObjectType>();
                     regionObjectsAccessibility[region] = new List<List<SlugcatStats.Name>>();
                 }
             });
@@ -254,15 +254,20 @@ namespace RainWorldRandomizer.Generation
             // Add placedObject type to set
             void AddToRegionObjects(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, PlacedObject placedObject)
             {
-                if (!regionObjects[region].Contains(placedObject.type))
+                if (ExtEnumBase.TryParse(typeof(AbstractPhysicalObject.AbstractObjectType), placedObject.type.value, true, out ExtEnumBase t))
                 {
-                    regionObjects[region].Add(placedObject.type);
-                    regionObjectsAccessibility[region].Add(self.FilterTokenClearance(list3, new List<SlugcatStats.Name>(), IntersectClearance(list3, region, room)));
-                }
-                else
-                {
-                    int index = regionObjects[region].IndexOf(placedObject.type);
-                    regionObjectsAccessibility[region][index] = self.FilterTokenClearance(list3, regionObjectsAccessibility[region][index], IntersectClearance(list3, region, room));
+                    AbstractPhysicalObject.AbstractObjectType objectType = (AbstractPhysicalObject.AbstractObjectType)t;
+
+                    if (!regionObjects[region].Contains(objectType))
+                    {
+                        regionObjects[region].Add(objectType);
+                        regionObjectsAccessibility[region].Add(self.FilterTokenClearance(list3, new List<SlugcatStats.Name>(), IntersectClearance(list3, region, room)));
+                    }
+                    else
+                    {
+                        int index = regionObjects[region].IndexOf(objectType);
+                        regionObjectsAccessibility[region][index] = self.FilterTokenClearance(list3, regionObjectsAccessibility[region][index], IntersectClearance(list3, region, room));
+                    }
                 }
             }
 
@@ -303,7 +308,7 @@ namespace RainWorldRandomizer.Generation
             string[] regions = File.ReadAllLines(AssetManager.ResolveFilePath("World" + Path.DirectorySeparatorChar.ToString() + "regions.txt"));
             foreach (string region in regions)
             {
-                regionObjects[region] = new List<PlacedObject.Type>();
+                regionObjects[region] = new List<AbstractPhysicalObject.AbstractObjectType>();
                 regionObjectsAccessibility[region] = new List<List<SlugcatStats.Name>>();
                 string path = AssetManager.ResolveFilePath(string.Concat(new string[]
                 {
@@ -325,7 +330,7 @@ namespace RainWorldRandomizer.Generation
                     foreach (string entry in entries)
                     {
                         string[] split = Regex.Split(entry, "~");
-                        regionObjects[region].Add(new PlacedObject.Type(split[0]));
+                        regionObjects[region].Add(new AbstractPhysicalObject.AbstractObjectType(split[0]));
                         regionObjectsAccessibility[region].Add(split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
                     }
                 }
