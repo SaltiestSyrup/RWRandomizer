@@ -584,7 +584,6 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
-            /*
             if (creaturesStart != -1)
             {
                 for (int m = roomsStart; m <= roomsEnd; m++)
@@ -605,7 +604,6 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
             }
-            */
 
             return accessibility;
         }

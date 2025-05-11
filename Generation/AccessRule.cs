@@ -351,6 +351,7 @@ namespace RainWorldRandomizer.Generation
     {
         public static AccessRule[] Lizards;
         public static AccessRule[] Regions;
+        public static CompoundAccessRule NeuronAccess;
 
         public static void InitConstants()
         {
@@ -363,6 +364,7 @@ namespace RainWorldRandomizer.Generation
                 new CreatureAccessRule(CreatureTemplate.Type.BlackLizard),
                 new CreatureAccessRule(CreatureTemplate.Type.WhiteLizard)
             };
+
             if (ModManager.DLCShared)
             {
                 lizards.Add(new CreatureAccessRule(CreatureTemplate.Type.RedLizard));

@@ -414,8 +414,20 @@ namespace RainWorldRandomizer.Generation
                     }
                     else
                     {
-                        locations.Add(new Location($"FoodQuest-{data.type.value}", Location.Type.Food,
-                            new ObjectAccessRule(data.type)));
+                        AccessRule rule = new ObjectAccessRule(data.type);
+                        if (data.type == AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)
+                        {
+                            rule = new CompoundAccessRule(new AccessRule[]
+                            {
+                                new RegionAccessRule("SS"),
+                                new RegionAccessRule("SL"),
+                                new RegionAccessRule("DM"),
+                                new RegionAccessRule("CL"),
+                                new RegionAccessRule("RM"),
+                            }, CompoundAccessRule.CompoundOperation.Any);
+                        }
+
+                        locations.Add(new Location($"FoodQuest-{data.type.value}", Location.Type.Food, rule));
                     }
                 }
             }
@@ -426,8 +438,11 @@ namespace RainWorldRandomizer.Generation
                 locations.Add(new Location("Eat_Neuron", Location.Type.Story, 
                     new CompoundAccessRule(new AccessRule[]
                     {
-                        new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer),
-                        new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SLOracleSwarmer),
+                        new RegionAccessRule("SS"),
+                        new RegionAccessRule("SL"),
+                        new RegionAccessRule("DM"),
+                        new RegionAccessRule("CL"),
+                        new RegionAccessRule("RM"),
                     }, CompoundAccessRule.CompoundOperation.Any)));
 
                 switch (slugcat.value)
