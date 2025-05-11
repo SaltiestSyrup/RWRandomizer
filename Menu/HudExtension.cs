@@ -16,7 +16,7 @@ namespace RainWorldRandomizer
 {
     public static class HudExtension
     {
-        public static WeakReference<ChatLog> _chatLog;
+        public static WeakReference<ChatLog> _chatLog = new WeakReference<ChatLog>(null);
         public static ChatLog CurrentChatLog
         {
             get
