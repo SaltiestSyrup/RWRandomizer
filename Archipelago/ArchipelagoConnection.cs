@@ -576,7 +576,7 @@ namespace RainWorldRandomizer
                 Data = new Dictionary<string, JToken> { { dataKey, JToken.FromObject(info) } }
             });
 
-            Plugin.Log.LogDebug($"Sent packet for room {info}");
+            //Plugin.Log.LogDebug($"Sent packet for room {info}");
         }
 
         private static void MessageReceived(LogMessage message)
