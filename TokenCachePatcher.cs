@@ -657,11 +657,13 @@ namespace RainWorldRandomizer
                 }
             }
 
+            /*
             Plugin.Log.LogDebug($"Creatures in {regionUpper}");
             for (int i = 0; i < regionCreatures[regionUpper].Count; i++)
             {
                 Plugin.Log.LogDebug($"\t{regionCreatures[regionUpper][i]}: {string.Join(", ", regionCreaturesAccessibility[regionUpper][i].Select(c => c.value))}");
             }
+            */
 
             return accessibility;
         }
