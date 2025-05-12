@@ -542,7 +542,7 @@ namespace RainWorldRandomizer
 
             for (int i = 0; i < currentIndex && i < newInventory.Items.Length; i++)
             {
-                oldItems.Add( Session.Items.GetItemName(newInventory.Items[i].Item));
+                oldItems.Add(Session.Items.GetItemName(newInventory.Items[i].Item));
             }
 
             // Add all the items before index as an old inventory
@@ -600,7 +600,7 @@ namespace RainWorldRandomizer
 
         public static void SendCompletion()
         {
-            Session.Socket.SendPacket(
+            Session?.Socket.SendPacket(
                 new StatusUpdatePacket
                 {
                     Status = ArchipelagoClientState.ClientGoal

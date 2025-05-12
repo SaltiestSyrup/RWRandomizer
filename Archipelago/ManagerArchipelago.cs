@@ -27,7 +27,7 @@ namespace RainWorldRandomizer
         {
             isNewGame = !continueSaved;
 
-            if (!ArchipelagoConnection.Session.Socket.Connected)
+            if (!(ArchipelagoConnection.Session?.Socket.Connected ?? false))
             {
                 Plugin.Log.LogError("Tried to start AP campaign without first connecting to server");
                 isRandomizerActive = false;
