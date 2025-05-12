@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using RWCustom;
+using System.Collections;
 
 namespace RainWorldRandomizer
 {
@@ -308,6 +309,10 @@ namespace RainWorldRandomizer
             string[] regions = File.ReadAllLines(AssetManager.ResolveFilePath("World" + Path.DirectorySeparatorChar.ToString() + "regions.txt"));
             foreach (string region in regions)
             {
+                // Need to trigger a load for creature accessibility
+                _ = GetRoomAccessibility(region);
+
+                // Load object accessibilities from file
                 regionObjects[region] = new List<AbstractPhysicalObject.AbstractObjectType>();
                 regionObjectsAccessibility[region] = new List<List<SlugcatStats.Name>>();
                 string path = AssetManager.ResolveFilePath(string.Concat(new string[]
@@ -360,10 +365,18 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Adapted code from WorldLoader to just find which rooms are accessible to each slugcat
+        /// Adapted code from WorldLoader to just find which rooms are accessible to each slugcat.
+        /// Also loads which creatures are accessible
         /// </summary>
         private static Dictionary<string, List<SlugcatStats.Name>> LoadRoomAccessibility(string regionName)
         {
+            string regionUpper = regionName.ToUpperInvariant();
+            lock (regionCreatures)
+            {
+                regionCreatures[regionUpper] = new List<CreatureTemplate.Type>();
+                regionCreaturesAccessibility[regionUpper] = new List<List<SlugcatStats.Name>>();
+            }
+
             string worldFilePath = AssetManager.ResolveFilePath(string.Concat(new string[]
             {
                 "World",
@@ -584,29 +597,87 @@ namespace RainWorldRandomizer
                 }
             }
 
+            // Creatures loop
             if (creaturesStart != -1)
             {
-                for (int m = roomsStart; m <= roomsEnd; m++)
+                for (int m = creaturesStart; m <= creaturesEnd; m++)
                 {
                     if (worldFile[m] == "" || worldFile[m].StartsWith("//")) continue;
                     string[] split = Regex.Split(worldFile[m], " : ");
+                    List<SlugcatStats.Name> relevantSlugcats;
 
-                    // Manage whitelists
+                    // Manage slugcat whitelist / blacklists
                     if (split[0].StartsWith("("))
                     {
                         bool isBlacklist = split[0].StartsWith("(X-");
-                        string[] slugcatStrings = split[0].Substring(isBlacklist ? 2 : 0).Trim(new char[] { '(', ')'}).Split(',');
+                        // Convert comma seperated slugcat strings into array of SlugcatStats.Name
+                        List<SlugcatStats.Name> slugcats = split[0]
+                            .Split(')')[0]
+                            .Substring(isBlacklist ? 2 : 0)
+                            .Trim(new char[] { '(', ')' })
+                            .Split(',')
+                            .Select(s => new SlugcatStats.Name(s))
+                            .ToList();
 
                         if (isBlacklist)
                         {
-
+                            relevantSlugcats = allSlugcats.Except(slugcats).ToList();
                         }
+                        else
+                        {
+                            relevantSlugcats = slugcats;
+                        }
+                        split[0] = split[0].Split(')')[1];
+                    }
+                    else
+                    {
+                        relevantSlugcats = allSlugcats.ToList();
+                    }
+
+                    // Lineage handling
+                    // Only grab the first creature in the lineage tree. All lineages are considered out of logic
+                    if (split[0].Equals("LINEAGE"))
+                    {
+                        CreatureTemplate.Type firstCreature = WorldLoader.CreatureTypeFromString(Regex.Split(split[3], ", ")[0].Split('-')[0]);
+                        if (firstCreature == null) continue;
+                        AddCreatureToCache(regionUpper, firstCreature, relevantSlugcats);
+                        continue;
+                    }
+
+                    // Normal dens
+                    // Convert comma seperated den settings into a list of creature types that exist in the room
+                    CreatureTemplate.Type[] creatureStrings = Regex.Split(split[1], ", ")
+                        .Select(c => WorldLoader.CreatureTypeFromString(c.Split('-')[1]))
+                        .ToArray();
+
+                    foreach (CreatureTemplate.Type creature in creatureStrings)
+                    {
+                        AddCreatureToCache(regionUpper, creature, relevantSlugcats);
                     }
                 }
+            }
+
+            Plugin.Log.LogDebug($"Creatures in {regionUpper}");
+            for (int i = 0; i < regionCreatures[regionUpper].Count; i++)
+            {
+                Plugin.Log.LogDebug($"\t{regionCreatures[regionUpper][i]}: {string.Join(", ", regionCreaturesAccessibility[regionUpper][i].Select(c => c.value))}");
             }
 
             return accessibility;
         }
 
+        private static void AddCreatureToCache(string region, CreatureTemplate.Type creature, List<SlugcatStats.Name> slugcats)
+        {
+            if (!regionCreatures[region].Contains(creature))
+            {
+                regionCreatures[region].Add(creature);
+                regionCreaturesAccessibility[region].Add(slugcats);
+            }
+            else
+            {
+                int index = regionCreatures[region].IndexOf(creature);
+                regionCreaturesAccessibility[region][index] = regionCreaturesAccessibility[region][index].Union(slugcats).ToList();
+            }
+        }
     }
 }
