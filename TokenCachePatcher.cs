@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using RWCustom;
 
-namespace RainWorldRandomizer.Generation
+namespace RainWorldRandomizer
 {
     public static class TokenCachePatcher
     {
