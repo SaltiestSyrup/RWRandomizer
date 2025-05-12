@@ -38,7 +38,11 @@ namespace RainWorldRandomizer
                 definition.onTrigger(game);
                 timer = definition.duration;
 
-                if (definition.duration > 0) activeTraps.Add(this);
+                if (definition.duration > 0)
+                {
+                    TrapUpdate += Update;
+                    activeTraps.Add(this);
+                }
             }
 
             public void Update(RainWorldGame game)
@@ -54,6 +58,7 @@ namespace RainWorldRandomizer
             public void Deactivate(RainWorldGame game)
             {
                 definition.onDeactivate(game);
+                TrapUpdate -= Update;
                 activeTraps.Remove(this);
             }
             public void NewRoom(RainWorldGame game) => definition.onNewRoom(game);
@@ -122,6 +127,7 @@ namespace RainWorldRandomizer
         /// Traps with a duration that are currently active
         /// </summary>
         private static HashSet<Trap> activeTraps = new HashSet<Trap>();
+        private static Action<RainWorldGame> TrapUpdate = (game) => { };
 
         public static void ApplyHooks()
         {
@@ -158,10 +164,11 @@ namespace RainWorldRandomizer
                 currentCooldown--;
             }
 
-            foreach (Trap trap in activeTraps)
-            {
-                trap.Update(self);
-            }
+            TrapUpdate(self);
+            //foreach (Trap trap in activeTraps)
+            //{
+            //    trap.Update(self);
+            //}
 
             if (pendingTrapQueue.Count == 0) return;
             
