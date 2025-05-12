@@ -1,21 +1,13 @@
 using Archipelago.MultiClient.Net;
-using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Colors;
 using Archipelago.MultiClient.Net.Enums;
-using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
-using Archipelago.MultiClient.Net.Models;
 using Archipelago.MultiClient.Net.Packets;
 using MoreSlugcats;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
 using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
-using System.Security.Policy;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -228,7 +220,7 @@ namespace RainWorldRandomizer
         /// Disconnect from the current session
         /// </summary>
         /// <returns>True if there was a running session to disconnect</returns>
-        public static bool Disconnect()
+        public static bool Disconnect(bool resetManager = true)
         {
             if (Session == null) return false;
 
@@ -241,7 +233,8 @@ namespace RainWorldRandomizer
             Authenticated = false;
             ReceivedSlotData = false;
 
-            (Plugin.RandoManager as ManagerArchipelago).Reset();
+            if (resetManager) (Plugin.RandoManager as ManagerArchipelago).Reset();
+
             return true;
         }
 
@@ -599,7 +592,7 @@ namespace RainWorldRandomizer
 
             if (e is WebSocketException)
             {
-                Session.Socket.DisconnectAsync();
+                Disconnect(false);
                 Plugin.Log.LogError("Disconnected Socket due to WebSocketException");
                 Plugin.Singleton.notifQueue.Enqueue("You have been disconnected due to an exception. Please attempt to reconnect.");
             }

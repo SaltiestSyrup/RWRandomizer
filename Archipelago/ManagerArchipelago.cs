@@ -1,13 +1,8 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -317,7 +312,7 @@ namespace RainWorldRandomizer
             locationsStatus[location] = true;
             
             // We still gave the location, but we're offline so it can't be sent yet
-            if (!ArchipelagoConnection.Session.Socket.Connected)
+            if (!(ArchipelagoConnection.Session?.Socket.Connected ?? false))
             {
                 Plugin.Log.LogInfo($"Found location while offline: {location}");
                 return true;
@@ -369,12 +364,15 @@ namespace RainWorldRandomizer
             if (!locationsLoaded) return;
 
             // Set locations the server says we found
-            foreach (long locID in ArchipelagoConnection.Session.Locations.AllLocationsChecked)
+            if (ArchipelagoConnection.Session != null)
             {
-                string loc = GetLocStringIDFromID(locID);
-                if (locationsStatus.TryGetValue(loc, out bool found) && !found)
+                foreach (long locID in ArchipelagoConnection.Session.Locations.AllLocationsChecked)
                 {
-                    locationsStatus[loc] = true;
+                    string loc = GetLocStringIDFromID(locID);
+                    if (locationsStatus.TryGetValue(loc, out bool found) && !found)
+                    {
+                        locationsStatus[loc] = true;
+                    }
                 }
             }
 
