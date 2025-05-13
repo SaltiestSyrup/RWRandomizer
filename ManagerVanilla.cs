@@ -101,6 +101,7 @@ namespace RainWorldRandomizer
                 {
                     randomizerKey = generator.GetCompletedSeed();
                     customStartDen = generator.customStartDen;
+                    currentSeed = generator.generationSeed;
                     SaveManager.WriteSavedGameToFile(randomizerKey, storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot);
                 }
                 else

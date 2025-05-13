@@ -31,7 +31,6 @@ namespace RainWorldRandomizer.Generation
 
         private SlugcatStats.Name slugcat;
         private SlugcatStats.Timeline timeline;
-        private int generationSeed;
 
         public enum GenerationStep
         {
@@ -65,6 +64,7 @@ namespace RainWorldRandomizer.Generation
 
         public StringBuilder generationLog = new StringBuilder();
         public string customStartDen = "NONE";
+        public int generationSeed;
 
 
         public VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int generationSeed = 0)
@@ -283,28 +283,29 @@ namespace RainWorldRandomizer.Generation
                 // Passage locations
                 if (Options.UsePassageChecks)
                 {
+                    // TODO: Mother, Hunter, Monk, Outlaw, and Saint currently have placeholder rules as in-depth requirements are a difficult problem to solve
                     AccessRule accessRule = new AccessRule();
                     switch (passage)
                     {
                         case "Martyr":
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
                             break;
-                        // TODO: Find a way to parse pup spawn chance in regions without loading them
                         case "Mother":
-                            accessRule = new CompoundAccessRule(new AccessRule[]
-                            {
-                                new RegionAccessRule("HI"),
-                                new RegionAccessRule("DS"),
-                                new RegionAccessRule("GW"),
-                                new RegionAccessRule("SH"),
-                                new RegionAccessRule("CC"),
-                                new RegionAccessRule("SI"),
-                                new RegionAccessRule("LF"),
-                                new RegionAccessRule("SB"),
-                                new RegionAccessRule("VS"),
-                            }, CompoundAccessRule.CompoundOperation.Any);
+                            // Surely there's a pup spawnable region within a group of 5
+                            // The correct way to do this is by reading region properties files
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
                             break;
-                        // TODO: Populate Pilgrim passage requirements
                         case "Pilgrim":
+                            List<string> echoRegions = new List<string>();
+                            foreach (string region in SlugcatStats.SlugcatStoryRegions(slugcat))
+                            {
+                                if (World.CheckForRegionGhost(slugcat, region)) echoRegions.Add(region);
+                            }
+                            accessRule = new CompoundAccessRule(
+                                echoRegions.Select(r => new RegionAccessRule(r)).ToArray(),
+                                CompoundAccessRule.CompoundOperation.All);
                             break;
                         case "Survivor":
                             accessRule = new KarmaAccessRule(5);
@@ -329,17 +330,25 @@ namespace RainWorldRandomizer.Generation
                         case "Chieftain":
                             accessRule = new CreatureAccessRule(CreatureTemplate.Type.Scavenger);
                             break;
-                        // TODO: Populate Hunter and Monk passage requirements
                         case "Hunter":
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
+                            break;
                         case "Monk":
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
                             break;
                         case "Nomad":
                             accessRule = new CompoundAccessRule(AccessRuleConstants.Regions, 
                                 CompoundAccessRule.CompoundOperation.AtLeast, 4);
                             break;
-                        // TODO: Figure out Outlaw and Saint passage requirements
                         case "Outlaw":
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 3);
+                            break;
                         case "Saint":
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
                             break;
                         case "Scholar":
                             List<AccessRule> rules = new List<AccessRule>()
@@ -417,14 +426,7 @@ namespace RainWorldRandomizer.Generation
                         AccessRule rule = new ObjectAccessRule(data.type);
                         if (data.type == AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)
                         {
-                            rule = new CompoundAccessRule(new AccessRule[]
-                            {
-                                new RegionAccessRule("SS"),
-                                new RegionAccessRule("SL"),
-                                new RegionAccessRule("DM"),
-                                new RegionAccessRule("CL"),
-                                new RegionAccessRule("RM"),
-                            }, CompoundAccessRule.CompoundOperation.Any);
+                            rule = AccessRuleConstants.NeuronAccess;
                         }
 
                         locations.Add(new Location($"FoodQuest-{data.type.value}", Location.Type.Food, rule));
@@ -435,15 +437,7 @@ namespace RainWorldRandomizer.Generation
             // Create Special locations
             if (Options.UseSpecialChecks)
             {
-                locations.Add(new Location("Eat_Neuron", Location.Type.Story, 
-                    new CompoundAccessRule(new AccessRule[]
-                    {
-                        new RegionAccessRule("SS"),
-                        new RegionAccessRule("SL"),
-                        new RegionAccessRule("DM"),
-                        new RegionAccessRule("CL"),
-                        new RegionAccessRule("RM"),
-                    }, CompoundAccessRule.CompoundOperation.Any)));
+                locations.Add(new Location("Eat_Neuron", Location.Type.Story, AccessRuleConstants.NeuronAccess));
 
                 switch (slugcat.value)
                 {
@@ -474,7 +468,7 @@ namespace RainWorldRandomizer.Generation
                             new CompoundAccessRule(new AccessRule[]
                             {
                                 new RegionAccessRule("SL"),
-                                new AccessRule("NSHSwarmer")
+                                new AccessRule("Object-NSHSwarmer")
                             }, CompoundAccessRule.CompoundOperation.All)));
                         locations.Add(new Location("Meet_FP", Location.Type.Story,
                             new RegionAccessRule("SS")));

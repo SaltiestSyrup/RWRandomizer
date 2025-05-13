@@ -355,6 +355,15 @@ namespace RainWorldRandomizer.Generation
 
         public static void InitConstants()
         {
+            NeuronAccess = new CompoundAccessRule(new AccessRule[]
+            {
+                new RegionAccessRule("SS"),
+                new RegionAccessRule("SL"),
+                new RegionAccessRule("DM"),
+                new RegionAccessRule("CL"),
+                new RegionAccessRule("RM"),
+            }, CompoundAccessRule.CompoundOperation.Any);
+
             List<AccessRule> lizards = new List<AccessRule>
             {
                 new CreatureAccessRule(CreatureTemplate.Type.BlueLizard),
