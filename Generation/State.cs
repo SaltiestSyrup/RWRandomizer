@@ -109,9 +109,19 @@ namespace RainWorldRandomizer.Generation
             // Add any new region's placed objects
             foreach (string region in Regions)
             {
-                foreach (AbstractPhysicalObject.AbstractObjectType type in TokenCachePatcher.regionObjects[region])
+                for (int i = 0; i < TokenCachePatcher.regionObjects[region].Count; i++)
                 {
-                    Objects.Add(type);
+                    if (TokenCachePatcher.regionObjectsAccessibility[region][i].Contains(Slugcat))
+                    {
+                        Objects.Add(TokenCachePatcher.regionObjects[region][i]);
+                    }
+                }
+                for (int j = 0; j < TokenCachePatcher.regionCreatures[region].Count; j++)
+                {
+                    if (TokenCachePatcher.regionCreaturesAccessibility[region][j].Contains(Slugcat))
+                    {
+                        Creatures.Add(TokenCachePatcher.regionCreatures[region][j]);
+                    }
                 }
             }
 
