@@ -138,33 +138,35 @@ namespace RainWorldRandomizer.Generation
         private bool UpdateGate(string gateName)
         {
             string[] gate = Regex.Split(gateName, "_");
+            string regLeft = Plugin.ProperRegionMap[gate[1]];
+            string regRight = Plugin.ProperRegionMap[gate[2]];
 
             // One way gate logic
             if (Constants.OneWayGates.ContainsKey(gateName))
             {
                 // If the gate only travels right, check for left region access
-                if (Regions.Contains(gate[1])
+                if (Regions.Contains(regLeft)
                     && !Constants.OneWayGates[gateName]
-                    && !Regions.Contains(gate[2]))
+                    && !Regions.Contains(regRight))
                 {
-                    Regions.Add(gate[2]);
+                    Regions.Add(regRight);
                     return true;
                 }
                 // If the gate only travels left, check for right region access
-                if (Regions.Contains(gate[2])
+                if (Regions.Contains(regRight)
                     && Constants.OneWayGates[gateName]
-                    && !Regions.Contains(gate[1]))
+                    && !Regions.Contains(regLeft))
                 {
-                    Regions.Add(gate[1]);
+                    Regions.Add(regLeft);
                     return true;
                 }
                 return false;
             }
 
-            if (Regions.Contains(gate[1]) ^ Regions.Contains(gate[2]))
+            if (Regions.Contains(regLeft) ^ Regions.Contains(regRight))
             {
-                Regions.Add(gate[1]);
-                Regions.Add(gate[2]);
+                Regions.Add(regLeft);
+                Regions.Add(regRight);
                 return true;
             }
 

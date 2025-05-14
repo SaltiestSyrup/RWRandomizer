@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -252,6 +250,8 @@ namespace RainWorldRandomizer.Generation
                 throw new ArgumentException("Given option does not exist in Options class", "optionName");
             }
         }
+
+        public override bool IsMet(State state) => true;
 
         public override bool IsPossible(State state)
         {

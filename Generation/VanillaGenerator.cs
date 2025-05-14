@@ -1,6 +1,7 @@
 ﻿using MoreSlugcats;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -80,6 +81,8 @@ namespace RainWorldRandomizer.Generation
             RandomizedGame = new Dictionary<Location, Item>();
 
             // Initialize RNG
+            // Using inferior System.Random because it's instanced rather than static.
+            // UnityEngine.Random doesn't play well with threads
             this.generationSeed = generationSeed;
             randomState = new Random(generationSeed);
             
@@ -104,29 +107,20 @@ namespace RainWorldRandomizer.Generation
             generationThread = new Task(Generate);
             generationThread.Start();
             return generationThread;
-            //try
-            //{
-            //    generationThread.Wait();
-            //}
-            //catch (Exception e)
-            //{
-            //    Plugin.Log.LogError(e);
-            //}
-            //finally
-            //{
-            //    Plugin.Log.LogDebug(generationLog);
-            //}
         }
 
         private void Generate()
         {
             generationLog.AppendLine("Begin Generation");
+            Stopwatch sw = Stopwatch.StartNew();
+
             InitializeState();
             ApplyRuleOverrides();
             BalanceItems();
             PlaceProgression();
             PlaceFiller();
             generationLog.AppendLine("Generation complete!");
+            generationLog.AppendLine($"Gen time: {sw.ElapsedMilliseconds} ms");
             CurrentStage = GenerationStep.Complete;
         }
 
@@ -529,12 +523,12 @@ namespace RainWorldRandomizer.Generation
                     if (Options.UseEnergyCell)
                     {
                         ItemsToPlace.Add(new Item("Object-EnergyCell", Item.Type.Object, Item.Importance.Progression));
-                        ItemsToPlace.Add(new Item("FP_Disconnected", Item.Type.Other, Item.Importance.Progression));
+                        ItemsToPlace.Add(new Item("DisconnectFP", Item.Type.Other, Item.Importance.Progression));
                     }
                     break;
                 case "Spear":
                     ItemsToPlace.Add(new Item("PearlObject-Spearmasterpearl", Item.Type.Object, Item.Importance.Progression));
-                    ItemsToPlace.Add(new Item("Rewrite_Spear_Pearl", Item.Type.Other, Item.Importance.Progression));
+                    ItemsToPlace.Add(new Item("RewriteSpearPearl", Item.Type.Other, Item.Importance.Progression));
                     break;
             }
 
@@ -580,6 +574,8 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("BALANCE ITEMS");
             CurrentStage = GenerationStep.BalancingItems;
+
+
             // Manage case where there are not enough locations for the amount of items in pool
             while (state.AllLocations.Count < ItemsToPlace.Count)
             {
@@ -676,7 +672,7 @@ namespace RainWorldRandomizer.Generation
                         {
                             string[] gate = Regex.Split(i.id, "_");
                             if (state.Gates.Contains(i.id)) continue;
-                            if (state.Regions.Contains(gate[1]) ^ state.Regions.Contains(gate[2]))
+                            if (state.Regions.Contains(Plugin.ProperRegionMap[gate[1]]) ^ state.Regions.Contains(Plugin.ProperRegionMap[gate[2]]))
                             {
                                 placeableGates.Add(i);
                             }
@@ -691,7 +687,7 @@ namespace RainWorldRandomizer.Generation
                 bool useOtherProgThisCycle;
                 if (placeableOtherProg.Count == 0) useOtherProgThisCycle = false;
                 else if (placeableGates.Count == 0) useOtherProgThisCycle = true;
-                else useOtherProgThisCycle = randomState.NextDouble() < OTHER_PROG_PLACEMENT_CHANCE;
+                else useOtherProgThisCycle = state.AvailableLocations.Count > 5 && randomState.NextDouble() < OTHER_PROG_PLACEMENT_CHANCE;
                 List<Item> placeableProg = useOtherProgThisCycle ? placeableOtherProg : placeableGates;
 
                 // Check if we have failed
@@ -808,6 +804,7 @@ namespace RainWorldRandomizer.Generation
                 }
                 else
                 {
+
                     Plugin.Log.LogWarning($"Tried to place double location: {placement.Key.id}");
                 }
             }

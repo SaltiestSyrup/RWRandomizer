@@ -73,7 +73,7 @@ namespace RainWorldRandomizer
 
             if (Input.GetKey("o"))
             {
-                DebugBulkGeneration(50);
+                DebugBulkGeneration(500);
             }
 
             if (continueSaved)
@@ -98,6 +98,8 @@ namespace RainWorldRandomizer
                 VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat));
                 bool timedOut = !generator.BeginGeneration().Wait(5000);
 
+                Plugin.Log.LogDebug(generator.generationLog);
+
                 if (generator.CurrentStage == VanillaGenerator.GenerationStep.Complete)
                 {
                     randomizerKey = generator.GetCompletedSeed();
@@ -108,7 +110,6 @@ namespace RainWorldRandomizer
                 else
                 {
                     if (timedOut) Plugin.Log.LogDebug("Generation timed out.");
-                    Plugin.Log.LogDebug(generator.generationLog);
                     Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
                     return;
                 }
@@ -820,6 +821,8 @@ namespace RainWorldRandomizer
             int numSucceeded = 0;
             int numFailed = 0;
 
+            Stopwatch sw = Stopwatch.StartNew();
+
             Plugin.Log.LogDebug("Starting bulk generation test");
             for (int i = 0; i < howMany; i++)
             {
@@ -827,8 +830,12 @@ namespace RainWorldRandomizer
                 genTask[i] = generators[i].BeginGeneration();
             }
 
-            try { Task.WaitAll(genTask, 6000); }
+            // Only gen for up to 10 seconds
+            // Try block here to stop WaitAll from throwing innner task's exceptions
+            try { Task.WaitAll(genTask, 10000); }
             catch { }
+
+            sw.Stop();
 
             for (int j = 0; j < howMany; j++)
             {
@@ -850,8 +857,7 @@ namespace RainWorldRandomizer
                     Plugin.Log.LogDebug(generators[j].generationLog);
                 }
             }
-
-            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%");
+            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tTime: {sw.ElapsedMilliseconds} ms");
         }
 
         private static List<string> UpdateAvailableRegions(List<string> availableRegions, List<string> preOpened, string newGate)
