@@ -46,8 +46,29 @@ namespace RainWorldRandomizer.Generation
 
         public void DefineLocs(HashSet<Location> allLocs)
         {
-            AllLocations = allLocs;
-            UnreachedLocations = allLocs;
+            AllLocations = new HashSet<Location>();
+
+            foreach (Location loc in allLocs)
+            {
+                // If a location with the same name already exists, combine their AccessRules
+                // and consider them the same location. This effectively means when the same
+                // location is collectible in multiple places, it will be deemed accessible
+                // once either condition is met.
+                if (AllLocations.Contains(loc, new LocationIDComparer()))
+                {
+                    Location mergedLoc = AllLocations.First(l => l.id == loc.id);
+                    mergedLoc.accessRule = new CompoundAccessRule(new AccessRule[]
+                    {
+                        mergedLoc.accessRule, loc.accessRule
+                    }, CompoundAccessRule.CompoundOperation.Any);
+                }
+                else
+                {
+                    AllLocations.Add(loc);
+                }
+            }
+
+            UnreachedLocations = AllLocations;
             AvailableLocations = new HashSet<Location>();
         }
 
@@ -171,6 +192,22 @@ namespace RainWorldRandomizer.Generation
             }
 
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Custom <see cref="IEqualityComparer{T}"/> allowing <see cref="Location"/>s to be considered equal if they have the same ID
+    /// </summary>
+    public class LocationIDComparer : IEqualityComparer<Location>
+    {
+        public bool Equals(Location x, Location y)
+        {
+            return x.id == y.id;
+        }
+
+        public int GetHashCode(Location obj)
+        {
+            return obj.id.GetHashCode();
         }
     }
 }
