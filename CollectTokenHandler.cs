@@ -8,6 +8,7 @@ namespace RainWorldRandomizer
 {
     public class CollectTokenHandler
     {
+        public SlugcatStats.Name tokensLoadedFor = null;
         public Dictionary<string, string[]> availableTokens = new Dictionary<string, string[]>();
 
         public void ApplyHooks()
@@ -84,6 +85,7 @@ namespace RainWorldRandomizer
 
                 availableTokens.Add(allRegions[i], idsToAdd.ToArray());
             }
+            tokensLoadedFor = slugcat;
         }
 
         /// <summary>

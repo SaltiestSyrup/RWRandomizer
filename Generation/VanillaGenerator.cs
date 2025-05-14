@@ -82,7 +82,7 @@ namespace RainWorldRandomizer.Generation
             // Initialize RNG
             this.generationSeed = generationSeed;
             randomState = new Random(generationSeed);
-
+            
             // Combine custom rules together
             RuleOverrides = GlobalRuleOverrides;
             // Slugcat specific rules take priority over global ones
@@ -99,23 +99,23 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
-        public void BeginGeneration()
+        public Task BeginGeneration()
         {
             generationThread = new Task(Generate);
             generationThread.Start();
-
-            try
-            {
-                generationThread.Wait();
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError(e);
-            }
-            finally
-            {
-                Plugin.Log.LogDebug(generationLog);
-            }
+            return generationThread;
+            //try
+            //{
+            //    generationThread.Wait();
+            //}
+            //catch (Exception e)
+            //{
+            //    Plugin.Log.LogError(e);
+            //}
+            //finally
+            //{
+            //    Plugin.Log.LogDebug(generationLog);
+            //}
         }
 
         private void Generate()
@@ -140,7 +140,13 @@ namespace RainWorldRandomizer.Generation
             // Load Tokens
             if (Options.UseSandboxTokenChecks)
             {
-                Plugin.Singleton.collectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
+                lock (Plugin.Singleton.collectTokenHandler)
+                {
+                    if (Plugin.Singleton.collectTokenHandler.tokensLoadedFor != slugcat)
+                    {
+                        Plugin.Singleton.collectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
+                    }
+                }
             }
 
             // Regions loop
@@ -531,8 +537,6 @@ namespace RainWorldRandomizer.Generation
                     ItemsToPlace.Add(new Item("Rewrite_Spear_Pearl", Item.Type.Other, Item.Importance.Progression));
                     break;
             }
-
-            TokenCachePatcher.ClearRoomAccessibilities();
 
             state.DefineLocs(locations);
         }

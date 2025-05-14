@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -72,7 +73,7 @@ namespace RainWorldRandomizer
 
             if (Input.GetKey("o"))
             {
-                //DebugBulkGeneration(100);
+                DebugBulkGeneration(50);
             }
 
             if (continueSaved)
@@ -95,7 +96,7 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
                 VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat));
-                generator.BeginGeneration();
+                bool timedOut = !generator.BeginGeneration().Wait(5000);
 
                 if (generator.CurrentStage == VanillaGenerator.GenerationStep.Complete)
                 {
@@ -106,6 +107,8 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
+                    if (timedOut) Plugin.Log.LogDebug("Generation timed out.");
+                    Plugin.Log.LogDebug(generator.generationLog);
                     Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
                     return;
                 }
@@ -113,7 +116,7 @@ namespace RainWorldRandomizer
 
             isRandomizerActive = true;
         }
-
+        /*
         public bool InitializeSession(SlugcatStats.Name slugcat)
         {
             Plugin.ProperRegionMap.Clear();
@@ -455,7 +458,8 @@ namespace RainWorldRandomizer
             TokenCachePatcher.ClearRoomAccessibilities();
             return true;
         }
-
+        */
+        /*
         public bool GenerateRandomizer()
         {
             Plugin.Log.LogInfo($"Playing as {currentSlugcat}");
@@ -807,34 +811,47 @@ namespace RainWorldRandomizer
             Plugin.Log.LogInfo("Generation Complete!");
             return true;
         }
-
+        */
+        
         public void DebugBulkGeneration(int howMany)
         {
-            Stopwatch sw = new Stopwatch();
+            VanillaGenerator[] generators = new VanillaGenerator[howMany];
+            Task[] genTask = new Task[howMany];
             int numSucceeded = 0;
             int numFailed = 0;
-            long sumRuntime = 0;
 
             Plugin.Log.LogDebug("Starting bulk generation test");
             for (int i = 0; i < howMany; i++)
             {
-                sw.Restart();
-                if (GenerateRandomizer())
-                    numSucceeded++;
-                else
-                    numFailed++;
-                sumRuntime += sw.ElapsedMilliseconds;
-                Plugin.Log.LogDebug($"Gen complete in {sw.ElapsedMilliseconds} ms");
+                generators[i] = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue));
+                genTask[i] = generators[i].BeginGeneration();
+            }
 
-                // Reset key
-                var keys = randomizerKey.Keys.ToList();
-                foreach (var key in keys)
+            try { Task.WaitAll(genTask, 6000); }
+            catch { }
+
+            for (int j = 0; j < howMany; j++)
+            {
+                if (generators[j].CurrentStage == VanillaGenerator.GenerationStep.FailedGen)
                 {
-                    randomizerKey[key] = null;
+                    Plugin.Log.LogError($"Generation failure with Exception:");
+                    Plugin.Log.LogError(genTask[j].Exception);
+                    Plugin.Log.LogDebug($"Log for failed gen:");
+                    Plugin.Log.LogDebug(generators[j].generationLog);
+                    numFailed++;
+                }
+                else if (generators[j].CurrentStage == VanillaGenerator.GenerationStep.Complete)
+                {
+                    numSucceeded++;
+                }
+                else
+                {
+                    Plugin.Log.LogError($"Generation was timed out before completion during stage: {generators[j].CurrentStage}");
+                    Plugin.Log.LogDebug(generators[j].generationLog);
                 }
             }
 
-            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tAverage time: {(float)sumRuntime / howMany} ms");
+            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%");
         }
 
         private static List<string> UpdateAvailableRegions(List<string> availableRegions, List<string> preOpened, string newGate)
