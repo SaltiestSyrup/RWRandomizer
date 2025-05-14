@@ -1,12 +1,12 @@
 ﻿using MoreSlugcats;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Random = UnityEngine.Random;
+using Random = System.Random;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -53,6 +53,7 @@ namespace RainWorldRandomizer.Generation
         }
 
         private Task generationThread;
+        private Random randomState;
 
         private State state;
         private List<Item> ItemsToPlace = new List<Item>();
@@ -79,8 +80,8 @@ namespace RainWorldRandomizer.Generation
             RandomizedGame = new Dictionary<Location, Item>();
 
             // Initialize RNG
-            this.generationSeed = generationSeed == 0 ? Random.Range(0, int.MaxValue) : generationSeed;
-            Random.InitState(generationSeed);
+            this.generationSeed = generationSeed;
+            randomState = new Random(generationSeed);
 
             // Combine custom rules together
             RuleOverrides = GlobalRuleOverrides;
@@ -590,7 +591,7 @@ namespace RainWorldRandomizer.Generation
                 IEnumerable<Item> gateItems = ItemsToPlace.Where(i => i.type == Item.Type.Gate);
                 if (gateItems.Count() > 0)
                 {
-                    Item item = gateItems.ElementAt(Random.Range(0, gateItems.Count()));
+                    Item item = gateItems.ElementAt(randomState.Next(gateItems.Count()));
                     ItemsToPlace.Remove(item);
                     UnplacedGates.Add(item.ToString());
                     state.AddGate(item.ToString());
@@ -624,7 +625,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     // Duplicate a random gate item
                     IEnumerable<Item> gateItems = ItemsToPlace.Where(i => i.type == Item.Type.Gate);
-                    Item gate = gateItems.ElementAt(Random.Range(0, gateItems.Count()));
+                    Item gate = gateItems.ElementAt(randomState.Next(gateItems.Count()));
                     itemsToAdd.Add(gate);
                     generationLog.AppendLine($"Added duplicate gate item: {gate}");
                 }
@@ -643,7 +644,7 @@ namespace RainWorldRandomizer.Generation
             // Determine starting region
             if (Options.RandomizeSpawnLocation)
             {
-                customStartDen = ManagerVanilla.FindRandomStart(slugcat);
+                customStartDen = FindRandomStart(slugcat);
                 generationLog.AppendLine($"Using custom start den: {customStartDen}");
                 state.AddRegion(Plugin.ProperRegionMap[Regex.Split(customStartDen, "_")[0]]);
             }
@@ -686,7 +687,7 @@ namespace RainWorldRandomizer.Generation
                 bool useOtherProgThisCycle;
                 if (placeableOtherProg.Count == 0) useOtherProgThisCycle = false;
                 else if (placeableGates.Count == 0) useOtherProgThisCycle = true;
-                else useOtherProgThisCycle = Random.value < OTHER_PROG_PLACEMENT_CHANCE;
+                else useOtherProgThisCycle = randomState.NextDouble() < OTHER_PROG_PLACEMENT_CHANCE;
                 List<Item> placeableProg = useOtherProgThisCycle ? placeableOtherProg : placeableGates;
 
                 // Check if we have failed
@@ -706,7 +707,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 Location chosenLocation = state.PopRandomLocation();
-                Item chosenItem = placeableProg[Random.Range(0, placeableProg.Count)];
+                Item chosenItem = placeableProg[randomState.Next(placeableProg.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
 
                 if (chosenItem.type == Item.Type.Gate)
@@ -748,7 +749,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 Location chosenLocation = state.PopRandomLocation();
-                Item chosenItem = placeableProg[Random.Range(0, placeableProg.Count)];
+                Item chosenItem = placeableProg[randomState.Next(placeableProg.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
 
                 if (chosenItem.type == Item.Type.Gate) state.AddGate(chosenItem.id);
@@ -784,7 +785,7 @@ namespace RainWorldRandomizer.Generation
             while (state.AvailableLocations.Count > 0)
             {
                 Location chosenLocation = state.PopRandomLocation();
-                Item chosenItem = ItemsToPlace[Random.Range(0, ItemsToPlace.Count)];
+                Item chosenItem = ItemsToPlace[randomState.Next(ItemsToPlace.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
                 ItemsToPlace.Remove(chosenItem);
             }
@@ -917,6 +918,35 @@ namespace RainWorldRandomizer.Generation
                 // Token cache fails to filter this pearl to only Past GW
                 GlobalRuleOverrides.Add("Pearl-MS", new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore));
             }
+        }
+
+        public string FindRandomStart(SlugcatStats.Name slugcat)
+        {
+            Dictionary<string, List<string>> contenders = new Dictionary<string, List<string>>();
+            if (File.Exists(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt")))
+            {
+                string[] file = File.ReadAllLines(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt"));
+                foreach (string line in file)
+                {
+                    if (!line.StartsWith("//") && line.Length > 0)
+                    {
+                        string region = Regex.Split(line, "_")[0];
+                        if (SlugcatStats.SlugcatStoryRegions(slugcat).Contains(region))
+                        {
+                            if (!contenders.ContainsKey(region))
+                            {
+                                contenders.Add(region, new List<string>());
+                            }
+                            contenders[region].Add(line);
+                        }
+                    }
+                }
+
+                string selectedRegion = contenders.Keys.ToArray()[randomState.Next(0, contenders.Count)];
+                return contenders[selectedRegion][randomState.Next(contenders[selectedRegion].Count)];
+            }
+
+            return "NONE";
         }
 
         public class GenerationFailureException : Exception
