@@ -53,6 +53,11 @@ namespace RainWorldRandomizer.Generation
         {
             return ReqName != IMPOSSIBLE_ID;
         }
+
+        public override string ToString()
+        {
+            return $"Has item {ReqName}";
+        }
     }
 
     /// <summary>
@@ -74,6 +79,11 @@ namespace RainWorldRandomizer.Generation
         public override bool IsPossible(State state)
         {
             return Region.GetFullRegionOrder(state.Timeline).Contains(ReqName);
+        }
+
+        public override string ToString()
+        {
+            return $"Can enter {ReqName}";
         }
     }
 
@@ -100,6 +110,11 @@ namespace RainWorldRandomizer.Generation
         {
             return reqAmount > 0 && reqAmount <= 10;
         }
+
+        public override string ToString()
+        {
+            return $"Has {reqAmount} Karma";
+        }
     }
 
     /// <summary>
@@ -116,6 +131,11 @@ namespace RainWorldRandomizer.Generation
         public override bool IsMet(State state)
         {
             return state.Gates.Contains(ReqName);
+        }
+
+        public override string ToString()
+        {
+            return $"Gate {ReqName} is open";
         }
     }
 
@@ -137,6 +157,11 @@ namespace RainWorldRandomizer.Generation
         {
             return state.Creatures.Contains(creature);
         }
+
+        public override string ToString()
+        {
+            return $"Can find {ReqName}";
+        }
     }
 
     /// <summary>
@@ -157,6 +182,11 @@ namespace RainWorldRandomizer.Generation
         {
             return state.Objects.Contains(item);
         }
+
+        public override string ToString()
+        {
+            return $"Can find {ReqName}";
+        }
     }
 
     /// <summary>
@@ -168,6 +198,11 @@ namespace RainWorldRandomizer.Generation
         {
             Type = AccessRuleType.Echo;
             ReqName = echoID.value;
+        }
+
+        public override string ToString()
+        {
+            return $"Can find Echo {ReqName}";
         }
     }
 
@@ -181,11 +216,17 @@ namespace RainWorldRandomizer.Generation
         public SlugcatAccessRule(SlugcatStats.Name slugcat)
         {
             this.slugcat = slugcat;
+            ReqName = slugcat.value;
         }
 
         public override bool IsPossible(State state)
         {
             return state.Slugcat == slugcat;
+        }
+
+        public override string ToString()
+        {
+            return $"Playing as {ReqName}";
         }
     }
 
@@ -208,6 +249,7 @@ namespace RainWorldRandomizer.Generation
         {
             this.timeline = timeline;
             this.operation = operation;
+            ReqName = timeline.value;
         }
 
         public override bool IsPossible(State state)
@@ -224,6 +266,21 @@ namespace RainWorldRandomizer.Generation
                     return false;
             }
         }
+
+        public override string ToString()
+        {
+            switch (operation)
+            {
+                case TimelineOperation.At:
+                    return $"Playing at timeline: {ReqName}";
+                case TimelineOperation.AtOrBefore:
+                    return $"Playing at or before timeline: {ReqName}";
+                case TimelineOperation.AtOrAfter:
+                    return $"Playing at or after timeline: {ReqName}";
+                default:
+                    return $"Unknown timeline operation: {ReqName}";
+            }
+        }
     }
 
     /// <summary>
@@ -232,6 +289,7 @@ namespace RainWorldRandomizer.Generation
     public class OptionAccessRule : AccessRule
     {
         private PropertyInfo optionProperty;
+        private bool inverted;
 
         /// <summary>
         /// Set location possiblity based on if <paramref name="optionName"/> is enabled.
@@ -242,6 +300,7 @@ namespace RainWorldRandomizer.Generation
         public OptionAccessRule(string optionName, bool inverted = false)
         {
             ReqName = $"Option-{optionName}";
+            this.inverted = inverted;
 
             optionProperty = typeof(Options).GetProperty(optionName, BindingFlags.Public | BindingFlags.Static, null, typeof(bool), new Type[0], null);
 
@@ -258,7 +317,8 @@ namespace RainWorldRandomizer.Generation
             // This should always succeed due to check in constructor, but catch exception just in case
             try
             {
-                return (bool)optionProperty.GetValue(null);
+                bool optionSet = (bool)optionProperty.GetValue(null);
+                return inverted ? !optionSet : optionSet;
             }
             catch (Exception e)
             {
@@ -266,6 +326,11 @@ namespace RainWorldRandomizer.Generation
                 Plugin.Log.LogError(e);
                 return false;
             }
+        }
+
+        public override string ToString()
+        {
+            return $"{ReqName} is set to {!inverted}";
         }
     }
 
@@ -335,6 +400,22 @@ namespace RainWorldRandomizer.Generation
                     return count >= valAmount;
                 default:
                     return false;
+            }
+        }
+
+        public override string ToString()
+        {
+            string joinedRules = string.Join(", ", accessRules.Select(r => r.ToString()));
+            switch (operation)
+            {
+                case CompoundOperation.All:
+                    return $"ALL of: ({joinedRules})";
+                case CompoundOperation.Any:
+                    return $"ANY of: ({joinedRules})";
+                case CompoundOperation.AtLeast:
+                    return $"At least {valAmount} of: ({joinedRules})";
+                default:
+                    return $"Invalid compound operation containing: ({joinedRules})";
             }
         }
     }

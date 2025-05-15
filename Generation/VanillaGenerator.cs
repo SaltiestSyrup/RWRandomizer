@@ -566,6 +566,7 @@ namespace RainWorldRandomizer.Generation
             foreach (Location loc in state.AllLocations)
             {
                 generationLog.AppendLine($"\t{loc.id}");
+                generationLog.AppendLine($"\t\t{loc.accessRule}");
             }
             generationLog.AppendLine();
         }
@@ -767,7 +768,7 @@ namespace RainWorldRandomizer.Generation
                 generationLog.AppendLine("Failed to aquire access to:");
                 foreach (Location loc in state.UnreachedLocations)
                 {
-                    generationLog.AppendLine($"\t{loc.id}");
+                    generationLog.AppendLine($"\t{loc.id}; {loc.accessRule}");
                 }
                 // TODO: Re-enable this failure state
                 //CurrentStage = GenerationStep.FailedGen;
