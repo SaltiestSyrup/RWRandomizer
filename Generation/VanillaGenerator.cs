@@ -496,9 +496,17 @@ namespace RainWorldRandomizer.Generation
                     // Saint has 2 seperate checks here for ascending
                     case "Saint":
                         locations.Add(new Location("Ascend_LttM", Location.Type.Story,
-                            new RegionAccessRule("SL")));
+                            new CompoundAccessRule(new AccessRule[]
+                            {
+                                new RegionAccessRule("SL"),
+                                new KarmaAccessRule(10)
+                            }, CompoundAccessRule.CompoundOperation.All)));
                         locations.Add(new Location("Ascend_FP", Location.Type.Story,
-                            new RegionAccessRule("CL")));
+                            new CompoundAccessRule(new AccessRule[]
+                            {
+                                new RegionAccessRule("CL"),
+                                new KarmaAccessRule(10)
+                            }, CompoundAccessRule.CompoundOperation.All)));
                         break;
                 }
             }
@@ -575,7 +583,6 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("BALANCE ITEMS");
             CurrentStage = GenerationStep.BalancingItems;
-
 
             // Manage case where there are not enough locations for the amount of items in pool
             while (state.AllLocations.Count < ItemsToPlace.Count)
@@ -886,7 +893,7 @@ namespace RainWorldRandomizer.Generation
                 // Outer Expanse requires the Mark for Gourmand
                 SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Gourmand].Add("Region-OE", new AccessRule("The_Mark"));
 
-                // if Arty, require drone and mark
+                // if Arty, Metro requires drone and mark
                 // else require option
                 GlobalRuleOverrides.Add("Region-LC", new OptionAccessRule("ForceOpenMetropolis"));
                 SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Artificer].Add("Region-LC", new CompoundAccessRule(new AccessRule[]
@@ -919,6 +926,16 @@ namespace RainWorldRandomizer.Generation
 
                 // Token cache fails to filter this pearl to only Past GW
                 GlobalRuleOverrides.Add("Pearl-MS", new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore));
+
+                // Rubicon isn't blocked by a gate so it never gets marked as accessible
+                // Remove Rubicon from requirements and substitute Karma 10
+                List<AccessRule> travellerRule = SlugcatStats.SlugcatStoryRegions(MoreSlugcatsEnums.SlugcatStatsName.Saint)
+                    .Except(new string[] { "HR" })
+                    .Select<string, AccessRule>(r => new RegionAccessRule(r))
+                    .ToList();
+                travellerRule.Add(new KarmaAccessRule(10));
+                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Saint].Add("Passage-Traveller", new CompoundAccessRule(
+                    travellerRule.ToArray(), CompoundAccessRule.CompoundOperation.All));
             }
         }
 

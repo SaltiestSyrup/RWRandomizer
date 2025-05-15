@@ -102,7 +102,6 @@ namespace RainWorldRandomizer
             // Register Enums
             RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
-            AccessRuleConstants.InitConstants();
 
             // Create hooks
             try
@@ -216,6 +215,7 @@ namespace RainWorldRandomizer
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
             VanillaGenerator.GenerateCustomRules();
+            AccessRuleConstants.InitConstants();
 
             hasInitialized = true;
         }

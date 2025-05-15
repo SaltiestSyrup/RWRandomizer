@@ -95,7 +95,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
-                VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat));
+                VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue));
                 bool timedOut = !generator.BeginGeneration().Wait(5000);
 
                 Plugin.Log.LogDebug(generator.generationLog);

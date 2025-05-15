@@ -97,7 +97,8 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public void AddOtherProgItem(string itemName)
         {
-            SpecialProg.Add(itemName);
+            if (itemName.Equals("Karma")) MaxKarma++;
+            else SpecialProg.Add(itemName);
             RecalculateState();
         }
 
