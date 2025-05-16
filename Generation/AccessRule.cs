@@ -219,6 +219,8 @@ namespace RainWorldRandomizer.Generation
             ReqName = slugcat.value;
         }
 
+        public override bool IsMet(State state) => true;
+
         public override bool IsPossible(State state)
         {
             return state.Slugcat == slugcat;
@@ -251,6 +253,8 @@ namespace RainWorldRandomizer.Generation
             this.operation = operation;
             ReqName = timeline.value;
         }
+
+        public override bool IsMet(State state) => true;
 
         public override bool IsPossible(State state)
         {
