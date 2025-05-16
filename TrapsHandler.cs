@@ -171,7 +171,7 @@ namespace RainWorldRandomizer
             //}
 
             if (pendingTrapQueue.Count == 0) return;
-            
+
             if (currentCooldown == 0)
             {
                 // Defer trap trigger until the player is in a proper state to suffer
@@ -185,7 +185,7 @@ namespace RainWorldRandomizer
 
                 // Process the next trap in queue
                 pendingTrapQueue.Dequeue().Activate(self);
-                
+
                 ResetCooldown();
             }
         }
@@ -240,7 +240,7 @@ namespace RainWorldRandomizer
         private static void TrapSpawnCreatureNearby(this RainWorldGame game, CreatureTemplate.Type template)
         {
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
-            
+
             int[] connectedRooms = player.room.abstractRoom.connections;
             AbstractRoom chosenRoom = game.world.GetAbstractRoom(connectedRooms[UnityEngine.Random.Range(0, connectedRooms.Length)]);
 
@@ -251,9 +251,9 @@ namespace RainWorldRandomizer
             }
 
             AbstractCreature crit = new AbstractCreature(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
-            
+
             chosenRoom.AddEntity(crit);
-            
+
             if (chosenRoom.realizedRoom != null)
             {
                 crit.RealizeInRoom();
@@ -265,7 +265,7 @@ namespace RainWorldRandomizer
         private static void TrapAlarm(this RainWorldGame game)
         {
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
-            
+
             // For each realized room
             foreach (AbstractRoom room in game.world.abstractRooms.Where(e => e.realizedRoom != null))
             {

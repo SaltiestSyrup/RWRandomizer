@@ -302,7 +302,7 @@ namespace RainWorldRandomizer
                 ILCursor c = new ILCursor(il);
 
                 // Make the game think the power is still on if we turned it off
-                while(c.TryGotoNext(
+                while (c.TryGotoNext(
                     MoveType.After,
                     x => x.MatchLdarg(0),
                     x => x.MatchLdfld(typeof(UpdatableAndDeletable).GetField(nameof(UpdatableAndDeletable.room))),
@@ -330,7 +330,7 @@ namespace RainWorldRandomizer
                 // Skip over code for giving player the Mass Rarefaction cell
                 c1.GotoNext(
                     MoveType.After,
-                    x => x.MatchCallOrCallvirt(typeof(HUD.TextPrompt).GetMethod(nameof(HUD.TextPrompt.AddMessage), 
+                    x => x.MatchCallOrCallvirt(typeof(HUD.TextPrompt).GetMethod(nameof(HUD.TextPrompt.AddMessage),
                         new Type[] { typeof(string), typeof(int), typeof(int), typeof(bool), typeof(bool) }))
                     );
 
@@ -590,7 +590,7 @@ namespace RainWorldRandomizer
                                     break;
                             }
                         }
-                        
+
 
                         oracle.voice = oracle.oracle.room.PlaySound(sound, oracle.oracle.firstChunk);
                         oracle.voice.requireActiveUpkeep = true;

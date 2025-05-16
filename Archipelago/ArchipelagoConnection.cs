@@ -17,7 +17,7 @@ namespace RainWorldRandomizer
     {
         private const string AP_VERSION = "0.6.1";
         public const string GAME_NAME = "Rain World";
-        private static readonly string[] REQUIRED_SLOT_DATA = new string[] 
+        private static readonly string[] REQUIRED_SLOT_DATA = new string[]
         {
             "which_gamestate",
             "passage_progress_without_survivor",
@@ -62,7 +62,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Defined palette for the mod to use when displaying colors
         /// </summary>
-        public static Palette<UnityEngine.Color> palette = 
+        public static Palette<UnityEngine.Color> palette =
             new Palette<UnityEngine.Color>(
                 Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
                 new Dictionary<PaletteColor, UnityEngine.Color>()
@@ -80,7 +80,7 @@ namespace RainWorldRandomizer
                     { PaletteColor.Yellow, new UnityEngine.Color(1f, 1f, 0f) }
                 }
             );
-            
+
         public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
         public enum PPwSBehavior { Disabled, Enabled, Bypassed }
 
@@ -177,7 +177,7 @@ namespace RainWorldRandomizer
                 string errLog = "";
                 switch (slotDataResult)
                 {
-                    case SlotDataResult.Success: 
+                    case SlotDataResult.Success:
                         ReceivedSlotData = true;
                         break;
                     case SlotDataResult.MissingData:
@@ -329,7 +329,7 @@ namespace RainWorldRandomizer
                 if (!slotData.TryGetValue("which_game_version", out object v1)
                     || !slotData.TryGetValue("is_msc_enabled", out object v2)
                     || !slotData.TryGetValue("is_watcher_enabled", out object v3)
-                    || !slotData.TryGetValue("which_campaign", out object v4)) 
+                    || !slotData.TryGetValue("which_campaign", out object v4))
                     return SlotDataResult.MissingData;
 
                 worldStateIndex = -1;
@@ -338,7 +338,7 @@ namespace RainWorldRandomizer
                 shouldHaveWatcher = (long)v3;
                 campaignIndex = (long)v4;
             }
-            
+
             long PPwS = (long)slotData["passage_progress_without_survivor"];
             long completionType = (long)slotData["which_victory_condition"];
             long foodQuestAccess = (long)slotData["checks_foodquest"];
@@ -377,7 +377,7 @@ namespace RainWorldRandomizer
             // Check DLC state
             IsMSC = shouldHaveMSC > 0;
             IsWatcher = shouldHaveWatcher > 0;
-            
+
             // Choose campaign and ending
             switch (campaignIndex)
             {
@@ -506,7 +506,7 @@ namespace RainWorldRandomizer
 
             DeathLinkHandler.Active = deathLink > 0;
 
-            foodQuest = IsMSC && (Slugcat.value == "Gourmand" || foodQuestAccess == 2) ? 
+            foodQuest = IsMSC && (Slugcat.value == "Gourmand" || foodQuestAccess == 2) ?
                 (foodQuestAccessibility > 0 ? FoodQuestBehavior.Expanded : FoodQuestBehavior.Enabled) : FoodQuestBehavior.Disabled;
             ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
             WinState.GourmandPassageTracker = foodQuest == FoodQuestBehavior.Expanded ? MiscHooks.expanded : MiscHooks.unexpanded;
@@ -529,7 +529,7 @@ namespace RainWorldRandomizer
                 }
 
                 (Plugin.RandoManager as ManagerArchipelago).CreateNewSave(saveId);
-            }   
+            }
             catch (Exception e)
             {
                 Debug.LogException(e);
@@ -559,7 +559,7 @@ namespace RainWorldRandomizer
         {
             if (!(Session?.Socket.Connected ?? false)) return;
             string dataKey = $"RW_{playerName}_room";
-            
+
             // Send a bounce packet
             Session.Socket.SendPacketAsync(new BouncePacket()
             {

@@ -20,8 +20,8 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Whether the randomizer will use a set seed or a generated one", null, "",
                     new object[] { "Use seed" }));
 
-            Options.seed = config.Bind<int>("seed", 0, 
-                new ConfigurableInfo("The seed used to generate the randomizer if 'Use seed' is checked", 
+            Options.seed = config.Bind<int>("seed", 0,
+                new ConfigurableInfo("The seed used to generate the randomizer if 'Use seed' is checked",
                     new ConfigAcceptableRange<int>(0, int.MaxValue), ""));
 
             Options.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", false,
@@ -56,10 +56,10 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Whether the game will randomize passage tokens", null, "",
                     new object[] { "Use Passage tokens" }));
 
-            Options.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f, 
+            Options.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
                 new ConfigurableInfo("The maximum density of cycle increases that can appear when playing as Hunter (0-1 for 0% to 100%)",
                     new ConfigAcceptableRange<float>(0, 1), "",
-                    new object[] {"Hunter max cycle increases"}));
+                    new object[] { "Hunter max cycle increases" }));
 
             Options.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
@@ -67,7 +67,7 @@ namespace RainWorldRandomizer
 
             Options.startMinKarma = config.Bind<bool>("startMinKarma", false,
                 new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
-                "Gates will have their karma requirements decreased to match", null, "", 
+                "Gates will have their karma requirements decreased to match", null, "",
                     new object[] { "Start with low karma" }));
 
             Options.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
@@ -88,9 +88,9 @@ namespace RainWorldRandomizer
 
             // ----- MSC -----
             Options.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
-                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (Where applicable)", null, "", 
+                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (Where applicable)", null, "",
                 new object[] { "Open Metropolis" }));
-            
+
             Options.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
                 new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (Where applicable)", null, "",
                 new object[] { "Open Submerged Superstructure" }));
@@ -493,12 +493,12 @@ namespace RainWorldRandomizer
             };
 
             // Attempt AP connection on click
-            connectButton.OnClick += (trigger) => 
+            connectButton.OnClick += (trigger) =>
             {
                 connectResultLabel.text = ArchipelagoConnection.Connect(
-                    hostNameTextBox.value, 
-                    portTextBox.valueInt, 
-                    slotNameTextBox.value, 
+                    hostNameTextBox.value,
+                    portTextBox.valueInt,
+                    slotNameTextBox.value,
                     passwordTextBox.value == "" ? null : passwordTextBox.value);
 
                 if (!ArchipelagoConnection.Authenticated) return;
@@ -518,7 +518,7 @@ namespace RainWorldRandomizer
                     $"Using DeathLink:\n" +
                     $"Food Quest:\n" +
                     $"Shelter-sanity:";
-                slotDataLabelRight.text = 
+                slotDataLabelRight.text =
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
                     $"{ArchipelagoConnection.IsWatcher}\n" +
                     $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
@@ -527,7 +527,7 @@ namespace RainWorldRandomizer
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
                     $"{DeathLinkHandler.Active}\n" +
-                    $"{ArchipelagoConnection.foodQuest}\n" + 
+                    $"{ArchipelagoConnection.foodQuest}\n" +
                     $"{ArchipelagoConnection.sheltersanity}";
             };
             // Disconnect from AP on click

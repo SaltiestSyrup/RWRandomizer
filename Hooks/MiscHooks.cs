@@ -3,10 +3,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MoreSlugcats;
-using RWCustom;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -243,9 +240,9 @@ namespace RainWorldRandomizer
                 foreach (string gate in self.karmaLocks)
                 {
                     string[] split = Regex.Split(gate, " : ");
-                    
+
                     if (Plugin.defaultGateRequirements.ContainsKey(split[0])) continue;
-                    
+
                     Plugin.defaultGateRequirements.Add(split[0], new RegionGate.GateRequirement[2]
                     {
                         new RegionGate.GateRequirement(split[1]),
@@ -320,8 +317,8 @@ namespace RainWorldRandomizer
                 // Echoes that don't require karma should use default logic
                 if (ghostID == GhostWorldPresence.GhostID.UW
                     || ghostID == GhostWorldPresence.GhostID.SB
-                    || ModManager.MSC 
-                    && (ghostID == MoreSlugcatsEnums.GhostID.LC 
+                    || ModManager.MSC
+                    && (ghostID == MoreSlugcatsEnums.GhostID.LC
                     || ghostID == MoreSlugcatsEnums.GhostID.MS))
                 {
                     return spawnEcho;
@@ -331,7 +328,7 @@ namespace RainWorldRandomizer
                 int karma = self.game.GetStorySession.saveState.deathPersistentSaveData.karma;
                 int cap = self.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap;
                 bool reinforced = self.game.GetStorySession.saveState.deathPersistentSaveData.reinforcedKarma;
-                int encounterIndex = self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo.ContainsKey(ghostID) ? 
+                int encounterIndex = self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo.ContainsKey(ghostID) ?
                     self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo[ghostID] : 0;
                 bool isArtificer = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer;
                 bool isSaint = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Saint;

@@ -1,9 +1,4 @@
 ﻿using MoreSlugcats;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -49,7 +44,7 @@ namespace RainWorldRandomizer
         public static Configurable<bool> archipelagoDeathLinkOverride;
         public static Configurable<bool> archipelagoPreventDLKarmaLoss;
         public static Configurable<bool> archipelagoIgnoreMenuDL;
-        
+
         // Base
         public static bool UseSetSeed
         {

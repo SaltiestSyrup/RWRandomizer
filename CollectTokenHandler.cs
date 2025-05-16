@@ -53,7 +53,7 @@ namespace RainWorldRandomizer
         {
             availableTokens.Clear();
             List<string> allRegions = Region.GetFullRegionOrder();
-            
+
             for (int i = 0; i < allRegions.Count; i++)
             {
                 List<string> idsToAdd = new List<string>();
@@ -100,9 +100,9 @@ namespace RainWorldRandomizer
         /// </summary>
         public bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
         {
-            return orig(self) || (ModManager.MSC 
+            return orig(self) || (ModManager.MSC
                 && !self.devToken
-                && !(self.room.game.StoryCharacter == null) 
+                && !(self.room.game.StoryCharacter == null)
                 && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
         }
 
@@ -143,7 +143,7 @@ namespace RainWorldRandomizer
             else
             {
                 tokenString = $"Token-{tokenString}";
-                
+
                 if (!(Plugin.RandoManager.IsLocationGiven(tokenString) ?? true))
                 {
                     Plugin.RandoManager.GiveLocation(tokenString);
@@ -157,7 +157,7 @@ namespace RainWorldRandomizer
         public void ILRoomLoaded(ILContext il)
         {
             ILCursor c = new ILCursor(il);
-            
+
             // Fetch the local variable index of "num11", which represents the index within placedObjects the loop is processing
             int localVarIndex = -1;
             c.GotoNext(
@@ -311,7 +311,7 @@ namespace RainWorldRandomizer
                     item = Path.GetFileNameWithoutExtension(item);
                     // Filter down to the alternates of the current room
                     List<string> altRooms = list2.Where(room => Path.GetFileNameWithoutExtension(room).Contains(item)).ToList();
-                    
+
                     // Find the slugcats these alternate rooms match to
                     foreach (string altRoom in altRooms)
                     {
@@ -745,7 +745,7 @@ namespace RainWorldRandomizer
 
                     tokensAccessibility[regionShort][listIndex] = new List<string>();
 
-                    for(int j = 0; j < allSlugcats.Length; j++)
+                    for (int j = 0; j < allSlugcats.Length; j++)
                     {
                         if (idAndSetting[1].StartsWith("!") ^ Regex.Split(idAndSetting[1].TrimStart('!'), "\\|").Contains(allSlugcats[j]))
                         {
@@ -774,7 +774,7 @@ namespace RainWorldRandomizer
                     List<string> accessibilityStrings = new List<string>();
                     Plugin.Singleton.rainWorld.regionBlueTokensAccessibility[key][i].ForEach(o => accessibilityStrings.Add(o.value));
 
-                    
+
 
                     string fileSays = "";
                     string gameSays = "";

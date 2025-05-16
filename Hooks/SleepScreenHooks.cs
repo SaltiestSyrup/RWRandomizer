@@ -116,7 +116,7 @@ namespace RainWorldRandomizer
         /// Return list of all token locations of the given type that have been checked
         /// </summary>
         private static List<ExtEnumBase> FoundTokensOfType<T>() where T : ExtEnumBase
-        { 
+        {
             List<ExtEnumBase> output = new List<ExtEnumBase>();
 
             string startPattern;
@@ -239,7 +239,7 @@ namespace RainWorldRandomizer
         /// Stores fake passage token UI elements
         /// </summary>
         private static ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>> passageTokensUI = new ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>>();
-        
+
         // Add a button to SleepAndDeathScreen allowing free passage to the starting shelter
         private static ConditionalWeakTable<SleepAndDeathScreen, SimpleButton> passageHomeButton = new ConditionalWeakTable<SleepAndDeathScreen, SimpleButton>();
         public static SimpleButton GetPassageHomeButton(this SleepAndDeathScreen self)
@@ -294,7 +294,7 @@ namespace RainWorldRandomizer
 
             // Skip adding button if Riv in Bitter Aerie
             SaveState state = (menu as SleepAndDeathScreen).saveState;
-            if (ModManager.MSC 
+            if (ModManager.MSC
                 && state.saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Rivulet
                 && state.miscWorldSaveData.moonHeartRestored
                 && !state.deathPersistentSaveData.altEnding)
@@ -359,7 +359,7 @@ namespace RainWorldRandomizer
                 self.manager.rainWorld.progression.miscProgressionData.menuRegion = Regex.Split(customDen, "_")[0];
                 RainWorld.ShelterBeforePassage = self.manager.rainWorld.progression.ShelterOfSaveGame(self.saveState.saveStateNumber);
                 RainWorld.ShelterAfterPassage = self.manager.menuSetup.regionSelectRoom;
-                
+
                 // Initiate proccess switch
                 self.manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
                 self.PlaySound(SoundID.MENU_Passage_Button);

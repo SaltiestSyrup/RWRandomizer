@@ -310,7 +310,7 @@ namespace RainWorldRandomizer
             if (IsLocationGiven(location) ?? true) return false;
 
             locationsStatus[location] = true;
-            
+
             // We still gave the location, but we're offline so it can't be sent yet
             if (!(ArchipelagoConnection.Session?.Socket.Connected ?? false))
             {

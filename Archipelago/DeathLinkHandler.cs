@@ -1,13 +1,9 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
-using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MoreSlugcats;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -15,7 +11,7 @@ namespace RainWorldRandomizer
     public static class DeathLinkHandler
     {
         private static DeathLinkService service = null;
-        
+
         /// <summary>Cooldown to ensure we don't send a packet for a received death</summary>
         private static int receiveDeathCooldown = 0;
         /// <summary>When True, the mod is waiting for a proper state to kill the player</summary>
@@ -106,7 +102,7 @@ namespace RainWorldRandomizer
             orig(self);
             if (self.GamePaused || !self.processActive) return;
 
-            if (deathPending 
+            if (deathPending
                 && self.FirstAlivePlayer?.realizedCreature is Player firstPlayer // Player exists
                 && firstPlayer.room != null // Player is in a room
                 && self.manager.fadeToBlack == 0 // The screen has fully faded in
@@ -125,7 +121,7 @@ namespace RainWorldRandomizer
                         return;
                     }
                 }
-                
+
                 lastDeathWasMe = true;
                 foreach (AbstractCreature abstractPlayer in self.AlivePlayers)
                 {

@@ -696,7 +696,7 @@ namespace RainWorldRandomizer
                         key = randomizerKey.First(k => k.Value == null).Key;
                         index = UnityEngine.Random.Range(0, remainingUnlocks.Count());
                     }
-                    
+
                     randomizerKey[key] = remainingUnlocks[index];
                     remainingUnlocks.RemoveAt(index);
                 }

@@ -51,7 +51,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
         {
-            if (ID == ProcessManager.ProcessID.Game 
+            if (ID == ProcessManager.ProcessID.Game
                 && (Plugin.RandoManager == null || !Plugin.RandoManager.isRandomizerActive))
             {
                 // If we don't have a manager yet, create one
@@ -157,7 +157,7 @@ namespace RainWorldRandomizer
             Plugin.Singleton.Game = self;
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
-            
+
             Plugin.UpdateKarmaLocks();
             self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
 
@@ -346,7 +346,7 @@ namespace RainWorldRandomizer
             Room currentRoom = self.FirstRealizedPlayer?.room;
             if (currentRoom?.abstractRoom.shelter ?? false)
             {
-                if (Plugin.RandoManager is ManagerArchipelago 
+                if (Plugin.RandoManager is ManagerArchipelago
                     && ArchipelagoConnection.sheltersanity
                     && $"Shelter-{currentRoom.abstractRoom.name.ToUpper()}" is string checkName
                     && Plugin.RandoManager.LocationExists(checkName))
