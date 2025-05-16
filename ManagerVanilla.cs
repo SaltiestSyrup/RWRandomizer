@@ -99,7 +99,7 @@ namespace RainWorldRandomizer
                 bool timedOut = false;
                 try
                 {
-                    timedOut = !generator.BeginGeneration().Wait(5000);
+                    timedOut = !generator.BeginGeneration().Wait(10000);
                 }
                 catch (Exception e)
                 {
@@ -838,9 +838,9 @@ namespace RainWorldRandomizer
                 genTask[i] = generators[i].BeginGeneration();
             }
 
-            // Only gen for up to 10 seconds
+            // Only gen for up to 30 seconds
             // Try block here to stop WaitAll from throwing innner task's exceptions
-            try { Task.WaitAll(genTask, 10000); }
+            try { Task.WaitAll(genTask, 30000); }
             catch { }
 
             sw.Stop();
