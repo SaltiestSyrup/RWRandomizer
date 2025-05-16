@@ -18,7 +18,7 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.2.7";
+        public const string PLUGIN_VERSION = "1.2.8";
 
         internal static ManualLogSource Log;
 
@@ -64,7 +64,7 @@ namespace RainWorldRandomizer
             {
                 return RegionNamesMap.Keys
                     .Except(new string[] {
-                        "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS", 
+                        "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS",
                         "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS" })
                     .Any();
             }
@@ -363,16 +363,16 @@ namespace RainWorldRandomizer
         public static RegionGate.GateRequirement[] GetGateRequirement(string gateName)
         {
             bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
-            RegionGate.GateRequirement[] newRequirements = 
-                defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v) 
+            RegionGate.GateRequirement[] newRequirements =
+                defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
                 ? (RegionGate.GateRequirement[])v.Clone() : new RegionGate.GateRequirement[2] {
-                    RegionGate.GateRequirement.OneKarma, 
+                    RegionGate.GateRequirement.OneKarma,
                     RegionGate.GateRequirement.OneKarma
                 };
 
             if (gateName.Equals("GATE_OE_SU")) hasKeyForGate = true;
-            if (gateName.Equals("GATE_SL_MS") 
-                && ModManager.MSC 
+            if (gateName.Equals("GATE_SL_MS")
+                && ModManager.MSC
                 && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
             {
                 hasKeyForGate = true;
