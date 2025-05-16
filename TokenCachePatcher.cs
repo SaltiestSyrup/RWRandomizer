@@ -642,7 +642,17 @@ namespace RainWorldRandomizer
                     // Only grab the first creature in the lineage tree. All lineages are considered out of logic
                     if (split[0].Equals("LINEAGE"))
                     {
-                        CreatureTemplate.Type firstCreature = WorldLoader.CreatureTypeFromString(Regex.Split(split[3], ", ")[0].Split('-')[0]);
+                        CreatureTemplate.Type firstCreature;
+                        try
+                        {
+                            firstCreature = WorldLoader.CreatureTypeFromString(Regex.Split(split[3], ", ")[0].Split('-')[0]);
+                        }
+                        catch 
+                        { 
+                            Plugin.Log.LogWarning($"Failed to parse creature line in world_{regionName}: {worldFile[m]}");
+                            continue;
+                        }
+                        
                         if (firstCreature == null) continue;
                         AddCreatureToCache(regionUpper, firstCreature, relevantSlugcats);
                         continue;
@@ -650,9 +660,18 @@ namespace RainWorldRandomizer
 
                     // Normal dens
                     // Convert comma seperated den settings into a list of creature types that exist in the room
-                    CreatureTemplate.Type[] creatureStrings = Regex.Split(split[1], ", ")
+                    CreatureTemplate.Type[] creatureStrings;
+                    try
+                    {
+                        creatureStrings = Regex.Split(split[1], ", ")
                         .Select(c => WorldLoader.CreatureTypeFromString(c.Split('-')[1]))
                         .ToArray();
+                    }
+                    catch
+                    {
+                        Plugin.Log.LogWarning($"Failed to parse creature line in world_{regionName}: {worldFile[m]}");
+                        continue;
+                    }
 
                     foreach (CreatureTemplate.Type creature in creatureStrings)
                     {

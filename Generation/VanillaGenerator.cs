@@ -1,4 +1,5 @@
-﻿using MoreSlugcats;
+﻿using MonoMod.Utils;
+using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -147,6 +148,7 @@ namespace RainWorldRandomizer.Generation
             bool regionKitEchoes = Options.UseEchoChecks && RegionKitCompatibility.Enabled;
             bool doPearlLocations = Options.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
             bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && Options.UseSMBroadcasts;
+            List<string> slugcatRegions = SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat)).ToList();
             foreach (string region in Region.GetFullRegionOrder(timeline))
             {
                 AccessRule regionAccessRule = new RegionAccessRule(region);
@@ -166,6 +168,8 @@ namespace RainWorldRandomizer.Generation
                     }, CompoundAccessRule.CompoundOperation.All);
                     generationLog.AppendLine($"Applied custom rules for region: {region}");
                 }
+                // Filter out slugcat inaccessible regions unless there is a special rule defined
+                else if (!slugcatRegions.Contains(region)) continue;
                 
                 AllRegions.Add(region);
                 string regionLower = region.ToLowerInvariant();
@@ -214,6 +218,7 @@ namespace RainWorldRandomizer.Generation
             {
                 string gate = Regex.Split(karmaLock, " : ")[0];
                 string[] split = Regex.Split(gate, "_");
+                if (split.Length < 3) continue; // Ignore abnormal gates
                 string[] regions = new string[2] { split[1], split[2] };
 
                 bool skipThisGate = false;
@@ -937,6 +942,10 @@ namespace RainWorldRandomizer.Generation
                 SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Saint].Add("Passage-Traveller", new CompoundAccessRule(
                     travellerRule.ToArray(), CompoundAccessRule.CompoundOperation.All));
             }
+
+            // Inbuilt custom region rules
+            GlobalRuleOverrides.AddRange(CustomRegionCompatability.GlobalRuleOverrides);
+            SlugcatRuleOverrides.AddRange(CustomRegionCompatability.SlugcatRuleOverrides);
         }
 
         public string FindRandomStart(SlugcatStats.Name slugcat)

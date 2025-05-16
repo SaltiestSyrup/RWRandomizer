@@ -502,8 +502,7 @@ namespace RainWorldRandomizer
         public static string GateToString(string gate, SlugcatStats.Name slugcat)
         {
             string[] gateSplit = Regex.Split(gate, "_");
-            //string name1 = Region.GetRegionFullName(Region.GetProperRegionAcronym(slugcat, gateSplit[1]), slugcat);
-            //string name2 = Region.GetRegionFullName(Region.GetProperRegionAcronym(slugcat, gateSplit[2]), slugcat);
+            if (gateSplit.Length < 3) return gate;
 
             string properAcro1 = ProperRegionMap.ContainsKey(gateSplit[1]) ? ProperRegionMap[gateSplit[1]] : "";
             string properAcro2 = ProperRegionMap.ContainsKey(gateSplit[2]) ? ProperRegionMap[gateSplit[2]] : "";
@@ -537,6 +536,7 @@ namespace RainWorldRandomizer
         public static string GateToShortString(string gate, SlugcatStats.Name slugcat)
         {
             string[] gateSplit = Regex.Split(gate, "_");
+            if (gateSplit.Length < 3) return gate;
             string output;
 
             output = $"{gateSplit[1]} <-> {gateSplit[2]}";
