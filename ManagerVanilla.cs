@@ -66,9 +66,16 @@ namespace RainWorldRandomizer
             _givenSpearPearlRewrite = false;
             customStartDen = "NONE";
 
+            // Init alternate region mapping
             foreach (string region in Region.GetFullRegionOrder())
             {
                 Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(storyGameCharacter), region));
+            }
+            // Add all gates to status dict
+            foreach (string roomName in Plugin.Singleton.rainWorld.progression.karmaLocks)
+            {
+                string gate = Regex.Split(roomName, " : ")[0];
+                if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, false);
             }
 
             if (Input.GetKey("o"))
