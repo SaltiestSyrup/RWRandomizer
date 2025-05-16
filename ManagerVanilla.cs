@@ -96,7 +96,15 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
                 VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue));
-                bool timedOut = !generator.BeginGeneration().Wait(5000);
+                bool timedOut = false;
+                try
+                {
+                    timedOut = !generator.BeginGeneration().Wait(5000);
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError(e);
+                }
 
                 Plugin.Log.LogDebug(generator.generationLog);
 
@@ -854,7 +862,7 @@ namespace RainWorldRandomizer
                 else
                 {
                     Plugin.Log.LogError($"Generation was timed out before completion during stage: {generators[j].CurrentStage}");
-                    Plugin.Log.LogDebug(generators[j].generationLog);
+                    //Plugin.Log.LogDebug(generators[j].generationLog);
                 }
             }
             Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tTime: {sw.ElapsedMilliseconds} ms");
