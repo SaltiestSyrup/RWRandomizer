@@ -170,8 +170,8 @@ namespace RainWorldRandomizer.Generation
                 }
                 // Filter out slugcat inaccessible regions unless there is a special rule defined
                 else if (!slugcatRegions.Contains(region)) continue;
-                
-                AllRegions.Add(region);
+
+                    AllRegions.Add(region);
                 string regionLower = region.ToLowerInvariant();
 
                 // Add Echoes from RegionKit if present
@@ -249,6 +249,15 @@ namespace RainWorldRandomizer.Generation
                 if (skipThisGate) continue;
 
                 AllGates.Add(gate);
+
+                // TODO: Un-hardcode check for marking GATE_UW_SL as non-progression
+                if (gate.Equals("GATE_UW_SL")
+                    && SlugcatStats.AtOrAfterTimeline(timeline, SlugcatStats.Timeline.Sofanthiel))
+                {
+                    ItemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Filler));
+                    continue;
+                }
+                
                 ItemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
             }
 
