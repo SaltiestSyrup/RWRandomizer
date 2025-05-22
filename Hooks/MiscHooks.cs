@@ -55,7 +55,8 @@ namespace RainWorldRandomizer
                 IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
                 IL.Menu.SlugcatSelectMenu.ContinueStartedGame += SlugcatSelectOverrideDeadCheckIL;
                 IL.Menu.SlugcatSelectMenu.UpdateStartButtonText += SlugcatSelectOverrideDeadCheckIL;
-                IL.MoreSlugcats.CutsceneArtificerRobo.GetInput += ArtificerRoboIL;
+                IL.MoreSlugcats.MSCRoomSpecificScript.AddRoomSpecificScript += AddMSCRoomSpecificScriptIL;
+                IL.MoreSlugcats.CutsceneArtificer.Update += CutsceneArtificerUpdateIL;
                 IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
                 IL.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
                 //IL.WinState.CreateAndAddTracker += WinStateCreateTrackerIL;
@@ -84,7 +85,8 @@ namespace RainWorldRandomizer
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.Menu.SlugcatSelectMenu.ContinueStartedGame -= SlugcatSelectOverrideDeadCheckIL;
             IL.Menu.SlugcatSelectMenu.UpdateStartButtonText -= SlugcatSelectOverrideDeadCheckIL;
-            IL.MoreSlugcats.CutsceneArtificerRobo.GetInput -= ArtificerRoboIL;
+            IL.MoreSlugcats.MSCRoomSpecificScript.AddRoomSpecificScript += AddMSCRoomSpecificScriptIL;
+            IL.MoreSlugcats.CutsceneArtificer.Update -= CutsceneArtificerUpdateIL;
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
             //IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
@@ -391,29 +393,56 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Prevent Artificer's drone from activating in the starting cutscene
+        /// Completely skip Artificer robo cutscene
         /// </summary>
-        private static void ArtificerRoboIL(ILContext il)
+        private static void AddMSCRoomSpecificScriptIL(ILContext il)
         {
-            try
-            {
-                ILCursor c = new ILCursor(il);
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdsfld(typeof(CutsceneArtificerRobo.Phase).GetField(nameof(CutsceneArtificerRobo.Phase.ActivateRobo))),
-                    x => x.MatchStfld(typeof(CutsceneArtificerRobo).GetField(nameof(CutsceneArtificerRobo.phase)))
-                    );
+            ILCursor c = new ILCursor(il);
+            // Check if room is GW_A25 at 018F
+            c.GotoNext(x => x.MatchLdstr("GW_A25"));
+            // After hasRobo load at 01D8
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
+                );
+            // Tell check that we always have robo
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldc_I4_1);
+        }
 
-                c.Index--;
-                c.Emit(OpCodes.Pop);
-                c.Emit(OpCodes.Ldsfld, typeof(CutsceneArtificerRobo.Phase).GetField(nameof(CutsceneArtificerRobo.Phase.End)));
-            }
-            catch (Exception e)
+        private static bool hasSeenArtyStart = false;
+        /// <summary>
+        /// Skip Artificer intro cutscene if player has already seen it
+        /// </summary>
+        private static void CutsceneArtificerUpdateIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+            // After myRobot load at 0018
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.myRobot)))
+                );
+            // Skip cutscene if we saw it instead of if robo is present
+            c.Emit(OpCodes.Pop);
+            c.EmitDelegate<Func<bool>>(() => hasSeenArtyStart);
+
+            // Jump further into method to dodge first call to Destroy()
+            c.GotoNext(x => x.MatchLdsfld(typeof(CutsceneArtificer.Phase).GetField(nameof(CutsceneArtificer.Phase.End))));
+            // Before call to Destroy at 043A
+            c.GotoNext(
+                MoveType.Before,
+                x => x.MatchLdarg(0),
+                x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy)))
+                );
+            c.MoveAfterLabels();
+            // Mark cutscene as seen
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate<Action<CutsceneArtificer>>(self =>
             {
-                Plugin.Log.LogError("Failed Hooking for ArtificerRoboIL");
-                Plugin.Log.LogError(e);
-            }
+                hasSeenArtyStart = true;
+                RainWorldGame.ForceSaveNewDenLocation(self.room.game, "GW_A24", true);
+                Plugin.Log.LogDebug("Saved cutscene status");
+            });
         }
 
         /// <summary>

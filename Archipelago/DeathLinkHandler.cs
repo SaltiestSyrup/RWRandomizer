@@ -91,7 +91,6 @@ namespace RainWorldRandomizer
 
         private static void OnPlayerDie(On.RainWorldGame.orig_GoToDeathScreen orig, RainWorldGame self)
         {
-            Plugin.Log.LogDebug("Player died");
             if (!Active
                 || lastDeathWasLink 
                 || receiveDeathCooldown > 0
