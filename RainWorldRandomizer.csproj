@@ -103,6 +103,7 @@
     <Compile Include="Archipelago\ArchipelagoConnection.cs" />
     <Compile Include="CollectTokenHandler.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Hooks\FlowerCheckHandler.cs" />
     <Compile Include="Hooks\SleepScreenHooks.cs" />
     <Compile Include="Menu\HudExtension.cs" />
     <Compile Include="ModCompat\CustomRegionCompatability.cs" />
