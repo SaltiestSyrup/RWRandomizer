@@ -266,7 +266,7 @@ namespace RainWorldRandomizer
         private static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, EndgameTokens self, Menu.Menu menu, MenuObject owner, Vector2 pos, FContainer container, KarmaLadder ladder)
         {
             orig(self, menu, owner, pos, container, ladder);
-            if (!Options.GivePassageItems) return;
+            if (!RandoOptions.GivePassageItems) return;
 
             // We won't be needing these
             foreach (EndgameTokens.Token token in self.tokens)
@@ -349,7 +349,7 @@ namespace RainWorldRandomizer
 
                 // Find den to travel to
                 string customDen = Plugin.RandoManager.customStartDen;
-                if (!Options.RandomizeSpawnLocation || customDen.Equals("NONE"))
+                if (!RandoOptions.RandomizeSpawnLocation || customDen.Equals("NONE"))
                 {
                     customDen = Constants.SlugcatDefaultStartingDen[self.saveState.saveStateNumber];
                 }
@@ -430,7 +430,7 @@ namespace RainWorldRandomizer
         private static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, EndgameTokens self, WinState.EndgameID ID)
         {
             orig(self, ID);
-            if (!Options.GivePassageItems) return;
+            if (!RandoOptions.GivePassageItems) return;
 
             foreach (EndgameTokens.Token token in self.tokens)
             {
@@ -455,7 +455,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static WinState.EndgameID NextPassageToken(On.WinState.orig_GetNextEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !Options.GivePassageItems) return orig(self);
+            if (!Plugin.RandoManager.isRandomizerActive || !RandoOptions.GivePassageItems) return orig(self);
 
             foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {
@@ -473,7 +473,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !Options.GivePassageItems)
+            if (!Plugin.RandoManager.isRandomizerActive || !RandoOptions.GivePassageItems)
             {
                 orig(self);
                 return;

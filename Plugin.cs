@@ -379,7 +379,7 @@ namespace RainWorldRandomizer
             }
 
             // Change default Metropolis gate karma
-            if (gateName.Equals("GATE_UW_LC") && Options.ForceOpenMetropolis)
+            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
             {
                 newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
                 newRequirements[1] = RegionGate.GateRequirement.FiveKarma;
@@ -391,7 +391,7 @@ namespace RainWorldRandomizer
             {
                 gateBehavior = ArchipelagoConnection.gateBehavior;
             }
-            else if (Options.StartMinimumKarma)
+            else if (RandoOptions.StartMinimumKarma)
             {
                 gateBehavior = GateBehavior.OnlyKey;
             }

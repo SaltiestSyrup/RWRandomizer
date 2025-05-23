@@ -2,7 +2,7 @@
 
 namespace RainWorldRandomizer
 {
-    public static class Options
+    public static class RandoOptions
     {
         // Base
         internal static Configurable<bool> useSeed;
