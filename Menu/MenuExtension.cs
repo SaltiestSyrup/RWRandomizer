@@ -48,7 +48,7 @@ namespace RainWorldRandomizer
 
             RectangularMenuObject gateDisplay;
 
-            if (Options.useGateMap.Value && (Plugin.RandoManager is ManagerArchipelago || !Plugin.AnyThirdPartyRegions))
+            if (RandoOptions.useGateMap.Value && (Plugin.RandoManager is ManagerArchipelago || !Plugin.AnyThirdPartyRegions))
             {
                 gateDisplay = new GateMapDisplay(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 320f));
@@ -61,7 +61,7 @@ namespace RainWorldRandomizer
 
             self.pages[0].subObjects.Add(gateDisplay);
 
-            if (Options.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+            if (RandoOptions.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
             {
                 pendingItemsDisplay = new PendingItemsDisplay(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));

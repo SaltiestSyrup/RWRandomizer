@@ -120,7 +120,7 @@ namespace RainWorldRandomizer
         {
             orig(self);
 
-            if (Options.RandomizeSpawnLocation)
+            if (RandoOptions.RandomizeSpawnLocation)
             {
                 if (Plugin.RandoManager.customStartDen.Equals("NONE"))
                 {
@@ -204,7 +204,7 @@ namespace RainWorldRandomizer
                 // When AP is enabled, start game button should only be available if AP is connected and the correct slugcat is chosen
                 c1.EmitDelegate<Func<SlugcatSelectMenu, bool>>((self) =>
                 {
-                    return !Options.archipelago.Value
+                    return !RandoOptions.archipelago.Value
                         || (Plugin.RandoManager is ManagerArchipelago manager
                             && manager.locationsLoaded
                             && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex)
@@ -504,7 +504,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
         }
 
-        private static bool YesItIsMeGourmand(bool prev) => Options.UseFoodQuest || prev;
+        private static bool YesItIsMeGourmand(bool prev) => RandoOptions.UseFoodQuest || prev;
 
         /// <summary>
         /// Allow Spearmaster to eat mushrooms for the food quest, and detect spearing a neuron for Eat Neuron check

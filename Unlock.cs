@@ -300,7 +300,7 @@ namespace RainWorldRandomizer
 
         public static void ShowItemTutorial()
         {
-            if (hasSeenItemTutorial || Options.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
+            if (hasSeenItemTutorial || RandoOptions.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
             Plugin.Singleton.notifQueue.Enqueue("TIP: Unlocked items are stored in your stomach for safe keeping");
             hasSeenItemTutorial = true;
         }
