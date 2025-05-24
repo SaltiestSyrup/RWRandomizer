@@ -517,7 +517,8 @@ namespace RainWorldRandomizer
                     $"Passage Progress w/o Survivor:\n" +
                     $"Using DeathLink:\n" +
                     $"Food Quest:\n" +
-                    $"Shelter-sanity:";
+                    $"Shelter-sanity:\n" + 
+                    $"Flower-sanity:\n";
                 slotDataLabelRight.text =
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
                     $"{ArchipelagoConnection.IsWatcher}\n" +
@@ -528,7 +529,8 @@ namespace RainWorldRandomizer
                     $"{ArchipelagoConnection.PPwS}\n" +
                     $"{DeathLinkHandler.Active}\n" +
                     $"{ArchipelagoConnection.foodQuest}\n" +
-                    $"{ArchipelagoConnection.sheltersanity}";
+                    $"{ArchipelagoConnection.sheltersanity}\n" + 
+                    $"{ArchipelagoConnection.flowersanity}\n";
             };
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
