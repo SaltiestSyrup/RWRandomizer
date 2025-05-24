@@ -68,6 +68,13 @@ namespace RainWorldRandomizer
                     || Plugin.RandoManager is ManagerArchipelago;
             }
         }
+        public static bool UseDevTokenChecks
+        {
+            get
+            {
+                return Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.devTokenChecks;
+            }
+        }
         public static bool UsePearlChecks
         {
             get
