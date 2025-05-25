@@ -97,7 +97,7 @@ namespace RainWorldRandomizer
 
                     // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
                     if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
-                        && Options.UseFoodQuest)
+                        && RandoOptions.UseFoodQuest)
                     {
                         WinState.GourFeastTracker gourTracker = saveState.deathPersistentSaveData.winState.GetTracker(id, true) as WinState.GourFeastTracker;
 
@@ -189,7 +189,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Action<RainWorldGame, int>>((self, roomIndex) =>
             {
                 // Spawn pending items in spawn room
-                if (Options.ItemShelterDelivery)
+                if (RandoOptions.ItemShelterDelivery)
                 {
                     while (Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
@@ -270,11 +270,11 @@ namespace RainWorldRandomizer
             // Display any pending notifications
             if (Plugin.Singleton.notifQueueAP.Count > 0)
             {
-                if (Options.DisableNotificationQueue)
+                if (RandoOptions.DisableNotificationQueue)
                 {
                     Plugin.Singleton.notifQueueAP.Dequeue();
                 }
-                else if (Options.legacyNotifications.Value)
+                else if (RandoOptions.legacyNotifications.Value)
                 {
                     Plugin.Singleton.DisplayLegacyNotification(true);
                 }
@@ -286,11 +286,11 @@ namespace RainWorldRandomizer
             // Display plain text messages last, as they tend to be more important
             else if (Plugin.Singleton.notifQueue.Count > 0)
             {
-                if (Options.DisableNotificationQueue)
+                if (RandoOptions.DisableNotificationQueue)
                 {
                     Plugin.Singleton.notifQueue.Dequeue();
                 }
-                else if (Options.legacyNotifications.Value)
+                else if (RandoOptions.legacyNotifications.Value)
                 {
                     Plugin.Singleton.DisplayLegacyNotification(false);
                 }
