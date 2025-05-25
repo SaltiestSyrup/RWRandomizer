@@ -518,6 +518,7 @@ namespace RainWorldRandomizer
                     $"Using DeathLink:\n" +
                     $"Food Quest:\n" +
                     $"Shelter-sanity:\n" + 
+                    $"Flower-sanity:\n" +
                     $"Dev token checks:";
                 slotDataLabelRight.text =
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
@@ -530,6 +531,7 @@ namespace RainWorldRandomizer
                     $"{DeathLinkHandler.Active}\n" +
                     $"{ArchipelagoConnection.foodQuest}\n" +
                     $"{ArchipelagoConnection.sheltersanity}\n" + 
+                    $"{ArchipelagoConnection.flowersanity}\n" +
                     $"{ArchipelagoConnection.devTokenChecks}";
             };
             // Disconnect from AP on click

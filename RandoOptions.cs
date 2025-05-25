@@ -107,6 +107,14 @@ namespace RainWorldRandomizer
                     || Plugin.RandoManager is ManagerArchipelago;
             }
         }
+        public static bool UseKarmaFlowerChecks
+        {
+            get
+            {
+                return Plugin.RandoManager is ManagerArchipelago
+                    && ArchipelagoConnection.flowersanity;
+            }
+        }
         public static bool GiveObjectItems
         {
             get
