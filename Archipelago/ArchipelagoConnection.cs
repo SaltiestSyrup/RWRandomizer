@@ -326,7 +326,7 @@ namespace RainWorldRandomizer
             long desiredGameVersion = -1;
             long shouldHaveMSC = -1;
             long shouldHaveWatcher = -1;
-            long campaignIndex = -1;
+            string campaignString = "";
             if (slotData.ContainsKey("which_campaign"))
             {
                 if (!slotData.TryGetValue("which_game_version", out object v1)
@@ -339,7 +339,7 @@ namespace RainWorldRandomizer
                 desiredGameVersion = (long)v1;
                 shouldHaveMSC = (long)v2;
                 shouldHaveWatcher = (long)v3;
-                campaignIndex = (long)v4;
+                campaignString = (string)v4;
             }
 
             long PPwS = (long)slotData["passage_progress_without_survivor"];
@@ -349,7 +349,7 @@ namespace RainWorldRandomizer
             string startingShelter = (string)slotData["starting_room"];
             long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
             long sheltersanity = (long)slotData["checks_sheltersanity"];
-            long flowersanity = (long)slotData["checks_flowersanity"]; // This may change based on AP decision
+            long flowersanity = (long)slotData["checks_flowersanity"];
             long devTokenChecks = (long)slotData["checks_devtokens"];
             long foodQuestAccessibility = (long)slotData["checks_foodquest_accessibility"];
             // DeathLink we can live without receiving
@@ -373,43 +373,29 @@ namespace RainWorldRandomizer
             IsWatcher = shouldHaveWatcher > 0;
 
             // Choose campaign and ending
-            switch (campaignIndex)
+            Slugcat = new SlugcatStats.Name(campaignString);
+            switch (campaignString)
             {
-                case 0:
-                    Slugcat = SlugcatStats.Name.Yellow;
+                case "Yellow":
+                case "White":
+                case "Gourmand":
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
                     break;
-                case 1:
-                    Slugcat = SlugcatStats.Name.White;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case 2:
-                    Slugcat = SlugcatStats.Name.Red;
+                case "Red":
+                case "Sofanthiel":
                     completionCondition = CompletionCondition.Ascension;
                     break;
-                case 3:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Gourmand;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case 4:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Artificer;
+                case "Artificer":
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing;
                     break;
-                case 5:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Rivulet;
+                case "Rivulet":
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon;
                     break;
-                case 6:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Spear;
+                case "Spear":
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger;
                     break;
-                case 7:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Saint;
+                case "Saint":
                     completionCondition = CompletionCondition.Rubicon;
-                    break;
-                case 8:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
-                    completionCondition = CompletionCondition.Ascension;
                     break;
             }
 
