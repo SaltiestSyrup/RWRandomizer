@@ -77,7 +77,7 @@ namespace RainWorldRandomizer
         {
             Plugin.Log.LogInfo($"Received DeathLink packet from {deathLink.Source}");
 
-            if (!Options.archipelagoIgnoreMenuDL.Value // Ignore menu DeathLinks if setting
+            if (!RandoOptions.archipelagoIgnoreMenuDL.Value // Ignore menu DeathLinks if setting
                 || Plugin.Singleton.rainWorld.processManager.currentMainLoop is RainWorldGame)
             {
                 receiveDeathCooldown = 40; // 1 second
@@ -91,7 +91,6 @@ namespace RainWorldRandomizer
 
         private static void OnPlayerDie(On.RainWorldGame.orig_GoToDeathScreen orig, RainWorldGame self)
         {
-            Plugin.Log.LogDebug("Player died");
             if (!Active
                 || lastDeathWasLink 
                 || receiveDeathCooldown > 0
@@ -163,7 +162,7 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate<Func<int, int>>((orig) =>
             {
-                bool preventDeath = Options.archipelagoPreventDLKarmaLoss.Value && lastDeathWasLink;
+                bool preventDeath = RandoOptions.archipelagoPreventDLKarmaLoss.Value && lastDeathWasLink;
                 lastDeathWasLink = false;
                 return preventDeath ? 0 : 1;
             });

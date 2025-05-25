@@ -54,6 +54,7 @@ namespace RainWorldRandomizer
         public static long foodQuestAccessibility;
         public static bool sheltersanity;
         public static bool flowersanity;
+        public static bool devTokenChecks;
 
         public static ArchipelagoSession Session;
 
@@ -349,6 +350,7 @@ namespace RainWorldRandomizer
             long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
             long sheltersanity = (long)slotData["checks_sheltersanity"];
             long flowersanity = (long)slotData["checks_flowersanity"]; // This may change based on AP decision
+            long devTokenChecks = (long)slotData["checks_devtokens"];
             long foodQuestAccessibility = (long)slotData["checks_foodquest_accessibility"];
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
@@ -506,6 +508,7 @@ namespace RainWorldRandomizer
             ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
             ArchipelagoConnection.sheltersanity = sheltersanity > 0;
             ArchipelagoConnection.flowersanity = flowersanity > 0;
+            ArchipelagoConnection.devTokenChecks = devTokenChecks > 0;
             ArchipelagoConnection.echoDifficulty = (EchoLowKarmaDifficulty)echoDifficulty;
 
             DeathLinkHandler.Active = deathLink > 0;

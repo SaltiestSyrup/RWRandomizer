@@ -119,7 +119,7 @@
     <Compile Include="Hooks\IteratorHooks.cs" />
     <Compile Include="Menu\OptionsMenu.cs" />
     <Compile Include="ModCompat\ImprovedCollectibleTrackerCompat.cs" />
-    <Compile Include="Options.cs" />
+    <Compile Include="RandoOptions.cs" />
     <Compile Include="RandomizerEnums.cs" />
     <Compile Include="Hooks\MiscHooks.cs" />
     <Compile Include="Plugin.cs" />

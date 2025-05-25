@@ -2,7 +2,7 @@
 
 namespace RainWorldRandomizer
 {
-    public static class Options
+    public static class RandoOptions
     {
         // Base
         internal static Configurable<bool> useSeed;
@@ -66,6 +66,13 @@ namespace RainWorldRandomizer
             {
                 return useSandboxTokenChecks.Value
                     || Plugin.RandoManager is ManagerArchipelago;
+            }
+        }
+        public static bool UseDevTokenChecks
+        {
+            get
+            {
+                return Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.devTokenChecks;
             }
         }
         public static bool UsePearlChecks
