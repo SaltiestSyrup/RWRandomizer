@@ -31,7 +31,7 @@ namespace RainWorldRandomizer
         private static void OnRoomLoaded(On.Room.orig_Loaded orig, Room self)
         {
             orig(self);
-            if (!Options.UseKarmaFlowerChecks) return;
+            if (!RandoOptions.UseKarmaFlowerChecks) return;
             foreach (AbstractWorldEntity entity in self.abstractRoom.entities)
             {
                 if (entity is AbstractPhysicalObject abstractObj
@@ -49,7 +49,7 @@ namespace RainWorldRandomizer
         {
             // Bites is decremented at the start of orig,
             // so we check if bites is 1 instead of 0
-            if (Options.UseKarmaFlowerChecks
+            if (RandoOptions.UseKarmaFlowerChecks
                 && self.bites == 1
                 && trackedFlowers.TryGetValue(self.abstractPhysicalObject, out FlowerData data))
             //&& !data.alreadyChecked) <-- TODO: Uncomment this when locations are added to world
@@ -64,7 +64,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void OnSpearHitWithoutStopping(On.Spear.orig_HitSomethingWithoutStopping orig, Spear self, PhysicalObject obj, BodyChunk chunk, PhysicalObject.Appendage appendage)
         {
-            if (Options.UseKarmaFlowerChecks
+            if (RandoOptions.UseKarmaFlowerChecks
                 && self.Spear_NeedleCanFeed()
                 && obj is KarmaFlower flower
                 && trackedFlowers.TryGetValue(flower.abstractPhysicalObject, out FlowerData data))
@@ -80,7 +80,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static int OnPlayerFoodInRoom(On.Player.orig_FoodInRoom_Room_bool orig, Player self, Room checkRoom, bool eatAndDestroy)
         {
-            if (Options.UseKarmaFlowerChecks
+            if (RandoOptions.UseKarmaFlowerChecks
                 && eatAndDestroy
                 && checkRoom.game.session is StoryGameSession)
             {
@@ -108,7 +108,7 @@ namespace RainWorldRandomizer
             public FlowerData(AbstractPhysicalObject obj)
             {
                 // Flower-[ROOM_NAME]
-                locID = $"Flower-{obj.placedObjectOrigin.Split(':')[0]}";
+                locID = $"Flower-{obj.placedObjectOrigin.Split(':')[0].ToUpperInvariant()}";
                 alreadyChecked = Plugin.RandoManager.IsLocationGiven(locID) ?? true;
 
                 Plugin.Log.LogDebug($"Register flower: {locID}");
