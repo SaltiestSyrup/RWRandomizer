@@ -359,20 +359,9 @@ namespace RainWorldRandomizer
             // Only a warning for now until there's some actual logic difference between versions
             // This version of the mod won't even load properly for 1.9
             bool doGameVersionWarning = false;
-            switch (desiredGameVersion)
+            if (desiredGameVersion < 1100000L)
             {
-                // I'm not sure how it was intended to parse these but here's what we've got for now
-                case -1:
-                    break;
-                case 1091503L:
-                    if (!RainWorld.GAME_VERSION_STRING.Equals("v1.9.15b")) doGameVersionWarning = true;
-                    break;
-                case 1100100L:
-                    if (!RainWorld.GAME_VERSION_STRING.Equals("v1.10.1")) doGameVersionWarning = true;
-                    break;
-                default:
-                    doGameVersionWarning = true;
-                    break;
+                doGameVersionWarning = true;
             }
             if (doGameVersionWarning)
             {
