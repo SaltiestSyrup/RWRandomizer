@@ -132,9 +132,9 @@ namespace RainWorldRandomizer
             {
                 Plugin.RandoManager.GiveLocation($"Broadcast-{tokenString}");
             }
-            else if (data.isDev && !(Plugin.RandoManager.IsLocationGiven($"DevToken-{player.room.abstractRoom.name}") ?? true))
+            else if (data.isDev && !(Plugin.RandoManager.IsLocationGiven($"DevToken-{player.room.abstractRoom.name.ToUpperInvariant()}") ?? true))
             {
-                Plugin.RandoManager.GiveLocation($"DevToken-{player.room.abstractRoom.name}");
+                Plugin.RandoManager.GiveLocation($"DevToken-{player.room.abstractRoom.name.ToUpperInvariant()}");
             }
             else
             {
@@ -264,7 +264,7 @@ namespace RainWorldRandomizer
             }
             else if (data.isDev)
             {
-                tokenString = $"DevToken-{room.abstractRoom.name}";
+                tokenString = $"DevToken-{room.abstractRoom.name.ToUpperInvariant()}";
             }
             else
             {
