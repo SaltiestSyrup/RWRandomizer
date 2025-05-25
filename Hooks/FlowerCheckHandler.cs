@@ -51,8 +51,8 @@ namespace RainWorldRandomizer
             // so we check if bites is 1 instead of 0
             if (RandoOptions.UseKarmaFlowerChecks
                 && self.bites == 1
-                && trackedFlowers.TryGetValue(self.abstractPhysicalObject, out FlowerData data))
-            //&& !data.alreadyChecked) <-- TODO: Uncomment this when locations are added to world
+                && trackedFlowers.TryGetValue(self.abstractPhysicalObject, out FlowerData data)
+                && !data.alreadyChecked)
             {
                 data.AwardCheck();
             }
@@ -67,8 +67,8 @@ namespace RainWorldRandomizer
             if (RandoOptions.UseKarmaFlowerChecks
                 && self.Spear_NeedleCanFeed()
                 && obj is KarmaFlower flower
-                && trackedFlowers.TryGetValue(flower.abstractPhysicalObject, out FlowerData data))
-            //&& !data.alreadyChecked) <-- TODO: Uncomment this when locations are added to world
+                && trackedFlowers.TryGetValue(flower.abstractPhysicalObject, out FlowerData data)
+                && !data.alreadyChecked)
             {
                 data.AwardCheck();
             }
@@ -90,8 +90,8 @@ namespace RainWorldRandomizer
                     if (entity is AbstractPhysicalObject abstractObj
                         && abstractObj.realizedObject != null
                         && abstractObj.type == AbstractPhysicalObject.AbstractObjectType.KarmaFlower
-                        && trackedFlowers.TryGetValue(abstractObj, out FlowerData data))
-                    //&& !data.alreadyChecked) <-- TODO: Uncomment this when locations are added to world
+                        && trackedFlowers.TryGetValue(abstractObj, out FlowerData data)
+                        && !data.alreadyChecked)
                     {
                         data.AwardCheck();
                     }
