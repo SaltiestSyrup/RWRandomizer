@@ -61,7 +61,6 @@ namespace RainWorldRandomizer.Generation
         private List<Item> ItemsToPlace = new List<Item>();
         private HashSet<string> AllRegions = new HashSet<string>();
         public HashSet<string> AllGates { get; private set; }
-        public HashSet<string> UnplacedGates { get; private set; }
         public HashSet<string> AllPassages { get; private set; }
         public Dictionary<Location, Item> RandomizedGame { get; private set; }
 
@@ -77,7 +76,6 @@ namespace RainWorldRandomizer.Generation
             CurrentStage = GenerationStep.NotStarted;
 
             AllGates = new HashSet<string>();
-            UnplacedGates = new HashSet<string>();
             AllPassages = new HashSet<string>();
             RandomizedGame = new Dictionary<Location, Item>();
 
@@ -597,6 +595,7 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("BALANCE ITEMS");
             CurrentStage = GenerationStep.BalancingItems;
+            generationLog.AppendLine($"Item balancing start with {state.AllLocations.Count} locations and {ItemsToPlace.Count} items");
 
             // Manage case where there are not enough locations for the amount of items in pool
             while (state.AllLocations.Count < ItemsToPlace.Count)
@@ -615,7 +614,6 @@ namespace RainWorldRandomizer.Generation
                 {
                     Item item = gateItems.ElementAt(randomState.Next(gateItems.Count()));
                     ItemsToPlace.Remove(item);
-                    UnplacedGates.Add(item.ToString());
                     state.AddGate(item.ToString());
                     generationLog.AppendLine($"Pre-open gate: {item}");
                     continue;
@@ -657,6 +655,8 @@ namespace RainWorldRandomizer.Generation
             {
                 ItemsToPlace.AddRange(itemsToAdd);
             }
+
+            generationLog.AppendLine($"Item balancing ended with {state.AllLocations.Count} locations and {ItemsToPlace.Count} items");
         }
         
         private void PlaceProgression()
@@ -810,6 +810,7 @@ namespace RainWorldRandomizer.Generation
                 Item chosenItem = ItemsToPlace[randomState.Next(ItemsToPlace.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
                 ItemsToPlace.Remove(chosenItem);
+                generationLog.AppendLine($"Placed filler \"{chosenItem.id}\" at {chosenLocation.id}");
             }
         }
 
