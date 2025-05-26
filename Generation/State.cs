@@ -68,7 +68,7 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
-            UnreachedLocations = AllLocations;
+            UnreachedLocations = new HashSet<Location>(AllLocations);
             AvailableLocations = new HashSet<Location>();
         }
 
@@ -117,9 +117,10 @@ namespace RainWorldRandomizer.Generation
         private void RecalculateState()
         {
             // Loop through and update every gate in state
-            bool madeProgress = false;
+            bool madeProgress;
             do
             {
+                madeProgress = false;
                 foreach (string gate in Gates)
                 {
                     madeProgress |= UpdateGate(gate);
