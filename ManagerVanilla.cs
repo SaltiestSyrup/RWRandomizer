@@ -103,6 +103,7 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
                 VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue));
+                Exception generationException = null;
                 bool timedOut = false;
                 try
                 {
@@ -111,6 +112,7 @@ namespace RainWorldRandomizer
                 catch (Exception e)
                 {
                     Plugin.Log.LogError(e);
+                    generationException = e;
                 }
 
                 Plugin.Log.LogDebug(generator.generationLog);
@@ -125,7 +127,16 @@ namespace RainWorldRandomizer
                 else
                 {
                     if (timedOut) Plugin.Log.LogDebug("Generation timed out.");
-                    Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
+
+                    if (generator.CurrentStage == VanillaGenerator.GenerationStep.FailedGen
+                        && generationException.InnerException is VanillaGenerator.GenerationFailureException)
+                    {
+                        Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate with error: {generationException.InnerException.Message}. More details found in BepInEx/LogOutput.log");
+                    }
+                    else
+                    {
+                        Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
+                    }
                     return;
                 }
             }

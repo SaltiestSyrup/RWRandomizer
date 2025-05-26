@@ -577,6 +577,7 @@ namespace RainWorldRandomizer.Generation
                     {
                         // Impossible locations are removed from state
                         state.AllLocations.Remove(loc);
+                        state.UnreachedLocations.Remove(loc);
                         generationLog.AppendLine($"Removed impossible location: {rule.Key}");
                     }
                 }
@@ -622,7 +623,7 @@ namespace RainWorldRandomizer.Generation
                 generationLog.AppendLine("Too few locations present to make a valid seed");
                 generationLog.AppendLine("Generation Failed");
                 CurrentStage = GenerationStep.FailedGen;
-                throw new GenerationFailureException();
+                throw new GenerationFailureException("Too few locations present to make a valid seed");
             }
 
             List<Item> itemsToAdd = new List<Item>();
@@ -715,8 +716,9 @@ namespace RainWorldRandomizer.Generation
                 // Check if we have failed
                 if (state.AvailableLocations.Count == 0 || placeableProg.Count == 0)
                 {
-                    generationLog.AppendLine($"ERROR: Ran out of " +
-                        $"{(placeableProg.Count == 0 ? "placeable progression" : "possible locations")}.");
+                    string errorMessage = $"Ran out of " +
+                        $"{(placeableProg.Count == 0 ? "placeable progression" : "possible locations")}.";
+                    generationLog.AppendLine($"ERROR: {errorMessage}");
 
                     generationLog.AppendLine("Failed to connect to:");
                     foreach (string region in AllRegions.Except(state.Regions))
@@ -725,7 +727,7 @@ namespace RainWorldRandomizer.Generation
                     }
                     // TODO: Print full final state on error
                     CurrentStage = GenerationStep.FailedGen;
-                    throw new GenerationFailureException();
+                    throw new GenerationFailureException(errorMessage);
                 }
 
                 Location chosenLocation = state.PopRandomLocation();
@@ -767,7 +769,7 @@ namespace RainWorldRandomizer.Generation
                         generationLog.AppendLine($"\t{loc.id}; {loc.accessRule}");
                     }
                     CurrentStage = GenerationStep.FailedGen;
-                    throw new GenerationFailureException();
+                    throw new GenerationFailureException("Ran out of possible locations");
                 }
 
                 Location chosenLocation = state.PopRandomLocation();
@@ -803,7 +805,6 @@ namespace RainWorldRandomizer.Generation
             // State should have full access by this point
             generationLog.AppendLine("PLACE FILLER");
             CurrentStage = GenerationStep.PlacingFiller;
-
             while (state.AvailableLocations.Count > 0)
             {
                 Location chosenLocation = state.PopRandomLocation();
