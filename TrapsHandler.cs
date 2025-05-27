@@ -267,7 +267,7 @@ namespace RainWorldRandomizer
                 if (chosenRoom == null)
                 {
                     Plugin.Log.LogError("Trap failed to find a valid room to spawn creature in");
-                    return;
+                    continue;
                 }
 
                 AbstractCreature crit = new AbstractCreature(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
