@@ -105,7 +105,7 @@ namespace RainWorldRandomizer
             { "Zoomies", new TrapDefinition(TrapZoomiesPlayer, TrapDisableZoomies, null, TrapZoomiesPlayer, 1200) },
             //{ "Flood", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             //{ "Rain", game => { throw new NotImplementedException("Trap not implemented yet"); } },
-            //{ "Gravity", game => { throw new NotImplementedException("Trap not implemented yet"); } },
+            { "Gravity", new TrapDefinition(TrapGravityActivate, TrapGravityDeactivate, null, TrapGravityActivate, 1200) },
             //{ "Fog", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             //{ "KillSquad", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             { "Alarm", new TrapDefinition(TrapAlarm) },
@@ -165,10 +165,6 @@ namespace RainWorldRandomizer
             }
 
             TrapUpdate(self);
-            //foreach (Trap trap in activeTraps)
-            //{
-            //    trap.Update(self);
-            //}
 
             if (pendingTrapQueue.Count == 0) return;
 
@@ -275,6 +271,34 @@ namespace RainWorldRandomizer
                     creature.abstractAI?.RealAI?.tracker?.SeeCreature(player.abstractCreature);
                 }
             }
+        }
+
+        private static List<WeakReference<Room>> gravityTrappedRooms = new List<WeakReference<Room>>();
+
+        /// <summary>Sets the gravity to 0 (Does not apply to rooms with <see cref="AntiGravity"/> or other gravity effects)</summary>
+        private static void TrapGravityActivate(this RainWorldGame game)
+        {
+            Room currentRoom = (game.FirstAlivePlayer?.realizedCreature as Player).room;
+
+            // Track each room this effect is applied to for cleaning up later
+            gravityTrappedRooms.Add(new WeakReference<Room>(currentRoom));
+
+            // Most gravity effects in the game apply through update loops,
+            // so this will be overidden instantly in those cases
+            currentRoom.gravity = 0f;
+        }
+
+        /// <summary>Turns gravity back on for affected rooms</summary>
+        private static void TrapGravityDeactivate(this RainWorldGame game)
+        {
+            // Rooms may have been abstracted since they were added,
+            // so they are stored as WeakReferences so we don't hold up their deletion
+            foreach (WeakReference<Room> roomRef in gravityTrappedRooms)
+            {
+                // Abstracted rooms will already have gravity reset when realized again
+                if (roomRef.TryGetTarget(out Room room)) room.gravity = 1f;
+            }
+            gravityTrappedRooms.Clear();
         }
         #endregion
     }
