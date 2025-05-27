@@ -62,7 +62,7 @@ namespace RainWorldRandomizer.Generation
             { "Object-SingularityBomb", 1 },
         };
 
-        public static Item RandomJunkItem()
+        public static Item RandomJunkItem(ref Random random)
         {
             List<string> items = junkItemWeights.Keys.ToList();
             List<int> weights = junkItemWeights.Values.ToList();
@@ -74,7 +74,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             int sum = weights.Sum();
-            int randomValue = UnityEngine.Random.Range(0, sum + 1);
+            int randomValue = random.Next(sum + 1);
 
             int cursor = 0;
             for (int i = 0; i < items.Count; i++)

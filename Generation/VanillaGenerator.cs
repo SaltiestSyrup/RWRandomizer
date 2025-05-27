@@ -650,7 +650,7 @@ namespace RainWorldRandomizer.Generation
                 else if (RandoOptions.GiveObjectItems)
                 {
                     // Add junk items
-                    itemsToAdd.Add(Item.RandomJunkItem());
+                    itemsToAdd.Add(Item.RandomJunkItem(ref randomState));
                 }
                 else
                 {
@@ -743,7 +743,7 @@ namespace RainWorldRandomizer.Generation
                     throw new GenerationFailureException(errorMessage);
                 }
 
-                Location chosenLocation = state.PopRandomLocation();
+                Location chosenLocation = state.PopRandomLocation(ref randomState);
                 Item chosenItem = placeableProg[randomState.Next(placeableProg.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
 
@@ -785,7 +785,7 @@ namespace RainWorldRandomizer.Generation
                     throw new GenerationFailureException("Ran out of possible locations");
                 }
 
-                Location chosenLocation = state.PopRandomLocation();
+                Location chosenLocation = state.PopRandomLocation(ref randomState);
                 Item chosenItem = placeableProg[randomState.Next(placeableProg.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
 
@@ -819,7 +819,7 @@ namespace RainWorldRandomizer.Generation
             CurrentStage = GenerationStep.PlacingFiller;
             while (state.AvailableLocations.Count > 0)
             {
-                Location chosenLocation = state.PopRandomLocation();
+                Location chosenLocation = state.PopRandomLocation(ref randomState);
                 Item chosenItem = ItemsToPlace[randomState.Next(ItemsToPlace.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
                 ItemsToPlace.Remove(chosenItem);

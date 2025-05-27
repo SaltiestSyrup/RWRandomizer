@@ -102,11 +102,11 @@ namespace RainWorldRandomizer.Generation
             RecalculateState();
         }
 
-        public Location PopRandomLocation()
+        public Location PopRandomLocation(ref Random random)
         {
             if (AvailableLocations.Count == 0) return null;
 
-            Location chosen = AvailableLocations.ElementAt(UnityEngine.Random.Range(0, AvailableLocations.Count));
+            Location chosen = AvailableLocations.ElementAt(random.Next(AvailableLocations.Count));
             AvailableLocations.Remove(chosen);
             return chosen;
         }
