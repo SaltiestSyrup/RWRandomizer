@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RainWorldRandomizer
@@ -62,21 +63,28 @@ namespace RainWorldRandomizer
         public UnlockType Type { get; private set; }
         public bool IsGiven { get; private set; } = false;
 
-        public enum UnlockType
+        public class UnlockType : ExtEnum<UnlockType>
         {
-            Gate,
-            Token,
-            Karma,
-            Glow,
-            Mark,
-            Item,
-            ItemPearl,
-            HunterCycles,
-            IdDrone,
-            DisconnectFP,
-            RewriteSpearPearl
-        }
+            public static readonly UnlockType Gate = new UnlockType("Gate", true);
+            public static readonly UnlockType Token = new UnlockType("Token", true);
+            public static readonly UnlockType Karma = new UnlockType("Karma", true);
+            public static readonly UnlockType Glow = new UnlockType("Neuron_Glow", true);
+            public static readonly UnlockType Mark = new UnlockType("The_Mark", true);
+            public static readonly UnlockType Item = new UnlockType("Item", true);
+            public static readonly UnlockType ItemPearl = new UnlockType("ItemPearl", true);
+            public static readonly UnlockType HunterCycles = new UnlockType("HunterCycles", true);
+            public static readonly UnlockType IdDrone = new UnlockType("IdDrone", true);
+            public static readonly UnlockType DisconnectFP = new UnlockType("DisconnectFP", true);
+            public static readonly UnlockType RewriteSpearPearl = new UnlockType("RewriteSpearPearl", true);
 
+            public UnlockType(string value, bool register = false) : base(value, register) { }
+
+            [Obsolete("Only here for backwards compatability with SaveManager integer parsing")]
+            public static UnlockType[] typeOrder = new UnlockType[]
+            {
+                Gate, Token, Karma, Glow, Mark, Item, ItemPearl, HunterCycles, IdDrone, DisconnectFP, RewriteSpearPearl
+            };
+        }
 
         public Unlock(UnlockType type, string ID, bool isGiven = false)
         {
@@ -110,26 +118,26 @@ namespace RainWorldRandomizer
 
             IsGiven = true;
 
-            switch (Type)
+            switch (Type.value)
             {
-                case UnlockType.Gate:
+                case "Gate":
                     Plugin.RandoManager.OpenGate(ID);
                     break;
-                case UnlockType.Token:
+                case "Token":
                     Plugin.RandoManager.AwardPassageToken(new WinState.EndgameID(ID));
                     break;
-                case UnlockType.Karma:
+                case "Karma":
                     Plugin.RandoManager.IncreaseKarma();
                     break;
-                case UnlockType.Glow:
+                case "Neuron_Glow":
                     Plugin.Singleton.Game.GetStorySession.saveState.theGlow = true;
                     Plugin.RandoManager.GivenNeuronGlow = true;
                     break;
-                case UnlockType.Mark:
+                case "The_Mark":
                     Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
                     Plugin.RandoManager.GivenMark = true;
                     break;
-                case UnlockType.Item:
+                case "Item":
                     if (item != null)
                     {
                         Plugin.Singleton.itemDeliveryQueue.Enqueue((Item)item);
@@ -143,7 +151,7 @@ namespace RainWorldRandomizer
                     }
                     ShowItemTutorial();
                     break;
-                case UnlockType.ItemPearl:
+                case "ItemPearl":
                     if (item != null)
                     {
                         Plugin.Singleton.itemDeliveryQueue.Enqueue((Item)item);
@@ -157,18 +165,18 @@ namespace RainWorldRandomizer
                     }
                     ShowItemTutorial();
                     break;
-                case UnlockType.HunterCycles:
+                case "HunterCycles":
                     Plugin.RandoManager.HunterBonusCyclesGiven++;
                     break;
-                case UnlockType.IdDrone:
+                case "IdDrone":
                     Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
                     Plugin.RandoManager.GivenRobo = true;
                     break;
-                case UnlockType.DisconnectFP:
+                case "DisconnectFP":
                     Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
                     Plugin.RandoManager.GivenPebblesOff = true;
                     break;
-                case UnlockType.RewriteSpearPearl:
+                case "RewriteSpearPearl":
                     Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
                     Plugin.RandoManager.GivenSpearPearlRewrite = true;
                     break;
@@ -177,27 +185,27 @@ namespace RainWorldRandomizer
 
         public string UnlockCompleteMessage()
         {
-            switch (Type)
+            switch (Type.value)
             {
-                case UnlockType.Gate:
+                case "Gate":
                     return $"Unlocked Gate: {Plugin.GateToString(ID, Plugin.RandoManager.currentSlugcat)}";
-                case UnlockType.Token:
+                case "Token":
                     return $"Unlocked Passage Token: {ID}";
-                case UnlockType.Karma:
+                case "Karma":
                     return "Unlocked Karma Increase";
-                case UnlockType.Glow:
+                case "Neuron_Glow":
                     return "Unlocked Neuron Glow";
-                case UnlockType.Mark:
+                case "The_Mark":
                     return "Unlocked The Mark";
-                case UnlockType.Item:
+                case "Item":
                     return $"Found {ItemToEncodedIcon((Item)item)}";
-                case UnlockType.HunterCycles:
+                case "HunterCycles":
                     return "Increased Lifespan";
-                case UnlockType.IdDrone:
+                case "IdDrone":
                     return "Found Citizen ID Drone";
-                case UnlockType.DisconnectFP:
+                case "DisconnectFP":
                     return "Disconnected Five Pebbles";
-                case UnlockType.RewriteSpearPearl:
+                case "RewriteSpearPearl":
                     return "Unlocked Broadcast Encoding";
                 default:
                     return $"Unlocked {ID}";
@@ -241,29 +249,29 @@ namespace RainWorldRandomizer
 
         public override string ToString()
         {
-            switch (Type)
+            switch (Type.value)
             {
-                case UnlockType.Gate:
+                case "Gate":
                     return Plugin.GateToShortString(ID, Plugin.RandoManager.currentSlugcat);
-                case UnlockType.Token:
+                case "Token":
                     return ID;
-                case UnlockType.Karma:
+                case "Karma":
                     return "Karma Increase";
-                case UnlockType.Glow:
+                case "Neuron_Glow":
                     return "Neuron Glow";
-                case UnlockType.Mark:
+                case "The_Mark":
                     return "The Mark";
-                case UnlockType.Item:
+                case "Item":
                     return item.Value.name;
-                case UnlockType.HunterCycles:
+                case "HunterCycles":
                     if (ModManager.MMF)
                     {
                         return $"+{MoreSlugcats.MMF.cfgHunterBonusCycles.Value} Cycles";
                     }
                     return "+5 Cycles";
-                case UnlockType.IdDrone:
+                case "IdDrone":
                     return "Citizen ID Drone";
-                case UnlockType.DisconnectFP:
+                case "DisconnectFP":
                     return "Disconnect Pebbles";
                 default:
                     return ID;

@@ -1,10 +1,12 @@
 ﻿using MoreSlugcats;
+using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -52,27 +54,39 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            Plugin.ProperRegionMap.Clear();
 
-            // Attempt to initialize session
-            if (!InitializeSession(storyGameCharacter))
+            // Reset tracking variables
+            _currentMaxKarma = Options.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(storyGameCharacter);
+            _hunterBonusCyclesGiven = 0;
+            _givenNeuronGlow = false;
+            _givenMark = false;
+            _givenRobo = false;
+            _givenPebblesOff = false;
+            _givenSpearPearlRewrite = false;
+            customStartDen = "NONE";
+
+            // Init alternate region mapping
+            foreach (string region in Region.GetFullRegionOrder())
             {
-                Plugin.Log.LogError("Failed to initialize randomizer.");
-                isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to initialize. Check logs for details.");
-                return;
+                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(storyGameCharacter), region));
             }
-
-            Plugin.Log.LogDebug($"Initialized session in {stopwatch.ElapsedMilliseconds}");
-            stopwatch.Stop();
 
             if (Input.GetKey("o"))
             {
-                DebugBulkGeneration(100);
+                DebugBulkGeneration(500);
             }
 
             if (continueSaved)
             {
+                // Add all gates to status dict
+                foreach (string roomName in Plugin.Singleton.rainWorld.progression.karmaLocks)
+                {
+                    string gate = Regex.Split(roomName, " : ")[0];
+                    if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, false);
+                }
+
+                // Load save game
                 if (SaveManager.IsThereASavedGame(storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot))
                 {
                     Plugin.Log.LogInfo("Continuing randomizer game...");
@@ -90,25 +104,56 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
-                stopwatch.Restart();
-                if (GenerateRandomizer())
+                VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue));
+                Exception generationException = null;
+                bool timedOut = false;
+                try
                 {
+                    timedOut = !generator.BeginGeneration().Wait(10000);
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError(e);
+                    generationException = e;
+                }
+
+                Plugin.Log.LogDebug(generator.generationLog);
+
+                if (generator.CurrentStage == VanillaGenerator.GenerationStep.Complete)
+                {
+                    // Load gates from generator
+                    // Existing gates that didn't have an item placed start open
+                    foreach (string gate in generator.AllGates)
+                    {
+                        if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate) ? true : false);
+                    }
+
+                    // Write new save game
+                    randomizerKey = generator.GetCompletedSeed();
+                    customStartDen = generator.customStartDen;
+                    currentSeed = generator.generationSeed;
                     SaveManager.WriteSavedGameToFile(randomizerKey, storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot);
                 }
                 else
                 {
-                    Plugin.Log.LogError("Failed to generate randomizer. See above for details.");
-                    isRandomizerActive = false;
-                    Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
+                    if (timedOut) Plugin.Log.LogDebug("Generation timed out.");
+
+                    // Log reason for expected generation exceptions
+                    if (generator.CurrentStage == VanillaGenerator.GenerationStep.FailedGen
+                        && generationException.InnerException is VanillaGenerator.GenerationFailureException)
+                    {
+                        Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate with error: {generationException.InnerException.Message}. More details found in BepInEx/LogOutput.log");
+                    }
+                    else
+                    {
+                        Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
+                    }
                     return;
                 }
-                Plugin.Log.LogDebug($"Gen complete in {stopwatch.ElapsedMilliseconds} ms");
-                stopwatch.Stop();
             }
 
             isRandomizerActive = true;
         }
-
         public bool InitializeSession(SlugcatStats.Name slugcat)
         {
             Plugin.ProperRegionMap.Clear();
@@ -212,10 +257,10 @@ namespace RainWorldRandomizer
                 }
 
                 // Check if this gate room is not accessible to the current slugcat)
-                if (CollectTokenHandler.GetRoomAccessibility(split[1]).ContainsKey(gate.ToLowerInvariant())
-                    && CollectTokenHandler.GetRoomAccessibility(split[2]).ContainsKey(gate.ToLowerInvariant())
-                    && !(CollectTokenHandler.GetRoomAccessibility(split[1])[gate.ToLowerInvariant()].Contains(slugcat)
-                        && CollectTokenHandler.GetRoomAccessibility(split[2])[gate.ToLowerInvariant()].Contains(slugcat)))
+                if (TokenCachePatcher.GetRoomAccessibility(split[1]).ContainsKey(gate.ToLowerInvariant())
+                    && TokenCachePatcher.GetRoomAccessibility(split[2]).ContainsKey(gate.ToLowerInvariant())
+                    && !(TokenCachePatcher.GetRoomAccessibility(split[1])[gate.ToLowerInvariant()].Contains(slugcat)
+                        && TokenCachePatcher.GetRoomAccessibility(split[2])[gate.ToLowerInvariant()].Contains(slugcat)))
                 {
                     isBlacklisted = true;
                 }
@@ -411,6 +456,10 @@ namespace RainWorldRandomizer
                         randomizerKey.Add("Meet_LttM_Spear", null);
                         randomizerKey.Add("Meet_FP", null);
                         break;
+                    case "Spear":
+                        randomizerKey.Add("Meet_LttM_Spear", null);
+                        randomizerKey.Add("Meet_FP", null);
+                        break;
                     case "Saint":
                         randomizerKey.Add("Ascend_LttM", null);
                         randomizerKey.Add("Ascend_FP", null);
@@ -447,10 +496,10 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            CollectTokenHandler.ClearRoomAccessibilities();
+            TokenCachePatcher.ClearRoomAccessibilities();
             return true;
         }
-
+        /*
         public bool GenerateRandomizer()
         {
             Plugin.Log.LogInfo($"Playing as {currentSlugcat}");
@@ -741,7 +790,7 @@ namespace RainWorldRandomizer
                         {
                             if (u.Type == Unlock.UnlockType.Gate)
                             {
-                                if (Plugin.OneWayGates.ContainsKey(u.ID)
+                                if (Constants.OneWayGates.ContainsKey(u.ID)
                                 || LogicBlacklist.Contains(u.ID))
                                     return false;
 
@@ -802,34 +851,52 @@ namespace RainWorldRandomizer
             Plugin.Log.LogInfo("Generation Complete!");
             return true;
         }
-
+        */
+        
         public void DebugBulkGeneration(int howMany)
         {
-            Stopwatch sw = new Stopwatch();
+            VanillaGenerator[] generators = new VanillaGenerator[howMany];
+            Task[] genTask = new Task[howMany];
             int numSucceeded = 0;
             int numFailed = 0;
-            long sumRuntime = 0;
+
+            Stopwatch sw = Stopwatch.StartNew();
 
             Plugin.Log.LogDebug("Starting bulk generation test");
             for (int i = 0; i < howMany; i++)
             {
-                sw.Restart();
-                if (GenerateRandomizer())
-                    numSucceeded++;
-                else
-                    numFailed++;
-                sumRuntime += sw.ElapsedMilliseconds;
-                Plugin.Log.LogDebug($"Gen complete in {sw.ElapsedMilliseconds} ms");
-
-                // Reset key
-                var keys = randomizerKey.Keys.ToList();
-                foreach (var key in keys)
-                {
-                    randomizerKey[key] = null;
-                }
+                generators[i] = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue));
+                genTask[i] = generators[i].BeginGeneration();
             }
 
-            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tAverage time: {(float)sumRuntime / howMany} ms");
+            // Only gen for up to 30 seconds
+            // Try block here to stop WaitAll from throwing innner task's exceptions
+            try { Task.WaitAll(genTask, 30000); }
+            catch { }
+
+            sw.Stop();
+
+            for (int j = 0; j < howMany; j++)
+            {
+                if (generators[j].CurrentStage == VanillaGenerator.GenerationStep.FailedGen)
+                {
+                    Plugin.Log.LogError($"Generation failure with Exception:");
+                    Plugin.Log.LogError(genTask[j].Exception);
+                    Plugin.Log.LogDebug($"Log for failed gen:");
+                    Plugin.Log.LogDebug(generators[j].generationLog);
+                    numFailed++;
+                }
+                else if (generators[j].CurrentStage == VanillaGenerator.GenerationStep.Complete)
+                {
+                    numSucceeded++;
+                }
+                else
+                {
+                    Plugin.Log.LogError($"Generation was timed out before completion during stage: {generators[j].CurrentStage}");
+                    //Plugin.Log.LogDebug(generators[j].generationLog);
+                }
+            }
+            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tTime: {sw.ElapsedMilliseconds} ms");
         }
 
         private static List<string> UpdateAvailableRegions(List<string> availableRegions, List<string> preOpened, string newGate)
@@ -906,36 +973,43 @@ namespace RainWorldRandomizer
             // Set unlocked gates and passage tokens
             foreach (Unlock item in randomizerKey.Values)
             {
-                switch (item.Type)
+                switch (item.Type.value)
                 {
-                    case Unlock.UnlockType.Gate:
+                    case "Gate":
                         if (gatesStatus.ContainsKey(item.ID))
                         {
                             gatesStatus[item.ID] = gatesStatus[item.ID] || item.IsGiven; // If the gate was already opened by an identical unlock, keep it open
                         }
                         break;
-                    case Unlock.UnlockType.Token:
+                    case "Token":
                         if (passageTokensStatus.ContainsKey(new WinState.EndgameID(item.ID)))
                         {
                             passageTokensStatus[new WinState.EndgameID(item.ID)] = item.IsGiven;
                         }
                         break;
-                    case Unlock.UnlockType.Karma:
+                    case "Karma":
                         if (item.IsGiven) IncreaseKarma();
                         break;
-                    case Unlock.UnlockType.Glow:
+                    case "Neuron_Glow":
                         if (item.IsGiven) _givenNeuronGlow = true;
                         break;
-                    case Unlock.UnlockType.Mark:
+                    case "The_Mark":
                         if (item.IsGiven) _givenMark = true;
                         break;
-                    case Unlock.UnlockType.HunterCycles:
+                    case "HunterCycles":
                         if (item.IsGiven) _hunterBonusCyclesGiven++;
                         break;
-                    case Unlock.UnlockType.IdDrone:
+                    case "IdDrone":
                         if (item.IsGiven) _givenRobo = true;
                         break;
+                    case "DisconnectFP":
+                        if (item.IsGiven) _givenPebblesOff = true;
+                        break;
+                    case "RewriteSpearPearl":
+                        if (item.IsGiven) _givenSpearPearlRewrite = true;
+                        break;
                 }
+                
             }
 
             Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, saveSlot);

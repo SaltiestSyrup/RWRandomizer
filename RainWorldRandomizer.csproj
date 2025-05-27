@@ -19,7 +19,7 @@
     <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -104,6 +104,12 @@
     <Compile Include="CollectTokenHandler.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Hooks\FlowerCheckHandler.cs" />
+    <Compile Include="Generation\AccessRule.cs" />
+    <Compile Include="TokenCachePatcher.cs" />
+    <Compile Include="Generation\Item.cs" />
+    <Compile Include="Generation\Location.cs" />
+    <Compile Include="Generation\State.cs" />
+    <Compile Include="Generation\VanillaGenerator.cs" />
     <Compile Include="Hooks\SleepScreenHooks.cs" />
     <Compile Include="Menu\HudExtension.cs" />
     <Compile Include="ModCompat\CustomRegionCompatability.cs" />

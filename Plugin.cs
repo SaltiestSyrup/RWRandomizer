@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using System.Linq;
+using RainWorldRandomizer.Generation;
 
 namespace RainWorldRandomizer
 {
@@ -22,6 +24,7 @@ namespace RainWorldRandomizer
 
         internal static ManualLogSource Log;
 
+        public bool hasInitialized = false;
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new ArchipelagoConnection();
         public static ManagerBase RandoManager = null;
@@ -70,13 +73,6 @@ namespace RainWorldRandomizer
             }
         }
 
-        // { GATE_NAME, IS_LEFT_TRAVEL }
-        public static Dictionary<string, bool> OneWayGates = new Dictionary<string, bool>()
-        {
-            { "GATE_OE_SU", false },
-            { "GATE_LF_SB", false },
-        };
-
         public enum GateBehavior
         {
             OnlyKey, // Only keys matter, karma not required
@@ -114,6 +110,7 @@ namespace RainWorldRandomizer
                 collectTokenHandler.ApplyHooks();
                 seedViewer.ApplyHooks();
                 HudExtension.ApplyHooks();
+                TokenCachePatcher.ApplyHooks();
 
                 GameLoopHooks.ApplyHooks();
                 PlayerHooks.ApplyHooks();
@@ -128,6 +125,7 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
+                On.ExtEnumInitializer.InitTypes += OnInitExtEnumTypes;
                 //On.RainWorld.LoadModResources += LoadResources;
                 //On.RainWorld.UnloadResources += UnloadResources;
 
@@ -158,6 +156,7 @@ namespace RainWorldRandomizer
                 collectTokenHandler.RemoveHooks();
                 seedViewer.RemoveHooks();
                 HudExtension.RemoveHooks();
+                TokenCachePatcher.RemoveHooks();
 
                 GameLoopHooks.RemoveHooks();
                 PlayerHooks.RemoveHooks();
@@ -172,6 +171,7 @@ namespace RainWorldRandomizer
 
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
+                On.ExtEnumInitializer.InitTypes -= OnInitExtEnumTypes;
                 //On.RainWorld.LoadModResources -= LoadResources;
                 //On.RainWorld.UnloadResources -= UnloadResources;
             }
@@ -184,6 +184,8 @@ namespace RainWorldRandomizer
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
+            if (hasInitialized) return;
+
             rainWorld = self;
 
             //try
@@ -215,6 +217,10 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
+            VanillaGenerator.GenerateCustomRules();
+            AccessRuleConstants.InitConstants();
+
+            hasInitialized = true;
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
@@ -226,6 +232,12 @@ namespace RainWorldRandomizer
             {
                 RegionNamesMap.Add(regionShort, Region.GetRegionFullName(regionShort, null));
             }
+        }
+
+        public void OnInitExtEnumTypes(On.ExtEnumInitializer.orig_InitTypes orig)
+        {
+            orig();
+            RandomizerEnums.InitExtEnumTypes();
         }
 
         // --- Not currently needed but may still be useful in the future ---
@@ -493,8 +505,7 @@ namespace RainWorldRandomizer
         public static string GateToString(string gate, SlugcatStats.Name slugcat)
         {
             string[] gateSplit = Regex.Split(gate, "_");
-            //string name1 = Region.GetRegionFullName(Region.GetProperRegionAcronym(slugcat, gateSplit[1]), slugcat);
-            //string name2 = Region.GetRegionFullName(Region.GetProperRegionAcronym(slugcat, gateSplit[2]), slugcat);
+            if (gateSplit.Length < 3) return gate;
 
             string properAcro1 = ProperRegionMap.ContainsKey(gateSplit[1]) ? ProperRegionMap[gateSplit[1]] : "";
             string properAcro2 = ProperRegionMap.ContainsKey(gateSplit[2]) ? ProperRegionMap[gateSplit[2]] : "";
@@ -515,10 +526,10 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            if (OneWayGates.ContainsKey(gate))
+            if (Constants.OneWayGates.ContainsKey(gate))
             {
                 output = $"{name1}" +
-                    $" {(OneWayGates[gate] ? "<-" : "->")} " +
+                    $" {(Constants.OneWayGates[gate] ? "<-" : "->")} " +
                     $"{name2}";
             }
 
@@ -528,13 +539,14 @@ namespace RainWorldRandomizer
         public static string GateToShortString(string gate, SlugcatStats.Name slugcat)
         {
             string[] gateSplit = Regex.Split(gate, "_");
+            if (gateSplit.Length < 3) return gate;
             string output;
 
             output = $"{gateSplit[1]} <-> {gateSplit[2]}";
 
-            if (OneWayGates.ContainsKey(gate))
+            if (Constants.OneWayGates.ContainsKey(gate))
             {
-                output = $"{gateSplit[1]} {(OneWayGates[gate] ? "<-" : "->")} {gateSplit[2]}";
+                output = $"{gateSplit[1]} {(Constants.OneWayGates[gate] ? "<-" : "->")} {gateSplit[2]}";
             }
 
             return output;
