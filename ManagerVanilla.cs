@@ -57,7 +57,7 @@ namespace RainWorldRandomizer
             Plugin.ProperRegionMap.Clear();
 
             // Reset tracking variables
-            _currentMaxKarma = 4;
+            _currentMaxKarma = Options.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(storyGameCharacter);
             _hunterBonusCyclesGiven = 0;
             _givenNeuronGlow = false;
             _givenMark = false;

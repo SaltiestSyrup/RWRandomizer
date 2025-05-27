@@ -24,7 +24,7 @@ namespace RainWorldRandomizer.Generation
         /// Used to override rules for locations as specific slugcats. Applies on top of <see cref="GlobalRuleOverrides"/>, taking priority over all if playing as the relevant slugcat
         /// </summary>
         public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> SlugcatRuleOverrides = new Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>>();
-        
+
         /// <summary>
         /// Combination of <see cref="GlobalRuleOverrides"/> and <see cref="SlugcatRuleOverrides"/> populated in instance constructor.
         /// Any additions to rule overrides must be completed by the time the generator instance is created
@@ -46,12 +46,12 @@ namespace RainWorldRandomizer.Generation
         }
         public GenerationStep CurrentStage { get; private set; }
         public bool InProgress
-        { 
-            get 
+        {
+            get
             {
                 return CurrentStage > GenerationStep.NotStarted
                     && CurrentStage < GenerationStep.Complete;
-            } 
+            }
         }
 
         private Task generationThread;
@@ -86,7 +86,7 @@ namespace RainWorldRandomizer.Generation
             // UnityEngine.Random doesn't play well with threads
             this.generationSeed = generationSeed;
             randomState = new Random(generationSeed);
-            
+
             // Combine custom rules together
             RuleOverrides = GlobalRuleOverrides;
             // Slugcat specific rules take priority over global ones
@@ -171,7 +171,7 @@ namespace RainWorldRandomizer.Generation
                 // Filter out slugcat inaccessible regions unless there is a special rule defined
                 else if (!slugcatRegions.Contains(region)) continue;
 
-                    AllRegions.Add(region);
+                AllRegions.Add(region);
                 string regionLower = region.ToLowerInvariant();
 
                 // Add Echoes from RegionKit if present
@@ -197,7 +197,7 @@ namespace RainWorldRandomizer.Generation
                 if (Options.UseSandboxTokenChecks
                     && Plugin.Singleton.collectTokenHandler.availableTokens.ContainsKey(region))
                 {
-                    foreach(string token in Plugin.Singleton.collectTokenHandler.availableTokens[region])
+                    foreach (string token in Plugin.Singleton.collectTokenHandler.availableTokens[region])
                     {
                         locations.Add(new Location($"Token-{token}", Location.Type.Token, regionAccessRule));
                     }
@@ -221,12 +221,17 @@ namespace RainWorldRandomizer.Generation
                 if (split.Length < 3) continue; // Ignore abnormal gates
                 string[] regions = new string[2] { split[1], split[2] };
 
+                // Skip if gate already accounted for
+                if (AllGates.Contains(gate)) continue;
+                // Gates that have to always be open to avoid softlocks
+                if (Constants.ForceOpenGates.Contains(gate)) continue;
+
                 bool skipThisGate = false;
                 foreach (string region in regions)
                 {
                     // If this region does not exist in the timeline
                     // and is not an alias of an existing region, skip the gate
-                    if (!AllRegions.Contains(region) 
+                    if (!AllRegions.Contains(region)
                         && (!Plugin.ProperRegionMap.TryGetValue(region, out string alias)
                         || region == alias))
                     {
@@ -241,9 +246,6 @@ namespace RainWorldRandomizer.Generation
                     {
                         skipThisGate = true;
                     }
-
-                    // Gates that have to always be open to avoid softlocks
-                    if (Constants.ForceOpenGates.Contains(gate)) skipThisGate = true;
                 }
 
                 if (skipThisGate) continue;
@@ -257,7 +259,7 @@ namespace RainWorldRandomizer.Generation
                     ItemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Filler));
                     continue;
                 }
-                
+
                 ItemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
             }
 
@@ -272,9 +274,9 @@ namespace RainWorldRandomizer.Generation
                 {
                     switch (passage)
                     {
+                        // Gourmand is handled later
                         case "Gourmand":
-                            if (Options.UseFoodQuest) continue;
-                            break;
+                            continue;
                         case "Mother":
                             if (!motherUnlocked || !canFindSlugpups) continue;
                             break;
@@ -326,11 +328,11 @@ namespace RainWorldRandomizer.Generation
                             accessRule = new KarmaAccessRule(5);
                             break;
                         case "DragonSlayer":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards, 
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards,
                                 CompoundAccessRule.CompoundOperation.AtLeast, 6);
                             break;
                         case "Friend":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards, 
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards,
                                 CompoundAccessRule.CompoundOperation.Any);
                             break;
                         case "Traveller":
@@ -339,7 +341,7 @@ namespace RainWorldRandomizer.Generation
                             {
                                 regions.Add(new RegionAccessRule(reg));
                             }
-                            accessRule = new CompoundAccessRule(regions.ToArray(), 
+                            accessRule = new CompoundAccessRule(regions.ToArray(),
                                 CompoundAccessRule.CompoundOperation.All);
                             break;
                         case "Chieftain":
@@ -354,7 +356,7 @@ namespace RainWorldRandomizer.Generation
                                 CompoundAccessRule.CompoundOperation.AtLeast, 5);
                             break;
                         case "Nomad":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions, 
+                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
                                 CompoundAccessRule.CompoundOperation.AtLeast, 4);
                             break;
                         case "Outlaw":
@@ -369,7 +371,7 @@ namespace RainWorldRandomizer.Generation
                             List<AccessRule> rules = new List<AccessRule>()
                             {
                                 new AccessRule("The_Mark"),
-                                new CompoundAccessRule(AccessRuleConstants.Regions, 
+                                new CompoundAccessRule(AccessRuleConstants.Regions,
                                     CompoundAccessRule.CompoundOperation.AtLeast, 3)
                             };
                             if (slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Yellow
@@ -377,11 +379,8 @@ namespace RainWorldRandomizer.Generation
                             {
                                 rules.Add(new RegionAccessRule("SL"));
                             }
-                            accessRule = new CompoundAccessRule(rules.ToArray(), 
+                            accessRule = new CompoundAccessRule(rules.ToArray(),
                                 CompoundAccessRule.CompoundOperation.All);
-                            break;
-                        // TODO: Populate Food Quest passage requirements
-                        case "Gourmand":
                             break;
                     }
 
@@ -423,6 +422,7 @@ namespace RainWorldRandomizer.Generation
             // Create Food Quest locations
             if (ModManager.MSC && Options.UseFoodQuest)
             {
+                List<AccessRule> allGourmRules = new List<AccessRule>();
                 foreach (WinState.GourmandTrackerData data in WinState.GourmandPassageTracker)
                 {
                     if (data.type == AbstractPhysicalObject.AbstractObjectType.Creature)
@@ -433,8 +433,12 @@ namespace RainWorldRandomizer.Generation
                             rules.Add(new CreatureAccessRule(type));
                         }
 
-                        locations.Add(new Location($"FoodQuest-{data.crits[0].value}", Location.Type.Food,
-                            new CompoundAccessRule(rules.ToArray(), CompoundAccessRule.CompoundOperation.Any)));
+                        AccessRule rule;
+                        if (rules.Count > 1) rule = new CompoundAccessRule(rules.ToArray(), CompoundAccessRule.CompoundOperation.Any);
+                        else rule = rules[0];
+
+                        allGourmRules.Add(rule);
+                        locations.Add(new Location($"FoodQuest-{data.crits[0].value}", Location.Type.Food, rule));
                     }
                     else
                     {
@@ -444,8 +448,11 @@ namespace RainWorldRandomizer.Generation
                             rule = AccessRuleConstants.NeuronAccess;
                         }
 
+                        allGourmRules.Add(rule);
                         locations.Add(new Location($"FoodQuest-{data.type.value}", Location.Type.Food, rule));
                     }
+                    locations.Add(new Location("Passage-Gourmand", Location.Type.Passage,
+                        new CompoundAccessRule(allGourmRules.ToArray(), CompoundAccessRule.CompoundOperation.All)));
                 }
             }
 
@@ -617,6 +624,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     Item item = gateItems.ElementAt(randomState.Next(gateItems.Count()));
                     ItemsToPlace.Remove(item);
+                    UnplacedGates.Add(item.id);
                     state.AddGate(item.ToString());
                     generationLog.AppendLine($"Pre-open gate: {item}");
                     continue;
@@ -630,7 +638,7 @@ namespace RainWorldRandomizer.Generation
 
             List<Item> itemsToAdd = new List<Item>();
             int hunterCyclesAdded = 0;
-            while(state.AllLocations.Count > ItemsToPlace.Count + itemsToAdd.Count)
+            while (state.AllLocations.Count > ItemsToPlace.Count + itemsToAdd.Count)
             {
                 if (slugcat == SlugcatStats.Name.Red
                     && hunterCyclesAdded < state.AllLocations.Count * Options.HunterCycleIncreaseDensity)
@@ -642,7 +650,7 @@ namespace RainWorldRandomizer.Generation
                 else if (Options.GiveObjectItems)
                 {
                     // Add junk items
-                    itemsToAdd.Add(Item.RandomJunkItem()); 
+                    itemsToAdd.Add(Item.RandomJunkItem());
                 }
                 else
                 {
@@ -664,7 +672,7 @@ namespace RainWorldRandomizer.Generation
 
             generationLog.AppendLine($"Item balancing ended with {state.AllLocations.Count} locations and {ItemsToPlace.Count} items");
         }
-        
+
         private void PlaceProgression()
         {
             generationLog.AppendLine("PLACE PROGRESSION");
@@ -798,9 +806,8 @@ namespace RainWorldRandomizer.Generation
                 {
                     generationLog.AppendLine($"\t{loc.id}; {loc.accessRule}");
                 }
-                // TODO: Re-enable this failure state
-                //CurrentStage = GenerationStep.FailedGen;
-                //throw new GenerationFailureException();
+                CurrentStage = GenerationStep.FailedGen;
+                throw new GenerationFailureException("Failed to reach all locations");
             }
         }
 
