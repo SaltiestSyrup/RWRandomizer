@@ -36,7 +36,7 @@ namespace RainWorldRandomizer
 
             public void Activate(RainWorldGame game)
             {
-                Plugin.Log.LogDebug($"Trap Triggered! ({id})");
+                Plugin.Log.LogInfo($"Trap Triggered! ({id})");
                 Plugin.Singleton.notifQueue.Enqueue($"Trap Triggered! ({id})");
                 definition.onTrigger(game);
                 timer = definition.duration;
@@ -165,7 +165,6 @@ namespace RainWorldRandomizer
         public static void EnqueueTrap(string itemId)
         {
             pendingTrapQueue.Enqueue(new Trap(itemId.Substring(5)));
-            Plugin.Log.LogDebug($"Added trap to queue. Current traps count: {pendingTrapQueue.Count}");
         }
 
         private static void ResetCooldown()
