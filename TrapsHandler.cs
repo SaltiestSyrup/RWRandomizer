@@ -115,8 +115,8 @@ namespace RainWorldRandomizer
 
             { "RedLizard", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); }) },
             { "RedCentipede", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedCentipede); }) },
-            { "SpitterSpider", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider); }) },
-            { "BrotherLongLegs", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.BrotherLongLegs); }) },
+            { "SpitterSpider", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider, 4); }) },
+            { "BrotherLongLegs", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.BrotherLongLegs, 2); }) },
             { "DaddyLongLegs", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.DaddyLongLegs); }) },
         };
 
@@ -254,27 +254,32 @@ namespace RainWorldRandomizer
 
         /// <summary>Spawns the desired creature in an adjacent room</summary>
         /// <param name="template">The type of creature to spawn</param>
-        private static void TrapSpawnCreatureNearby(this RainWorldGame game, CreatureTemplate.Type template)
+        /// <param name="count">How many of the creature to spawn</param>
+        private static void TrapSpawnCreatureNearby(this RainWorldGame game, CreatureTemplate.Type template, int count = 1)
         {
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
 
             int[] connectedRooms = player.room.abstractRoom.connections;
-            AbstractRoom chosenRoom = game.world.GetAbstractRoom(connectedRooms[UnityEngine.Random.Range(0, connectedRooms.Length)]);
 
-            if (chosenRoom == null)
+            for (int i = 0; i < count; i++)
             {
-                Plugin.Log.LogError("Trap failed to find a valid room to spawn creature in");
-                return;
-            }
+                AbstractRoom chosenRoom = game.world.GetAbstractRoom(connectedRooms[UnityEngine.Random.Range(0, connectedRooms.Length)]);
 
-            AbstractCreature crit = new AbstractCreature(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
+                if (chosenRoom == null)
+                {
+                    Plugin.Log.LogError("Trap failed to find a valid room to spawn creature in");
+                    return;
+                }
 
-            chosenRoom.AddEntity(crit);
+                AbstractCreature crit = new AbstractCreature(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
 
-            if (chosenRoom.realizedRoom != null)
-            {
-                crit.RealizeInRoom();
-                crit.abstractAI.RealAI.tracker.SeeCreature(player.abstractCreature);
+                chosenRoom.AddEntity(crit);
+
+                if (chosenRoom.realizedRoom != null)
+                {
+                    crit.RealizeInRoom();
+                    crit.abstractAI.RealAI.tracker.SeeCreature(player.abstractCreature);
+                }
             }
         }
 
