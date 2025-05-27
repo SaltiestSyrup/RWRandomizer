@@ -891,8 +891,6 @@ namespace RainWorldRandomizer.Generation
 
         public static void GenerateCustomRules()
         {
-            Plugin.Log.LogDebug("Add custom rules");
-
             SlugcatRuleOverrides.Add(SlugcatStats.Name.White, new Dictionary<string, AccessRule>());
             SlugcatRuleOverrides.Add(SlugcatStats.Name.Yellow, new Dictionary<string, AccessRule>());
             SlugcatRuleOverrides.Add(SlugcatStats.Name.Red, new Dictionary<string, AccessRule>());
@@ -907,10 +905,19 @@ namespace RainWorldRandomizer.Generation
                 SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, new Dictionary<string, AccessRule>());
             }
 
+            // SB ravine checks only reachable from LF side
+            AccessRule subRavineRule = new CompoundAccessRule(new AccessRule[]
+            {
+                new GateAccessRule("GATE_LF_SB"),
+                new RegionAccessRule("LF"),
+                new RegionAccessRule("SB")
+            }, CompoundAccessRule.CompoundOperation.All);
+            GlobalRuleOverrides.Add("Echo-SB", subRavineRule);
+            GlobalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
+
             // MSC specific rules
             if (ModManager.MSC)
             {
-                Plugin.Log.LogDebug("Add MSC rules");
                 // OE isn't filtered out by timeline so it needs a manual rule here
                 GlobalRuleOverrides.Add("Region-OE", new MultiSlugcatAccessRule(new SlugcatStats.Name[]
                 {
