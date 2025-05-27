@@ -129,11 +129,11 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("INITIALIZE STATE");
             CurrentStage = GenerationStep.InitializingState;
-            state = new State(slugcat, timeline, Options.StartMinimumKarma ? 1 : 5);
+            state = new State(slugcat, timeline, RandoOptions.StartMinimumKarma ? 1 : 5);
             HashSet<Location> locations = new HashSet<Location>();
 
             // Load Tokens
-            if (Options.UseSandboxTokenChecks)
+            if (RandoOptions.UseSandboxTokenChecks)
             {
                 lock (Plugin.Singleton.collectTokenHandler)
                 {
@@ -145,9 +145,9 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Regions loop
-            bool regionKitEchoes = Options.UseEchoChecks && RegionKitCompatibility.Enabled;
-            bool doPearlLocations = Options.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
-            bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && Options.UseSMBroadcasts;
+            bool regionKitEchoes = RandoOptions.UseEchoChecks && RegionKitCompatibility.Enabled;
+            bool doPearlLocations = RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
+            bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && RandoOptions.UseSMBroadcasts;
             List<string> slugcatRegions = SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat)).ToList();
             foreach (string region in Region.GetFullRegionOrder(timeline))
             {
@@ -194,7 +194,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 // Create Token locations
-                if (Options.UseSandboxTokenChecks
+                if (RandoOptions.UseSandboxTokenChecks
                     && Plugin.Singleton.collectTokenHandler.availableTokens.ContainsKey(region))
                 {
                     foreach (string token in Plugin.Singleton.collectTokenHandler.availableTokens[region])
@@ -298,7 +298,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 // Passage locations
-                if (Options.UsePassageChecks)
+                if (RandoOptions.UsePassageChecks)
                 {
                     // TODO: Mother, Hunter, Monk, Outlaw, and Saint currently have placeholder rules as in-depth requirements are a difficult problem to solve
                     AccessRule accessRule = new AccessRule();
@@ -388,7 +388,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 // Passage items
-                if (Options.GivePassageItems && passage != "Gourmand")
+                if (RandoOptions.GivePassageItems && passage != "Gourmand")
                 {
                     AllPassages.Add(passage);
                     ItemsToPlace.Add(new Item(passage, Item.Type.Passage, Item.Importance.Filler));
@@ -396,7 +396,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Echo locations
-            if (Options.UseEchoChecks)
+            if (RandoOptions.UseEchoChecks)
             {
                 foreach (string echo in ExtEnumBase.GetNames(typeof(GhostWorldPresence.GhostID)))
                 {
@@ -420,7 +420,7 @@ namespace RainWorldRandomizer.Generation
 
             // TODO: Add support for expanded food quest
             // Create Food Quest locations
-            if (ModManager.MSC && Options.UseFoodQuest)
+            if (ModManager.MSC && RandoOptions.UseFoodQuest)
             {
                 List<AccessRule> allGourmRules = new List<AccessRule>();
                 foreach (WinState.GourmandTrackerData data in WinState.GourmandPassageTracker)
@@ -457,7 +457,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Special locations
-            if (Options.UseSpecialChecks)
+            if (RandoOptions.UseSpecialChecks)
             {
                 locations.Add(new Location("Eat_Neuron", Location.Type.Story, AccessRuleConstants.NeuronAccess));
 
@@ -508,7 +508,7 @@ namespace RainWorldRandomizer.Generation
                                 new RegionAccessRule("SL"),
                                 new AccessRule("The_Mark")
                             }, CompoundAccessRule.CompoundOperation.All)));
-                        if (Options.UseEnergyCell)
+                        if (RandoOptions.UseEnergyCell)
                         {
                             locations.Add(new Location("Kill_FP", Location.Type.Story,
                                 new RegionAccessRule("RM")));
@@ -549,7 +549,7 @@ namespace RainWorldRandomizer.Generation
                     ItemsToPlace.Add(new Item("IdDrone", Item.Type.Other, Item.Importance.Progression));
                     break;
                 case "Rivulet":
-                    if (Options.UseEnergyCell)
+                    if (RandoOptions.UseEnergyCell)
                     {
                         ItemsToPlace.Add(new Item("Object-EnergyCell", Item.Type.Object, Item.Importance.Progression));
                         ItemsToPlace.Add(new Item("DisconnectFP", Item.Type.Other, Item.Importance.Progression));
@@ -641,13 +641,13 @@ namespace RainWorldRandomizer.Generation
             while (state.AllLocations.Count > ItemsToPlace.Count + itemsToAdd.Count)
             {
                 if (slugcat == SlugcatStats.Name.Red
-                    && hunterCyclesAdded < state.AllLocations.Count * Options.HunterCycleIncreaseDensity)
+                    && hunterCyclesAdded < state.AllLocations.Count * RandoOptions.HunterCycleIncreaseDensity)
                 {
                     // Add cycle increases for Hunter
                     itemsToAdd.Add(new Item("HunterCycles", Item.Type.Other, Item.Importance.Filler));
                     hunterCyclesAdded++;
                 }
-                else if (Options.GiveObjectItems)
+                else if (RandoOptions.GiveObjectItems)
                 {
                     // Add junk items
                     itemsToAdd.Add(Item.RandomJunkItem());
@@ -678,7 +678,7 @@ namespace RainWorldRandomizer.Generation
             generationLog.AppendLine("PLACE PROGRESSION");
             CurrentStage = GenerationStep.PlacingProg;
             // Determine starting region
-            if (Options.RandomizeSpawnLocation)
+            if (RandoOptions.RandomizeSpawnLocation)
             {
                 customStartDen = FindRandomStart(slugcat);
                 generationLog.AppendLine($"Using custom start den: {customStartDen}");
