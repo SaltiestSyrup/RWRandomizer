@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.RuntimeDetour;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -104,7 +107,7 @@ namespace RainWorldRandomizer
             { "Timer", new TrapDefinition(game => { TrapCycleTimer(game); }) },
             { "Zoomies", new TrapDefinition(TrapZoomiesPlayer, TrapDisableZoomies, null, TrapZoomiesPlayer, 1200) },
             //{ "Flood", game => { throw new NotImplementedException("Trap not implemented yet"); } },
-            //{ "Rain", game => { throw new NotImplementedException("Trap not implemented yet"); } },
+            { "Rain", new TrapDefinition(TrapRainActivate, TrapRainDeactivate, null, null, 600) },
             { "Gravity", new TrapDefinition(TrapGravityActivate, TrapGravityDeactivate, null, TrapGravityActivate, 1200) },
             //{ "Fog", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             //{ "KillSquad", game => { throw new NotImplementedException("Trap not implemented yet"); } },
@@ -133,12 +136,30 @@ namespace RainWorldRandomizer
         {
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
             On.Player.NewRoom += OnPlayerNewRoom;
+
+            try
+            {
+                IL.GlobalRain.Update += ILGlobalRainUpdate;
+
+                _ = new ILHook(typeof(RainCycle).GetProperty(nameof(RainCycle.preCycleRain_Intensity)).GetGetMethod(), ILGetPreCycleRainIntensity);
+
+                _ = new ILHook(typeof(RainCycle).GetProperty(nameof(RainCycle.ScreenShake)).GetGetMethod(), ILPreTimer);
+                _ = new ILHook(typeof(RainCycle).GetProperty(nameof(RainCycle.MicroScreenShake)).GetGetMethod(), ILPreTimer);
+
+                _ = new ILHook(typeof(ElectricDeath).GetProperty(nameof(ElectricDeath.Intensity)).GetGetMethod(), ILElectricDeathIntensity);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError(e);
+            }
         }
 
         public static void RemoveHooks()
         {
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
             On.Player.NewRoom -= OnPlayerNewRoom;
+
+            IL.GlobalRain.Update -= ILGlobalRainUpdate;
         }
 
         public static void EnqueueTrap(string itemId)
@@ -273,6 +294,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// All rooms currently affected by gravity trap. Rooms may be null if player has unloaded them
+        /// </summary>
         private static List<WeakReference<Room>> gravityTrappedRooms = new List<WeakReference<Room>>();
 
         /// <summary>Sets the gravity to 0 (Does not apply to rooms with <see cref="AntiGravity"/> or other gravity effects)</summary>
@@ -291,8 +315,6 @@ namespace RainWorldRandomizer
         /// <summary>Turns gravity back on for affected rooms</summary>
         private static void TrapGravityDeactivate(this RainWorldGame game)
         {
-            // Rooms may have been abstracted since they were added,
-            // so they are stored as WeakReferences so we don't hold up their deletion
             foreach (WeakReference<Room> roomRef in gravityTrappedRooms)
             {
                 // Abstracted rooms will already have gravity reset when realized again
@@ -300,6 +322,114 @@ namespace RainWorldRandomizer
             }
             gravityTrappedRooms.Clear();
         }
+
+        private static bool rainTrapActive = false;
+
+        /// <summary>Triggers precycle rain effect</summary>
+        private static void TrapRainActivate(this RainWorldGame game)
+        {
+            rainTrapActive = true;
+            // TODO: Couldn't figure out how flooding works to force it to always happen. May return to this later
+            //game.globalRain.drainWorldFlood = 10f;
+            //Plugin.Log.LogDebug(game.globalRain.flood);
+            //Plugin.Log.LogDebug(game.globalRain.drainWorldFlood);
+        }
+        /// <summary>Returns rain trap to normal</summary>
+        private static void TrapRainDeactivate(this RainWorldGame game)
+        {
+            rainTrapActive = false;
+            //Plugin.Log.LogDebug(game.globalRain.flood);
+            //Plugin.Log.LogDebug(game.globalRain.drainWorldFlood);
+            //Room room = (game.FirstAlivePlayer?.realizedCreature as Player).room;
+            //Plugin.Log.LogDebug(room.waterObject.originalWaterLevel);
+            //Plugin.Log.LogDebug(room.roomRain.FloodLevel);
+        }
+
+        private static void ILGlobalRainUpdate(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // --- Redirect if statement
+
+            // After beq at 0481
+            c.GotoNext(x => x.MatchLdfld(typeof(GlobalRain).GetField(nameof(GlobalRain.preCycleRainPulse_Scale))));
+            c.GotoNext(MoveType.After, x => x.MatchBeq(out _));
+            // Mark entry to if block
+            ILLabel jump = c.MarkLabel();
+
+            // Before checking precycle module at 046C
+            c.GotoPrev(x => x.MatchCallOrCallvirt(typeof(ModManager).GetProperty(nameof(ModManager.PrecycleModule)).GetGetMethod()));
+
+            // If rain trap is active, act as if it's a precycle
+            c.Emit(OpCodes.Ldsfld, typeof(TrapsHandler).GetField(nameof(rainTrapActive), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic));
+            //c.EmitDelegate<Func<bool>>(() => rainTrapActive);
+            c.Emit(OpCodes.Brtrue, jump);
+
+            // --- Modify values
+
+            // Load pulse intensity at 0497
+            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(GlobalRain).GetField(nameof(GlobalRain.preCycleRainPulse_Intensity))));
+            // Load pulse scale at 04AD
+            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(GlobalRain).GetField(nameof(GlobalRain.preCycleRainPulse_Scale))));
+            // Supply new value for scale without overriding precyles
+            c.EmitDelegate<Func<float, float>>(oldScale => oldScale > 0 ? oldScale : 1f);
+        }
+
+        /// <summary>
+        /// Set precycle rain intensity when trap is active
+        /// </summary>
+        private static void ILGetPreCycleRainIntensity(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // First return at 001C
+            c.GotoNext(x => x.MatchRet());
+
+            // If precycle is not active but trap is, set our intensity
+            c.EmitDelegate<Func<float, float>>(intensity =>
+            {
+                return rainTrapActive ? 1f : 0f;
+            });
+        }
+
+        /// <summary>
+        /// Pretend that preTimer is not 0 for certain checks
+        /// </summary>
+        /// <param name="il"></param>
+        private static void ILPreTimer(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(RainCycle).GetField(nameof(RainCycle.preTimer))));
+            c.EmitDelegate<Func<int, int>>(preTimer =>
+            {
+                if (preTimer > 0f) return preTimer;
+                return rainTrapActive ? 1 : 0;
+            });
+        }
+
+        /// <summary>
+        /// Make ElectricDeath consider rain trap
+        /// </summary>
+        private static void ILElectricDeathIntensity(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(RainCycle).GetField(nameof(RainCycle.preTimer))));
+            c.EmitDelegate<Func<int, int>>(preTimer =>
+            {
+                if (preTimer > 0f) return preTimer;
+                return rainTrapActive ? 1 : 0;
+            });
+
+            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(RainCycle).GetField(nameof(RainCycle.maxPreTimer))));
+            c.EmitDelegate<Func<int, int>>(maxPreTimer =>
+            {
+                if (maxPreTimer > 0f) return maxPreTimer;
+                return rainTrapActive ? 1 : 0;
+            });
+        }
+
         #endregion
     }
 }
