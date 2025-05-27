@@ -297,7 +297,7 @@ namespace RainWorldRandomizer.Generation
 
         /// <summary>
         /// Set location possiblity based on if <paramref name="optionName"/> is enabled.
-        /// Will throw an <see cref="ArgumentException"/> if <paramref name="optionName"/> does not exactly match a static <see cref="bool"/> property in <see cref="Options"/>
+        /// Will throw an <see cref="ArgumentException"/> if <paramref name="optionName"/> does not exactly match a static <see cref="bool"/> property in <see cref="RandoOptions"/>
         /// </summary>
         /// <param name="inverted">If true, will instead check if option is disabled</param>
         /// <exception cref="ArgumentException"></exception>
@@ -306,7 +306,7 @@ namespace RainWorldRandomizer.Generation
             ReqName = $"Option-{optionName}";
             this.inverted = inverted;
 
-            optionProperty = typeof(Options).GetProperty(optionName, BindingFlags.Public | BindingFlags.Static, null, typeof(bool), new Type[0], null);
+            optionProperty = typeof(RandoOptions).GetProperty(optionName, BindingFlags.Public | BindingFlags.Static, null, typeof(bool), new Type[0], null);
 
             if (optionProperty == null)
             {
