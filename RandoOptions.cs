@@ -1,13 +1,8 @@
 ﻿using MoreSlugcats;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
-    public static class Options
+    public static class RandoOptions
     {
         // Base
         internal static Configurable<bool> useSeed;
@@ -49,7 +44,7 @@ namespace RainWorldRandomizer
         public static Configurable<bool> archipelagoDeathLinkOverride;
         public static Configurable<bool> archipelagoPreventDLKarmaLoss;
         public static Configurable<bool> archipelagoIgnoreMenuDL;
-        
+
         // Base
         public static bool UseSetSeed
         {
@@ -71,6 +66,13 @@ namespace RainWorldRandomizer
             {
                 return useSandboxTokenChecks.Value
                     || Plugin.RandoManager is ManagerArchipelago;
+            }
+        }
+        public static bool UseDevTokenChecks
+        {
+            get
+            {
+                return Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.devTokenChecks;
             }
         }
         public static bool UsePearlChecks
@@ -103,6 +105,14 @@ namespace RainWorldRandomizer
             {
                 return useSpecialChecks.Value
                     || Plugin.RandoManager is ManagerArchipelago;
+            }
+        }
+        public static bool UseKarmaFlowerChecks
+        {
+            get
+            {
+                return Plugin.RandoManager is ManagerArchipelago
+                    && ArchipelagoConnection.flowersanity;
             }
         }
         public static bool GiveObjectItems

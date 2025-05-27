@@ -116,7 +116,7 @@ namespace RainWorldRandomizer
         /// Return list of all token locations of the given type that have been checked
         /// </summary>
         private static List<ExtEnumBase> FoundTokensOfType<T>() where T : ExtEnumBase
-        { 
+        {
             List<ExtEnumBase> output = new List<ExtEnumBase>();
 
             string startPattern;
@@ -239,7 +239,7 @@ namespace RainWorldRandomizer
         /// Stores fake passage token UI elements
         /// </summary>
         private static ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>> passageTokensUI = new ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>>();
-        
+
         // Add a button to SleepAndDeathScreen allowing free passage to the starting shelter
         private static ConditionalWeakTable<SleepAndDeathScreen, SimpleButton> passageHomeButton = new ConditionalWeakTable<SleepAndDeathScreen, SimpleButton>();
         public static SimpleButton GetPassageHomeButton(this SleepAndDeathScreen self)
@@ -266,7 +266,7 @@ namespace RainWorldRandomizer
         private static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, EndgameTokens self, Menu.Menu menu, MenuObject owner, Vector2 pos, FContainer container, KarmaLadder ladder)
         {
             orig(self, menu, owner, pos, container, ladder);
-            if (!Options.GivePassageItems) return;
+            if (!RandoOptions.GivePassageItems) return;
 
             // We won't be needing these
             foreach (EndgameTokens.Token token in self.tokens)
@@ -294,7 +294,7 @@ namespace RainWorldRandomizer
 
             // Skip adding button if Riv in Bitter Aerie
             SaveState state = (menu as SleepAndDeathScreen).saveState;
-            if (ModManager.MSC 
+            if (ModManager.MSC
                 && state.saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Rivulet
                 && state.miscWorldSaveData.moonHeartRestored
                 && !state.deathPersistentSaveData.altEnding)
@@ -349,7 +349,7 @@ namespace RainWorldRandomizer
 
                 // Find den to travel to
                 string customDen = Plugin.RandoManager.customStartDen;
-                if (!Options.RandomizeSpawnLocation || customDen.Equals("NONE"))
+                if (!RandoOptions.RandomizeSpawnLocation || customDen.Equals("NONE"))
                 {
                     customDen = Constants.SlugcatDefaultStartingDen[self.saveState.saveStateNumber];
                 }
@@ -359,7 +359,7 @@ namespace RainWorldRandomizer
                 self.manager.rainWorld.progression.miscProgressionData.menuRegion = Regex.Split(customDen, "_")[0];
                 RainWorld.ShelterBeforePassage = self.manager.rainWorld.progression.ShelterOfSaveGame(self.saveState.saveStateNumber);
                 RainWorld.ShelterAfterPassage = self.manager.menuSetup.regionSelectRoom;
-                
+
                 // Initiate proccess switch
                 self.manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
                 self.PlaySound(SoundID.MENU_Passage_Button);
@@ -430,7 +430,7 @@ namespace RainWorldRandomizer
         private static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, EndgameTokens self, WinState.EndgameID ID)
         {
             orig(self, ID);
-            if (!Options.GivePassageItems) return;
+            if (!RandoOptions.GivePassageItems) return;
 
             foreach (EndgameTokens.Token token in self.tokens)
             {
@@ -455,7 +455,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static WinState.EndgameID NextPassageToken(On.WinState.orig_GetNextEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !Options.GivePassageItems) return orig(self);
+            if (!Plugin.RandoManager.isRandomizerActive || !RandoOptions.GivePassageItems) return orig(self);
 
             foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {
@@ -473,7 +473,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !Options.GivePassageItems)
+            if (!Plugin.RandoManager.isRandomizerActive || !RandoOptions.GivePassageItems)
             {
                 orig(self);
                 return;

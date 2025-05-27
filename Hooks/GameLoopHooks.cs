@@ -51,7 +51,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
         {
-            if (ID == ProcessManager.ProcessID.Game 
+            if (ID == ProcessManager.ProcessID.Game
                 && (Plugin.RandoManager == null || !Plugin.RandoManager.isRandomizerActive))
             {
                 // If we don't have a manager yet, create one
@@ -97,7 +97,7 @@ namespace RainWorldRandomizer
 
                     // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
                     if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
-                        && Options.UseFoodQuest)
+                        && RandoOptions.UseFoodQuest)
                     {
                         WinState.GourFeastTracker gourTracker = saveState.deathPersistentSaveData.winState.GetTracker(id, true) as WinState.GourFeastTracker;
 
@@ -157,7 +157,7 @@ namespace RainWorldRandomizer
             Plugin.Singleton.Game = self;
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
-            
+
             Plugin.UpdateKarmaLocks();
             self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
 
@@ -189,7 +189,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Action<RainWorldGame, int>>((self, roomIndex) =>
             {
                 // Spawn pending items in spawn room
-                if (Options.ItemShelterDelivery)
+                if (RandoOptions.ItemShelterDelivery)
                 {
                     while (Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
@@ -270,11 +270,11 @@ namespace RainWorldRandomizer
             // Display any pending notifications
             if (Plugin.Singleton.notifQueueAP.Count > 0)
             {
-                if (Options.DisableNotificationQueue)
+                if (RandoOptions.DisableNotificationQueue)
                 {
                     Plugin.Singleton.notifQueueAP.Dequeue();
                 }
-                else if (Options.legacyNotifications.Value)
+                else if (RandoOptions.legacyNotifications.Value)
                 {
                     Plugin.Singleton.DisplayLegacyNotification(true);
                 }
@@ -286,11 +286,11 @@ namespace RainWorldRandomizer
             // Display plain text messages last, as they tend to be more important
             else if (Plugin.Singleton.notifQueue.Count > 0)
             {
-                if (Options.DisableNotificationQueue)
+                if (RandoOptions.DisableNotificationQueue)
                 {
                     Plugin.Singleton.notifQueue.Dequeue();
                 }
-                else if (Options.legacyNotifications.Value)
+                else if (RandoOptions.legacyNotifications.Value)
                 {
                     Plugin.Singleton.DisplayLegacyNotification(false);
                 }
@@ -346,7 +346,7 @@ namespace RainWorldRandomizer
             Room currentRoom = self.FirstRealizedPlayer?.room;
             if (currentRoom?.abstractRoom.shelter ?? false)
             {
-                if (Plugin.RandoManager is ManagerArchipelago 
+                if (Plugin.RandoManager is ManagerArchipelago
                     && ArchipelagoConnection.sheltersanity
                     && $"Shelter-{currentRoom.abstractRoom.name.ToUpper()}" is string checkName
                     && Plugin.RandoManager.LocationExists(checkName))

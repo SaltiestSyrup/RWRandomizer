@@ -122,7 +122,7 @@ namespace RainWorldRandomizer
             // After 0B83
             c.GotoNext(MoveType.After,
                 x => x.MatchLdnull(),
-                x => x.MatchStfld(typeof(SSOracleBehavior.SSOracleMeetPurple).GetField(nameof(SSOracleBehavior.SSOracleMeetPurple.lockedOverseer), 
+                x => x.MatchStfld(typeof(SSOracleBehavior.SSOracleMeetPurple).GetField(nameof(SSOracleBehavior.SSOracleMeetPurple.lockedOverseer),
                     BindingFlags.NonPublic | BindingFlags.Instance))
                 );
 
@@ -172,13 +172,13 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchNewobj(typeof(SpearMasterPearl.AbstractSpearMasterPearl)
-                    .GetConstructor(new Type[] { 
-                        typeof(World), 
-                        typeof(PhysicalObject), 
-                        typeof(WorldCoordinate), 
-                        typeof(EntityID), 
-                        typeof(int), 
-                        typeof(int), 
+                    .GetConstructor(new Type[] {
+                        typeof(World),
+                        typeof(PhysicalObject),
+                        typeof(WorldCoordinate),
+                        typeof(EntityID),
+                        typeof(int),
+                        typeof(int),
                         typeof(PlacedObject.ConsumableObjectData) }))
                 );
 
@@ -268,8 +268,8 @@ namespace RainWorldRandomizer
 
         public class AbstractFakeSpearMasterPearl : AbstractSpearMasterPearl
         {
-            public AbstractFakeSpearMasterPearl(World world, PhysicalObject realizedObject, WorldCoordinate pos, EntityID ID, 
-                int originRoom, int placedObjectIndex, PlacedObject.ConsumableObjectData consumableData) 
+            public AbstractFakeSpearMasterPearl(World world, PhysicalObject realizedObject, WorldCoordinate pos, EntityID ID,
+                int originRoom, int placedObjectIndex, PlacedObject.ConsumableObjectData consumableData)
                 : base(world, realizedObject, pos, ID, originRoom, placedObjectIndex, consumableData)
             {
 

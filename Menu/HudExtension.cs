@@ -1,8 +1,5 @@
-﻿using Archipelago.MultiClient.Net.Colors;
-using Archipelago.MultiClient.Net.MessageLog.Messages;
-using Archipelago.MultiClient.Net.MessageLog.Parts;
+﻿using Archipelago.MultiClient.Net.MessageLog.Messages;
 using HUD;
-using Menu;
 using Menu.Remix.MixedUI;
 using RWCustom;
 using System;
@@ -61,7 +58,7 @@ namespace RainWorldRandomizer
         public bool forceDisplay = false;
         private bool GamePaused
         {
-            get 
+            get
             {
                 return hud.rainWorld.processManager.currentMainLoop is RainWorldGame game && game.pauseMenu != null;
             }
@@ -210,7 +207,7 @@ namespace RainWorldRandomizer
                             capturedIDs.Add(Regex.Match(split[i], "Icon{(\\S*)}").Groups[1].Value);
                             split[i] = $"_icon{i / 2}_¬";
                         }
-                        else if(!split[i].Equals(""))
+                        else if (!split[i].Equals(""))
                         {
                             split[i] += "¬";
                         }
@@ -223,7 +220,7 @@ namespace RainWorldRandomizer
                     for (int i = 0; i < splitWithBreaks.Length; i++)
                     {
                         if (splitWithBreaks[i].Equals("\n"))
-                        { 
+                        {
                             wrapIndices.Add(i - breakCount);
                             breakCount++;
                         }
@@ -270,7 +267,8 @@ namespace RainWorldRandomizer
                     // Create a text label
                     messageLabels[i] = CreateLabel(splitMessage[i], curOffset);
                     lastWasSprite = false;
-                };
+                }
+                ;
             }
 
             // Constructor for complex messages using an Archipelago LogMessage

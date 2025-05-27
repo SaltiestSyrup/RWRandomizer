@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -69,7 +68,7 @@ namespace RainWorldRandomizer
                 Plugin.RandoManager.currentSeed = int.Parse(file[1]);
                 file = file.Skip(2).ToArray();
             }
-            
+
             foreach (string line in file)
             {
                 string[] keyValue = Regex.Split(line, "->");

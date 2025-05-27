@@ -4,6 +4,7 @@ using BepInEx.Logging;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using System.Linq;
@@ -19,7 +20,7 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.2.7";
+        public const string PLUGIN_VERSION = "1.2.8";
 
         internal static ManualLogSource Log;
 
@@ -66,7 +67,7 @@ namespace RainWorldRandomizer
             {
                 return RegionNamesMap.Keys
                     .Except(new string[] {
-                        "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS", 
+                        "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS",
                         "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS" })
                     .Any();
             }
@@ -117,6 +118,7 @@ namespace RainWorldRandomizer
                 IteratorHooks.ApplyHooks();
                 SpearmasterCutscenes.ApplyHooks();
                 SleepScreenHooks.ApplyHooks();
+                FlowerCheckHandler.ApplyHooks();
 
                 TrapsHandler.ApplyHooks();
                 DeathLinkHandler.ApplyHooks();
@@ -162,6 +164,7 @@ namespace RainWorldRandomizer
                 IteratorHooks.RemoveHooks();
                 SpearmasterCutscenes.RemoveHooks();
                 SleepScreenHooks.RemoveHooks();
+                FlowerCheckHandler.RemoveHooks();
 
                 TrapsHandler.RemoveHooks();
                 DeathLinkHandler.RemoveHooks();
@@ -374,23 +377,23 @@ namespace RainWorldRandomizer
         public static RegionGate.GateRequirement[] GetGateRequirement(string gateName)
         {
             bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
-            RegionGate.GateRequirement[] newRequirements = 
-                defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v) 
+            RegionGate.GateRequirement[] newRequirements =
+                defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
                 ? (RegionGate.GateRequirement[])v.Clone() : new RegionGate.GateRequirement[2] {
-                    RegionGate.GateRequirement.OneKarma, 
+                    RegionGate.GateRequirement.OneKarma,
                     RegionGate.GateRequirement.OneKarma
                 };
 
             if (gateName.Equals("GATE_OE_SU")) hasKeyForGate = true;
-            if (gateName.Equals("GATE_SL_MS") 
-                && ModManager.MSC 
+            if (gateName.Equals("GATE_SL_MS")
+                && ModManager.MSC
                 && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
             {
                 hasKeyForGate = true;
             }
 
             // Change default Metropolis gate karma
-            if (gateName.Equals("GATE_UW_LC") && Options.ForceOpenMetropolis)
+            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
             {
                 newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
                 newRequirements[1] = RegionGate.GateRequirement.FiveKarma;
@@ -402,7 +405,7 @@ namespace RainWorldRandomizer
             {
                 gateBehavior = ArchipelagoConnection.gateBehavior;
             }
-            else if (Options.StartMinimumKarma)
+            else if (RandoOptions.StartMinimumKarma)
             {
                 gateBehavior = GateBehavior.OnlyKey;
             }

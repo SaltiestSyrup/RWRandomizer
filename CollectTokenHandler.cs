@@ -89,17 +89,6 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Make tokens spawn as Inv
-        /// </summary>
-        public bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
-        {
-            return orig(self) || (ModManager.MSC 
-                && !self.devToken
-                && !(self.room.game.StoryCharacter == null) 
-                && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
-        }
-
-        /// <summary>
         /// Detect token collection
         /// </summary>
         public void OnTokenPop(On.CollectToken.orig_Pop orig, CollectToken self, Player player)
@@ -107,17 +96,18 @@ namespace RainWorldRandomizer
             orig(self, player);
 
             // Prevent TextPrompt from being issued.
-            if (Options.DisableTokenPopUps) self.anythingUnlocked = false;
+            if (RandoOptions.DisableTokenPopUps) self.anythingUnlocked = false;
 
-            string tokenString = (self.placedObj.data as CollectToken.CollectTokenData).tokenString;
+            CollectToken.CollectTokenData data = self.placedObj.data as CollectToken.CollectTokenData;
+            string tokenString = data.tokenString;
 
-            if ((self.placedObj.data as CollectToken.CollectTokenData).isRed
-                && (self.placedObj.data as CollectToken.CollectTokenData).SafariUnlock != null)
+            if (data.isRed
+                && data.SafariUnlock != null)
             {
                 tokenString = $"S-{tokenString}";
             }
-            else if (!(self.placedObj.data as CollectToken.CollectTokenData).isBlue
-                && (self.placedObj.data as CollectToken.CollectTokenData).LevelUnlock != null)
+            else if (!data.isBlue
+                && data.LevelUnlock != null)
             {
                 tokenString = $"L-{tokenString}";
             }
@@ -127,16 +117,20 @@ namespace RainWorldRandomizer
                 tokenString = $"{tokenString}-{self.room.abstractRoom.name.Substring(0, 2)}";
             }
 
-            if ((self.placedObj.data as CollectToken.CollectTokenData).isWhite
-                && (self.placedObj.data as CollectToken.CollectTokenData).ChatlogCollect != null
+            if (data.isWhite
+                && data.ChatlogCollect != null
                 && !(Plugin.RandoManager.IsLocationGiven($"Broadcast-{tokenString}") ?? true))
             {
                 Plugin.RandoManager.GiveLocation($"Broadcast-{tokenString}");
             }
+            else if (data.isDev && !(Plugin.RandoManager.IsLocationGiven($"DevToken-{player.room.abstractRoom.name.ToUpperInvariant()}") ?? true))
+            {
+                Plugin.RandoManager.GiveLocation($"DevToken-{player.room.abstractRoom.name.ToUpperInvariant()}");
+            }
             else
             {
                 tokenString = $"Token-{tokenString}";
-                
+
                 if (!(Plugin.RandoManager.IsLocationGiven(tokenString) ?? true))
                 {
                     Plugin.RandoManager.GiveLocation(tokenString);
@@ -150,7 +144,7 @@ namespace RainWorldRandomizer
         public void ILRoomLoaded(ILContext il)
         {
             ILCursor c = new ILCursor(il);
-            
+
             // Fetch the local variable index of "num11", which represents the index within placedObjects the loop is processing
             int localVarIndex = -1;
             c.GotoNext(
@@ -158,6 +152,7 @@ namespace RainWorldRandomizer
                 x => x.MatchLdloc(out localVarIndex)
                 );
 
+            // sandbox
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
@@ -166,6 +161,7 @@ namespace RainWorldRandomizer
 
             InjectHasTokenCheck();
 
+            // slugcat
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
@@ -187,6 +183,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate((Func<Room, int, bool>)AlreadyHasToken);
             c.Emit(OpCodes.Brfalse, broadcastJump);
 
+            // safari
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
@@ -195,6 +192,34 @@ namespace RainWorldRandomizer
 
             InjectHasTokenCheck();
 
+            // developer
+            ILLabel devJumpTrue = null;
+            ILLabel devJumpFalse = null;
+            // After last if check at 2C9E
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(Options).GetMethod(nameof(Options.DeveloperCommentaryLocalized))),
+                x => x.MatchBrfalse(out devJumpFalse)
+                );
+            devJumpTrue = c.MarkLabel();
+
+            // After checking if object is dev token at 2C70
+            c.GotoPrev(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.PlacedObjectType).GetField(nameof(MoreSlugcatsEnums.PlacedObjectType.DevToken))),
+                x => x.MatchCallOrCallvirt(out _),
+                x => x.MatchBrfalse(out _)
+                );
+
+            // After we know this is a dev token, check if it is randomized and not found.
+            // Ignore developer commentary setting and localization check
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldloc, localVarIndex);
+            c.EmitDelegate((Func<Room, int, bool>)AlreadyHasToken);
+            c.Emit(OpCodes.Brfalse, devJumpTrue);
+            c.Emit(OpCodes.Br, devJumpFalse);
+
+            // ---
             void InjectHasTokenCheck()
             {
                 c.Emit(OpCodes.Brfalse, c.Next.Next);
@@ -228,6 +253,10 @@ namespace RainWorldRandomizer
             {
                 tokenString = $"Broadcast-{tokenString}";
             }
+            else if (data.isDev)
+            {
+                tokenString = $"DevToken-{room.abstractRoom.name.ToUpperInvariant()}";
+            }
             else
             {
                 tokenString = $"Token-{tokenString}";
@@ -237,7 +266,34 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// If <see cref="Options.DisableTokenPopUps"/> is enabled, prevent chatlogs from happening.
+        /// Prevent Dev tokens from getting instantly destroyed when spawned
+        /// </summary>
+        private void CollectTokenUpdateIL(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+
+            // Get devToken property at 0010
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.devToken)).GetGetMethod())
+                );
+
+            // If it never reads as a dev token it won't destroy it
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldc_I4_0);
+        }
+
+        /// <summary>
+        /// Make tokens spawn as Inv, and make Dev tokens spawn
+        /// </summary>
+        public bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
+        {
+            bool isInv = !(self.room.game.StoryCharacter == null) && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
+            return orig(self) || (ModManager.MSC && (isInv || self.devToken));
+        }
+
+        /// <summary>
+        /// If <see cref="RandoOptions.DisableTokenPopUps"/> is enabled, prevent chatlogs from happening.
         /// </summary>
         private void Player_ProcessChatLog(ILContext il)
         {
@@ -245,17 +301,17 @@ namespace RainWorldRandomizer
 
             // Prevent stun and mushroom effect (branch interception at 0026).
             c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<ChatlogData.ChatlogID>).GetMethod("op_Inequality")));
-            bool PreventStun(bool prev) => prev && !Options.DisableTokenPopUps;
+            bool PreventStun(bool prev) => prev && !RandoOptions.DisableTokenPopUps;
             c.EmitDelegate<Func<bool, bool>>(PreventStun);
 
             // Prevent chatlog from being displayed (branch interception at 00b1).
             c.GotoNext(MoveType.Before, x => x.MatchLdcI4(60));  // 00aa
-            int PreventChatlog(int prev) => Options.DisableTokenPopUps ? 59 : prev;
+            int PreventChatlog(int prev) => RandoOptions.DisableTokenPopUps ? 59 : prev;
             c.EmitDelegate<Func<int, int>>(PreventChatlog);
         }
 
         /// <summary>
-        /// If <see cref="Options.DisableTokenPopUps"/> is enabled, prevent Slugcat from being stopped by touching a chatlog token.
+        /// If <see cref="RandoOptions.DisableTokenPopUps"/> is enabled, prevent Slugcat from being stopped by touching a chatlog token.
         /// </summary>
         private void Player_InitChatLog(ILContext il)
         {
@@ -263,7 +319,7 @@ namespace RainWorldRandomizer
 
             // Prevent the `for` loop from running (branch interception at 0038).
             c.GotoNext(MoveType.Before, x => x.MatchConvI4());  // 0037
-            int PreventStop(int prev) => Options.DisableTokenPopUps ? 0 : prev;
+            int PreventStop(int prev) => RandoOptions.DisableTokenPopUps ? 0 : prev;
             c.EmitDelegate<Func<int, int>>(PreventStop);
         }
     }

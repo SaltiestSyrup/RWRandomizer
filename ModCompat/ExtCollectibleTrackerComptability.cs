@@ -1,11 +1,5 @@
 ﻿using MonoMod.RuntimeDetour;
-using ExtendedCollectiblesTracker;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Security.Permissions;
 
 namespace RainWorldRandomizer
 {
@@ -27,7 +21,7 @@ namespace RainWorldRandomizer
 
         public static void ApplyHooks()
         {
-            _ = new Hook(typeof(ExtendedCollectiblesTracker.Plugin).Assembly.GetType("ExtendedCollectiblesTracker.Mod", true).GetMethod("IsPearlRead"), 
+            _ = new Hook(typeof(ExtendedCollectiblesTracker.Plugin).Assembly.GetType("ExtendedCollectiblesTracker.Mod", true).GetMethod("IsPearlRead"),
                 typeof(ExtCollectibleTrackerComptability).GetMethod(nameof(OnIsPearlRead)));
         }
 

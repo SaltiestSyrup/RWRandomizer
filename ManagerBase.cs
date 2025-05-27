@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace RainWorldRandomizer
 {
@@ -87,7 +83,7 @@ namespace RainWorldRandomizer
         /// </summary>
         /// <returns>A list of all locations in the seed</returns>
         public abstract List<string> GetLocations();
-        
+
         /// <summary>
         /// Check whether a given location exists in the current seed
         /// </summary>
@@ -213,7 +209,8 @@ namespace RainWorldRandomizer
             }
 
             try { Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = CurrentMaxKarma; }
-            catch { };
+            catch { }
+            ;
         }
     }
 }

@@ -38,7 +38,11 @@ namespace RainWorldRandomizer
                 definition.onTrigger(game);
                 timer = definition.duration;
 
-                if (definition.duration > 0) activeTraps.Add(this);
+                if (definition.duration > 0)
+                {
+                    TrapUpdate += Update;
+                    activeTraps.Add(this);
+                }
             }
 
             public void Update(RainWorldGame game)
@@ -54,6 +58,7 @@ namespace RainWorldRandomizer
             public void Deactivate(RainWorldGame game)
             {
                 definition.onDeactivate(game);
+                TrapUpdate -= Update;
                 activeTraps.Remove(this);
             }
             public void NewRoom(RainWorldGame game) => definition.onNewRoom(game);
@@ -122,6 +127,7 @@ namespace RainWorldRandomizer
         /// Traps with a duration that are currently active
         /// </summary>
         private static HashSet<Trap> activeTraps = new HashSet<Trap>();
+        private static Action<RainWorldGame> TrapUpdate = (game) => { };
 
         public static void ApplyHooks()
         {
@@ -158,13 +164,14 @@ namespace RainWorldRandomizer
                 currentCooldown--;
             }
 
-            foreach (Trap trap in activeTraps)
-            {
-                trap.Update(self);
-            }
+            TrapUpdate(self);
+            //foreach (Trap trap in activeTraps)
+            //{
+            //    trap.Update(self);
+            //}
 
             if (pendingTrapQueue.Count == 0) return;
-            
+
             if (currentCooldown == 0)
             {
                 // Defer trap trigger until the player is in a proper state to suffer
@@ -178,7 +185,7 @@ namespace RainWorldRandomizer
 
                 // Process the next trap in queue
                 pendingTrapQueue.Dequeue().Activate(self);
-                
+
                 ResetCooldown();
             }
         }
@@ -233,7 +240,7 @@ namespace RainWorldRandomizer
         private static void TrapSpawnCreatureNearby(this RainWorldGame game, CreatureTemplate.Type template)
         {
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
-            
+
             int[] connectedRooms = player.room.abstractRoom.connections;
             AbstractRoom chosenRoom = game.world.GetAbstractRoom(connectedRooms[UnityEngine.Random.Range(0, connectedRooms.Length)]);
 
@@ -244,9 +251,9 @@ namespace RainWorldRandomizer
             }
 
             AbstractCreature crit = new AbstractCreature(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
-            
+
             chosenRoom.AddEntity(crit);
-            
+
             if (chosenRoom.realizedRoom != null)
             {
                 crit.RealizeInRoom();
@@ -258,7 +265,7 @@ namespace RainWorldRandomizer
         private static void TrapAlarm(this RainWorldGame game)
         {
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
-            
+
             // For each realized room
             foreach (AbstractRoom room in game.world.abstractRooms.Where(e => e.realizedRoom != null))
             {

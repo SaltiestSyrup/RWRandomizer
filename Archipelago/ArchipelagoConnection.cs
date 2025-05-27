@@ -1,21 +1,13 @@
 using Archipelago.MultiClient.Net;
-using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Colors;
 using Archipelago.MultiClient.Net.Enums;
-using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
-using Archipelago.MultiClient.Net.Models;
 using Archipelago.MultiClient.Net.Packets;
 using MoreSlugcats;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
 using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
-using System.Security.Policy;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -25,7 +17,7 @@ namespace RainWorldRandomizer
     {
         private const string AP_VERSION = "0.6.1";
         public const string GAME_NAME = "Rain World";
-        private static readonly string[] REQUIRED_SLOT_DATA = new string[] 
+        private static readonly string[] REQUIRED_SLOT_DATA = new string[]
         {
             "which_gamestate",
             "passage_progress_without_survivor",
@@ -35,6 +27,7 @@ namespace RainWorldRandomizer
             "starting_room",
             "difficulty_echo_low_karma",
             "checks_sheltersanity",
+            "checks_flowersanity", // Feel free to change this name if desired
             "checks_foodquest_accessibility",
         };
 
@@ -60,6 +53,8 @@ namespace RainWorldRandomizer
         /// <summary> A bitflag indicating the accessibility of each item in <see cref="MiscHooks.expanded"/>. </summary>
         public static long foodQuestAccessibility;
         public static bool sheltersanity;
+        public static bool flowersanity;
+        public static bool devTokenChecks;
 
         public static ArchipelagoSession Session;
 
@@ -70,7 +65,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Defined palette for the mod to use when displaying colors
         /// </summary>
-        public static Palette<UnityEngine.Color> palette = 
+        public static Palette<UnityEngine.Color> palette =
             new Palette<UnityEngine.Color>(
                 Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
                 new Dictionary<PaletteColor, UnityEngine.Color>()
@@ -88,7 +83,7 @@ namespace RainWorldRandomizer
                     { PaletteColor.Yellow, new UnityEngine.Color(1f, 1f, 0f) }
                 }
             );
-            
+
         public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
         public enum PPwSBehavior { Disabled, Enabled, Bypassed }
 
@@ -185,7 +180,7 @@ namespace RainWorldRandomizer
                 string errLog = "";
                 switch (slotDataResult)
                 {
-                    case SlotDataResult.Success: 
+                    case SlotDataResult.Success:
                         ReceivedSlotData = true;
                         break;
                     case SlotDataResult.MissingData:
@@ -228,7 +223,7 @@ namespace RainWorldRandomizer
         /// Disconnect from the current session
         /// </summary>
         /// <returns>True if there was a running session to disconnect</returns>
-        public static bool Disconnect()
+        public static bool Disconnect(bool resetManager = true)
         {
             if (Session == null) return false;
 
@@ -241,7 +236,8 @@ namespace RainWorldRandomizer
             Authenticated = false;
             ReceivedSlotData = false;
 
-            (Plugin.RandoManager as ManagerArchipelago).Reset();
+            if (resetManager) (Plugin.RandoManager as ManagerArchipelago).Reset();
+
             return true;
         }
 
@@ -330,22 +326,22 @@ namespace RainWorldRandomizer
             long desiredGameVersion = -1;
             long shouldHaveMSC = -1;
             long shouldHaveWatcher = -1;
-            long campaignIndex = -1;
+            string campaignString = "";
             if (slotData.ContainsKey("which_campaign"))
             {
                 if (!slotData.TryGetValue("which_game_version", out object v1)
                     || !slotData.TryGetValue("is_msc_enabled", out object v2)
                     || !slotData.TryGetValue("is_watcher_enabled", out object v3)
-                    || !slotData.TryGetValue("which_campaign", out object v4)) 
+                    || !slotData.TryGetValue("which_campaign", out object v4))
                     return SlotDataResult.MissingData;
 
                 worldStateIndex = -1;
                 desiredGameVersion = (long)v1;
                 shouldHaveMSC = (long)v2;
                 shouldHaveWatcher = (long)v3;
-                campaignIndex = (long)v4;
+                campaignString = (string)v4;
             }
-            
+
             long PPwS = (long)slotData["passage_progress_without_survivor"];
             long completionType = (long)slotData["which_victory_condition"];
             long foodQuestAccess = (long)slotData["checks_foodquest"];
@@ -353,6 +349,8 @@ namespace RainWorldRandomizer
             string startingShelter = (string)slotData["starting_room"];
             long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
             long sheltersanity = (long)slotData["checks_sheltersanity"];
+            long flowersanity = (long)slotData["checks_flowersanity"];
+            long devTokenChecks = (long)slotData["checks_devtokens"];
             long foodQuestAccessibility = (long)slotData["checks_foodquest_accessibility"];
             // DeathLink we can live without receiving
             long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
@@ -361,20 +359,9 @@ namespace RainWorldRandomizer
             // Only a warning for now until there's some actual logic difference between versions
             // This version of the mod won't even load properly for 1.9
             bool doGameVersionWarning = false;
-            switch (desiredGameVersion)
+            if (desiredGameVersion < 1100000L)
             {
-                // I'm not sure how it was intended to parse these but here's what we've got for now
-                case -1:
-                    break;
-                case 1091503L:
-                    if (!RainWorld.GAME_VERSION_STRING.Equals("v1.9.15b")) doGameVersionWarning = true;
-                    break;
-                case 1100100L:
-                    if (!RainWorld.GAME_VERSION_STRING.Equals("v1.10.1")) doGameVersionWarning = true;
-                    break;
-                default:
-                    doGameVersionWarning = true;
-                    break;
+                doGameVersionWarning = true;
             }
             if (doGameVersionWarning)
             {
@@ -384,45 +371,31 @@ namespace RainWorldRandomizer
             // Check DLC state
             IsMSC = shouldHaveMSC > 0;
             IsWatcher = shouldHaveWatcher > 0;
-            
+
             // Choose campaign and ending
-            switch (campaignIndex)
+            Slugcat = new SlugcatStats.Name(campaignString);
+            switch (campaignString)
             {
-                case 0:
-                    Slugcat = SlugcatStats.Name.Yellow;
+                case "Yellow":
+                case "White":
+                case "Gourmand":
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
                     break;
-                case 1:
-                    Slugcat = SlugcatStats.Name.White;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case 2:
-                    Slugcat = SlugcatStats.Name.Red;
+                case "Red":
+                case "Sofanthiel":
                     completionCondition = CompletionCondition.Ascension;
                     break;
-                case 3:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Gourmand;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case 4:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Artificer;
+                case "Artificer":
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing;
                     break;
-                case 5:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Rivulet;
+                case "Rivulet":
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon;
                     break;
-                case 6:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Spear;
+                case "Spear":
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger;
                     break;
-                case 7:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Saint;
+                case "Saint":
                     completionCondition = CompletionCondition.Rubicon;
-                    break;
-                case 8:
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
-                    completionCondition = CompletionCondition.Ascension;
                     break;
             }
 
@@ -509,11 +482,13 @@ namespace RainWorldRandomizer
 
             ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
             ArchipelagoConnection.sheltersanity = sheltersanity > 0;
+            ArchipelagoConnection.flowersanity = flowersanity > 0;
+            ArchipelagoConnection.devTokenChecks = devTokenChecks > 0;
             ArchipelagoConnection.echoDifficulty = (EchoLowKarmaDifficulty)echoDifficulty;
 
             DeathLinkHandler.Active = deathLink > 0;
 
-            foodQuest = IsMSC && (Slugcat.value == "Gourmand" || foodQuestAccess == 2) ? 
+            foodQuest = IsMSC && (Slugcat.value == "Gourmand" || foodQuestAccess == 2) ?
                 (foodQuestAccessibility > 0 ? FoodQuestBehavior.Expanded : FoodQuestBehavior.Enabled) : FoodQuestBehavior.Disabled;
             ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
             WinState.GourmandPassageTracker = foodQuest == FoodQuestBehavior.Expanded ? MiscHooks.expanded : MiscHooks.unexpanded;
@@ -536,7 +511,7 @@ namespace RainWorldRandomizer
                 }
 
                 (Plugin.RandoManager as ManagerArchipelago).CreateNewSave(saveId);
-            }   
+            }
             catch (Exception e)
             {
                 Debug.LogException(e);
@@ -549,7 +524,7 @@ namespace RainWorldRandomizer
 
             for (int i = 0; i < currentIndex && i < newInventory.Items.Length; i++)
             {
-                oldItems.Add( Session.Items.GetItemName(newInventory.Items[i].Item));
+                oldItems.Add(Session.Items.GetItemName(newInventory.Items[i].Item));
             }
 
             // Add all the items before index as an old inventory
@@ -566,7 +541,7 @@ namespace RainWorldRandomizer
         {
             if (!(Session?.Socket.Connected ?? false)) return;
             string dataKey = $"RW_{playerName}_room";
-            
+
             // Send a bounce packet
             Session.Socket.SendPacketAsync(new BouncePacket()
             {
@@ -576,7 +551,7 @@ namespace RainWorldRandomizer
                 Data = new Dictionary<string, JToken> { { dataKey, JToken.FromObject(info) } }
             });
 
-            Plugin.Log.LogDebug($"Sent packet for room {info}");
+            //Plugin.Log.LogDebug($"Sent packet for room {info}");
         }
 
         private static void MessageReceived(LogMessage message)
@@ -599,7 +574,7 @@ namespace RainWorldRandomizer
 
             if (e is WebSocketException)
             {
-                Session.Socket.DisconnectAsync();
+                Disconnect(false);
                 Plugin.Log.LogError("Disconnected Socket due to WebSocketException");
                 Plugin.Singleton.notifQueue.Enqueue("You have been disconnected due to an exception. Please attempt to reconnect.");
             }
@@ -607,7 +582,7 @@ namespace RainWorldRandomizer
 
         public static void SendCompletion()
         {
-            Session.Socket.SendPacket(
+            Session?.Socket.SendPacket(
                 new StatusUpdatePacket
                 {
                     Status = ArchipelagoClientState.ClientGoal

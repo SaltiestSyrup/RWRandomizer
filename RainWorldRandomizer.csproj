@@ -103,6 +103,7 @@
     <Compile Include="Archipelago\ArchipelagoConnection.cs" />
     <Compile Include="CollectTokenHandler.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Hooks\FlowerCheckHandler.cs" />
     <Compile Include="Generation\AccessRule.cs" />
     <Compile Include="TokenCachePatcher.cs" />
     <Compile Include="Generation\Item.cs" />
@@ -124,7 +125,7 @@
     <Compile Include="Hooks\IteratorHooks.cs" />
     <Compile Include="Menu\OptionsMenu.cs" />
     <Compile Include="ModCompat\ImprovedCollectibleTrackerCompat.cs" />
-    <Compile Include="Options.cs" />
+    <Compile Include="RandoOptions.cs" />
     <Compile Include="RandomizerEnums.cs" />
     <Compile Include="Hooks\MiscHooks.cs" />
     <Compile Include="Plugin.cs" />

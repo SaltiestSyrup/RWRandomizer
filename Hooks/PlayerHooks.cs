@@ -1,10 +1,6 @@
 ﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -46,7 +42,7 @@ namespace RainWorldRandomizer
         public static void OnRegurgitate(On.Player.orig_Regurgitate orig, Player self)
         {
             if (!Plugin.RandoManager.isRandomizerActive
-                || Options.ItemShelterDelivery
+                || RandoOptions.ItemShelterDelivery
                 || Plugin.Singleton.itemDeliveryQueue.Count == 0)
             {
                 orig(self);
@@ -115,7 +111,7 @@ namespace RainWorldRandomizer
                     {
                         return objectInstomach;
                     }
-                    if (!Options.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
                         return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), player.room);
                     }
@@ -157,7 +153,7 @@ namespace RainWorldRandomizer
 
                 c.EmitDelegate<Func<int, int>>((origTime) =>
                 {
-                    if (!Options.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
                         // This time needs to be longer than the 90 ticks swallowing an item takes
                         return 95;
@@ -198,7 +194,7 @@ namespace RainWorldRandomizer
                     {
                         return objectInstomach;
                     }
-                    if (!Options.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
                     {
                         return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), playerGraphics.player.room);
                     }

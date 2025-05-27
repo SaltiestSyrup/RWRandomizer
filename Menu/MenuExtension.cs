@@ -1,15 +1,12 @@
-﻿using System;
+﻿using Menu;
+using Menu.Remix;
+using Menu.Remix.MixedUI;
+using RWCustom;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Menu;
-using Menu.Remix.MixedUI;
-using UnityEngine;
-using RWCustom;
 using System.Text.RegularExpressions;
-using Menu.Remix;
-using System.Linq.Expressions;
-using System.Collections.Specialized;
-using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -51,7 +48,7 @@ namespace RainWorldRandomizer
 
             RectangularMenuObject gateDisplay;
 
-            if (Options.useGateMap.Value && (Plugin.RandoManager is ManagerArchipelago || !Plugin.AnyThirdPartyRegions))
+            if (RandoOptions.useGateMap.Value && (Plugin.RandoManager is ManagerArchipelago || !Plugin.AnyThirdPartyRegions))
             {
                 gateDisplay = new GateMapDisplay(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 320f));
@@ -64,7 +61,7 @@ namespace RainWorldRandomizer
 
             self.pages[0].subObjects.Add(gateDisplay);
 
-            if (Options.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+            if (RandoOptions.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
             {
                 pendingItemsDisplay = new PendingItemsDisplay(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));
@@ -571,7 +568,7 @@ namespace RainWorldRandomizer
                 public float completion;
                 public bool current;
 
-                public Node(Menu.Menu menu, MenuObject owner, Vector2 pos, string text, float completion = 0f) 
+                public Node(Menu.Menu menu, MenuObject owner, Vector2 pos, string text, float completion = 0f)
                     : base(menu, owner, pos, SIZE, true)
                 {
                     fillAlpha = 1f;
@@ -642,7 +639,7 @@ namespace RainWorldRandomizer
                 {
                     for (int i = 1; i < vertices.Length; i++)
                     {
-                        AddChild(new Segment(vertices[i-1], vertices[i]));
+                        AddChild(new Segment(vertices[i - 1], vertices[i]));
                     }
                 }
 
@@ -702,11 +699,11 @@ namespace RainWorldRandomizer
                     for (int i = 0; i < 3; i++)
                     {
                         segments.Add(new Segment(
-                            startA + offsetA.normalized * (dashLength + dashSpace) * i, 
+                            startA + offsetA.normalized * (dashLength + dashSpace) * i,
                             startA + offsetA.normalized * ((dashLength + dashSpace) * i + dashLength)
                             ));
                         segments.Add(new Segment(
-                            startB + offsetB.normalized * (dashLength + dashSpace) * i, 
+                            startB + offsetB.normalized * (dashLength + dashSpace) * i,
                             startB + offsetB.normalized * ((dashLength + dashSpace) * i + dashLength)
                             ));
                     }
@@ -741,8 +738,8 @@ namespace RainWorldRandomizer
             public override void Update()
             {
                 base.Update();
-                if (MouseOver 
-                    && nodes.FirstOrDefault(x => x.Value.MouseOver) is KeyValuePair<string, Node> pair 
+                if (MouseOver
+                    && nodes.FirstOrDefault(x => x.Value.MouseOver) is KeyValuePair<string, Node> pair
                     && pair.Key is string region && pair.Value is Node node
                     && region != displayedRegion)
                 {
@@ -765,7 +762,7 @@ namespace RainWorldRandomizer
                 displayedRegion = region;
 
                 checkIconContainer.RemoveAllChildren();
-                foreach (LocationInfo info in locationInfos.Where(x => x.region == region)) 
+                foreach (LocationInfo info in locationInfos.Where(x => x.region == region))
                     checkIconContainer.AddIcon(info.kind, info.name, info.collected);
                 checkIconContainer.Refresh();
                 //Plugin.Log.LogDebug($"Updating for region {region}: {string.Join(", ", locs)}");
@@ -1102,7 +1099,7 @@ namespace RainWorldRandomizer
                 subObjects.Add(scrollSlider);
 
                 // Filter Menu
-                filterSelectRect = new RoundedRect(menu, this, new Vector2(0f, -78f), new Vector2(size.x, 50f), true); 
+                filterSelectRect = new RoundedRect(menu, this, new Vector2(0f, -78f), new Vector2(size.x, 50f), true);
 
                 filterSelectOptions = new SelectOneButton[3];
                 filterSelectOptions[0] = new SelectOneButton(menu, this, menu.Translate("SHOW ALL"), "FILTER",
@@ -1354,10 +1351,10 @@ namespace RainWorldRandomizer
                         subObjects.Add(checkLabel);
                     }
 
-                    unlockLabel = new MenuLabel(menu, this, Plugin.RandoManager.GetUnlockAtLocation(entryKey).ToString(), 
-                        new Vector2(size.x / 2, 5f), 
+                    unlockLabel = new MenuLabel(menu, this, Plugin.RandoManager.GetUnlockAtLocation(entryKey).ToString(),
+                        new Vector2(size.x / 2, 5f),
                         new Vector2(size.x / 2, 20f), false, null);
-                    
+
                     subObjects.Add(unlockLabel);
                 }
 
@@ -1394,7 +1391,7 @@ namespace RainWorldRandomizer
                         }
                     }
 
-                    active = myindex >= (owner as SpoilerMenu).ScrollPos 
+                    active = myindex >= (owner as SpoilerMenu).ScrollPos
                         && myindex < (owner as SpoilerMenu).ScrollPos + (owner as SpoilerMenu).MaxVisibleItems;
 
                     if (sleep)
@@ -1476,7 +1473,7 @@ namespace RainWorldRandomizer
                         }
                     }
                 }
-                
+
                 public void OnPressDone(UIfocusable trigger)
                 {
                     Plugin.RandoManager.GiveLocation(entryKey);
@@ -1596,7 +1593,7 @@ namespace RainWorldRandomizer
                                 spriteName = "FlowerMarker";
                                 spriteColor = RainWorld.GoldRGB;
                             }
-                            else 
+                            else
                             {
                                 if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(unlock.ID))
                                 {

@@ -16,127 +16,127 @@ namespace RainWorldRandomizer
 
         public OptionsMenu()
         {
-            Options.useSeed = config.Bind<bool>("useSeed", false,
+            RandoOptions.useSeed = config.Bind<bool>("useSeed", false,
                 new ConfigurableInfo("Whether the randomizer will use a set seed or a generated one", null, "",
                     new object[] { "Use seed" }));
 
-            Options.seed = config.Bind<int>("seed", 0, 
-                new ConfigurableInfo("The seed used to generate the randomizer if 'Use seed' is checked", 
+            RandoOptions.seed = config.Bind<int>("seed", 0,
+                new ConfigurableInfo("The seed used to generate the randomizer if 'Use seed' is checked",
                     new ConfigAcceptableRange<int>(0, int.MaxValue), ""));
 
-            Options.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", false,
+            RandoOptions.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", false,
                 new ConfigurableInfo("Include Arena mode / Safari tokens as checks", null, "",
                     new object[] { "Use Sandbox tokens as checks" }));
 
-            Options.usePearlChecks = config.Bind<bool>("usePearlChecks", true,
+            RandoOptions.usePearlChecks = config.Bind<bool>("usePearlChecks", true,
                 new ConfigurableInfo("Include pearls as checks", null, "",
                     new object[] { "Use Pearls as checks" }));
 
-            Options.useEchoChecks = config.Bind<bool>("useEchoChecks", true,
+            RandoOptions.useEchoChecks = config.Bind<bool>("useEchoChecks", true,
                 new ConfigurableInfo("Include Echoes as checks", null, "",
                     new object[] { "Use Echoes as checks" }));
 
-            Options.usePassageChecks = config.Bind<bool>("usePassageChecks", true,
+            RandoOptions.usePassageChecks = config.Bind<bool>("usePassageChecks", true,
                 new ConfigurableInfo("Include Passages as checks", null, "",
                     new object[] { "Use Passages as checks" }));
 
-            Options.useSpecialChecks = config.Bind<bool>("useSpecialChecks", true,
+            RandoOptions.useSpecialChecks = config.Bind<bool>("useSpecialChecks", true,
                 new ConfigurableInfo("Include story objectives as checks", null, "",
                     new object[] { "Use Special checks" }));
 
-            Options.giveItemUnlocks = config.Bind<bool>("giveItemUnlocks", true,
+            RandoOptions.giveItemUnlocks = config.Bind<bool>("giveItemUnlocks", true,
                 new ConfigurableInfo("Whether the game can give you random items as the result of some checks", null, "",
                     new object[] { "Use Item unlocks" }));
 
-            Options.itemShelterDelivery = config.Bind<bool>("itemShelterDelivery", false,
+            RandoOptions.itemShelterDelivery = config.Bind<bool>("itemShelterDelivery", false,
                 new ConfigurableInfo("Whether items should be delivered in the next shelter instead of placed inside slugcat's stomach", null, "",
                     new object[] { "Deliver items in shelters" }));
 
-            Options.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
+            RandoOptions.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
                 new ConfigurableInfo("Whether the game will randomize passage tokens", null, "",
                     new object[] { "Use Passage tokens" }));
 
-            Options.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f, 
+            RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
                 new ConfigurableInfo("The maximum density of cycle increases that can appear when playing as Hunter (0-1 for 0% to 100%)",
                     new ConfigAcceptableRange<float>(0, 1), "",
-                    new object[] {"Hunter max cycle increases"}));
+                    new object[] { "Hunter max cycle increases" }));
 
-            Options.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
+            RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
                     new object[] { "Randomize starting den" }));
 
-            Options.startMinKarma = config.Bind<bool>("startMinKarma", false,
+            RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
                 new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
-                "Gates will have their karma requirements decreased to match", null, "", 
+                "Gates will have their karma requirements decreased to match", null, "",
                     new object[] { "Start with low karma" }));
 
-            Options.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
+            RandoOptions.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
                 new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
                 new object[] { "Disable notifications" }));
 
-            Options.disableTokenText = config.Bind<bool>("DisableTokenText", true,
+            RandoOptions.disableTokenText = config.Bind<bool>("DisableTokenText", true,
                 new ConfigurableInfo("Prevent pop-up text and chatlogs from appearing when collecting tokens", null, "",
                 new object[] { "Disable token text" }));
 
-            Options.legacyNotifications = config.Bind<bool>("LegacyNotifications", false,
+            RandoOptions.legacyNotifications = config.Bind<bool>("LegacyNotifications", false,
                 new ConfigurableInfo("Disable new notification system in favor of old one using tutorial text", null, "",
                 new object[] { "Enable Legacy notifications" }));
 
-            Options.useGateMap = config.Bind<bool>("UseGateMap", false,
+            RandoOptions.useGateMap = config.Bind<bool>("UseGateMap", false,
                 new ConfigurableInfo("Use a gate map instead of the gate key list", null, "",
                 new object[] { "Use gate map" }));
 
             // ----- MSC -----
-            Options.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
-                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (Where applicable)", null, "", 
+            RandoOptions.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
+                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (Where applicable)", null, "",
                 new object[] { "Open Metropolis" }));
-            
-            Options.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
+
+            RandoOptions.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
                 new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (Where applicable)", null, "",
                 new object[] { "Open Submerged Superstructure" }));
 
-            Options.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", true,
+            RandoOptions.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", true,
                 new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check", null, "",
                 new object[] { "Use Food quest checks" }));
 
-            Options.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
+            RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
                 new ConfigurableInfo("Rivulet's energy cell and the post cell-taken world mechanics will be randomized", null, "",
                 new object[] { "Use Mass Rarefaction cell" }));
 
-            Options.useSMTokens = config.Bind<bool>("UseSMTokens", true,
+            RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
                 new ConfigurableInfo("Include Spearmaster's broadcast tokens as checks", null, "",
                 new object[] { "Use Broadcasts" }));
 
             // ----- Archipelago -----
-            Options.archipelago = config.Bind<bool>("Archipelago", false,
+            RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
                 new ConfigurableInfo("Enable Archipelago mode. Other tabs' settings will be ignored in favor of .yaml settings", null, "",
                 new object[] { "Enable Archipelago" }));
 
-            Options.archipelagoHostName = config.Bind<string>("ArchipelagoHostName", "archipelago.gg",
+            RandoOptions.archipelagoHostName = config.Bind<string>("ArchipelagoHostName", "archipelago.gg",
                 new ConfigurableInfo("Host name for server connection. Leave as archipelago.gg if using the website", null, "",
                 new object[] { "Host Name" }));
 
-            Options.archipelagoPort = config.Bind<int>("ArchipelagoPort", 38281,
+            RandoOptions.archipelagoPort = config.Bind<int>("ArchipelagoPort", 38281,
                 new ConfigurableInfo("Port for server connection", null, "",
                 new object[] { "Port" }));
 
-            Options.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
+            RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
                 new ConfigurableInfo("Your player name for server connection", null, "",
                 new object[] { "Player Name" }));
 
-            Options.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
+            RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
                 new ConfigurableInfo("Password for server connection (Optional)", null, "",
                 new object[] { "Password" }));
 
-            Options.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
+            RandoOptions.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
                 new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here", null, "",
                 new object[] { "Enable DeathLink" }));
 
-            Options.archipelagoPreventDLKarmaLoss = config.Bind<bool>("ArchipelagoPreventDLKarmaLoss", false,
+            RandoOptions.archipelagoPreventDLKarmaLoss = config.Bind<bool>("ArchipelagoPreventDLKarmaLoss", false,
                 new ConfigurableInfo("Whether deaths received from DeathLink should ignore the normal karma loss mechanics", null, "",
                 new object[] { "Prevent Karma Loss" }));
 
-            Options.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
+            RandoOptions.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
                 new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
                 new object[] { "Ignore Menu Deaths" }));
         }
@@ -170,20 +170,20 @@ namespace RainWorldRandomizer
             runningY -= 35;
 
             // Seed options
-            OpCheckBox useSeedCheckbox = new OpCheckBox(Options.useSeed, 20f, runningY)
+            OpCheckBox useSeedCheckbox = new OpCheckBox(RandoOptions.useSeed, 20f, runningY)
             {
-                description = Translate(Options.useSeed.info.description)
+                description = Translate(RandoOptions.useSeed.info.description)
             };
-            OpLabel useSeedLabel = new OpLabel(60f, runningY, Translate(Options.useSeed.info.Tags[0] as string))
+            OpLabel useSeedLabel = new OpLabel(60f, runningY, Translate(RandoOptions.useSeed.info.Tags[0] as string))
             {
                 bumpBehav = useSeedCheckbox.bumpBehav,
                 description = useSeedCheckbox.description
             };
             runningY -= 35;
 
-            OpTextBox seedText = new OpTextBox(Options.seed, new Vector2(25f, runningY), 100f)
+            OpTextBox seedText = new OpTextBox(RandoOptions.seed, new Vector2(25f, runningY), 100f)
             {
-                description = Translate(Options.seed.info.description)
+                description = Translate(RandoOptions.seed.info.description)
             };
             // Make the seed field be active only when useSeed is selected
             seedText.OnUpdate += () => { seedText.greyedOut = !useSeedCheckbox.GetValueBool(); };
@@ -229,11 +229,11 @@ namespace RainWorldRandomizer
                 runningY -= 35;
             }
 
-            OpUpdown hunterCyclesUpDown = new OpUpdown(Options.hunterCyclesDensity, new Vector2(20f, runningY), 100f)
+            OpUpdown hunterCyclesUpDown = new OpUpdown(RandoOptions.hunterCyclesDensity, new Vector2(20f, runningY), 100f)
             {
-                description = Translate(Options.hunterCyclesDensity.info.description)
+                description = Translate(RandoOptions.hunterCyclesDensity.info.description)
             };
-            OpLabel hunterCyclesLabel = new OpLabel(140f, runningY, Translate(Options.hunterCyclesDensity.info.Tags[0] as string))
+            OpLabel hunterCyclesLabel = new OpLabel(140f, runningY, Translate(RandoOptions.hunterCyclesDensity.info.Tags[0] as string))
             {
                 bumpBehav = hunterCyclesUpDown.bumpBehav,
                 description = hunterCyclesUpDown.description
@@ -324,55 +324,55 @@ namespace RainWorldRandomizer
             // ----- Left side Configurables -----
             float runningY = 550f;
 
-            OpCheckBox APCheckBox = new OpCheckBox(Options.archipelago, new Vector2(20f, runningY))
+            OpCheckBox APCheckBox = new OpCheckBox(RandoOptions.archipelago, new Vector2(20f, runningY))
             {
-                description = Translate(Options.archipelago.info.description)
+                description = Translate(RandoOptions.archipelago.info.description)
             };
-            OpLabel APLabel = new OpLabel(60f, runningY, Translate(Options.archipelago.info.Tags[0] as string))
+            OpLabel APLabel = new OpLabel(60f, runningY, Translate(RandoOptions.archipelago.info.Tags[0] as string))
             {
                 bumpBehav = APCheckBox.bumpBehav,
                 description = APCheckBox.description
             };
             runningY -= 35;
 
-            OpTextBox hostNameTextBox = new OpTextBox(Options.archipelagoHostName, new Vector2(20f, runningY), 200f)
+            OpTextBox hostNameTextBox = new OpTextBox(RandoOptions.archipelagoHostName, new Vector2(20f, runningY), 200f)
             {
-                description = Translate(Options.archipelagoHostName.info.description)
+                description = Translate(RandoOptions.archipelagoHostName.info.description)
             };
-            OpLabel hostNameLabel = new OpLabel(240f, runningY, Translate(Options.archipelagoHostName.info.Tags[0] as string))
+            OpLabel hostNameLabel = new OpLabel(240f, runningY, Translate(RandoOptions.archipelagoHostName.info.Tags[0] as string))
             {
                 bumpBehav = hostNameTextBox.bumpBehav,
                 description = hostNameTextBox.description
             };
             runningY -= 35;
 
-            OpTextBox portTextBox = new OpTextBox(Options.archipelagoPort, new Vector2(20f, runningY), 55f)
+            OpTextBox portTextBox = new OpTextBox(RandoOptions.archipelagoPort, new Vector2(20f, runningY), 55f)
             {
-                description = Translate(Options.archipelagoPort.info.description)
+                description = Translate(RandoOptions.archipelagoPort.info.description)
             };
-            OpLabel portLabel = new OpLabel(95f, runningY, Translate(Options.archipelagoPort.info.Tags[0] as string))
+            OpLabel portLabel = new OpLabel(95f, runningY, Translate(RandoOptions.archipelagoPort.info.Tags[0] as string))
             {
                 bumpBehav = portTextBox.bumpBehav,
                 description = portTextBox.description
             };
             runningY -= 35;
 
-            OpTextBox slotNameTextBox = new OpTextBox(Options.archipelagoSlotName, new Vector2(20f, runningY), 200f)
+            OpTextBox slotNameTextBox = new OpTextBox(RandoOptions.archipelagoSlotName, new Vector2(20f, runningY), 200f)
             {
-                description = Translate(Options.archipelagoSlotName.info.description)
+                description = Translate(RandoOptions.archipelagoSlotName.info.description)
             };
-            OpLabel slotNameLabel = new OpLabel(240f, runningY, Translate(Options.archipelagoSlotName.info.Tags[0] as string))
+            OpLabel slotNameLabel = new OpLabel(240f, runningY, Translate(RandoOptions.archipelagoSlotName.info.Tags[0] as string))
             {
                 bumpBehav = slotNameTextBox.bumpBehav,
                 description = slotNameTextBox.description
             };
             runningY -= 35;
 
-            OpTextBox passwordTextBox = new OpTextBox(Options.archipelagoPassword, new Vector2(20f, runningY), 200f)
+            OpTextBox passwordTextBox = new OpTextBox(RandoOptions.archipelagoPassword, new Vector2(20f, runningY), 200f)
             {
-                description = Translate(Options.archipelagoPassword.info.description)
+                description = Translate(RandoOptions.archipelagoPassword.info.description)
             };
-            OpLabel passwordLabel = new OpLabel(240f, runningY, Translate(Options.archipelagoPassword.info.Tags[0] as string))
+            OpLabel passwordLabel = new OpLabel(240f, runningY, Translate(RandoOptions.archipelagoPassword.info.Tags[0] as string))
             {
                 bumpBehav = passwordTextBox.bumpBehav,
                 description = passwordTextBox.description
@@ -420,33 +420,33 @@ namespace RainWorldRandomizer
             deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
             runningY -= 35;
 
-            OpCheckBox deathLinkOverrideCheckbox = new OpCheckBox(Options.archipelagoDeathLinkOverride, new Vector2(420f, runningY))
+            OpCheckBox deathLinkOverrideCheckbox = new OpCheckBox(RandoOptions.archipelagoDeathLinkOverride, new Vector2(420f, runningY))
             {
-                description = Translate(Options.archipelagoDeathLinkOverride.info.description)
+                description = Translate(RandoOptions.archipelagoDeathLinkOverride.info.description)
             };
-            OpLabel deathLinkOverrrideLabel = new OpLabel(460f, runningY, Translate(Options.archipelagoDeathLinkOverride.info.Tags[0] as string))
+            OpLabel deathLinkOverrrideLabel = new OpLabel(460f, runningY, Translate(RandoOptions.archipelagoDeathLinkOverride.info.Tags[0] as string))
             {
                 bumpBehav = deathLinkOverrideCheckbox.bumpBehav,
                 description = deathLinkOverrideCheckbox.description
             };
             runningY -= 35;
 
-            OpCheckBox noKarmaLossCheckBox = new OpCheckBox(Options.archipelagoPreventDLKarmaLoss, new Vector2(420f, runningY))
+            OpCheckBox noKarmaLossCheckBox = new OpCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new Vector2(420f, runningY))
             {
-                description = Translate(Options.archipelagoPreventDLKarmaLoss.info.description)
+                description = Translate(RandoOptions.archipelagoPreventDLKarmaLoss.info.description)
             };
-            OpLabel noKarmaLossLabel = new OpLabel(460f, runningY, Translate(Options.archipelagoPreventDLKarmaLoss.info.Tags[0] as string))
+            OpLabel noKarmaLossLabel = new OpLabel(460f, runningY, Translate(RandoOptions.archipelagoPreventDLKarmaLoss.info.Tags[0] as string))
             {
                 bumpBehav = noKarmaLossCheckBox.bumpBehav,
                 description = noKarmaLossCheckBox.description
             };
             runningY -= 35;
 
-            OpCheckBox ignoreMenuDeathsCheckBox = new OpCheckBox(Options.archipelagoIgnoreMenuDL, new Vector2(420f, runningY))
+            OpCheckBox ignoreMenuDeathsCheckBox = new OpCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new Vector2(420f, runningY))
             {
-                description = Translate(Options.archipelagoIgnoreMenuDL.info.description)
+                description = Translate(RandoOptions.archipelagoIgnoreMenuDL.info.description)
             };
-            OpLabel ignoreMenuDeathsLabel = new OpLabel(460f, runningY, Translate(Options.archipelagoIgnoreMenuDL.info.Tags[0] as string))
+            OpLabel ignoreMenuDeathsLabel = new OpLabel(460f, runningY, Translate(RandoOptions.archipelagoIgnoreMenuDL.info.Tags[0] as string))
             {
                 bumpBehav = ignoreMenuDeathsCheckBox.bumpBehav,
                 description = ignoreMenuDeathsCheckBox.description
@@ -493,12 +493,12 @@ namespace RainWorldRandomizer
             };
 
             // Attempt AP connection on click
-            connectButton.OnClick += (trigger) => 
+            connectButton.OnClick += (trigger) =>
             {
                 connectResultLabel.text = ArchipelagoConnection.Connect(
-                    hostNameTextBox.value, 
-                    portTextBox.valueInt, 
-                    slotNameTextBox.value, 
+                    hostNameTextBox.value,
+                    portTextBox.valueInt,
+                    slotNameTextBox.value,
                     passwordTextBox.value == "" ? null : passwordTextBox.value);
 
                 if (!ArchipelagoConnection.Authenticated) return;
@@ -517,8 +517,10 @@ namespace RainWorldRandomizer
                     $"Passage Progress w/o Survivor:\n" +
                     $"Using DeathLink:\n" +
                     $"Food Quest:\n" +
-                    $"Shelter-sanity:";
-                slotDataLabelRight.text = 
+                    $"Shelter-sanity:\n" + 
+                    $"Flower-sanity:\n" +
+                    $"Dev token checks:";
+                slotDataLabelRight.text =
                     $"\n\n{ArchipelagoConnection.IsMSC}\n" +
                     $"{ArchipelagoConnection.IsWatcher}\n" +
                     $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
@@ -527,8 +529,10 @@ namespace RainWorldRandomizer
                     $"{ArchipelagoConnection.completionCondition}\n" +
                     $"{ArchipelagoConnection.PPwS}\n" +
                     $"{DeathLinkHandler.Active}\n" +
-                    $"{ArchipelagoConnection.foodQuest}\n" + 
-                    $"{ArchipelagoConnection.sheltersanity}";
+                    $"{ArchipelagoConnection.foodQuest}\n" +
+                    $"{ArchipelagoConnection.sheltersanity}\n" + 
+                    $"{ArchipelagoConnection.flowersanity}\n" +
+                    $"{ArchipelagoConnection.devTokenChecks}";
             };
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
@@ -585,36 +589,36 @@ namespace RainWorldRandomizer
             // Null indicates a line break
             boolConfigOrderGen1 = new Configurable<bool>[]
             {
-                Options.randomizeSpawnLocation,
-                Options.startMinKarma,
+                RandoOptions.randomizeSpawnLocation,
+                RandoOptions.startMinKarma,
                 null,
-                Options.useSandboxTokenChecks,
-                Options.usePearlChecks,
-                Options.useEchoChecks,
-                Options.usePassageChecks,
-                Options.useSpecialChecks,
+                RandoOptions.useSandboxTokenChecks,
+                RandoOptions.usePearlChecks,
+                RandoOptions.useEchoChecks,
+                RandoOptions.usePassageChecks,
+                RandoOptions.useSpecialChecks,
                 null,
-                Options.giveItemUnlocks,
-                Options.givePassageUnlocks,
+                RandoOptions.giveItemUnlocks,
+                RandoOptions.givePassageUnlocks,
             };
 
             boolConfigOrderGen2 = new Configurable<bool>[]
             {
-                Options.itemShelterDelivery,
-                Options.disableNotificationQueue,
-                Options.disableTokenText,
-                Options.legacyNotifications,
-                Options.useGateMap,
+                RandoOptions.itemShelterDelivery,
+                RandoOptions.disableNotificationQueue,
+                RandoOptions.disableTokenText,
+                RandoOptions.legacyNotifications,
+                RandoOptions.useGateMap,
             };
 
             boolConfigOrderMSC = new Configurable<bool>[]
             {
-                Options.allowMetroForOthers,
-                Options.allowSubmergedForOthers,
+                RandoOptions.allowMetroForOthers,
+                RandoOptions.allowSubmergedForOthers,
                 null,
-                Options.useFoodQuestChecks,
-                Options.useEnergyCell,
-                Options.useSMTokens,
+                RandoOptions.useFoodQuestChecks,
+                RandoOptions.useEnergyCell,
+                RandoOptions.useSMTokens,
             };
         }
     }

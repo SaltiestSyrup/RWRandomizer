@@ -1,6 +1,4 @@
-﻿
-
-using RainWorldRandomizer.Generation;
+﻿using RainWorldRandomizer.Generation;
 using System.Collections.Generic;
 
 namespace RainWorldRandomizer
