@@ -37,6 +37,7 @@ namespace RainWorldRandomizer
                 if (entity is AbstractPhysicalObject abstractObj
                     && abstractObj.type == AbstractPhysicalObject.AbstractObjectType.KarmaFlower)
                 {
+                    if (trackedFlowers.TryGetValue(abstractObj, out _)) continue;
                     trackedFlowers.Add(abstractObj, new FlowerData(abstractObj));
                 }
             }
@@ -110,15 +111,14 @@ namespace RainWorldRandomizer
                 // Flower-[ROOM_NAME]
                 locID = $"Flower-{obj.placedObjectOrigin.Split(':')[0].ToUpperInvariant()}";
                 alreadyChecked = Plugin.RandoManager.IsLocationGiven(locID) ?? true;
-
-                Plugin.Log.LogDebug($"Register flower: {locID}");
+                //Plugin.Log.LogDebug($"Register flower: {locID}");
             }
 
             public void AwardCheck()
             {
                 Plugin.RandoManager.GiveLocation(locID);
                 alreadyChecked = true;
-                Plugin.Log.LogDebug($"Checked flower: {locID}");
+                //Plugin.Log.LogDebug($"Checked flower: {locID}");
             }
         }
     }
