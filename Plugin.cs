@@ -202,18 +202,6 @@ namespace RainWorldRandomizer
                 Logger.LogError(e);
             }
 
-            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.White);
-            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.Yellow);
-            ManagerVanilla.LoadBlacklist(SlugcatStats.Name.Red);
-            if (ModManager.MSC)
-            {
-                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
-                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Artificer);
-                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
-                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Spear);
-                ManagerVanilla.LoadBlacklist(MoreSlugcatsEnums.SlugcatStatsName.Saint);
-            }
-
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
             VanillaGenerator.GenerateCustomRules();
