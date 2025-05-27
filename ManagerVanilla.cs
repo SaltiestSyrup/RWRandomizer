@@ -57,7 +57,7 @@ namespace RainWorldRandomizer
             Plugin.ProperRegionMap.Clear();
 
             // Reset tracking variables
-            _currentMaxKarma = Options.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(storyGameCharacter);
+            _currentMaxKarma = RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(storyGameCharacter);
             _hunterBonusCyclesGiven = 0;
             _givenNeuronGlow = false;
             _givenMark = false;
@@ -451,10 +451,6 @@ namespace RainWorldRandomizer
                     case "Rivulet":
                         randomizerKey.Add("Meet_LttM", null);
                         if (RandoOptions.UseEnergyCell) randomizerKey.Add("Kill_FP", null);
-                        break;
-                    case "Spear":
-                        randomizerKey.Add("Meet_LttM_Spear", null);
-                        randomizerKey.Add("Meet_FP", null);
                         break;
                     case "Spear":
                         randomizerKey.Add("Meet_LttM_Spear", null);
