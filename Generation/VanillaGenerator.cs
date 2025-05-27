@@ -61,6 +61,7 @@ namespace RainWorldRandomizer.Generation
         private List<Item> ItemsToPlace = new List<Item>();
         private HashSet<string> AllRegions = new HashSet<string>();
         public HashSet<string> AllGates { get; private set; }
+        public HashSet<string> UnplacedGates { get; private set; }
         public HashSet<string> AllPassages { get; private set; }
         public Dictionary<Location, Item> RandomizedGame { get; private set; }
 
@@ -76,6 +77,7 @@ namespace RainWorldRandomizer.Generation
             CurrentStage = GenerationStep.NotStarted;
 
             AllGates = new HashSet<string>();
+            UnplacedGates = new HashSet<string>();
             AllPassages = new HashSet<string>();
             RandomizedGame = new Dictionary<Location, Item>();
 
@@ -646,7 +648,10 @@ namespace RainWorldRandomizer.Generation
                 {
                     // Duplicate a random gate item
                     IEnumerable<Item> gateItems = ItemsToPlace.Where(i => i.type == Item.Type.Gate);
-                    Item gate = gateItems.ElementAt(randomState.Next(gateItems.Count()));
+                    Item gate = new Item(gateItems.ElementAt(randomState.Next(gateItems.Count())))
+                    {
+                        importance = Item.Importance.Filler
+                    };
                     itemsToAdd.Add(gate);
                     generationLog.AppendLine($"Added duplicate gate item: {gate}");
                 }

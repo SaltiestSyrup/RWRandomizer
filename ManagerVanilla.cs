@@ -71,12 +71,6 @@ namespace RainWorldRandomizer
             {
                 Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(storyGameCharacter), region));
             }
-            // Add all gates to status dict
-            foreach (string roomName in Plugin.Singleton.rainWorld.progression.karmaLocks)
-            {
-                string gate = Regex.Split(roomName, " : ")[0];
-                if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, false);
-            }
 
             if (Input.GetKey("o"))
             {
@@ -85,6 +79,14 @@ namespace RainWorldRandomizer
 
             if (continueSaved)
             {
+                // Add all gates to status dict
+                foreach (string roomName in Plugin.Singleton.rainWorld.progression.karmaLocks)
+                {
+                    string gate = Regex.Split(roomName, " : ")[0];
+                    if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, false);
+                }
+
+                // Load save game
                 if (SaveManager.IsThereASavedGame(storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot))
                 {
                     Plugin.Log.LogInfo("Continuing randomizer game...");
@@ -119,6 +121,14 @@ namespace RainWorldRandomizer
 
                 if (generator.CurrentStage == VanillaGenerator.GenerationStep.Complete)
                 {
+                    // Load gates from generator
+                    // Existing gates that didn't have an item placed start open
+                    foreach (string gate in generator.AllGates)
+                    {
+                        if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate) ? true : false);
+                    }
+
+                    // Write new save game
                     randomizerKey = generator.GetCompletedSeed();
                     customStartDen = generator.customStartDen;
                     currentSeed = generator.generationSeed;
@@ -128,6 +138,7 @@ namespace RainWorldRandomizer
                 {
                     if (timedOut) Plugin.Log.LogDebug("Generation timed out.");
 
+                    // Log reason for expected generation exceptions
                     if (generator.CurrentStage == VanillaGenerator.GenerationStep.FailedGen
                         && generationException.InnerException is VanillaGenerator.GenerationFailureException)
                     {
@@ -143,7 +154,6 @@ namespace RainWorldRandomizer
 
             isRandomizerActive = true;
         }
-        /*
         public bool InitializeSession(SlugcatStats.Name slugcat)
         {
             Plugin.ProperRegionMap.Clear();
@@ -485,7 +495,6 @@ namespace RainWorldRandomizer
             TokenCachePatcher.ClearRoomAccessibilities();
             return true;
         }
-        */
         /*
         public bool GenerateRandomizer()
         {

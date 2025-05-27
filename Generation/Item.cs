@@ -33,6 +33,13 @@ namespace RainWorldRandomizer.Generation
             this.importance = importance;
         }
 
+        public Item(Item item)
+        {
+            this.id = item.id;
+            this.type = item.type;
+            this.importance = item.importance;
+        }
+
         public override string ToString() => id;
 
         // --- Static Helpers ---
