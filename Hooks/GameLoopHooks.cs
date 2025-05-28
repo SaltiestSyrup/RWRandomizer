@@ -265,7 +265,7 @@ namespace RainWorldRandomizer
         public static void OnRainWorldGameUpdate(On.RainWorldGame.orig_Update orig, RainWorldGame self)
         {
             orig(self);
-            if (self.GamePaused) return;
+            if (self.GamePaused || !self.processActive) return;
 
             // Display any pending notifications
             if (Plugin.Singleton.notifQueueAP.Count > 0)
@@ -280,7 +280,7 @@ namespace RainWorldRandomizer
                 }
                 else if (HudExtension.CurrentChatLog != null)
                 {
-                    HudExtension.CurrentChatLog?.AddMessage(Plugin.Singleton.notifQueueAP.Dequeue());
+                    HudExtension.CurrentChatLog.AddMessage(Plugin.Singleton.notifQueueAP.Dequeue());
                 }
             }
             // Display plain text messages last, as they tend to be more important
@@ -296,35 +296,7 @@ namespace RainWorldRandomizer
                 }
                 else if (HudExtension.CurrentChatLog != null)
                 {
-                    HudExtension.CurrentChatLog?.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
-                    /*
-                    // If there are several messages waiting, move through them quicker
-                    bool hurry = Plugin.Singleton.notifQueue.Count > 3;
-
-                    // If we have any pending messages and are in the actual game loop
-                    if (self.session.Players[0]?.realizedCreature?.room != null
-                        && self.cameras[0].hud?.textPrompt != null
-                        && self.cameras[0].hud.textPrompt.messages.Count < 1
-                        && self.manager.currentMainLoop.ID == ProcessManager.ProcessID.Game)
-                    {
-                        string message = Plugin.Singleton.notifQueue.Dequeue();
-                        if (message.Contains("//"))
-                        {
-                            string[] split = Regex.Split(message, "//");
-                            self.cameras[0].hud.textPrompt.AddMessage(split[0], 0, hurry ? 60 : 120, false, true, 100f,
-                                new List<MultiplayerUnlocks.SandboxUnlockID>() { new MultiplayerUnlocks.SandboxUnlockID(split[1]) });
-                        }
-                        else
-                        {
-                            self.cameras[0].hud.textPrompt.AddMessage(message, 0, hurry ? 60 : 120, false, false);
-                        }
-
-                        if (!hurry)
-                        {
-                            self.session.Players[0].realizedCreature.room.PlaySound(SoundID.MENU_Passage_Button, 0, 1f, 1f);
-                        }
-                    }
-                    */
+                    HudExtension.CurrentChatLog.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
                 }
             }
 

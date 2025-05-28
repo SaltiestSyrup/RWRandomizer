@@ -19,14 +19,13 @@ namespace RainWorldRandomizer
             get
             {
                 if (_chatLog.TryGetTarget(out ChatLog g)) return g;
-                else return null;
+                return null;
             }
             set
             {
                 _chatLog = new WeakReference<ChatLog>(value);
             }
         }
-
 
         public static void ApplyHooks()
         {
@@ -137,6 +136,18 @@ namespace RainWorldRandomizer
             {
                 msg.Draw(timeStacker);
             }
+        }
+
+        public override void ClearSprites()
+        {
+            base.ClearSprites();
+            while (messages.Count > 0)
+            {
+                messages.Dequeue().ClearSprites();
+            }
+            // Making an assumption that if something is clearing our sprites,
+            // we should not exist anymore.
+            hud.parts.Remove(this);
         }
 
         private class ChatMessage
@@ -268,7 +279,6 @@ namespace RainWorldRandomizer
                     messageLabels[i] = CreateLabel(splitMessage[i], curOffset);
                     lastWasSprite = false;
                 }
-                ;
             }
 
             // Constructor for complex messages using an Archipelago LogMessage
