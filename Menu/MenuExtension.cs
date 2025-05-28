@@ -478,10 +478,7 @@ namespace RainWorldRandomizer
             {
                 get
                 {
-                    // `customStartDen` currently does not reliably reflect an AP start; grab AP directly
-                    string s = Plugin.RandoManager is ManagerArchipelago ? ArchipelagoConnection.desiredStartDen : Plugin.RandoManager.customStartDen;
-                    // Special case for Spearmaster
-                    return s == "GATE_OE_SU" ? "SU" : s.Split('_')[0];
+                    return Plugin.RandoManager.customStartDen.Split('_')[0];
                 }
             }
 

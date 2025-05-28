@@ -66,7 +66,7 @@ namespace RainWorldRandomizer.Generation
         public Dictionary<Location, Item> RandomizedGame { get; private set; }
 
         public StringBuilder generationLog = new StringBuilder();
-        public string customStartDen = "NONE";
+        public string customStartDen = "";
         public int generationSeed;
 
 
@@ -686,6 +686,7 @@ namespace RainWorldRandomizer.Generation
             }
             else
             {
+                customStartDen = Constants.SlugcatDefaultStartingDen[slugcat];
                 state.AddRegion(Constants.SlugcatStartingRegion[slugcat]);
             }
 

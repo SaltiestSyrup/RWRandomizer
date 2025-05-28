@@ -45,7 +45,7 @@ namespace RainWorldRandomizer
             _givenRobo = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
-            customStartDen = "NONE";
+            customStartDen = "";
 
             // Init alternate region mapping
             foreach (string region in Region.GetFullRegionOrder())

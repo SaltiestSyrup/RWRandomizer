@@ -63,7 +63,10 @@ namespace RainWorldRandomizer
         protected bool _givenPebblesOff = false;
         protected bool _givenSpearPearlRewrite = false;
 
-        public string customStartDen = "NONE";
+        /// <summary>
+        /// The den that this run has started in. If spawn was not randomized, this should be set to <see cref="currentSlugcat"/>'s entry in <see cref="Constants.SlugcatDefaultStartingDen"/>
+        /// </summary>
+        public string customStartDen = "";
 
         public ManagerBase() { }
 

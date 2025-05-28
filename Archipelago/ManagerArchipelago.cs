@@ -70,7 +70,7 @@ namespace RainWorldRandomizer
             _givenRobo = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
-            customStartDen = "NONE";
+            customStartDen = "";
             gameCompleted = false;
             locationsLoaded = false;
 
@@ -246,6 +246,10 @@ namespace RainWorldRandomizer
             {
                 customStartDen = ArchipelagoConnection.desiredStartDen;
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
+            }
+            else
+            {
+                customStartDen = Constants.SlugcatDefaultStartingDen[slugcat];
             }
 
             // Populate region mapping for display purposes
