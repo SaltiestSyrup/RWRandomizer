@@ -31,7 +31,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogWarning("Selected incompatible save, disabling randomizer");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue($"WARNING: This campaign is not currently supported by Check Randomizer. It will not be active for this session.");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"WARNING: This campaign is not currently supported by Check Randomizer. It will not be active for this session.", Color.red));
                 return;
             }
 
@@ -77,7 +77,7 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Log.LogError("Failed to load saved game.");
                     isRandomizerActive = false;
-                    Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to find valid save for current file");
+                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Randomizer failed to find valid save for current file", Color.red));
                     return;
                 }
             }
@@ -124,11 +124,13 @@ namespace RainWorldRandomizer
                     if (generator.CurrentStage == VanillaGenerator.GenerationStep.FailedGen
                         && generationException.InnerException is VanillaGenerator.GenerationFailureException)
                     {
-                        Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate with error: {generationException.InnerException.Message}. More details found in BepInEx/LogOutput.log");
+                        Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                            $"Randomizer failed to generate with error: {generationException.InnerException.Message}. More details found in BepInEx/LogOutput.log",
+                            Color.red));
                     }
                     else
                     {
-                        Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log");
+                        Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log", Color.red));
                     }
                     return;
                 }
@@ -136,7 +138,7 @@ namespace RainWorldRandomizer
 
             isRandomizerActive = true;
         }
-        
+
         public void DebugBulkGeneration(int howMany)
         {
             VanillaGenerator[] generators = new VanillaGenerator[howMany];
@@ -226,7 +228,7 @@ namespace RainWorldRandomizer
                         if (item.IsGiven) _givenSpearPearlRewrite = true;
                         break;
                 }
-                
+
             }
 
             Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, saveSlot);
@@ -255,7 +257,7 @@ namespace RainWorldRandomizer
             if (IsLocationGiven(location) ?? true) return false;
 
             randomizerKey[location].GiveUnlock();
-            Plugin.Singleton.notifQueue.Enqueue(randomizerKey[location].UnlockCompleteMessage());
+            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(randomizerKey[location].UnlockCompleteMessage()));
             Plugin.Log.LogInfo($"Completed Check: {location}");
 
             return true;

@@ -37,7 +37,8 @@ namespace RainWorldRandomizer
             public void Activate(RainWorldGame game)
             {
                 Plugin.Log.LogInfo($"Trap Triggered! ({id})");
-                Plugin.Singleton.notifQueue.Enqueue($"Trap Triggered! ({id})");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Trap Triggered! ({id})", 
+                    ArchipelagoConnection.palette[Archipelago.MultiClient.Net.Colors.PaletteColor.Red]));
                 definition.onTrigger(game);
                 timer = definition.duration;
 

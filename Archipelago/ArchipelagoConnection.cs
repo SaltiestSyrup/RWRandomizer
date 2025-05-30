@@ -65,22 +65,22 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Defined palette for the mod to use when displaying colors
         /// </summary>
-        public static Palette<UnityEngine.Color> palette =
-            new Palette<UnityEngine.Color>(
+        public static Palette<Color> palette =
+            new Palette<Color>(
                 Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
-                new Dictionary<PaletteColor, UnityEngine.Color>()
+                new Dictionary<PaletteColor, Color>()
                 {
                     { PaletteColor.Black, Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black) },
-                    { PaletteColor.Blue, new UnityEngine.Color(0f, 0f, 1f) },
-                    { PaletteColor.Cyan, new UnityEngine.Color(0f, 1f, 1f) },
-                    { PaletteColor.Green, new UnityEngine.Color(0, 0.5f, 0f) },
-                    { PaletteColor.Magenta, new UnityEngine.Color(1f, 0f, 1f) },
-                    { PaletteColor.Plum, new UnityEngine.Color(0.85f, 0.6f, 0.85f) },
-                    { PaletteColor.Red, new UnityEngine.Color(1f, 0f, 0f) },
-                    { PaletteColor.Salmon, new UnityEngine.Color(0.98f, 0.5f, 0.45f) },
-                    { PaletteColor.SlateBlue, new UnityEngine.Color(0.4f, 0.35f, 0.8f) },
-                    { PaletteColor.White, new UnityEngine.Color(1f, 1f, 1f) },
-                    { PaletteColor.Yellow, new UnityEngine.Color(1f, 1f, 0f) }
+                    { PaletteColor.Blue, new Color(0f, 0f, 1f) },
+                    { PaletteColor.Cyan, new Color(0f, 1f, 1f) },
+                    { PaletteColor.Green, new Color(0, 0.5f, 0f) },
+                    { PaletteColor.Magenta, new Color(1f, 0f, 1f) },
+                    { PaletteColor.Plum, new Color(0.85f, 0.6f, 0.85f) },
+                    { PaletteColor.Red, new Color(1f, 0f, 0f) },
+                    { PaletteColor.Salmon, new Color(0.98f, 0.5f, 0.45f) },
+                    { PaletteColor.SlateBlue, new Color(0.4f, 0.35f, 0.8f) },
+                    { PaletteColor.White, new Color(1f, 1f, 1f) },
+                    { PaletteColor.Yellow, new Color(1f, 1f, 0f) }
                 }
             );
 
@@ -564,7 +564,7 @@ namespace RainWorldRandomizer
                 && !(message is TagsChangedLogMessage) // Filter out tag change logs
                 && (!(message is ChatLogMessage chatMessage) || !chatMessage.Message.StartsWith("!"))) // Filter out chat commands
             {
-                Plugin.Singleton.notifQueueAP.Enqueue(message);
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(message));
             }
         }
 
@@ -576,7 +576,7 @@ namespace RainWorldRandomizer
             {
                 Disconnect(false);
                 Plugin.Log.LogError("Disconnected Socket due to WebSocketException");
-                Plugin.Singleton.notifQueue.Enqueue("You have been disconnected due to an exception. Please attempt to reconnect.");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
             }
         }
 

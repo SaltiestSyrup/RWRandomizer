@@ -309,7 +309,7 @@ namespace RainWorldRandomizer
         public static void ShowItemTutorial()
         {
             if (hasSeenItemTutorial || RandoOptions.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
-            Plugin.Singleton.notifQueue.Enqueue("TIP: Unlocked items are stored in your stomach for safe keeping");
+            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("TIP: Unlocked items are stored in your stomach for safe keeping"));
             hasSeenItemTutorial = true;
         }
     }

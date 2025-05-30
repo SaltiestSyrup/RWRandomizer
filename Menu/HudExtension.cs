@@ -74,8 +74,6 @@ namespace RainWorldRandomizer
             pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X - (MSG_MARGIN * 2) + 0.01f, 30.01f);
 
             // A whole bunch of test messages for debugging
-
-
             /*
             AddMessage("");
             AddMessage("This is a message showcasing the new Icon system. I can display anything I want, such as Icon{BubbleGrass}, " +
@@ -107,33 +105,14 @@ namespace RainWorldRandomizer
             */
         }
 
-        public void AddMessage(string text)
+        public void AddMessage(MessageText message)
         {
-            AddMessage(text, Color.white);
-        }
-
-        public void AddMessage(string text, Color color)
-        {
-            if (text == "") return; // Empty strings break messages
-            string[] strings = new string[] { text };
-            Color[] colors = new Color[] { color };
-            AddMessage(strings, colors);
-        }
-
-        public void AddMessage(LogMessage logMessage)
-        {
-            string[] strings = logMessage.Parts.Select(p => p.Text).ToArray();
-            Color[] colors = logMessage.Parts.Select(p => ArchipelagoConnection.palette[p.PaletteColor]).ToArray();
-            AddMessage(strings, colors);
-        }
-
-        public void AddMessage(string[] strings, Color[] colors)
-        {
-            if (strings.Length != colors.Length)
+            // Empty strings break messages
+            if (message.strings.Contains(""))
             {
-                throw new ArgumentException("Both array arguments must be of the same length");
+                Plugin.Log.LogWarning($"Chatlog tried to print invalid message: \"{string.Join("", message.strings)}\"");
             }
-            EnqueueMessage(new ChatMessage(this, strings, colors));
+            EnqueueMessage(new ChatMessage(this, message.strings, message.colors));
         }
 
         private void EnqueueMessage(ChatMessage message)
@@ -185,6 +164,43 @@ namespace RainWorldRandomizer
             // Making an assumption that if something is clearing our sprites,
             // we should not exist anymore.
             hud.parts.Remove(this);
+        }
+
+        /// <summary>
+        /// Simple struct for storing messages before creating their UI
+        /// </summary>
+        public struct MessageText
+        {
+            public string[] strings;
+            public Color[] colors;
+
+            /// <summary>Single part white message</summary>
+            public MessageText(string message)
+            {
+                strings = new string[] { message };
+                colors = new Color[] { Color.white };
+            }
+
+            /// <summary>Single part colored message</summary>
+            public MessageText(string message, Color color)
+            {
+                strings = new string[] { message };
+                colors = new Color[] { color };
+            }
+
+            /// <summary> Multi-part colored message</summary>
+            public MessageText(string[] strings, Color[] colors)
+            {
+                this.strings = strings;
+                this.colors = colors;
+            }
+
+            /// <summary>Import a message from an Archipelago <see cref="LogMessage"/></summary>
+            public MessageText(LogMessage logMessage)
+            {
+                strings = logMessage.Parts.Select(p => p.Text).ToArray();
+                colors = logMessage.Parts.Select(p => ArchipelagoConnection.palette[p.PaletteColor]).ToArray();
+            }
         }
 
         private class ChatMessage
