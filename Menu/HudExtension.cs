@@ -73,30 +73,67 @@ namespace RainWorldRandomizer
             this.container = container;
             pos = new Vector2(hud.rainWorld.options.ScreenSize.x - MSG_SIZE_X - (MSG_MARGIN * 2) + 0.01f, 30.01f);
 
-            //AddMessage("This is a message showcasing the new Icon system. I can display anything I want, such as Icon{BubbleGrass}, " +
-            //    "or Icon{ScavengerBomb}. A check can display an icon to log what the player received, like \"Found Icon{EnergyCell}\"," +
-            //    " or a player who wants to for whatever reason can use them as well. If someone tries to type an invalid icon, it will display as a" +
-            //    " white square instead, like so: Icon{Fruit}");
+            // A whole bunch of test messages for debugging
 
-            //AddMessage("AAAAAAAAAAAAAAAAAAAAAAAAAAIcon{BubbleGrass}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-            //AddMessage("B AAAAAAAAAAAAAAAAAAAAAAAAAAIcon{BubbleGrass}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+
+            /*
+            AddMessage("");
+            AddMessage("This is a message showcasing the new Icon system. I can display anything I want, such as Icon{BubbleGrass}, " +
+                "or Icon{ScavengerBomb}. A check can display an icon to log what the player received, like \"Found Icon{EnergyCell}\"," +
+                " or a player who wants to for whatever reason can use them as well. If someone tries to type an invalid icon, it will display as a" +
+                " white square instead, like so: Icon{Fruit}");
+
+            AddMessage("AAAAAB_icon5_BAAAAAAB\r\nBAAAAB\bBAAAAAABIcon{BubbleGrass}BAAAAAAB\vBAAAAAAAB\nBAAAAAAAAAAAAAB\tBAAAAAAAAAAAAAA");
+
+            AddMessage(new string[]
+            {
+                "This is red text, ",
+                "This is blue text, ",
+                "And this is a longer message written in green text"
+            }, new Color[] {Color.red, Color.blue, Color.green});
+
+            AddMessage(new string[]
+            {
+                "This is a message showcasing the new Icon system. ",
+                "I can display anything I want, such as Icon{BubbleGrass}, or Icon{ScavengerBomb}. ",
+                "A check can display an icon to log what the player received, like \"Found Icon{EnergyCell}\", or a player who wants to for whatever reason can use them as well. ",
+                "If someone tries to type an invalid icon, it will display as a white square instead, like so: Icon{Fruit}."
+            }, new Color[] {Color.yellow, Color.cyan, Color.gray, Color.white});
+
+            AddMessage(new string[]
+            {
+                "thisisareallylongstringwitho", "utspacesbutitalsoissplitintocol", "orgroupsiwonderwhatwillhappenIcon{Spear}alsoi", "justtypedanicon"
+            }, new Color[] { Color.red, Color.blue, Color.magenta, Color.green });
+            */
         }
 
         public void AddMessage(string text)
         {
-            try
-            {
-                EnqueueMessage(new ChatMessage(this, text));
-            }
-            catch (System.Exception e)
-            {
-                Plugin.Log.LogError(e);
-            }
+            AddMessage(text, Color.white);
+        }
+
+        public void AddMessage(string text, Color color)
+        {
+            if (text == "") return; // Empty strings break messages
+            string[] strings = new string[] { text };
+            Color[] colors = new Color[] { color };
+            AddMessage(strings, colors);
         }
 
         public void AddMessage(LogMessage logMessage)
         {
-            EnqueueMessage(new ChatMessage(this, logMessage));
+            string[] strings = logMessage.Parts.Select(p => p.Text).ToArray();
+            Color[] colors = logMessage.Parts.Select(p => ArchipelagoConnection.palette[p.PaletteColor]).ToArray();
+            AddMessage(strings, colors);
+        }
+
+        public void AddMessage(string[] strings, Color[] colors)
+        {
+            if (strings.Length != colors.Length)
+            {
+                throw new ArgumentException("Both array arguments must be of the same length");
+            }
+            EnqueueMessage(new ChatMessage(this, strings, colors));
         }
 
         private void EnqueueMessage(ChatMessage message)
@@ -155,7 +192,7 @@ namespace RainWorldRandomizer
             private readonly ChatLog owner;
             private readonly FFont font;
 
-            public int index;
+            public int index = 0;
             public int heightIndex;
             public int height;
             public string text;
@@ -180,76 +217,107 @@ namespace RainWorldRandomizer
             FLabel[] messageLabels;
             IconSymbol[] iconSymbols;
 
-            // Constructor for "simple" messages (Only one message part)
-            public ChatMessage(ChatLog chatLog, string message)
+            public ChatMessage(ChatLog chatlog, string[] strings, Color[] colors)
             {
-                owner = chatLog;
+                owner = chatlog;
                 font = Futile.atlasManager.GetFontWithName(Custom.GetFont());
-                index = 0;
-                text = message;
                 yPos = -MSG_SIZE_Y;
+                text = string.Join("", strings);
                 wrapIndices = new List<int>();
 
-                // Labels
-                List<string> splitMessage = new List<string>();
-
-                // Find and split along every instance of an "Icon"
-                // Clear any instances of our temp replacement string already present
-                message = Regex.Replace(message, "_icon\\d{1,2}_", "");
+                #region String parsing / part list creation
                 List<string> capturedIDs = new List<string>();
-                if (!Regex.IsMatch(message, "Icon{(\\S*)}"))
-                {
-                    // normal wrapping
-                    splitMessage = Regex.Split(message.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "\n").ToList();
-                    for (int i = 1; i < splitMessage.Count; i++)
-                    {
-                        wrapIndices.Add(i);
-                    }
-                }
-                else
-                {
-                    string[] split = Regex.Split(message, "(Icon{\\S*})");
+                int[] baseColorIndices = new int[strings.Length];
+                List<int> iconIndices = new List<int>();
 
-                    for (int i = 0; i < split.Length; i++)
-                    {
-                        // "¬" is used as a delimiter for where to re-seperate the string
-                        if (i % 2 == 1)
-                        {
-                            capturedIDs.Add(Regex.Match(split[i], "Icon{(\\S*)}").Groups[1].Value);
-                            split[i] = $"_icon{i / 2}_¬";
-                        }
-                        else if (!split[i].Equals(""))
-                        {
-                            split[i] += "¬";
-                        }
-                    }
+                int charIndex = 0;
+                for (int i = 0; i < strings.Length; i++)
+                {
+                    baseColorIndices[i] = charIndex;
+                    Plugin.Log.LogDebug($"baseColorIndices[{i}] = {charIndex}");
 
-                    string joinedWithBreaks = string.Join("", split);
-                    string[] splitWithBreaks = Regex.Split(joinedWithBreaks.WrapText(false, MSG_SIZE_X - (MSG_MARGIN * 2)), "¬|(\n)");
-                    int breakCount = 0;
-                    // There has to be a better way to do this part but I do not know it right now
-                    for (int i = 0; i < splitWithBreaks.Length; i++)
+                    strings[i] = Regex.Replace(strings[i], "_icon\\d{1,2}_", ""); // Already present icon output pattern is invalid
+                    strings[i] = Regex.Replace(strings[i], Environment.NewLine, " "); // Newline is invalid
+                    // If there is an icon present
+                    if (Regex.IsMatch(strings[i], "Icon{(\\S*)}"))
                     {
-                        if (splitWithBreaks[i].Equals("\n"))
+                        // Seperate each icon for parsing
+                        string[] split = Regex.Split(strings[i], "(Icon{\\S*})");
+                        for (int j = 0; j < split.Length; j++)
                         {
-                            wrapIndices.Add(i - breakCount);
-                            breakCount++;
+                            if (j % 2 == 1)
+                            {
+                                iconIndices.Add(charIndex);
+                                Plugin.Log.LogDebug($"iconIndices += {charIndex}");
+                                // Capture the icon ID for use later
+                                capturedIDs.Add(Regex.Match(split[j], "Icon{(\\S*)}").Groups[1].Value);
+                                // Store back as new pattern with consistent length
+                                split[j] = $"_icon{iconIndices.Count / 2}_";
+                                iconIndices.Add(charIndex + split[j].Length);
+                            }
+                            charIndex += split[j].Length;
                         }
-                        else
-                        {
-                            splitMessage.Add(splitWithBreaks[i]);
-                        }
+                        strings[i] = string.Join("", split);
+                    }
+                    else
+                    {
+                        charIndex += strings[i].Length;
                     }
                 }
 
-                messageLabels = new FLabel[splitMessage.Count];
-                iconSymbols = new IconSymbol[splitMessage.Count];
+                // Apply text wrapping
+                string fullText = string.Join("", strings);
+                Plugin.Log.LogDebug($"fullText = {fullText} | {fullText.Length}");
+                string wrappedText = fullText.WrapText(false, MSG_SIZE_X);
+                Plugin.Log.LogDebug($"wrappedText = {wrappedText} | {wrappedText.Length}");
+
+                List<int> wrapTextIndices = new List<int>();
+
+                // Trim line breaks and index them
+                string[] splitByLine = Regex.Split(wrappedText, Environment.NewLine);
+                int wrapCharIndex = 0;
+                foreach (string line in splitByLine)
+                {
+                    wrapTextIndices.Add(wrapCharIndex);
+                    Plugin.Log.LogDebug($"wrapTextIndices += {wrapCharIndex}");
+                    wrapCharIndex += line.Length;
+                }
+                wrappedText = string.Join("", splitByLine);
+
+                // Split message apart one more time, at each important split index
+                List<int> unionIndices = baseColorIndices.Union(iconIndices).Union(wrapTextIndices).ToList();
+                Queue<Color> colorQueue = new Queue<Color>(colors);
+                List<StringBuilder> finalTextList = new List<StringBuilder>(1) { new StringBuilder(wrappedText[0].ToString()) };
+                List<Color> finalColorList = new List<Color>(1) { colorQueue.Peek() };
+                int partIndex = 0;
+                for (int i = 1; i < wrappedText.Length; i++)
+                {
+                    // If a new color starts here, pop the old one
+                    if (baseColorIndices.Contains(i)) colorQueue.Dequeue();
+                    // Begin the next segment
+                    if (unionIndices.Contains(i))
+                    {
+                        partIndex++;
+                        finalTextList.Add(new StringBuilder());
+                        finalColorList.Add(colorQueue.Peek());
+                    }
+                    // If text wrapped here, mark it
+                    if (wrapTextIndices.Contains(i))
+                    {
+                        wrapIndices.Add(partIndex);
+                    }
+                    finalTextList[partIndex].Append(wrappedText[i]);
+                }
+                #endregion
+
+                messageLabels = new FLabel[finalTextList.Count];
+                iconSymbols = new IconSymbol[finalTextList.Count];
                 height = wrapIndices.Count + 1;
 
                 CreateBackgroundSprite();
 
                 bool lastWasSprite = false;
-                for (int i = 0; i < splitMessage.Count; i++)
+                for (int i = 0; i < finalTextList.Count; i++)
                 {
                     // Running offset to position labels in a line
                     float curOffset;
@@ -267,7 +335,7 @@ namespace RainWorldRandomizer
                     }
 
                     // Create an Icon
-                    var iconMatch = Regex.Match(splitMessage[i], "_icon(\\d{1,2})_");
+                    Match iconMatch = Regex.Match(finalTextList[i].ToString(), "_icon(\\d{1,2})_");
                     if (iconMatch.Success)
                     {
                         iconSymbols[i] = CreateIcon(capturedIDs[int.Parse(iconMatch.Groups[1].Value)], curOffset);
@@ -276,51 +344,8 @@ namespace RainWorldRandomizer
                     }
 
                     // Create a text label
-                    messageLabels[i] = CreateLabel(splitMessage[i], curOffset);
+                    messageLabels[i] = CreateLabel(finalTextList[i].ToString(), curOffset, finalColorList[i]);
                     lastWasSprite = false;
-                }
-            }
-
-            // Constructor for complex messages using an Archipelago LogMessage
-            public ChatMessage(ChatLog chatLog, LogMessage message)
-            {
-                owner = chatLog;
-                font = Futile.atlasManager.GetFontWithName(Custom.GetFont());
-                index = 0;
-                text = message.ToString();
-                yPos = -MSG_SIZE_Y;
-
-                messageLabels = new FLabel[message.Parts.Length];
-                iconSymbols = new IconSymbol[message.Parts.Length];
-
-                // Make a string[] representation of message parts
-                string[] msgParts = new string[message.Parts.Length];
-                for (int i = 0; i < message.Parts.Length; i++)
-                {
-                    msgParts[i] = message.Parts[i].Text;
-                }
-
-                // Text wrapping
-                wrapIndices = CreateWrapIndices(msgParts);
-                height = wrapIndices.Count + 1;
-                CreateBackgroundSprite();
-
-                for (int i = 0; i < msgParts.Length; i++)
-                {
-                    // Running offset to position labels in a line
-                    float curOffset = owner.pos.x + MSG_MARGIN;
-                    if (i > 0)
-                    {
-                        curOffset = messageLabels[i - 1].x + messageLabels[i - 1].textRect.width + 1f;
-                    }
-
-                    if (wrapIndices.Contains(i))
-                    {
-                        curOffset = owner.pos.x + MSG_MARGIN;
-                    }
-
-                    // Create the label
-                    messageLabels[i] = CreateLabel(msgParts[i], curOffset, ArchipelagoConnection.palette[message.Parts[i].PaletteColor]);
                 }
             }
 
@@ -385,45 +410,6 @@ namespace RainWorldRandomizer
                 {
                     messageLabels[i]?.RemoveFromContainer();
                     iconSymbols[i]?.RemoveSprites();
-                }
-            }
-
-            /// <summary>
-            /// Takes an array of <see cref="string"/>s and finds where text wrapping should occur
-            /// </summary>
-            /// <returns>A <see cref="List{T}"/> containing each index of <paramref name="message"/> where wrapping should occur</returns>
-            public static List<int> CreateWrapIndices(string[] message)
-            {
-                List<int> indices = new List<int>();
-                StringBuilder wrapText = new StringBuilder();
-
-                for (int i = 0; i < message.Length; i++)
-                {
-                    wrapText.Append(message[i]);
-
-                    // Is this string now too long for one line?
-                    if (wrapText.ToString().WrapText(false, MSG_SIZE_X).Contains("\n"))
-                    {
-                        int foundIndex = RecursiveWrap(i, i);
-                        indices.Add(foundIndex);
-                        wrapText.Clear();
-                        for (int j = foundIndex; j <= i; j++) wrapText.Append(message[j]);
-                    }
-                }
-
-                return indices;
-
-                // If there was no space character between this and the last part, move a step back
-                int RecursiveWrap(int curLength, int i)
-                {
-                    if (i <= 0) return 0;
-
-                    if (!message[i - 1].EndsWith(" ") && !message[i].StartsWith(" "))
-                    {
-                        return RecursiveWrap(curLength, i - 1);
-                    }
-
-                    return i;
                 }
             }
 
