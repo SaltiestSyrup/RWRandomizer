@@ -73,7 +73,7 @@ namespace RainWorldRandomizer
                     }
                     catch (Exception e)
                     {
-                        Plugin.Singleton.notifQueue.Enqueue("Failed to start randomizer game. More details found in BepInEx/LogOutput.log");
+                        Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Failed to start randomizer game. More details found in BepInEx/LogOutput.log", UnityEngine.Color.red));
                         Plugin.Log.LogError("Encountered exception while starting game session");
                         Plugin.Log.LogError(e);
                     }
@@ -268,22 +268,6 @@ namespace RainWorldRandomizer
             if (self.GamePaused || !self.processActive) return;
 
             // Display any pending notifications
-            if (Plugin.Singleton.notifQueueAP.Count > 0)
-            {
-                if (RandoOptions.DisableNotificationQueue)
-                {
-                    Plugin.Singleton.notifQueueAP.Dequeue();
-                }
-                else if (RandoOptions.legacyNotifications.Value)
-                {
-                    Plugin.Singleton.DisplayLegacyNotification(true);
-                }
-                else if (HudExtension.CurrentChatLog != null)
-                {
-                    HudExtension.CurrentChatLog.AddMessage(Plugin.Singleton.notifQueueAP.Dequeue());
-                }
-            }
-            // Display plain text messages last, as they tend to be more important
             else if (Plugin.Singleton.notifQueue.Count > 0)
             {
                 if (RandoOptions.DisableNotificationQueue)
@@ -292,7 +276,7 @@ namespace RainWorldRandomizer
                 }
                 else if (RandoOptions.legacyNotifications.Value)
                 {
-                    Plugin.Singleton.DisplayLegacyNotification(false);
+                    Plugin.Singleton.DisplayLegacyNotification();
                 }
                 else if (HudExtension.CurrentChatLog != null)
                 {

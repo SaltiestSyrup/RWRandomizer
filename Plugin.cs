@@ -47,8 +47,8 @@ namespace RainWorldRandomizer
             }
         }
 
-        public Queue<string> notifQueue = new Queue<string>(); // Queue of pending notifications to be sent to the player in-game
-        public Queue<LogMessage> notifQueueAP = new Queue<LogMessage>();
+        // Queue of pending notifications to be sent to the player in-game
+        public Queue<ChatLog.MessageText> notifQueue = new Queue<ChatLog.MessageText>();
         // Queue of items that the player has recieved and not claimed
         public Queue<Unlock.Item> lastItemDeliveryQueue = new Queue<Unlock.Item>();
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
@@ -456,12 +456,12 @@ namespace RainWorldRandomizer
             }
         }
 
-        public void DisplayLegacyNotification(bool fromAP)
+        public void DisplayLegacyNotification()
         {
             if (Game == null) return;
 
             // If there are several messages waiting, move through them quicker
-            bool hurry = notifQueue.Count + notifQueueAP.Count > 3;
+            bool hurry = notifQueue.Count > 3;
             // If we have any pending messages and are in the actual game loop
 
             if (Game.session.Players[0]?.realizedCreature?.room != null
@@ -470,7 +470,7 @@ namespace RainWorldRandomizer
                 && Game.manager.currentMainLoop.ID == ProcessManager.ProcessID.Game)
 
             {
-                string message = fromAP ? notifQueueAP.Dequeue().ToString() : notifQueue.Dequeue();
+                string message = string.Join("", notifQueue.Dequeue().strings);
                 if (message.Contains("//"))
                 {
                     string[] split = Regex.Split(message, "//");

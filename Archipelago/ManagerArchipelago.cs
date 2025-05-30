@@ -31,7 +31,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Tried to start AP campaign without first connecting to server");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue("Archipelago failed to start: Not connected to a server");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Archipelago failed to start: Not connected to a server", UnityEngine.Color.red));
             }
 
             base.StartNewGameSession(storyGameCharacter, continueSaved);
@@ -43,7 +43,7 @@ namespace RainWorldRandomizer
                     $"\n Chosen campaign: {storyGameCharacter}" +
                     $"\n Chosen AP option: {ArchipelagoConnection.Slugcat}");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue("Archipelago failed to start: Selected campaign does not match archipelago options.");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Archipelago failed to start: Selected campaign does not match archipelago options.", UnityEngine.Color.red));
                 return;
             }
 
@@ -52,7 +52,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Failed to initialize randomizer.");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue($"Randomizer failed to initialize. Check logs for details.");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Randomizer failed to initialize. Check logs for details.", UnityEngine.Color.red));
                 return;
             }
 
@@ -351,7 +351,7 @@ namespace RainWorldRandomizer
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();
             Plugin.Log.LogInfo("Game Complete!");
-            Plugin.Singleton.notifQueue.Enqueue("Game Complete!");
+            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Game Complete!", UnityEngine.Color.green));
         }
 
         public override void SaveGame(bool saveCurrentState)
