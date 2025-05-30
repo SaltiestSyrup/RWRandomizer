@@ -250,7 +250,6 @@ namespace RainWorldRandomizer
                 for (int i = 0; i < strings.Length; i++)
                 {
                     baseColorIndices[i] = charIndex;
-                    Plugin.Log.LogDebug($"baseColorIndices[{i}] = {charIndex}");
 
                     strings[i] = Regex.Replace(strings[i], "_icon\\d{1,2}_", ""); // Already present icon output pattern is invalid
                     strings[i] = Regex.Replace(strings[i], Environment.NewLine, " "); // Newline is invalid
@@ -264,7 +263,6 @@ namespace RainWorldRandomizer
                             if (j % 2 == 1)
                             {
                                 iconIndices.Add(charIndex);
-                                Plugin.Log.LogDebug($"iconIndices += {charIndex}");
                                 // Capture the icon ID for use later
                                 capturedIDs.Add(Regex.Match(split[j], "Icon{(\\S*)}").Groups[1].Value);
                                 // Store back as new pattern with consistent length
@@ -283,9 +281,7 @@ namespace RainWorldRandomizer
 
                 // Apply text wrapping
                 string fullText = string.Join("", strings);
-                Plugin.Log.LogDebug($"fullText = {fullText} | {fullText.Length}");
                 string wrappedText = fullText.WrapText(false, MSG_SIZE_X);
-                Plugin.Log.LogDebug($"wrappedText = {wrappedText} | {wrappedText.Length}");
 
                 List<int> wrapTextIndices = new List<int>();
 
@@ -295,7 +291,6 @@ namespace RainWorldRandomizer
                 foreach (string line in splitByLine)
                 {
                     wrapTextIndices.Add(wrapCharIndex);
-                    Plugin.Log.LogDebug($"wrapTextIndices += {wrapCharIndex}");
                     wrapCharIndex += line.Length;
                 }
                 wrappedText = string.Join("", splitByLine);
