@@ -204,8 +204,8 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
-            VanillaGenerator.GenerateCustomRules();
             AccessRuleConstants.InitConstants();
+            VanillaGenerator.GenerateCustomRules();
 
             hasInitialized = true;
         }

@@ -270,6 +270,24 @@ namespace RainWorldRandomizer
                         regionObjectsAccessibility[region][index] = self.FilterTokenClearance(list3, regionObjectsAccessibility[region][index], IntersectClearance(list3, region, room));
                     }
                 }
+                // Hardcoded check for hazers
+                else if (placedObject.type == PlacedObject.Type.DeadHazer 
+                    || placedObject.type == PlacedObject.Type.Hazer)
+                {
+                    // This works, but depends on token cache being built every time.
+                    // Need to store creatures as part of cache
+                    //string regionUpper = region.ToUpperInvariant();
+                    //if (!regionCreatures[regionUpper].Contains(CreatureTemplate.Type.Hazer))
+                    //{
+                    //    regionCreatures[regionUpper].Add(CreatureTemplate.Type.Hazer);
+                    //    regionCreaturesAccessibility[regionUpper].Add(self.FilterTokenClearance(list3, new List<SlugcatStats.Name>(), IntersectClearance(list3, region, room)));
+                    //}
+                    //else
+                    //{
+                    //    int index = regionCreatures[regionUpper].IndexOf(CreatureTemplate.Type.Hazer);
+                    //    regionCreaturesAccessibility[regionUpper][index] = self.FilterTokenClearance(list3, regionObjectsAccessibility[regionUpper][index], IntersectClearance(list3, region, room));
+                    //}
+                }
             }
 
             // After file write at 13D1

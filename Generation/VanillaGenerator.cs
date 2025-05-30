@@ -916,6 +916,20 @@ namespace RainWorldRandomizer.Generation
             GlobalRuleOverrides.Add("Echo-SB", subRavineRule);
             GlobalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
 
+            // TODO: Add effect detection for Batflies and Neurons
+            // This is temporary until there's a way to detect batflies in a region
+            GlobalRuleOverrides.Add("FoodQuest-Fly", new CompoundAccessRule(AccessRuleConstants.Regions,
+                CompoundAccessRule.CompoundOperation.AtLeast, 5));
+            // TODO: Add support for creatures that are PlacedObjects
+            GlobalRuleOverrides.Add("FoodQuest-Hazer", new CompoundAccessRule(new AccessRule[]
+            {
+                new RegionAccessRule("LF"),
+                new RegionAccessRule("DS"),
+                new RegionAccessRule("GW"),
+                new RegionAccessRule("HI"),
+                new RegionAccessRule("SL")
+            }, CompoundAccessRule.CompoundOperation.Any));
+
             // MSC specific rules
             if (ModManager.MSC)
             {
