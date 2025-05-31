@@ -129,6 +129,14 @@ namespace RainWorldRandomizer
                     return;
                 }
                 self.denPosition = Plugin.RandoManager.customStartDen;
+
+                if (ModManager.Watcher && Plugin.RandoManager.currentSlugcat.value == "Watcher")
+                {
+                    self.sessionEndingFromSpinningTopEncounter = true;
+                    self.deathPersistentSaveData.minimumRippleLevel = 1f;
+                    self.deathPersistentSaveData.maximumRippleLevel = 1f;
+                    self.deathPersistentSaveData.rippleLevel = 1f;
+                }
             }
         }
 

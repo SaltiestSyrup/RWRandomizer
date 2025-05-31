@@ -95,6 +95,8 @@ namespace RainWorldRandomizer
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
             Messenger, // Spearmaster delivering the encoded pearl to Comms array
             Rubicon, // Saint Ascending in Rubicon
+            SpinningTop,
+            SentientRot,
         }
 
         public enum EchoLowKarmaDifficulty
@@ -397,6 +399,9 @@ namespace RainWorldRandomizer
                 case "Saint":
                     completionCondition = CompletionCondition.Rubicon;
                     break;
+                case "Watcher":
+                    completionCondition = completionType == 0 ? CompletionCondition.SpinningTop : CompletionCondition.SentientRot;
+                    break;
             }
 
             // If the new slot data wasn't present this old logic will be used
@@ -494,6 +499,8 @@ namespace RainWorldRandomizer
             WinState.GourmandPassageTracker = foodQuest == FoodQuestBehavior.Expanded ? MiscHooks.expanded : MiscHooks.unexpanded;
 
             //Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
+
+            WatcherIntegration.Settings.ReceiveSlotData(slotData);
 
             return SlotDataResult.Success;
         }

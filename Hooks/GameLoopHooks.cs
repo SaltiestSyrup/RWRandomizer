@@ -88,12 +88,12 @@ namespace RainWorldRandomizer
 
             if (ID == ProcessManager.ProcessID.SleepScreen)
             {
+                SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
+
                 // Check for any new passages
                 foreach (string check in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
                 {
                     WinState.EndgameID id = new WinState.EndgameID(check, false);
-
-                    SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
 
                     // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
                     if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
@@ -143,6 +143,8 @@ namespace RainWorldRandomizer
                         }
                     }
                 }
+
+                if (ModManager.Watcher) WatcherIntegration.CheckDetection.Hooks.DetectStaticWarpPoint(saveState);
             }
 
             orig(self, ID);
