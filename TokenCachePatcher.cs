@@ -539,17 +539,28 @@ namespace RainWorldRandomizer
                 {
                     if (worldFile[j] == "" || worldFile[j].StartsWith("//")) continue;
                     string[] split = Regex.Split(worldFile[j], " : ");
-                    SlugcatStats.Name slugcat = new SlugcatStats.Name(split[0]);
+
+                    List<SlugcatStats.Name> slugcats;
+                    // Pull slugcats out of parenthesis if present
+                    Match match = Regex.Match(split[0], "\\((.+)\\)");
+                    if (match.Success)
+                    {
+                        slugcats = Regex.Split(match.Groups[1].Value, ",").Select(s => new SlugcatStats.Name(s)).ToList();
+                    }
+                    else
+                    {
+                        slugcats = Regex.Split(split[0], ",").Select(s => new SlugcatStats.Name(s)).ToList();
+                    }
 
                     if (split[1] == "EXCLUSIVEROOM")
                     {
                         if (exclusiveRooms.ContainsKey(split[2]))
                         {
-                            exclusiveRooms[split[2]].Add(slugcat);
+                            exclusiveRooms[split[2]].AddRange(slugcats);
                         }
                         else
                         {
-                            exclusiveRooms.Add(split[2], new List<SlugcatStats.Name> { slugcat });
+                            exclusiveRooms.Add(split[2], slugcats);
                         }
                         continue;
                     }
@@ -558,11 +569,11 @@ namespace RainWorldRandomizer
                     {
                         if (hiddenRooms.ContainsKey(split[2]))
                         {
-                            hiddenRooms[split[2]].Add(slugcat);
+                            hiddenRooms[split[2]].AddRange(slugcats);
                         }
                         else
                         {
-                            hiddenRooms.Add(split[2], new List<SlugcatStats.Name> { slugcat });
+                            hiddenRooms.Add(split[2], slugcats);
                         }
                         continue;
                     }
@@ -570,42 +581,42 @@ namespace RainWorldRandomizer
                     // CRS feature
                     if (split[1] == "REPLACEROOM")
                     {
-                        List<SlugcatStats.Name> releventScugs = new List<SlugcatStats.Name>();
+                        List<SlugcatStats.Name> replaceScugs = new List<SlugcatStats.Name>();
                         // Invert selection if needed
                         if (split[0].StartsWith("X-"))
                         {
                             // TODO: REPLACEROOM can input multiple slugcats, need to account for that
-                            slugcat = new SlugcatStats.Name(split[0].Substring(2));
+                            slugcats[0] = new SlugcatStats.Name(slugcats[0].value.Substring(2));
                             foreach (string value in ExtEnum<SlugcatStats.Name>.values.entries)
                             {
                                 SlugcatStats.Name name = new SlugcatStats.Name(value);
-                                if ((!ModManager.MSC || name != MoreSlugcatsEnums.SlugcatStatsName.Slugpup) && name != slugcat)
+                                if ((!ModManager.MSC || name != MoreSlugcatsEnums.SlugcatStatsName.Slugpup) && !slugcats.Contains(name))
                                 {
-                                    releventScugs.Add(name);
+                                    replaceScugs.Add(name);
                                 }
                             }
                         }
                         else
                         {
-                            releventScugs.Add(slugcat);
+                            replaceScugs.AddRange(slugcats);
                         }
 
                         if (hiddenRooms.ContainsKey(split[2]))
                         {
-                            hiddenRooms[split[2]].Union(releventScugs);
+                            hiddenRooms[split[2]].Union(replaceScugs);
                         }
                         else
                         {
-                            hiddenRooms.Add(split[2], releventScugs);
+                            hiddenRooms.Add(split[2], replaceScugs);
                         }
 
                         if (exclusiveRooms.ContainsKey(split[3]))
                         {
-                            exclusiveRooms[split[3]].Union(releventScugs);
+                            exclusiveRooms[split[3]].Union(replaceScugs);
                         }
                         else
                         {
-                            exclusiveRooms.Add(split[3], releventScugs);
+                            exclusiveRooms.Add(split[3], replaceScugs);
                         }
 
                         // Add the replacing room to a seperate list to be added later
@@ -636,6 +647,12 @@ namespace RainWorldRandomizer
                     string[] split = Regex.Split(worldFile[k], " : ");
                     string room = split[0];
                     string[] connections = Regex.Split(split[1], ", ");
+
+                    // Currently just ignoring slugcat filters in room connections
+                    if (room.StartsWith("(") && room.Contains(")"))
+                    {
+                        room = room.Substring(room.IndexOf(")") + 1);
+                    }
 
                     // Primitive solution. Does it work??
                     if (exclusiveRooms.ContainsKey(room))
