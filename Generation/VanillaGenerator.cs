@@ -975,7 +975,14 @@ namespace RainWorldRandomizer.Generation
                 SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Spear].Add("Pearl-SU_filt", new OptionAccessRule("RandomizeSpawnLocation", true));
 
                 // Token cache fails to filter this pearl to only Past GW
-                GlobalRuleOverrides.Add("Pearl-MS", new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore));
+                GlobalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(new AccessRule[]
+                {
+                    new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore),
+                    new RegionAccessRule("GW")
+                }, CompoundAccessRule.CompoundOperation.All));
+
+                // This chatlog is also in SB ravine
+                GlobalRuleOverrides.Add("Broadcast-Chatlog_SB0", subRavineRule);
 
                 // Rubicon isn't blocked by a gate so it never gets marked as accessible
                 // Remove Rubicon from requirements and substitute Karma 10

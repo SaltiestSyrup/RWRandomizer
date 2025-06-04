@@ -164,7 +164,7 @@ namespace RainWorldRandomizer
 
             for (int j = 0; j < howMany; j++)
             {
-                if (generators[j].CurrentStage == VanillaGenerator.GenerationStep.FailedGen)
+                if (genTask[j].Exception != null)
                 {
                     Plugin.Log.LogError($"Generation failure with Exception:");
                     Plugin.Log.LogError(genTask[j].Exception);
