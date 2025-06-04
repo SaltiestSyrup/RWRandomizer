@@ -437,12 +437,33 @@ namespace RainWorldRandomizer.Generation
                         if (rules.Count > 1) rule = new CompoundAccessRule(rules.ToArray(), CompoundAccessRule.CompoundOperation.Any);
                         else rule = rules[0];
 
+                        // TODO: Add effect detection for Batflies and Neurons
+                        // This is temporary until there's a way to detect batflies in a region
+                        if (data.crits[0] == CreatureTemplate.Type.Fly)
+                        {
+                            rule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
+                        }
+                        // TODO: Add support for creatures that are PlacedObjects
+                        else if (data.crits[0] == CreatureTemplate.Type.Hazer)
+                        {
+                            rule = new CompoundAccessRule(new AccessRule[]
+                            {
+                                new RegionAccessRule("LF"),
+                                new RegionAccessRule("DS"),
+                                new RegionAccessRule("GW"),
+                                new RegionAccessRule("HI"),
+                                new RegionAccessRule("SL")
+                            }, CompoundAccessRule.CompoundOperation.Any);
+                        }
+
                         allGourmRules.Add(rule);
                         locations.Add(new Location($"FoodQuest-{data.crits[0].value}", Location.Type.Food, rule));
                     }
                     else
                     {
                         AccessRule rule = new ObjectAccessRule(data.type);
+                        // Also temporary
                         if (data.type == AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)
                         {
                             rule = AccessRuleConstants.NeuronAccess;
@@ -451,9 +472,9 @@ namespace RainWorldRandomizer.Generation
                         allGourmRules.Add(rule);
                         locations.Add(new Location($"FoodQuest-{data.type.value}", Location.Type.Food, rule));
                     }
-                    locations.Add(new Location("Passage-Gourmand", Location.Type.Passage,
-                        new CompoundAccessRule(allGourmRules.ToArray(), CompoundAccessRule.CompoundOperation.All)));
                 }
+                locations.Add(new Location("Passage-Gourmand", Location.Type.Passage,
+                        new CompoundAccessRule(allGourmRules.ToArray(), CompoundAccessRule.CompoundOperation.All)));
             }
 
             // Create Special locations
@@ -915,20 +936,6 @@ namespace RainWorldRandomizer.Generation
             }, CompoundAccessRule.CompoundOperation.All);
             GlobalRuleOverrides.Add("Echo-SB", subRavineRule);
             GlobalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
-
-            // TODO: Add effect detection for Batflies and Neurons
-            // This is temporary until there's a way to detect batflies in a region
-            GlobalRuleOverrides.Add("FoodQuest-Fly", new CompoundAccessRule(AccessRuleConstants.Regions,
-                CompoundAccessRule.CompoundOperation.AtLeast, 5));
-            // TODO: Add support for creatures that are PlacedObjects
-            GlobalRuleOverrides.Add("FoodQuest-Hazer", new CompoundAccessRule(new AccessRule[]
-            {
-                new RegionAccessRule("LF"),
-                new RegionAccessRule("DS"),
-                new RegionAccessRule("GW"),
-                new RegionAccessRule("HI"),
-                new RegionAccessRule("SL")
-            }, CompoundAccessRule.CompoundOperation.Any));
 
             // MSC specific rules
             if (ModManager.MSC)
