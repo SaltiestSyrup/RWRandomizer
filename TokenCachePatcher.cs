@@ -42,6 +42,17 @@ namespace RainWorldRandomizer
             IL.RainWorld.BuildTokenCache -= ILBuildTokenCache;
         }
 
+        private static void OnProcessManagerUpdate(On.ProcessManager.orig_Update orig, ProcessManager self, float deltaTime)
+        {
+            orig(self, deltaTime);
+
+            if (self.finalizeModsStep == 1
+                && self.recomputeTokenRegions != null)
+            {
+
+            }
+        }
+
         /// <summary>
         /// Various fixes to BuildTokenCache, making it more accurate
         /// </summary>
@@ -222,6 +233,7 @@ namespace RainWorldRandomizer
             c2.Emit(OpCodes.Ldarg_2);
             c2.EmitDelegate<Action<string>>((region) =>
             {
+                region = region.ToLowerInvariant();
                 lock (regionObjects)
                 {
                     regionObjects[region] = new List<AbstractPhysicalObject.AbstractObjectType>();
@@ -255,6 +267,7 @@ namespace RainWorldRandomizer
             // Add placedObject type to set
             void AddToRegionObjects(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, PlacedObject placedObject)
             {
+                region = region.ToLowerInvariant();
                 if (ExtEnumBase.TryParse(typeof(AbstractPhysicalObject.AbstractObjectType), placedObject.type.value, true, out ExtEnumBase t))
                 {
                     AbstractPhysicalObject.AbstractObjectType objectType = (AbstractPhysicalObject.AbstractObjectType)t;
@@ -304,17 +317,46 @@ namespace RainWorldRandomizer
             c2.Emit(OpCodes.Ldarg_2);
             c2.EmitDelegate<Action<string, string>>((path, region) =>
             {
+                region = region.ToLowerInvariant();
+                // This *should* already be loaded but sanity check just in case
+                Dictionary<string, List<SlugcatStats.Name>> roomAccess = GetRoomAccessibility(region);
                 StringBuilder text = new StringBuilder();
+
+                // Objects
                 for (int i = 0; i < regionObjects[region].Count; i++)
                 {
                     string filter = string.Join("|", regionObjectsAccessibility[region][i]);
+                    if (filter.Equals("")) continue;
                     text.Append($"{regionObjects[region][i]}~{filter}");
                     if (i != regionObjects[region].Count - 1)
                     {
                         text.Append(",");
                     }
                 }
-                File.WriteAllText($"{path}randomizercache{region.ToLowerInvariant()}.txt", text.ToString());
+                text.AppendLine();
+
+                // Creatures
+                for (int j = 0; j < regionCreatures[region].Count; j++)
+                {
+                    string filter = string.Join("|", regionCreaturesAccessibility[region][j]);
+                    if (filter.Equals("")) continue;
+                    text.Append($"{regionCreatures[region][j]}~{filter}");
+                    if (j != regionCreatures[region].Count - 1)
+                    {
+                        text.Append(",");
+                    }
+                }
+                text.AppendLine();
+
+                // Rooms
+                foreach (KeyValuePair<string, List<SlugcatStats.Name>> room in roomAccess)
+                {
+                    string filter = string.Join("|", room.Value);
+                    if (filter.Equals("")) continue;
+                    text.Append($"{room.Key}~{filter},");
+                }
+                text.Remove(text.Length - 1, 1); // Remove trailing comma
+                File.WriteAllText($"{path}randomizercache{region}.txt", text.ToString());
             });
             #endregion
         }
@@ -323,16 +365,14 @@ namespace RainWorldRandomizer
         {
             orig(self);
             regionObjects.Clear();
+            regionCreatures.Clear();
+            ClearRoomAccessibilities();
 
             string[] regions = File.ReadAllLines(AssetManager.ResolveFilePath("World" + Path.DirectorySeparatorChar.ToString() + "regions.txt"));
             foreach (string region in regions)
             {
-                // Need to trigger a load for creature accessibility
-                _ = GetRoomAccessibility(region);
+                string regionLower = region.ToLowerInvariant();
 
-                // Load object accessibilities from file
-                regionObjects[region] = new List<AbstractPhysicalObject.AbstractObjectType>();
-                regionObjectsAccessibility[region] = new List<List<SlugcatStats.Name>>();
                 string path = AssetManager.ResolveFilePath(string.Concat(new string[]
                 {
                     "World",
@@ -340,22 +380,54 @@ namespace RainWorldRandomizer
                     "indexmaps",
                     Path.DirectorySeparatorChar.ToString(),
                     "randomizercache",
-                    region.ToLowerInvariant(),
+                    regionLower,
                     ".txt"
                 }));
 
-                if (File.Exists(path))
+                if (!File.Exists(path)) return;
+
+                string[] parts = File.ReadAllLines(path);
+
+                roomAccessibilities[regionLower] = new Dictionary<string, List<SlugcatStats.Name>>();
+                regionObjects[regionLower] = new List<AbstractPhysicalObject.AbstractObjectType>();
+                regionObjectsAccessibility[regionLower] = new List<List<SlugcatStats.Name>>();
+                regionCreatures[regionLower] = new List<CreatureTemplate.Type>();
+                regionCreaturesAccessibility[regionLower] = new List<List<SlugcatStats.Name>>();
+                try
                 {
-                    string file = File.ReadAllText(path);
-
-                    string[] entries = Regex.Split(file, ",");
-
-                    foreach (string entry in entries)
+                    // Objects
+                    string[] objectEntries = parts[0].Split(',');
+                    foreach (string entry in objectEntries)
                     {
+                        if (entry.Equals("")) continue; // This should only happen if there are no entries
                         string[] split = Regex.Split(entry, "~");
-                        regionObjects[region].Add(new AbstractPhysicalObject.AbstractObjectType(split[0]));
-                        regionObjectsAccessibility[region].Add(split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
+                        regionObjects[regionLower].Add(new AbstractPhysicalObject.AbstractObjectType(split[0]));
+                        regionObjectsAccessibility[regionLower].Add(split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
                     }
+
+                    // Creatures
+                    string[] creatureEntries = parts[1].Split(',');
+                    foreach (string entry in creatureEntries)
+                    {
+                        if (entry.Equals("")) continue;
+                        string[] split = Regex.Split(entry, "~");
+                        regionCreatures[regionLower].Add(new CreatureTemplate.Type(split[0]));
+                        regionCreaturesAccessibility[regionLower].Add(split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
+                    }
+
+                    // Rooms
+                    string[] roomEntries = parts[2].Split(',');
+                    foreach (string entry in roomEntries)
+                    {
+                        if (entry.Equals("")) continue;
+                        string[] split = Regex.Split(entry, "~");
+                        roomAccessibilities[regionLower].Add(split[0], split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
+                    }
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError($"Failed to load randomizer cache data for region {region}. File is malformed? \n{e}");
+                    ClearRoomAccessibilities();
                 }
             }
         }
@@ -392,11 +464,10 @@ namespace RainWorldRandomizer
         /// </summary>
         private static Dictionary<string, List<SlugcatStats.Name>> LoadRoomAccessibility(string regionName)
         {
-            string regionUpper = regionName.ToUpperInvariant();
             lock (regionCreatures)
             {
-                regionCreatures[regionUpper] = new List<CreatureTemplate.Type>();
-                regionCreaturesAccessibility[regionUpper] = new List<List<SlugcatStats.Name>>();
+                regionCreatures[regionName] = new List<CreatureTemplate.Type>();
+                regionCreaturesAccessibility[regionName] = new List<List<SlugcatStats.Name>>();
             }
 
             string worldFilePath = AssetManager.ResolveFilePath(string.Concat(new string[]
@@ -503,6 +574,7 @@ namespace RainWorldRandomizer
                         // Invert selection if needed
                         if (split[0].StartsWith("X-"))
                         {
+                            // TODO: REPLACEROOM can input multiple slugcats, need to account for that
                             slugcat = new SlugcatStats.Name(split[0].Substring(2));
                             foreach (string value in ExtEnum<SlugcatStats.Name>.values.entries)
                             {
@@ -672,7 +744,7 @@ namespace RainWorldRandomizer
                         }
                         
                         if (firstCreature == null) continue;
-                        AddCreatureToCache(regionUpper, firstCreature, relevantSlugcats);
+                        AddCreatureToCache(regionName, firstCreature, relevantSlugcats);
                         continue;
                     }
 
@@ -693,7 +765,7 @@ namespace RainWorldRandomizer
 
                     foreach (CreatureTemplate.Type creature in creatureStrings)
                     {
-                        AddCreatureToCache(regionUpper, creature, relevantSlugcats);
+                        AddCreatureToCache(regionName, creature, relevantSlugcats);
                     }
                 }
             }
