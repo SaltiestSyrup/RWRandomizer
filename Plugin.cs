@@ -138,7 +138,7 @@ namespace RainWorldRandomizer
                     ImprovedCollectibleTrackerCompat.ApplyHooks();
                 }
 
-                if (ModManager.Watcher) WatcherIntegration.EntryPoint.Apply();
+                WatcherIntegration.EntryPoint.Apply();
             }
             catch (Exception e)
             {
@@ -176,7 +176,7 @@ namespace RainWorldRandomizer
                 //On.RainWorld.LoadModResources -= LoadResources;
                 //On.RainWorld.UnloadResources -= UnloadResources;
 
-                if (ModManager.Watcher) WatcherIntegration.EntryPoint.Unapply();
+                WatcherIntegration.EntryPoint.Unapply();
             }
             catch (Exception e)
             {

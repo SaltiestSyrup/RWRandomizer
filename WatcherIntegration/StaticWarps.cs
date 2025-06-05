@@ -33,7 +33,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 orig(self);
                 if (self.KeyName() is string keyName
-                    && Items.CollectedStaticKeys?.Contains(keyName) == false 
+                    && Items.CollectedStaticKeys?.Contains(keyName) != true 
                     && self.Data.nonDynamicWarpPoint
                     && self.warpTear is Watcher.WarpTear tear
                     && tear.openAnimation < 0.1f) tear.openAnimation = 0f;

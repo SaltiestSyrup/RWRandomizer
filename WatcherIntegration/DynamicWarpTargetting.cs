@@ -9,6 +9,16 @@ namespace RainWorldRandomizer.WatcherIntegration
 {
     internal static class DynamicWarpTargetting
     {
+        internal enum WarpSourceKind { Other, Normal, Throne, Permarotted, Unrottable }
+        internal static WarpSourceKind GetWarpSourceKind(string room)
+        {
+            if (room.ToUpperInvariant().StartsWith("WORA_THRONE")) return WarpSourceKind.Throne;
+            string region = room.Split('_')[0];
+            if (Region.IsSentientRotRegion(region)) return WarpSourceKind.Permarotted;
+            if (Region.HasSentientRotResistance(region)) return WarpSourceKind.Unrottable;
+            return WarpSourceKind.Normal;
+        }
+
         internal static class Hooks
         {
             internal static void Apply()
@@ -49,51 +59,56 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static List<string> PredetermineOrFilter(On.Watcher.WarpPoint.orig_GetAvailableDynamicWarpTargets orig, AbstractRoom room, bool spreadingRot)
             {
                 failureReason = null;
-                string region = room.name.Region();
-                bool isWORA = region == "wora";
-                DynWarpMode relevantMode = isWORA ? modeThrone : modeNormal;
-                if (relevantMode == DynWarpMode.Ignored) return orig(room, spreadingRot); // shortcut
-                string key = null;
+                string roomName = room.name.ToUpperInvariant();
+                string region = roomName.Region();
+                WarpSourceKind sourceKind = GetWarpSourceKind(roomName);
+                DynWarpMode relevantMode = sourceKind == WarpSourceKind.Throne ? modeThrone : modeNormal;
 
-                // Warping from WORA in Predetermined mode uses the room's name as the key.
-                if (isWORA) key = relevantMode == DynWarpMode.Predetermined ? room.name.ToLowerInvariant() : null;
-                // Warping from elsewhere in PUS mode requires the dynamic key.  Without it, return an empty list to fail the warp.
-                else if (relevantMode == DynWarpMode.PredeterminedUnlockableSource && !Items.CollectedDynamicKeys.Contains(region))
+                // For a predetermined mode, we return a single room early instead of running the original method.
+                if (relevantMode.Predetermined())
                 {
-                    failureReason = FailureReason.MissingSourceKey;
-                    return new List<string>();
-                }
-                // Warping from elsewhere in PUS mode with the dynamic key or in P mode uses the region as the key.
-                else if (relevantMode.Predetermined()) key = region;
-                // If the key was set from a previous step, use it to get the predetermined target and make that our only possible target.
-                if (predetermination.TryGetValue(key, out string dest)) return new List<string> { dest };
+                    // If we need the key but do not have it, set a failure reason and return empty.
+                    if (relevantMode == DynWarpMode.PredeterminedUnlockableSource && !Items.CollectedDynamicKeys.Contains(region))
+                    {
+                        failureReason = FailureReason.MissingSourceKey;
+                        return new List<string> { };
+                    }
+                    // Specifically in the Throne, we need to index the mapping with the room; otherwise, index with the region.
+                    if (predetermination.TryGetValue(sourceKind == WarpSourceKind.Throne ? roomName : region, out string destRoom))
+                    {
+                        return new List<string> { destRoom };
+                    }
 
-                // Otherwise, get the list of candidate targets as usual, then filter depending on mode.
+                    // Ideally this failure state never happens - it would imply either custom regions,
+                    // some sort of generation failure, or incomplete slot data.
+                    failureReason = FailureReason.MissingPredetermination;
+                    return new List<string> { };
+                }
+
+                // For a non-predetermined mode, get the ordinarily valid candidate targets.
                 List<string> candidates = orig(room, spreadingRot);
 
-                // If the filtering step removes all remaining targets,
-                // we want a unique message to indicate that Archipelago is the reason for warp failure.
-                // But if, for some reason, there aren't any valid candidates to begin with,
-                // that's some other problem that is causing the paths to overflow beyond measure,
-                // and we don't want to override that failure message.
-                if (candidates.Count > 0)
+                // If, for some reason, there are no valid candidate to begin with,
+                // something else has gone wrong and we don't need to bother with a custom failure reason.
+                if (candidates.Count == 0) return candidates;
+                Plugin.Log.LogDebug($"Original candidates for dynamic warp: [{string.Join(",", candidates)}]");
+
+                // Otherwise, we may need to filter this list, depending on the warp mode.
+                IEnumerable<string> regionFilter = null;
+                FailureReason? latentFR = null;
+                switch (relevantMode)
                 {
-                    switch (relevantMode)
-                    {
-                        case DynWarpMode.Visited: 
-                            candidates = candidates.Where(x => visitedRegions.Contains(x.Region())).ToList();
-                            if (candidates.Count == 0) failureReason = FailureReason.NoOtherVisitedRegions;
-                            break;
-                        case DynWarpMode.UnlockableTargetPool: 
-                            candidates = candidates.Where(x => Items.CollectedDynamicKeys.Contains(x.Region())).ToList();
-                            if (candidates.Count == 0) failureReason = FailureReason.NoUsableDynamicKeys;
-                            break;
-                        case DynWarpMode.StaticTargetPool:
-                            candidates = candidates.Where(x => targetPool.Contains(x.Region())).ToList();
-                            if (candidates.Count == 0) failureReason = FailureReason.NoValidStaticPoolTargets;
-                            break;
-                    }
+                    case DynWarpMode.Visited: regionFilter = visitedRegions; latentFR = FailureReason.NoOtherVisitedRegions; break;
+                    case DynWarpMode.StaticTargetPool: regionFilter = targetPool; latentFR = FailureReason.NoValidStaticPoolTargets; break;
+                    case DynWarpMode.UnlockableTargetPool: regionFilter = Items.CollectedDynamicKeys; latentFR = FailureReason.NoUsableDynamicKeys; break;
                 }
+
+                if (regionFilter != null)
+                {
+                    candidates = candidates.Where(x => regionFilter.Contains(x.Region())).ToList();
+                    if (candidates.Count == 0) failureReason = latentFR;
+                }
+                Plugin.Log.LogDebug($"Filtered candidates for dynamic warp: [{string.Join(",", candidates)}]");
                 return candidates;
             }
 
@@ -105,9 +120,9 @@ namespace RainWorldRandomizer.WatcherIntegration
                 ILCursor c = new ILCursor(il);
 
                 // Store a reference to the visited region list so we don't waste time recomputing it later.
-                c.GotoNext(MoveType.Before, x => x.MatchLdloc(4));  // List<string> list3
+                c.GotoNext(MoveType.After, x => x.MatchLdloc(4));  // List<string> list3
                 c.Emit(OpCodes.Dup);
-                c.Emit(OpCodes.Stsfld, typeof(Hooks).GetField(nameof(visitedRegions)));
+                c.Emit(OpCodes.Stsfld, typeof(Hooks).GetField(nameof(visitedRegions), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static));
                 //c.EmitDelegate<Action<List<string>>>(StoreVisitedRegions);
 
                 // Comparative branch interception.  Waive Ripple requirement if that setting is enabled.

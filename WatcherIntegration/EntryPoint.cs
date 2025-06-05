@@ -13,6 +13,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             CheckDetection.Hooks.Apply();
             DynamicWarpTargetting.Hooks.Apply();
             StaticWarps.Hooks.Apply();
+            Plugin.Log.LogDebug("Watcher integration hooks applied");
         }
 
         internal static void Unapply()
