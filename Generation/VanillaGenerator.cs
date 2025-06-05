@@ -443,23 +443,18 @@ namespace RainWorldRandomizer.Generation
                     else
                     {
                         AccessRule rule = new ObjectAccessRule(data.type);
-                        if (data.type == AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)
-                        {
-                            rule = AccessRuleConstants.NeuronAccess;
-                        }
-
                         allGourmRules.Add(rule);
                         locations.Add(new Location($"FoodQuest-{data.type.value}", Location.Type.Food, rule));
                     }
-                    locations.Add(new Location("Passage-Gourmand", Location.Type.Passage,
-                        new CompoundAccessRule(allGourmRules.ToArray(), CompoundAccessRule.CompoundOperation.All)));
                 }
+                locations.Add(new Location("Passage-Gourmand", Location.Type.Passage,
+                        new CompoundAccessRule(allGourmRules.ToArray(), CompoundAccessRule.CompoundOperation.All)));
             }
 
             // Create Special locations
             if (RandoOptions.UseSpecialChecks)
             {
-                locations.Add(new Location("Eat_Neuron", Location.Type.Story, AccessRuleConstants.NeuronAccess));
+                locations.Add(new Location("Eat_Neuron", Location.Type.Story, new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)));
 
                 switch (slugcat.value)
                 {
@@ -915,20 +910,6 @@ namespace RainWorldRandomizer.Generation
             }, CompoundAccessRule.CompoundOperation.All);
             GlobalRuleOverrides.Add("Echo-SB", subRavineRule);
             GlobalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
-
-            // TODO: Add effect detection for Batflies and Neurons
-            // This is temporary until there's a way to detect batflies in a region
-            GlobalRuleOverrides.Add("FoodQuest-Fly", new CompoundAccessRule(AccessRuleConstants.Regions,
-                CompoundAccessRule.CompoundOperation.AtLeast, 5));
-            // TODO: Add support for creatures that are PlacedObjects
-            GlobalRuleOverrides.Add("FoodQuest-Hazer", new CompoundAccessRule(new AccessRule[]
-            {
-                new RegionAccessRule("LF"),
-                new RegionAccessRule("DS"),
-                new RegionAccessRule("GW"),
-                new RegionAccessRule("HI"),
-                new RegionAccessRule("SL")
-            }, CompoundAccessRule.CompoundOperation.Any));
 
             // MSC specific rules
             if (ModManager.MSC)
