@@ -1,4 +1,4 @@
-﻿using MonoMod.Utils;
+using MonoMod.Utils;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
@@ -436,6 +436,26 @@ namespace RainWorldRandomizer.Generation
                         AccessRule rule;
                         if (rules.Count > 1) rule = new CompoundAccessRule(rules.ToArray(), CompoundAccessRule.CompoundOperation.Any);
                         else rule = rules[0];
+
+                        // TODO: Add effect detection for Batflies and Neurons
+                        // This is temporary until there's a way to detect batflies in a region
+                        if (data.crits[0] == CreatureTemplate.Type.Fly)
+                        {
+                            rule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
+                        }
+                        // TODO: Add support for creatures that are PlacedObjects
+                        else if (data.crits[0] == CreatureTemplate.Type.Hazer)
+                        {
+                            rule = new CompoundAccessRule(new AccessRule[]
+                            {
+                                new RegionAccessRule("LF"),
+                                new RegionAccessRule("DS"),
+                                new RegionAccessRule("GW"),
+                                new RegionAccessRule("HI"),
+                                new RegionAccessRule("SL")
+                            }, CompoundAccessRule.CompoundOperation.Any);
+                        }
 
                         allGourmRules.Add(rule);
                         locations.Add(new Location($"FoodQuest-{data.crits[0].value}", Location.Type.Food, rule));
