@@ -22,6 +22,6 @@ namespace RainWorldRandomizer.WatcherIntegration
             DynamicWarpTargetting.Hooks.Unapply();
             StaticWarps.Hooks.Unapply();
         }
-        internal static string Region(this string self) => self?.Split('_')[0].ToLowerInvariant();
+        internal static string Region(this string self) => self?.Split('_')[0].ToUpperInvariant();
     }
 }

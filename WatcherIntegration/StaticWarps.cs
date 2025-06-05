@@ -13,7 +13,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             string region = self.room.world.region.name;
             if (Region.IsSentientRotRegion(region) || region == "WRSA" || region == "WAUA") return null;
             string[] endpoints = new string[] { region.ToUpperInvariant(), self.Data.destRegion.ToUpperInvariant() };
-            return $"StaticWarp-{string.Join("-", endpoints.OrderBy(x => x))}";
+            return string.Join("-", endpoints.OrderBy(x => x));
         }
 
         internal static class Hooks

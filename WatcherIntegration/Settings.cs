@@ -59,7 +59,6 @@ namespace RainWorldRandomizer.WatcherIntegration
             Settings.targetPool = pool.Select(x => x.ToLowerInvariant());
             Settings.predetermination = predetermination;
             Settings.rippleReq = rippleReq;
-            Items.CollectedDynamicKeys = new HashSet<string>();
         }
     }
 }

@@ -162,6 +162,7 @@ namespace RainWorldRandomizer
 
             Plugin.UpdateKarmaLocks();
             self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
+            WatcherIntegration.Items.UpdateRipple();
 
             // Ensure found state triggers are set
             self.GetStorySession.saveState.theGlow = Plugin.RandoManager.GivenNeuronGlow;
