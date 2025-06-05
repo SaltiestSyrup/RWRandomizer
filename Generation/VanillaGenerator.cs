@@ -1,4 +1,4 @@
-﻿using MonoMod.Utils;
+using MonoMod.Utils;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
@@ -463,12 +463,6 @@ namespace RainWorldRandomizer.Generation
                     else
                     {
                         AccessRule rule = new ObjectAccessRule(data.type);
-                        // Also temporary
-                        if (data.type == AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)
-                        {
-                            rule = AccessRuleConstants.NeuronAccess;
-                        }
-
                         allGourmRules.Add(rule);
                         locations.Add(new Location($"FoodQuest-{data.type.value}", Location.Type.Food, rule));
                     }
@@ -480,7 +474,7 @@ namespace RainWorldRandomizer.Generation
             // Create Special locations
             if (RandoOptions.UseSpecialChecks)
             {
-                locations.Add(new Location("Eat_Neuron", Location.Type.Story, AccessRuleConstants.NeuronAccess));
+                locations.Add(new Location("Eat_Neuron", Location.Type.Story, new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)));
 
                 switch (slugcat.value)
                 {
