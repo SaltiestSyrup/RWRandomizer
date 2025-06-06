@@ -22,6 +22,8 @@ namespace RainWorldRandomizer
         public static Dictionary<string, List<AbstractPhysicalObject.AbstractObjectType>> regionObjects = new Dictionary<string, List<AbstractPhysicalObject.AbstractObjectType>>();
         public static Dictionary<string, List<List<SlugcatStats.Name>>> regionObjectsAccessibility = new Dictionary<string, List<List<SlugcatStats.Name>>>();
 
+        public static bool hasLoadedCache = false;
+
         public static void ApplyHooks()
         {
             On.RainWorld.ReadTokenCache += OnReadTokenCache;
@@ -329,6 +331,7 @@ namespace RainWorldRandomizer
                 }
                 text.Remove(text.Length - 1, 1); // Remove trailing comma
                 File.WriteAllText($"{path}randomizercache{region}.txt", text.ToString());
+                hasLoadedCache = true;
             }
             #endregion
 
@@ -483,6 +486,8 @@ namespace RainWorldRandomizer
                     ClearRoomAccessibilities();
                 }
             }
+
+            hasLoadedCache = true;
         }
 
         /// <summary>
