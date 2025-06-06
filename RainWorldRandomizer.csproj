@@ -136,6 +136,7 @@
     <Compile Include="TrapsHandler.cs" />
     <Compile Include="Unlock.cs" />
     <Compile Include="WatcherIntegration\CheckDetection.cs" />
+    <Compile Include="WatcherIntegration\Completion.cs" />
     <Compile Include="WatcherIntegration\DynamicWarpTargetting.cs" />
     <Compile Include="WatcherIntegration\EntryPoint.cs" />
     <Compile Include="WatcherIntegration\Items.cs" />

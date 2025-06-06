@@ -17,7 +17,6 @@ namespace RainWorldRandomizer.WatcherIntegration
                 IL.Room.Loaded += SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat += LetThemWander;
                 On.SlugcatStats.SlugcatStoryRegions += SlugcatStats_SlugcatStoryRegions;
-                On.ProcessManager.RequestMainProcessSwitch_ProcessID += DetectCompletion;
             }
 
             internal static void Unapply()
@@ -27,20 +26,6 @@ namespace RainWorldRandomizer.WatcherIntegration
                 IL.Room.Loaded -= SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat -= LetThemWander;
                 On.SlugcatStats.SlugcatStoryRegions -= SlugcatStats_SlugcatStoryRegions;
-                On.ProcessManager.RequestMainProcessSwitch_ProcessID -= DetectCompletion;
-            }
-
-            /// <summary>Detect completion conditions when switching to the ending slideshows.</summary>
-            private static void DetectCompletion(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID orig, ProcessManager self, ProcessManager.ProcessID ID)
-            {
-                if (ID == ProcessManager.ProcessID.SlideShow && Plugin.RandoManager is ManagerArchipelago managerAP && !managerAP.gameCompleted)
-                {
-                    if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingRot)
-                        managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SentientRot);
-                    else if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingSpinningTop)
-                        managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SpinningTop);
-                }
-                orig(self, ID);
             }
 
             internal static List<string> watcherStoryRegions = new List<string> { 

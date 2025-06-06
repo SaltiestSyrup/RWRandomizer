@@ -16,6 +16,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static IDictionary<string, string> predetermination;
         internal static RippleReqMode rippleReq;
         internal static bool spinningTopKeys;
+        internal static long rottedRegionTarget;
 
         internal static bool Predetermined(this DynWarpMode mode) => mode == DynWarpMode.StaticPredetermined || mode == DynWarpMode.UnlockablePredetermined;
         internal static bool Unlockable(this DynWarpMode mode) => mode == DynWarpMode.UnlockablePool || mode == DynWarpMode.UnlockablePredetermined;
@@ -48,13 +49,14 @@ namespace RainWorldRandomizer.WatcherIntegration
                     data.GetArray<string>("warp_pool") ?? new List<string> { },
                     data.GetDict("predetermined_warps")?.SelectStringKeys() ?? new Dictionary<string, string> { },
                     (RippleReqMode)data.GetSimple("dynamic_warp_ripple_req", 0L),
-                    data.GetSimple("spinning_top_keys", 0L) == 2L
+                    data.GetSimple("spinning_top_keys", 0L) == 2L,
+                    data.GetSimple("rotted_region_target", 18L)
                     );
             }
             catch (Exception e) { Plugin.Log.LogError(e); }
         }
 
-        internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, RippleReqMode rippleReq, bool spinningTopKeys)
+        internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, RippleReqMode rippleReq, bool spinningTopKeys, long rottedRegionTarget)
         {
             Settings.modeNormal = modeNormal;
             Settings.modeThrone = modeThrone;
@@ -62,6 +64,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             Settings.predetermination = predetermination;
             Settings.rippleReq = rippleReq;
             Settings.spinningTopKeys = spinningTopKeys;
+            Settings.rottedRegionTarget = rottedRegionTarget;
         }
     }
 }

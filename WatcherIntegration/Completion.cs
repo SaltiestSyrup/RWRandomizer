@@ -1,0 +1,51 @@
+﻿using MonoMod.RuntimeDetour;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+using MWSD = MiscWorldSaveData;
+
+namespace RainWorldRandomizer.WatcherIntegration
+{
+    internal static class Completion
+    {
+        internal static class Hooks
+        {
+            internal static Hook rottedRegionTargetHook;
+
+            internal static void Apply()
+            {
+                On.ProcessManager.RequestMainProcessSwitch_ProcessID += DetectCompletion;
+
+                rottedRegionTargetHook = new Hook(
+                    typeof(MWSD).GetProperty(nameof(MWSD.remainingRegionsForSentientRotEnding)).GetGetMethod(), 
+                    typeof(Hooks).GetMethod(nameof(ApplyRottedRegionTarget), EntryPoint.bfAll));
+            }
+
+            internal static void Unapply()
+            {
+                On.ProcessManager.RequestMainProcessSwitch_ProcessID -= DetectCompletion;
+                rottedRegionTargetHook.Undo();
+            }
+
+            /// <summary>Reduce the number of regions needed for the Sentient Rot ending if that setting requires it.</summary>
+            internal static int ApplyRottedRegionTarget(Func<MiscWorldSaveData, int> orig, MiscWorldSaveData self) 
+                => Mathf.Max(orig(self) - 18 + (int)Settings.rottedRegionTarget, 0);
+
+            /// <summary>Detect completion conditions when switching to the ending slideshows.</summary>
+            private static void DetectCompletion(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID orig, ProcessManager self, ProcessManager.ProcessID ID)
+            {
+                if (ID == ProcessManager.ProcessID.SlideShow && Plugin.RandoManager is ManagerArchipelago managerAP && !managerAP.gameCompleted)
+                {
+                    if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingRot)
+                        managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SentientRot);
+                    else if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingSpinningTop)
+                        managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SpinningTop);
+                }
+                orig(self, ID);
+            }
+        }
+    }
+}

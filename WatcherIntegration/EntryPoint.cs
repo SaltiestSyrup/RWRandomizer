@@ -1,18 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace RainWorldRandomizer.WatcherIntegration
 {
     internal static class EntryPoint
     {
+        internal static BindingFlags bfAll = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+
         internal static void Apply()
         {
             CheckDetection.Hooks.Apply();
             DynamicWarpTargetting.Hooks.Apply();
             StaticWarps.Hooks.Apply();
+            Completion.Hooks.Apply();
             Plugin.Log.LogDebug("Watcher integration hooks applied");
 
             // debug hooks
@@ -29,6 +29,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             CheckDetection.Hooks.Unapply();
             DynamicWarpTargetting.Hooks.Unapply();
             StaticWarps.Hooks.Unapply();
+            Completion.Hooks.Unapply();
         }
         internal static string Region(this string self) => self?.Split('_')[0].ToUpperInvariant();
     }
