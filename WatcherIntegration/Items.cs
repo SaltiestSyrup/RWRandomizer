@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace RainWorldRandomizer.WatcherIntegration
@@ -7,12 +8,37 @@ namespace RainWorldRandomizer.WatcherIntegration
     {
         /// <summary>The number of Ripple items collected.</summary>
         internal static int RippleIncrements;
+        /// <summary>What the minimum and maximum Ripple should be, based on <see cref="RippleIncrements"/>.</summary>
         internal static Vector2 Ripple => new Vector2(Mathf.Max(1f, -1f + RippleIncrements / 2f), Mathf.Min(5f, 1f + RippleIncrements / 2f));
         internal static List<string> collectedDynamicKeys = new List<string>();
         internal static List<string> CollectedDynamicKeys => collectedDynamicKeys;  // this could get from where the data actually gets stored later
         internal static List<string> collectedStaticKeys = new List<string>();
         internal static List<string> CollectedStaticKeys => collectedDynamicKeys;
 
+        internal struct StaticKey
+        {
+            internal string name;
+            internal bool canHaveKey;
+            internal StaticKey(string region1, string region2)
+            {
+                name = string.Join("-", (new string[] { region1.Region(), region2.Region() }).OrderBy(x => x));
+                canHaveKey = CanHaveStaticKey(name);
+            }
+            internal static bool CanHaveStaticKey(string name)
+            {
+                if (name.Contains("WAUA") && name != "WARA-WAUA") return false;  // leading out of Ancient Urban
+                if (name == "WARA-WRSA") return false;  // leading out of Daemon
+                if (name.Contains("WSUR") || name.Contains("WHIR") || name.Contains("WGWR") || name.Contains("WDSR")) return false;  // rot
+                if (name == "NULL-WSSR") return false;
+
+                return true;
+            }
+            internal bool Missing => canHaveKey && !CollectedStaticKeys.Contains(name);
+
+            internal static bool IsMissing(string region1, string region2) => new StaticKey(region1, region2).Missing;
+        }
+
+        /// <summary>Updates the Ripple levels of the currently loaded <see cref="DeathPersistentSaveData"/>.</summary>
         internal static void UpdateRipple()
         {
             if (Plugin.Singleton.Game?.GetStorySession?.saveState.deathPersistentSaveData is DeathPersistentSaveData dpsd)

@@ -1,20 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using WarpPoint = Watcher.WarpPoint;
+﻿using WarpPoint = Watcher.WarpPoint;
 
 namespace RainWorldRandomizer.WatcherIntegration
 {
     internal static class StaticWarps
     {
-
-        /// <summary>Compute this warp point's key name.  Returns null if this warp point cannot have a key.</summary>
-        internal static string KeyName(this WarpPoint self)
-        {
-            string region = self.room.world.region.name;
-            if (Region.IsSentientRotRegion(region) || region == "WRSA" || region == "WAUA") return null;
-            string[] endpoints = new string[] { region.ToUpperInvariant(), self.Data.destRegion.ToUpperInvariant() };
-            return string.Join("-", endpoints.OrderBy(x => x));
-        }
+        /// <summary>Determine if this <see cref="WarpPoint"/> needs a key which is not yet collected.</summary>
+        internal static bool MissingKey(this WarpPoint self) => 
+            self.Data.nonDynamicWarpPoint && Items.StaticKey.IsMissing(self.room.world.region.name, self.Data.destRegion);
 
         internal static class Hooks
         {
@@ -32,9 +24,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static void WarpPoint_UpdateWarpTear(On.Watcher.WarpPoint.orig_UpdateWarpTear orig, WarpPoint self)
             {
                 orig(self);
-                if (self.KeyName() is string keyName
-                    && Items.CollectedStaticKeys?.Contains(keyName) != true 
-                    && self.Data.nonDynamicWarpPoint
+                if (self.MissingKey() 
                     && self.warpTear is Watcher.WarpTear tear
                     && tear.openAnimation < 0.1f) tear.openAnimation = 0f;
             }

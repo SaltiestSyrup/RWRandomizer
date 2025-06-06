@@ -7,7 +7,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 {
     internal static class Settings
     {
-        internal enum DynWarpMode { Ignored, Visited, StaticTargetPool, UNUSED, UnlockableTargetPool, Predetermined, PredeterminedUnlockableSource }
+        internal enum DynWarpMode { Ignored, Visited, StaticPool, UNUSED, UnlockablePool, StaticPredetermined, UnlockablePredetermined }
         internal enum RippleReqMode { Unaltered, None }
 
         internal static DynWarpMode modeNormal;
@@ -15,9 +15,10 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static IEnumerable<string> targetPool;
         internal static IDictionary<string, string> predetermination;
         internal static RippleReqMode rippleReq;
+        internal static bool spinningTopKeys;
 
-        internal static bool Predetermined(this DynWarpMode mode) => mode == DynWarpMode.Predetermined || mode == DynWarpMode.PredeterminedUnlockableSource;
-        internal static bool Unlockable(this DynWarpMode mode) => mode == DynWarpMode.UnlockableTargetPool || mode == DynWarpMode.PredeterminedUnlockableSource;
+        internal static bool Predetermined(this DynWarpMode mode) => mode == DynWarpMode.StaticPredetermined || mode == DynWarpMode.UnlockablePredetermined;
+        internal static bool Unlockable(this DynWarpMode mode) => mode == DynWarpMode.UnlockablePool || mode == DynWarpMode.UnlockablePredetermined;
 
         internal static T GetSimple<T>(this Dictionary<string, object> self, string key, T defaultValue = default) 
             => self.TryGetValue(key, out object value) ? (T)value : defaultValue;
@@ -46,19 +47,21 @@ namespace RainWorldRandomizer.WatcherIntegration
                     (DynWarpMode)data.GetSimple("throne_dynamic_warp_behavior", 5L),
                     data.GetArray<string>("warp_pool") ?? new List<string> { },
                     data.GetDict("predetermined_warps")?.SelectStringKeys() ?? new Dictionary<string, string> { },
-                    (RippleReqMode)data.GetSimple("dynamic_warp_ripple_req", 0L)
+                    (RippleReqMode)data.GetSimple("dynamic_warp_ripple_req", 0L),
+                    data.GetSimple("spinning_top_keys", 0L) == 1L
                     );
             }
             catch (Exception e) { Plugin.Log.LogError(e); }
         }
 
-        internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, RippleReqMode rippleReq)
+        internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, RippleReqMode rippleReq, bool spinningTopKeys)
         {
             Settings.modeNormal = modeNormal;
             Settings.modeThrone = modeThrone;
-            Settings.targetPool = pool.Select(x => x.ToLowerInvariant());
+            Settings.targetPool = pool.Select(x => x.ToUpperInvariant());
             Settings.predetermination = predetermination;
             Settings.rippleReq = rippleReq;
+            Settings.spinningTopKeys = spinningTopKeys;
         }
     }
 }
