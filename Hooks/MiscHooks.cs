@@ -132,7 +132,9 @@ namespace RainWorldRandomizer
 
                 if (ModManager.Watcher && Plugin.RandoManager.currentSlugcat.value == "Watcher")
                 {
-                    self.sessionEndingFromSpinningTopEncounter = true;
+                    // set a fake warp data a la `SaveState.LoadGame`
+                    //self.warpPointTargetAfterWarpPointSave = new Watcher.WarpPoint.WarpPointData(null);
+                    //self.warpPointTargetAfterWarpPointSave.FromString("0~0~Watcher~Watcher~wskb~wskb_c17~NULL~NULL~~WatcherOnly");
                     self.deathPersistentSaveData.minimumRippleLevel = 1f;
                     self.deathPersistentSaveData.maximumRippleLevel = 1f;
                     self.deathPersistentSaveData.rippleLevel = 1f;
