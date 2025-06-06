@@ -1,7 +1,7 @@
-﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
+﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System;
+using System.Collections.Generic;
 using WPOT = Watcher.WatcherEnums.PlacedObjectType;
 
 namespace RainWorldRandomizer.WatcherIntegration
@@ -15,6 +15,9 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered += DetectSpinningTop;
                 On.Watcher.SpinningTop.CanRaiseRippleLevel += Dont;
                 IL.Room.Loaded += SpinningTopKeyCheck;
+                On.WinState.TrackerAllowedOnSlugcat += LetThemWander;
+                On.SlugcatStats.SlugcatStoryRegions += SlugcatStats_SlugcatStoryRegions;
+                On.ProcessManager.RequestMainProcessSwitch_ProcessID += DetectCompletion;
             }
 
             internal static void Unapply()
@@ -22,9 +25,39 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered -= DetectSpinningTop;
                 On.Watcher.SpinningTop.CanRaiseRippleLevel -= Dont;
                 IL.Room.Loaded -= SpinningTopKeyCheck;
+                On.WinState.TrackerAllowedOnSlugcat -= LetThemWander;
+                On.SlugcatStats.SlugcatStoryRegions -= SlugcatStats_SlugcatStoryRegions;
+                On.ProcessManager.RequestMainProcessSwitch_ProcessID -= DetectCompletion;
             }
 
-            /// <summary>Prevent Ripple from being raised automatically.</summary>
+            /// <summary>Detect completion conditions when switching to the ending slideshows.</summary>
+            private static void DetectCompletion(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID orig, ProcessManager self, ProcessManager.ProcessID ID)
+            {
+                if (ID == ProcessManager.ProcessID.SlideShow && Plugin.RandoManager is ManagerArchipelago managerAP && !managerAP.gameCompleted)
+                {
+                    if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingRot)
+                        managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SentientRot);
+                    else if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingSpinningTop)
+                        managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SpinningTop);
+                }
+                orig(self, ID);
+            }
+
+            internal static List<string> watcherStoryRegions = new List<string> { 
+                "WARA", "WARB", "WARC", "WARD", "WARE", "WARF", "WARG", "WAUA", "WBLA", 
+                "WDSR", "WGWR", "WHIR", "WORA", "WPTA", "WRFA", "WRFB", "WRRA", "WRSA", 
+                "WSKA", "WSKB", "WSKC", "WSKD", "WSSR", "WSUR", "WTDA", "WTDB", "WVWA" 
+            };
+
+            private static List<string> SlugcatStats_SlugcatStoryRegions(On.SlugcatStats.orig_SlugcatStoryRegions orig, SlugcatStats.Name i) 
+                => i.value == "Watcher" ? watcherStoryRegions : orig(i);
+            
+            /// <summary>Don't blacklist The Wanderer for Watcher.</summary>
+            private static bool LetThemWander(On.WinState.orig_TrackerAllowedOnSlugcat orig, WinState.EndgameID trackerId, SlugcatStats.Name slugcat) 
+                => (ModManager.Watcher && slugcat.value == "Watcher" && trackerId == WinState.EndgameID.Traveller) || orig(trackerId, slugcat);
+
+            /// <summary>Prevent Ripple from being raised automatically.
+            /// This also prevents the Ripple ladder from appearing (`Watcher.SpinningTop.SpawnWarpPoint`).</summary>
             private static bool Dont(On.Watcher.SpinningTop.orig_CanRaiseRippleLevel orig, Watcher.SpinningTop self) => false;
 
             internal static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, Watcher.SpinningTop self)
