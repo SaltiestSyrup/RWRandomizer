@@ -395,6 +395,9 @@ namespace RainWorldRandomizer
             // Add a creature to cache with filters
             void CacheCreature(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, CreatureTemplate.Type crit)
             {
+                // Sometimes room access won't be loaded before this, add extra check to do so
+                if (!regionCreatures.ContainsKey(region)) _ = GetRoomAccessibility(region);
+
                 if (!regionCreatures[region].Contains(crit))
                 {
                     regionCreatures[region].Add(crit);
