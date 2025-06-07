@@ -24,7 +24,7 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("The seed used to generate the randomizer if 'Use seed' is checked",
                     new ConfigAcceptableRange<int>(0, int.MaxValue), ""));
 
-            RandoOptions.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", false,
+            RandoOptions.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", true,
                 new ConfigurableInfo("Include Arena mode / Safari tokens as checks", null, "",
                     new object[] { "Use Sandbox tokens as checks" }));
 
@@ -57,7 +57,8 @@ namespace RainWorldRandomizer
                     new object[] { "Use Passage tokens" }));
 
             RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
-                new ConfigurableInfo("The maximum density of cycle increases that can appear when playing as Hunter (0-1 for 0% to 100%)",
+                new ConfigurableInfo("The percentage amount of filler that will be replaced by cycle increases when playing as Hunter (1 is 100%)." +
+                    "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
                     new ConfigAcceptableRange<float>(0, 1), "",
                     new object[] { "Hunter max cycle increases" }));
 
@@ -67,7 +68,7 @@ namespace RainWorldRandomizer
 
             RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
                 new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
-                "Gates will have their karma requirements decreased to match", null, "",
+                "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
                     new object[] { "Start with low karma" }));
 
             RandoOptions.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
@@ -83,7 +84,7 @@ namespace RainWorldRandomizer
                 new object[] { "Enable Legacy notifications" }));
 
             RandoOptions.useGateMap = config.Bind<bool>("UseGateMap", false,
-                new ConfigurableInfo("Use a gate map instead of the gate key list", null, "",
+                new ConfigurableInfo("Use a gate map instead of the gate key list on the pause screen", null, "",
                 new object[] { "Use gate map" }));
 
             // ----- MSC -----
@@ -100,7 +101,7 @@ namespace RainWorldRandomizer
                 new object[] { "Use Food quest checks" }));
 
             RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
-                new ConfigurableInfo("Rivulet's energy cell and the post cell-taken world mechanics will be randomized", null, "",
+                new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized", null, "",
                 new object[] { "Use Mass Rarefaction cell" }));
 
             RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,

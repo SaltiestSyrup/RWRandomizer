@@ -1,4 +1,4 @@
-﻿using MonoMod.Utils;
+using MonoMod.Utils;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
@@ -437,29 +437,44 @@ namespace RainWorldRandomizer.Generation
                         if (rules.Count > 1) rule = new CompoundAccessRule(rules.ToArray(), CompoundAccessRule.CompoundOperation.Any);
                         else rule = rules[0];
 
+                        // TODO: Add effect detection for Batflies and Neurons
+                        // This is temporary until there's a way to detect batflies in a region
+                        if (data.crits[0] == CreatureTemplate.Type.Fly)
+                        {
+                            rule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
+                        }
+                        // TODO: Add support for creatures that are PlacedObjects
+                        else if (data.crits[0] == CreatureTemplate.Type.Hazer)
+                        {
+                            rule = new CompoundAccessRule(new AccessRule[]
+                            {
+                                new RegionAccessRule("LF"),
+                                new RegionAccessRule("DS"),
+                                new RegionAccessRule("GW"),
+                                new RegionAccessRule("HI"),
+                                new RegionAccessRule("SL")
+                            }, CompoundAccessRule.CompoundOperation.Any);
+                        }
+
                         allGourmRules.Add(rule);
                         locations.Add(new Location($"FoodQuest-{data.crits[0].value}", Location.Type.Food, rule));
                     }
                     else
                     {
                         AccessRule rule = new ObjectAccessRule(data.type);
-                        if (data.type == AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)
-                        {
-                            rule = AccessRuleConstants.NeuronAccess;
-                        }
-
                         allGourmRules.Add(rule);
                         locations.Add(new Location($"FoodQuest-{data.type.value}", Location.Type.Food, rule));
                     }
-                    locations.Add(new Location("Passage-Gourmand", Location.Type.Passage,
-                        new CompoundAccessRule(allGourmRules.ToArray(), CompoundAccessRule.CompoundOperation.All)));
                 }
+                locations.Add(new Location("Passage-Gourmand", Location.Type.Passage,
+                        new CompoundAccessRule(allGourmRules.ToArray(), CompoundAccessRule.CompoundOperation.All)));
             }
 
             // Create Special locations
             if (RandoOptions.UseSpecialChecks)
             {
-                locations.Add(new Location("Eat_Neuron", Location.Type.Story, AccessRuleConstants.NeuronAccess));
+                locations.Add(new Location("Eat_Neuron", Location.Type.Story, new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)));
 
                 switch (slugcat.value)
                 {
@@ -916,20 +931,6 @@ namespace RainWorldRandomizer.Generation
             GlobalRuleOverrides.Add("Echo-SB", subRavineRule);
             GlobalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
 
-            // TODO: Add effect detection for Batflies and Neurons
-            // This is temporary until there's a way to detect batflies in a region
-            GlobalRuleOverrides.Add("FoodQuest-Fly", new CompoundAccessRule(AccessRuleConstants.Regions,
-                CompoundAccessRule.CompoundOperation.AtLeast, 5));
-            // TODO: Add support for creatures that are PlacedObjects
-            GlobalRuleOverrides.Add("FoodQuest-Hazer", new CompoundAccessRule(new AccessRule[]
-            {
-                new RegionAccessRule("LF"),
-                new RegionAccessRule("DS"),
-                new RegionAccessRule("GW"),
-                new RegionAccessRule("HI"),
-                new RegionAccessRule("SL")
-            }, CompoundAccessRule.CompoundOperation.Any));
-
             // MSC specific rules
             if (ModManager.MSC)
             {
@@ -975,7 +976,14 @@ namespace RainWorldRandomizer.Generation
                 SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Spear].Add("Pearl-SU_filt", new OptionAccessRule("RandomizeSpawnLocation", true));
 
                 // Token cache fails to filter this pearl to only Past GW
-                GlobalRuleOverrides.Add("Pearl-MS", new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore));
+                GlobalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(new AccessRule[]
+                {
+                    new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore),
+                    new RegionAccessRule("GW")
+                }, CompoundAccessRule.CompoundOperation.All));
+
+                // This chatlog is also in SB ravine
+                GlobalRuleOverrides.Add("Broadcast-Chatlog_SB0", subRavineRule);
 
                 // Rubicon isn't blocked by a gate so it never gets marked as accessible
                 // Remove Rubicon from requirements and substitute Karma 10

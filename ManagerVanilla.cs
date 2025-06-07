@@ -85,6 +85,12 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
+                if (!TokenCachePatcher.hasLoadedCache)
+                {
+                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Failed to start randomizer, missing token cache data. Try reloading mods to update cache", Color.red));
+                    return;
+                }
+
                 VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
                     RandoOptions.UseSetSeed ? RandoOptions.SetSeed : UnityEngine.Random.Range(0, int.MaxValue));
                 Exception generationException = null;
@@ -164,7 +170,7 @@ namespace RainWorldRandomizer
 
             for (int j = 0; j < howMany; j++)
             {
-                if (generators[j].CurrentStage == VanillaGenerator.GenerationStep.FailedGen)
+                if (genTask[j].Exception != null)
                 {
                     Plugin.Log.LogError($"Generation failure with Exception:");
                     Plugin.Log.LogError(genTask[j].Exception);

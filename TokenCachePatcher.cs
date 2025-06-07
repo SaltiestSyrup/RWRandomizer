@@ -22,6 +22,8 @@ namespace RainWorldRandomizer
         public static Dictionary<string, List<AbstractPhysicalObject.AbstractObjectType>> regionObjects = new Dictionary<string, List<AbstractPhysicalObject.AbstractObjectType>>();
         public static Dictionary<string, List<List<SlugcatStats.Name>>> regionObjectsAccessibility = new Dictionary<string, List<List<SlugcatStats.Name>>>();
 
+        public static bool hasLoadedCache = false;
+
         public static void ApplyHooks()
         {
             On.RainWorld.ReadTokenCache += OnReadTokenCache;
@@ -222,6 +224,7 @@ namespace RainWorldRandomizer
             c2.Emit(OpCodes.Ldarg_2);
             c2.EmitDelegate<Action<string>>((region) =>
             {
+                region = region.ToLowerInvariant();
                 lock (regionObjects)
                 {
                     regionObjects[region] = new List<AbstractPhysicalObject.AbstractObjectType>();
@@ -255,38 +258,20 @@ namespace RainWorldRandomizer
             // Add placedObject type to set
             void AddToRegionObjects(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, PlacedObject placedObject)
             {
+                region = region.ToLowerInvariant();
                 if (ExtEnumBase.TryParse(typeof(AbstractPhysicalObject.AbstractObjectType), placedObject.type.value, true, out ExtEnumBase t))
                 {
-                    AbstractPhysicalObject.AbstractObjectType objectType = (AbstractPhysicalObject.AbstractObjectType)t;
-
-                    if (!regionObjects[region].Contains(objectType))
-                    {
-                        regionObjects[region].Add(objectType);
-                        regionObjectsAccessibility[region].Add(self.FilterTokenClearance(list3, new List<SlugcatStats.Name>(), IntersectClearance(list3, region, room)));
-                    }
-                    else
-                    {
-                        int index = regionObjects[region].IndexOf(objectType);
-                        regionObjectsAccessibility[region][index] = self.FilterTokenClearance(list3, regionObjectsAccessibility[region][index], IntersectClearance(list3, region, room));
-                    }
+                    CacheObject(self, region, room, list3, (AbstractPhysicalObject.AbstractObjectType)t);
+                    return;
                 }
-                // Hardcoded check for hazers
-                else if (placedObject.type == PlacedObject.Type.DeadHazer 
-                    || placedObject.type == PlacedObject.Type.Hazer)
+
+                // Hardcode checks for placed creatures
+                switch (placedObject.type.value)
                 {
-                    // This works, but depends on token cache being built every time.
-                    // Need to store creatures as part of cache
-                    //string regionUpper = region.ToUpperInvariant();
-                    //if (!regionCreatures[regionUpper].Contains(CreatureTemplate.Type.Hazer))
-                    //{
-                    //    regionCreatures[regionUpper].Add(CreatureTemplate.Type.Hazer);
-                    //    regionCreaturesAccessibility[regionUpper].Add(self.FilterTokenClearance(list3, new List<SlugcatStats.Name>(), IntersectClearance(list3, region, room)));
-                    //}
-                    //else
-                    //{
-                    //    int index = regionCreatures[regionUpper].IndexOf(CreatureTemplate.Type.Hazer);
-                    //    regionCreaturesAccessibility[regionUpper][index] = self.FilterTokenClearance(list3, regionObjectsAccessibility[regionUpper][index], IntersectClearance(list3, region, room));
-                    //}
+                    case "Hazer":
+                    case "DeadHazer":
+                        CacheCreature(self, region, room, list3, CreatureTemplate.Type.Hazer);
+                        break;
                 }
             }
 
@@ -302,37 +287,145 @@ namespace RainWorldRandomizer
             // Write set to file
             c2.Emit(OpCodes.Ldloc_1);
             c2.Emit(OpCodes.Ldarg_2);
-            c2.EmitDelegate<Action<string, string>>((path, region) =>
+            c2.EmitDelegate<Action<string, string>>(WriteCacheToFile);
+
+            void WriteCacheToFile(string path, string region)
             {
+                region = region.ToLowerInvariant();
+                // This *should* already be loaded but sanity check just in case
+                Dictionary<string, List<SlugcatStats.Name>> roomAccess = GetRoomAccessibility(region);
                 StringBuilder text = new StringBuilder();
+
+                // Objects
                 for (int i = 0; i < regionObjects[region].Count; i++)
                 {
                     string filter = string.Join("|", regionObjectsAccessibility[region][i]);
+                    if (filter.Equals("")) continue;
                     text.Append($"{regionObjects[region][i]}~{filter}");
                     if (i != regionObjects[region].Count - 1)
                     {
                         text.Append(",");
                     }
                 }
-                File.WriteAllText($"{path}randomizercache{region.ToLowerInvariant()}.txt", text.ToString());
-            });
+                text.AppendLine();
+
+                // Creatures
+                for (int j = 0; j < regionCreatures[region].Count; j++)
+                {
+                    string filter = string.Join("|", regionCreaturesAccessibility[region][j]);
+                    if (filter.Equals("")) continue;
+                    text.Append($"{regionCreatures[region][j]}~{filter}");
+                    if (j != regionCreatures[region].Count - 1)
+                    {
+                        text.Append(",");
+                    }
+                }
+                text.AppendLine();
+
+                // Rooms
+                foreach (KeyValuePair<string, List<SlugcatStats.Name>> room in roomAccess)
+                {
+                    string filter = string.Join("|", room.Value);
+                    if (filter.Equals("")) continue;
+                    text.Append($"{room.Key}~{filter},");
+                }
+                text.Remove(text.Length - 1, 1); // Remove trailing comma
+                File.WriteAllText($"{path}randomizercache{region}.txt", text.ToString());
+                hasLoadedCache = true;
+            }
             #endregion
+
+            #region Room effect parsing
+
+            ILCursor c3 = new ILCursor(il);
+
+            // After label pointing to start of if at 0489
+            c3.GotoNext(
+                MoveType.AfterLabel,
+                x => x.MatchLdloc(14),
+                x => x.MatchLdloc(24)
+                );
+
+            c3.Emit(OpCodes.Ldarg_0); // this
+
+            c3.Emit(OpCodes.Ldarg_2); // region
+
+            // get room name
+            c3.Emit(OpCodes.Ldloc_3); // list
+            c3.Emit(OpCodes.Ldloc, 11); // j
+            c3.Emit(OpCodes.Callvirt, typeof(List<string>).GetMethod("get_Item")); // []
+
+            c3.Emit(OpCodes.Ldloc, 12); // list3
+
+            c3.Emit(OpCodes.Ldloc, 14); // list5
+            c3.Emit(OpCodes.Ldloc, 24); // l
+            c3.EmitDelegate<Action<RainWorld, string, string, List<SlugcatStats.Name>, List<string[]>, int>>(ReadRoomEffects);
+
+            void ReadRoomEffects(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, List<string[]> list5, int l)
+            {
+                if (!list5[l][0].Equals("Effects")) return;
+
+                string[] effects = Regex.Split(Custom.ValidateSpacedDelimiter(list5[l][1], ","), ", ");
+                for (int m = 0; m < effects.Length; m++)
+                {
+                    string effectName = effects[m].Split('-')[0];
+
+                    switch (effectName)
+                    {
+                        case "SSSwarmers":
+                            CacheObject(self, region.ToLowerInvariant(), room, list3, AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer);
+                            break;
+                    }
+                }
+            }
+            #endregion
+
+            // Add an object to cache with filters
+            void CacheObject(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, AbstractPhysicalObject.AbstractObjectType obj)
+            {
+                if (!regionObjects[region].Contains(obj))
+                {
+                    regionObjects[region].Add(obj);
+                    regionObjectsAccessibility[region].Add(self.FilterTokenClearance(list3, new List<SlugcatStats.Name>(), IntersectClearance(list3, region, room)));
+                }
+                else
+                {
+                    int index = regionObjects[region].IndexOf(obj);
+                    regionObjectsAccessibility[region][index] = self.FilterTokenClearance(list3, regionObjectsAccessibility[region][index], IntersectClearance(list3, region, room));
+                }
+            }
+
+            // Add a creature to cache with filters
+            void CacheCreature(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, CreatureTemplate.Type crit)
+            {
+                // Sometimes room access won't be loaded before this, add extra check to do so
+                if (!regionCreatures.ContainsKey(region)) _ = GetRoomAccessibility(region);
+
+                if (!regionCreatures[region].Contains(crit))
+                {
+                    regionCreatures[region].Add(crit);
+                    regionCreaturesAccessibility[region].Add(self.FilterTokenClearance(list3, new List<SlugcatStats.Name>(), IntersectClearance(list3, region, room)));
+                }
+                else
+                {
+                    int index = regionCreatures[region].IndexOf(crit);
+                    regionCreaturesAccessibility[region][index] = self.FilterTokenClearance(list3, regionCreaturesAccessibility[region][index], IntersectClearance(list3, region, room));
+                }
+            }
         }
 
         public static void OnReadTokenCache(On.RainWorld.orig_ReadTokenCache orig, RainWorld self)
         {
             orig(self);
             regionObjects.Clear();
+            regionCreatures.Clear();
+            ClearRoomAccessibilities();
 
             string[] regions = File.ReadAllLines(AssetManager.ResolveFilePath("World" + Path.DirectorySeparatorChar.ToString() + "regions.txt"));
             foreach (string region in regions)
             {
-                // Need to trigger a load for creature accessibility
-                _ = GetRoomAccessibility(region);
+                string regionLower = region.ToLowerInvariant();
 
-                // Load object accessibilities from file
-                regionObjects[region] = new List<AbstractPhysicalObject.AbstractObjectType>();
-                regionObjectsAccessibility[region] = new List<List<SlugcatStats.Name>>();
                 string path = AssetManager.ResolveFilePath(string.Concat(new string[]
                 {
                     "World",
@@ -340,24 +433,61 @@ namespace RainWorldRandomizer
                     "indexmaps",
                     Path.DirectorySeparatorChar.ToString(),
                     "randomizercache",
-                    region.ToLowerInvariant(),
+                    regionLower,
                     ".txt"
                 }));
 
-                if (File.Exists(path))
+                if (!File.Exists(path)) return;
+
+                string[] parts = File.ReadAllLines(path);
+
+                roomAccessibilities[regionLower] = new Dictionary<string, List<SlugcatStats.Name>>();
+                regionObjects[regionLower] = new List<AbstractPhysicalObject.AbstractObjectType>();
+                regionObjectsAccessibility[regionLower] = new List<List<SlugcatStats.Name>>();
+                regionCreatures[regionLower] = new List<CreatureTemplate.Type>();
+                regionCreaturesAccessibility[regionLower] = new List<List<SlugcatStats.Name>>();
+                try
                 {
-                    string file = File.ReadAllText(path);
-
-                    string[] entries = Regex.Split(file, ",");
-
-                    foreach (string entry in entries)
+                    // Objects
+                    string[] objectEntries = parts[0].Split(',');
+                    foreach (string entry in objectEntries)
                     {
+                        if (entry.Equals("")) continue; // This should only happen if there are no entries
                         string[] split = Regex.Split(entry, "~");
-                        regionObjects[region].Add(new AbstractPhysicalObject.AbstractObjectType(split[0]));
-                        regionObjectsAccessibility[region].Add(split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
+                        regionObjects[regionLower].Add(new AbstractPhysicalObject.AbstractObjectType(split[0]));
+                        regionObjectsAccessibility[regionLower].Add(split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
+                        //Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
+                    }
+
+                    // Creatures
+                    string[] creatureEntries = parts[1].Split(',');
+                    foreach (string entry in creatureEntries)
+                    {
+                        if (entry.Equals("")) continue;
+                        string[] split = Regex.Split(entry, "~");
+                        regionCreatures[regionLower].Add(new CreatureTemplate.Type(split[0]));
+                        regionCreaturesAccessibility[regionLower].Add(split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
+                        //Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
+                    }
+
+                    // Rooms
+                    string[] roomEntries = parts[2].Split(',');
+                    foreach (string entry in roomEntries)
+                    {
+                        if (entry.Equals("")) continue;
+                        string[] split = Regex.Split(entry, "~");
+                        roomAccessibilities[regionLower].Add(split[0], split[1].Split('|').Select(s => new SlugcatStats.Name(s)).ToList());
+                        //Plugin.Log.LogDebug($"{region}\t{split[0]}\t\t\t{split[1]}");
                     }
                 }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError($"Failed to load randomizer cache data for region {region}. File is malformed? \n{e}");
+                    ClearRoomAccessibilities();
+                }
             }
+
+            hasLoadedCache = true;
         }
 
         /// <summary>
@@ -392,11 +522,10 @@ namespace RainWorldRandomizer
         /// </summary>
         private static Dictionary<string, List<SlugcatStats.Name>> LoadRoomAccessibility(string regionName)
         {
-            string regionUpper = regionName.ToUpperInvariant();
             lock (regionCreatures)
             {
-                regionCreatures[regionUpper] = new List<CreatureTemplate.Type>();
-                regionCreaturesAccessibility[regionUpper] = new List<List<SlugcatStats.Name>>();
+                regionCreatures[regionName] = new List<CreatureTemplate.Type>();
+                regionCreaturesAccessibility[regionName] = new List<List<SlugcatStats.Name>>();
             }
 
             string worldFilePath = AssetManager.ResolveFilePath(string.Concat(new string[]
@@ -468,17 +597,28 @@ namespace RainWorldRandomizer
                 {
                     if (worldFile[j] == "" || worldFile[j].StartsWith("//")) continue;
                     string[] split = Regex.Split(worldFile[j], " : ");
-                    SlugcatStats.Name slugcat = new SlugcatStats.Name(split[0]);
+
+                    List<SlugcatStats.Name> slugcats;
+                    // Pull slugcats out of parenthesis if present
+                    Match match = Regex.Match(split[0], "\\((.+)\\)");
+                    if (match.Success)
+                    {
+                        slugcats = Regex.Split(match.Groups[1].Value, ",").Select(s => new SlugcatStats.Name(s)).ToList();
+                    }
+                    else
+                    {
+                        slugcats = Regex.Split(split[0], ",").Select(s => new SlugcatStats.Name(s)).ToList();
+                    }
 
                     if (split[1] == "EXCLUSIVEROOM")
                     {
                         if (exclusiveRooms.ContainsKey(split[2]))
                         {
-                            exclusiveRooms[split[2]].Add(slugcat);
+                            exclusiveRooms[split[2]].AddRange(slugcats);
                         }
                         else
                         {
-                            exclusiveRooms.Add(split[2], new List<SlugcatStats.Name> { slugcat });
+                            exclusiveRooms.Add(split[2], slugcats);
                         }
                         continue;
                     }
@@ -487,11 +627,11 @@ namespace RainWorldRandomizer
                     {
                         if (hiddenRooms.ContainsKey(split[2]))
                         {
-                            hiddenRooms[split[2]].Add(slugcat);
+                            hiddenRooms[split[2]].AddRange(slugcats);
                         }
                         else
                         {
-                            hiddenRooms.Add(split[2], new List<SlugcatStats.Name> { slugcat });
+                            hiddenRooms.Add(split[2], slugcats);
                         }
                         continue;
                     }
@@ -499,41 +639,42 @@ namespace RainWorldRandomizer
                     // CRS feature
                     if (split[1] == "REPLACEROOM")
                     {
-                        List<SlugcatStats.Name> releventScugs = new List<SlugcatStats.Name>();
+                        List<SlugcatStats.Name> replaceScugs = new List<SlugcatStats.Name>();
                         // Invert selection if needed
                         if (split[0].StartsWith("X-"))
                         {
-                            slugcat = new SlugcatStats.Name(split[0].Substring(2));
+                            // TODO: REPLACEROOM can input multiple slugcats, need to account for that
+                            slugcats[0] = new SlugcatStats.Name(slugcats[0].value.Substring(2));
                             foreach (string value in ExtEnum<SlugcatStats.Name>.values.entries)
                             {
                                 SlugcatStats.Name name = new SlugcatStats.Name(value);
-                                if ((!ModManager.MSC || name != MoreSlugcatsEnums.SlugcatStatsName.Slugpup) && name != slugcat)
+                                if ((!ModManager.MSC || name != MoreSlugcatsEnums.SlugcatStatsName.Slugpup) && !slugcats.Contains(name))
                                 {
-                                    releventScugs.Add(name);
+                                    replaceScugs.Add(name);
                                 }
                             }
                         }
                         else
                         {
-                            releventScugs.Add(slugcat);
+                            replaceScugs.AddRange(slugcats);
                         }
 
                         if (hiddenRooms.ContainsKey(split[2]))
                         {
-                            hiddenRooms[split[2]].Union(releventScugs);
+                            hiddenRooms[split[2]].Union(replaceScugs);
                         }
                         else
                         {
-                            hiddenRooms.Add(split[2], releventScugs);
+                            hiddenRooms.Add(split[2], replaceScugs);
                         }
 
                         if (exclusiveRooms.ContainsKey(split[3]))
                         {
-                            exclusiveRooms[split[3]].Union(releventScugs);
+                            exclusiveRooms[split[3]].Union(replaceScugs);
                         }
                         else
                         {
-                            exclusiveRooms.Add(split[3], releventScugs);
+                            exclusiveRooms.Add(split[3], replaceScugs);
                         }
 
                         // Add the replacing room to a seperate list to be added later
@@ -564,6 +705,12 @@ namespace RainWorldRandomizer
                     string[] split = Regex.Split(worldFile[k], " : ");
                     string room = split[0];
                     string[] connections = Regex.Split(split[1], ", ");
+
+                    // Currently just ignoring slugcat filters in room connections
+                    if (room.StartsWith("(") && room.Contains(")"))
+                    {
+                        room = room.Substring(room.IndexOf(")") + 1);
+                    }
 
                     // Primitive solution. Does it work??
                     if (exclusiveRooms.ContainsKey(room))
@@ -596,6 +743,12 @@ namespace RainWorldRandomizer
                         {
                             accessibility.Add(room.ToLowerInvariant(), allSlugcats.ToList());
                         }
+                    }
+
+                    // Cache presence of batflies in room
+                    if (split.Contains("SWARMROOM"))
+                    {
+                        AddCreatureToCache(regionName, CreatureTemplate.Type.Fly, accessibility[room.ToLowerInvariant()]);
                     }
                 }
 
@@ -672,7 +825,7 @@ namespace RainWorldRandomizer
                         }
                         
                         if (firstCreature == null) continue;
-                        AddCreatureToCache(regionUpper, firstCreature, relevantSlugcats);
+                        AddCreatureToCache(regionName, firstCreature, relevantSlugcats);
                         continue;
                     }
 
@@ -693,7 +846,7 @@ namespace RainWorldRandomizer
 
                     foreach (CreatureTemplate.Type creature in creatureStrings)
                     {
-                        AddCreatureToCache(regionUpper, creature, relevantSlugcats);
+                        AddCreatureToCache(regionName, creature, relevantSlugcats);
                     }
                 }
             }

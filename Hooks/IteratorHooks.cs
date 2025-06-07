@@ -531,20 +531,27 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            Room room = Plugin.Singleton.Game.session.Players[0].realizedCreature.room;
+            // Don't try to play sound if player doesn't exist
+            if (self.hud.owner == null 
+                || !(self.hud.owner is Player player) 
+                || player.room == null)
+                return;
+
+            Room room = player.room;
             for (int i = 0; i < room.physicalObjects.Length; i++)
             {
                 for (int j = 0; j < room.physicalObjects[i].Count; j++)
                 {
-                    // If this object is Five Pebbles and he is talking
-                    if (room.physicalObjects[i][j] is Oracle
-                        && ((Oracle)room.physicalObjects[i][j]).oracleBehavior is SSOracleBehavior oracle
-                        && oracle.currSubBehavior is SSOracleBehavior.TalkBehavior)
+                    // If this object is an SSOracle and they are talking
+                    if (room.physicalObjects[i][j] is Oracle oracle
+                        && oracle.oracleBehavior is SSOracleBehavior oracleBehavior
+                        && oracleBehavior.currSubBehavior is SSOracleBehavior.TalkBehavior oracleTalkBehavior)
                     {
                         SoundID sound;
-                        int pause = 0;
+                        int pause;
 
-                        if (ModManager.MSC && oracle.oracle.ID == MoreSlugcatsEnums.OracleID.DM)
+                        // Use random identity appropriate chatter
+                        if (ModManager.MSC && oracleBehavior.oracle.ID == MoreSlugcatsEnums.OracleID.DM)
                         {
                             switch (UnityEngine.Random.Range(0, 4))
                             {
@@ -592,13 +599,13 @@ namespace RainWorldRandomizer
                         }
 
 
-                        oracle.voice = oracle.oracle.room.PlaySound(sound, oracle.oracle.firstChunk);
-                        oracle.voice.requireActiveUpkeep = true;
-                        if (oracle.conversation != null)
+                        oracleBehavior.voice = oracle.room.PlaySound(sound, oracle.firstChunk);
+                        oracleBehavior.voice.requireActiveUpkeep = true;
+                        if (oracleBehavior.conversation != null)
                         {
-                            oracle.conversation.waitForStill = true;
+                            oracleBehavior.conversation.waitForStill = true;
                         }
-                        ((SSOracleBehavior.TalkBehavior)oracle.currSubBehavior).communicationPause = pause;
+                        oracleTalkBehavior.communicationPause = pause;
                         return;
                     }
                 }
