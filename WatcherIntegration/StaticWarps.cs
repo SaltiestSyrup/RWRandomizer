@@ -10,12 +10,12 @@ namespace RainWorldRandomizer.WatcherIntegration
 
         internal static class Hooks
         {
-            internal static void Apply()
+            internal static void ApplyHooks()
             {
                 On.Watcher.WarpPoint.UpdateWarpTear += WarpPoint_UpdateWarpTear;
             }
 
-            internal static void Unapply()
+            internal static void RemoveHooks()
             {
                 On.Watcher.WarpPoint.UpdateWarpTear -= WarpPoint_UpdateWarpTear;
             }

@@ -5,31 +5,23 @@ namespace RainWorldRandomizer.WatcherIntegration
 {
     internal static class EntryPoint
     {
+        /// <summary>A <see cref="BindingFlags"/> which matches everything.</summary>
         internal static BindingFlags bfAll = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
 
-        internal static void Apply()
+        internal static void ApplyHooks()
         {
-            CheckDetection.Hooks.Apply();
-            DynamicWarpTargetting.Hooks.Apply();
-            StaticWarps.Hooks.Apply();
-            Completion.Hooks.Apply();
-            Plugin.Log.LogDebug("Watcher integration hooks applied");
-
-            // debug hooks
-            On.Watcher.WarpPoint.NewWorldLoaded += WarpPoint_NewWorldLoaded;
+            CheckDetection.Hooks.ApplyHooks();
+            DynamicWarpTargetting.Hooks.ApplyHooks();
+            StaticWarps.Hooks.ApplyHooks();
+            Completion.Hooks.ApplyHooks();
         }
 
-        private static void WarpPoint_NewWorldLoaded(On.Watcher.WarpPoint.orig_NewWorldLoaded orig, Watcher.WarpPoint self)
+        internal static void RemoveHooks()
         {
-            try { orig(self); } catch (Exception e) { Plugin.Log.LogError(e); }
-        }
-
-        internal static void Unapply()
-        {
-            CheckDetection.Hooks.Unapply();
-            DynamicWarpTargetting.Hooks.Unapply();
-            StaticWarps.Hooks.Unapply();
-            Completion.Hooks.Unapply();
+            CheckDetection.Hooks.RemoveHooks();
+            DynamicWarpTargetting.Hooks.RemoveHooks();
+            StaticWarps.Hooks.RemoveHooks();
+            Completion.Hooks.RemoveHooks();
         }
         internal static string Region(this string self) => self?.Split('_')[0].ToUpperInvariant();
     }

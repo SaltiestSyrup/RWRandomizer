@@ -21,16 +21,16 @@ namespace RainWorldRandomizer.WatcherIntegration
 
         internal static class Hooks
         {
-            internal static void Apply()
+            internal static void ApplyHooks()
             {
-                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets += Yes;
+                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets += WaiveRippleReq;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets += PredetermineOrFilter;
                 IL.Player.SpawnDynamicWarpPoint += CustomFailureMessage;
             }
 
-            internal static void Unapply()
+            internal static void RemoveHooks()
             {
-                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets -= Yes;
+                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets -= WaiveRippleReq;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets -= PredetermineOrFilter;
                 IL.Player.SpawnDynamicWarpPoint -= CustomFailureMessage;
             }
@@ -121,7 +121,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             internal static FailureReason? failureReason = null;
 
             /// <summary>Waive Ripple requirements if set, and store the list of visited regions for efficiency.</summary>
-            internal static void Yes(ILContext il)
+            internal static void WaiveRippleReq(ILContext il)
             {
                 ILCursor c = new(il);
 

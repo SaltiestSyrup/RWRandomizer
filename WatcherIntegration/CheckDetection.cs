@@ -10,22 +10,22 @@ namespace RainWorldRandomizer.WatcherIntegration
     {
         internal static class Hooks
         {
-            internal static void Apply()
+            internal static void ApplyHooks()
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered += DetectSpinningTop;
                 On.Watcher.SpinningTop.CanRaiseRippleLevel += Dont;
                 IL.Room.Loaded += SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat += LetThemWander;
-                On.SlugcatStats.SlugcatStoryRegions += SlugcatStats_SlugcatStoryRegions;
+                On.SlugcatStats.SlugcatStoryRegions += WatcherStoryRegions;
             }
 
-            internal static void Unapply()
+            internal static void RemoveHooks()
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered -= DetectSpinningTop;
                 On.Watcher.SpinningTop.CanRaiseRippleLevel -= Dont;
                 IL.Room.Loaded -= SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat -= LetThemWander;
-                On.SlugcatStats.SlugcatStoryRegions -= SlugcatStats_SlugcatStoryRegions;
+                On.SlugcatStats.SlugcatStoryRegions -= WatcherStoryRegions;
             }
 
             internal static List<string> watcherStoryRegions = new()
@@ -35,7 +35,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                 "WSKA", "WSKB", "WSKC", "WSKD", "WSSR", "WSUR", "WTDA", "WTDB", "WVWA" 
             };
 
-            private static List<string> SlugcatStats_SlugcatStoryRegions(On.SlugcatStats.orig_SlugcatStoryRegions orig, SlugcatStats.Name i) 
+            /// <summary>Return a relevant list of regions for Watcher.</summary>
+            private static List<string> WatcherStoryRegions(On.SlugcatStats.orig_SlugcatStoryRegions orig, SlugcatStats.Name i) 
                 => i.value == "Watcher" ? watcherStoryRegions : orig(i);
             
             /// <summary>Don't blacklist The Wanderer for Watcher.</summary>
@@ -46,6 +47,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             /// This also prevents the Ripple ladder from appearing (`Watcher.SpinningTop.SpawnWarpPoint`).</summary>
             private static bool Dont(On.Watcher.SpinningTop.orig_CanRaiseRippleLevel orig, Watcher.SpinningTop self) => false;
 
+            /// <summary>Detect the moment that a Spinning Top is marked as encountered.</summary>
             internal static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, Watcher.SpinningTop self)
             {
                 orig(self);
@@ -53,6 +55,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 if (Plugin.RandoManager.IsLocationGiven(loc) == false) Plugin.RandoManager.GiveLocation(loc);
             }
 
+            /// <summary>Detect, at cycle end, what new fixed warp points have been discovered.</summary>
             internal static void DetectStaticWarpPoint(SaveState saveState)
             {
                 foreach (var point in saveState.deathPersistentSaveData.newlyDiscoveredWarpPoints)
