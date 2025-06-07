@@ -38,25 +38,25 @@ namespace RainWorldRandomizer.WatcherIntegration
             /// <summary>Sets a custom failure message for if Archipelago dynamic warping rules specifically cause a failure.</summary>
             private static void CustomFailureMessage(ILContext il)
             {
-                ILCursor c = new ILCursor(il);
+                ILCursor c = new(il);
                 c.GotoNext(MoveType.After, x => x.MatchLdstr("The paths overflow beyond measure"));  // 0c1d
 
-                string Delegate(string orig)
+                static string Delegate(string orig)
                 {
-                    switch (failureReason)
+                    return failureReason switch
                     {
-                        case FailureReason.MissingSourceKey: return "Something is missing... the dynamic key?";
-                        case FailureReason.NoOtherVisitedRegions: return "No threads lead to new horizons";
+                        FailureReason.MissingSourceKey => "Something is missing... the dynamic key?",
+                        FailureReason.NoOtherVisitedRegions => "No threads lead to new horizons",
                         // Once the AP logic is cleaned up, this should not happen at all.
-                        case FailureReason.MissingPredetermination: return "Something went terribly wrong here";
-                        case FailureReason.NoUsableDynamicKeys: return "Something is missing... any dynamic key?";
+                        FailureReason.MissingPredetermination => "Something went terribly wrong here",
+                        FailureReason.NoUsableDynamicKeys => "Something is missing... any dynamic key?",
                         // Static pool only errors if the pool is very small - if every pool region is either gated by Ripple or is the current region.
-                        case FailureReason.NoValidStaticPoolTargets: return "There are few paths and none are within reach";
-                        default: return orig;
-                    }
+                        FailureReason.NoValidStaticPoolTargets => "There are few paths and none are within reach",
+                        _ => orig,
+                    };
                 }
 
-                c.EmitDelegate<Func<string, string>>(Delegate);
+                c.EmitDelegate(Delegate);
             }
 
             /// <summary>Intercept the list of normal dynamic warp targets.</summary>
@@ -75,18 +75,18 @@ namespace RainWorldRandomizer.WatcherIntegration
                     if (relevantMode == DynWarpMode.UnlockablePredetermined && !Items.CollectedDynamicKeys.Contains(region))
                     {
                         failureReason = FailureReason.MissingSourceKey;
-                        return new List<string> { };
+                        return new();
                     }
                     // Specifically in the Throne, we need to index the mapping with the room; otherwise, index with the region.
                     if (predetermination.TryGetValue(sourceKind == WarpSourceKind.Throne ? roomName : region, out string destRoom))
                     {
-                        return new List<string> { destRoom };
+                        return new() { destRoom };
                     }
 
                     // Ideally this failure state never happens - it would imply either custom regions,
                     // some sort of generation failure, or incomplete slot data.
                     failureReason = FailureReason.MissingPredetermination;
-                    return new List<string> { };
+                    return new();
                 }
 
                 // For a non-predetermined mode, get the ordinarily valid candidate targets.
@@ -123,17 +123,17 @@ namespace RainWorldRandomizer.WatcherIntegration
             /// <summary>Waive Ripple requirements if set, and store the list of visited regions for efficiency.</summary>
             internal static void Yes(ILContext il)
             {
-                ILCursor c = new ILCursor(il);
+                ILCursor c = new(il);
 
                 // Store a reference to the visited region list so we don't waste time recomputing it later.
                 c.GotoNext(MoveType.After, x => x.MatchLdloc(4));  // List<string> list3
                 c.Emit(OpCodes.Dup);
-                c.Emit(OpCodes.Stsfld, typeof(Hooks).GetField(nameof(visitedRegions), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static));
+                c.Emit(OpCodes.Stsfld, typeof(Hooks).GetField(nameof(visitedRegions), EntryPoint.bfAll));
 
                 // Comparative branch interception.  Waive Ripple requirement if that setting is enabled.
                 c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(KeyValuePair<float, List<string>>).GetProperty(nameof(KeyValuePair<float, List<string>>.Key)).GetGetMethod()));  // 0174
-                float WaiveRippleRequirement(float orig) => rippleReq == RippleReqMode.None ? float.MinValue : orig;
-                c.EmitDelegate<Func<float, float>>(WaiveRippleRequirement);
+                static float WaiveRippleRequirement(float orig) => rippleReq == RippleReqMode.None ? float.MinValue : orig;
+                c.EmitDelegate(WaiveRippleRequirement);
             }
 
             internal static List<string> visitedRegions;

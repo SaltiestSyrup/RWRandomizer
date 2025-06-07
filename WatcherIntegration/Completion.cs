@@ -1,9 +1,5 @@
 ﻿using MonoMod.RuntimeDetour;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using MWSD = MiscWorldSaveData;
 
@@ -31,7 +27,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             }
 
             /// <summary>Reduce the number of regions needed for the Sentient Rot ending if that setting requires it.</summary>
-            internal static int ApplyRottedRegionTarget(Func<MiscWorldSaveData, int> orig, MiscWorldSaveData self) 
+            internal static int ApplyRottedRegionTarget(Func<MWSD, int> orig, MWSD self) 
                 => Mathf.Max(orig(self) - 18 + (int)Settings.rottedRegionTarget, 0);
 
             /// <summary>Detect completion conditions when switching to the ending slideshows.</summary>

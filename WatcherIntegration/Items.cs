@@ -9,10 +9,10 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// <summary>The number of Ripple items collected.</summary>
         internal static int RippleIncrements;
         /// <summary>What the minimum and maximum Ripple should be, based on <see cref="RippleIncrements"/>.</summary>
-        internal static Vector2 Ripple => new Vector2(Mathf.Max(1f, -1f + RippleIncrements / 2f), Mathf.Min(5f, 1f + RippleIncrements / 2f));
-        internal static List<string> collectedDynamicKeys = new List<string>();
+        internal static Vector2 Ripple => new(Mathf.Max(1f, -1f + RippleIncrements / 2f), Mathf.Min(5f, 1f + RippleIncrements / 2f));
+        internal static List<string> collectedDynamicKeys = new();
         internal static List<string> CollectedDynamicKeys => collectedDynamicKeys;  // this could get from where the data actually gets stored later
-        internal static List<string> collectedStaticKeys = new List<string>();
+        internal static List<string> collectedStaticKeys = new();
         internal static List<string> CollectedStaticKeys => collectedDynamicKeys;
 
         internal struct StaticKey
@@ -33,7 +33,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 return true;
             }
-            internal bool Missing => canHaveKey && !CollectedStaticKeys.Contains(name);
+            internal readonly bool Missing => canHaveKey && !CollectedStaticKeys.Contains(name);
 
             internal static bool IsMissing(string region1, string region2) => new StaticKey(region1, region2).Missing;
         }

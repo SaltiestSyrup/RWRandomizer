@@ -24,9 +24,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static void WarpPoint_UpdateWarpTear(On.Watcher.WarpPoint.orig_UpdateWarpTear orig, WarpPoint self)
             {
                 orig(self);
-                if (self.MissingKey() 
-                    && self.warpTear is Watcher.WarpTear tear
-                    && tear.openAnimation < 0.1f) tear.openAnimation = 0f;
+                if (self.MissingKey() && self.warpTear is { openAnimation: < 0.1f } tear) tear.openAnimation = 0f;
             }
         }
     }

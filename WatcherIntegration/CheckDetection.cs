@@ -28,7 +28,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.SlugcatStats.SlugcatStoryRegions -= SlugcatStats_SlugcatStoryRegions;
             }
 
-            internal static List<string> watcherStoryRegions = new List<string> { 
+            internal static List<string> watcherStoryRegions = new()
+            { 
                 "WARA", "WARB", "WARC", "WARD", "WARE", "WARF", "WARG", "WAUA", "WBLA", 
                 "WDSR", "WGWR", "WHIR", "WORA", "WPTA", "WRFA", "WRFB", "WRRA", "WRSA", 
                 "WSKA", "WSKB", "WSKC", "WSKD", "WSSR", "WSUR", "WTDA", "WTDB", "WVWA" 
@@ -63,20 +64,20 @@ namespace RainWorldRandomizer.WatcherIntegration
             /// <summary>Prevent Spinning Top from spawning if the key is not collected (unless that setting is disabled).</summary>
             private static void SpinningTopKeyCheck(ILContext il)
             {
-                ILCursor c = new ILCursor(il);
+                ILCursor c = new(il);
                 // Branch interception at 1d71 (roomSettings.placedObjects[num10].type == WatcherEnums.PlacedObjectType.SpinningTopSpot).
                 c.GotoNext(x => x.MatchLdsfld(typeof(WPOT).GetField(nameof(WPOT.SpinningTopSpot))));  // 1d67
                 c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<PlacedObject.Type>).GetMethod("op_Equality")));  // 1d6c
 
                 c.Emit(OpCodes.Ldarg_0);  // Room this
                 c.Emit(OpCodes.Ldloc, 27);  // int num10 (iteration variable)
-                bool Delegate(bool orig, Room self, int index)
+                static bool Delegate(bool orig, Room self, int index)
                 {
                     if (!orig || !Settings.spinningTopKeys) return orig;
                     string dest = (self.roomSettings.placedObjects[index].data as SpinningTopData).destRegion;
                     return !Items.StaticKey.IsMissing(self.world.name, dest);
                 }
-                c.EmitDelegate<Func<bool, Room, int, bool>>(Delegate);
+                c.EmitDelegate(Delegate);
             }
         }
     }
