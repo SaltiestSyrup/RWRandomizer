@@ -1,12 +1,12 @@
 using BepInEx;
 using BepInEx.Logging;
 using MoreSlugcats;
+using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
-using RainWorldRandomizer.Generation;
 
 namespace RainWorldRandomizer
 {
@@ -32,7 +32,7 @@ namespace RainWorldRandomizer
         private OptionsMenu options;
 
         public RainWorld rainWorld;
-        public WeakReference<RainWorldGame> _game = new WeakReference<RainWorldGame>(null);
+        public WeakReference<RainWorldGame> _game = new(null);
         public RainWorldGame Game
         {
             get
@@ -53,10 +53,10 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
 
         // A map of every region to it's display name
-        public static Dictionary<string, string> RegionNamesMap = new Dictionary<string, string>();
+        public static Dictionary<string, string> RegionNamesMap = [];
         // A map of the 'correct' region acronyms for each region depending on current slugcat
-        public static Dictionary<string, string> ProperRegionMap = new Dictionary<string, string>();
-        public static Dictionary<string, RegionGate.GateRequirement[]> defaultGateRequirements = new Dictionary<string, RegionGate.GateRequirement[]>();
+        public static Dictionary<string, string> ProperRegionMap = [];
+        public static Dictionary<string, RegionGate.GateRequirement[]> defaultGateRequirements = [];
 
         /// <summary>Whether there are any third-party regions.</summary>
         public static bool AnyThirdPartyRegions
@@ -64,9 +64,11 @@ namespace RainWorldRandomizer
             get
             {
                 return RegionNamesMap.Keys
-                    .Except(new string[] {
+                    .Except(
+                    [
                         "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS",
-                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS" })
+                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS" 
+                    ])
                     .Any();
             }
         }
@@ -289,7 +291,7 @@ namespace RainWorldRandomizer
                 {
                     return new AbstractSpear(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
-                        item.id == "FireSpear" || item.id == "ExplosiveSpear", item.id == "ElectricSpear");
+                        item.id is "FireSpear" or "ExplosiveSpear", item.id == "ElectricSpear");
                 }
                 // Lillypuck is a consumable, but still needs its own constructor
                 if (ModManager.MSC && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
@@ -365,10 +367,8 @@ namespace RainWorldRandomizer
             bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
             RegionGate.GateRequirement[] newRequirements =
                 defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
-                ? (RegionGate.GateRequirement[])v.Clone() : new RegionGate.GateRequirement[2] {
-                    RegionGate.GateRequirement.OneKarma,
-                    RegionGate.GateRequirement.OneKarma
-                };
+                ? (RegionGate.GateRequirement[])v.Clone()
+                : [ RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
 
             if (gateName.Equals("GATE_OE_SU")) hasKeyForGate = true;
             if (gateName.Equals("GATE_SL_MS")
@@ -464,8 +464,7 @@ namespace RainWorldRandomizer
             // If we have any pending messages and are in the actual game loop
 
             if (Game.session.Players[0]?.realizedCreature?.room != null
-                && Game.cameras[0].hud?.textPrompt != null
-                && Game.cameras[0].hud.textPrompt.messages.Count < 1
+                && Game.cameras[0].hud?.textPrompt?.messages.Count < 1
                 && Game.manager.currentMainLoop.ID == ProcessManager.ProcessID.Game)
 
             {
@@ -474,7 +473,7 @@ namespace RainWorldRandomizer
                 {
                     string[] split = Regex.Split(message, "//");
                     Game.cameras[0].hud.textPrompt.AddMessage(split[0], 0, hurry ? 60 : 120, false, true, 100f,
-                        new List<MultiplayerUnlocks.SandboxUnlockID>() { new MultiplayerUnlocks.SandboxUnlockID(split[1]) });
+                        [new MultiplayerUnlocks.SandboxUnlockID(split[1])]);
                 }
                 else
                 {
@@ -497,21 +496,12 @@ namespace RainWorldRandomizer
             string properAcro2 = ProperRegionMap.ContainsKey(gateSplit[2]) ? ProperRegionMap[gateSplit[2]] : "";
             string name1 = RegionNamesMap.ContainsKey(properAcro1) ? RegionNamesMap[properAcro1] : "nullRegion";
             string name2 = RegionNamesMap.ContainsKey(properAcro2) ? RegionNamesMap[properAcro2] : "nullRegion";
-            string output;
-
-            switch (gate)
+            string output = gate switch
             {
-                case "GATE_SS_UW":
-                    output = "Five Pebbles <-> The Wall";
-                    break;
-                case "GATE_UW_SS":
-                    output = "Five Pebbles <-> Underhang";
-                    break;
-                default:
-                    output = $"{name1} <-> {name2}";
-                    break;
-            }
-
+                "GATE_SS_UW" => "Five Pebbles <-> The Wall",
+                "GATE_UW_SS" => "Five Pebbles <-> Underhang",
+                _ => $"{name1} <-> {name2}",
+            };
             if (Constants.OneWayGates.ContainsKey(gate))
             {
                 output = $"{name1}" +

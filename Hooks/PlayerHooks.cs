@@ -105,7 +105,7 @@ namespace RainWorldRandomizer
             try
             {
                 // Substitution function
-                AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, Player player)
+                static AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, Player player)
                 {
                     if (objectInstomach != null)
                     {
@@ -119,7 +119,7 @@ namespace RainWorldRandomizer
                     return null;
                 }
 
-                ILCursor c = new ILCursor(il);
+                ILCursor c = new(il);
                 c.GotoNext(
                     MoveType.After,
                     x => x.MatchLdloc(11),
@@ -131,7 +131,7 @@ namespace RainWorldRandomizer
 
                 c.Emit(OpCodes.Ldarg_0);
                 // If we have a waiting item to be delivered, act as if there is an item in stomach
-                c.EmitDelegate((Func<AbstractPhysicalObject, Player, AbstractPhysicalObject>)objectReplace);
+                c.EmitDelegate(objectReplace);
 
                 c.GotoNext(
                     MoveType.After,
@@ -142,7 +142,7 @@ namespace RainWorldRandomizer
                     );
 
                 c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate((Func<AbstractPhysicalObject, Player, AbstractPhysicalObject>)objectReplace);
+                c.EmitDelegate(objectReplace);
 
                 // Make item delivery spit up faster
                 c.GotoNext(
@@ -171,7 +171,7 @@ namespace RainWorldRandomizer
                     );
 
                 c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate((Func<AbstractPhysicalObject, Player, AbstractPhysicalObject>)objectReplace);
+                c.EmitDelegate(objectReplace);
             }
             catch (Exception e)
             {
@@ -188,7 +188,7 @@ namespace RainWorldRandomizer
             try
             {
                 // Substitution function
-                AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, PlayerGraphics playerGraphics)
+                static AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, PlayerGraphics playerGraphics)
                 {
                     if (objectInstomach != null)
                     {
@@ -202,7 +202,7 @@ namespace RainWorldRandomizer
                     return null;
                 }
 
-                ILCursor c = new ILCursor(il);
+                ILCursor c = new(il);
                 c.GotoNext(
                     MoveType.After,
                     x => x.MatchLdarg(0),
@@ -212,7 +212,7 @@ namespace RainWorldRandomizer
 
                 c.Emit(OpCodes.Ldarg_0);
                 // If we have a waiting item to be delivered, act as if there is an item in stomach
-                c.EmitDelegate((Func<AbstractPhysicalObject, PlayerGraphics, AbstractPhysicalObject>)objectReplace);
+                c.EmitDelegate(objectReplace);
             }
             catch (Exception e)
             {

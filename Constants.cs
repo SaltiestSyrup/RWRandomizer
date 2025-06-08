@@ -7,12 +7,12 @@ namespace RainWorldRandomizer
 {
     public static class Constants
     {
-        public static readonly List<SlugcatStats.Name> CompatibleSlugcats = new List<SlugcatStats.Name>();
+        public static readonly List<SlugcatStats.Name> CompatibleSlugcats = [];
 
         /// <summary>
         /// Describes which food quest items can be eaten by each slugcat. Matches order of <see cref="WinState.GourmandPassageTracker"/>
         /// </summary>
-        public static readonly Dictionary<SlugcatStats.Name, bool[]> SlugcatFoodQuestAccessibility = new Dictionary<SlugcatStats.Name, bool[]>();
+        public static readonly Dictionary<SlugcatStats.Name, bool[]> SlugcatFoodQuestAccessibility = [];
         // SlimeMold, DangleFruit, BatFly, Mushroom, BlackLizard, WaterNut, JellyFish, JetFish, GlowWeed, Salamander, Snail,
         // Hazer, EggBug, LillyPuck, YellowLizard, GrappleWorm, Neuron, Centiwing, DandelionPeach, CyanLizard, GooieDuck, RedCenti
 
@@ -29,12 +29,12 @@ namespace RainWorldRandomizer
         /// The fallback starting den for each slugcat. 
         /// Most slugcats start in an intro scene instead of a den, so this defines the closest den to that starting point
         /// </summary>
-        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatDefaultStartingDen = new Dictionary<SlugcatStats.Name, string>();
+        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatDefaultStartingDen = [];
 
         /// <summary>
         /// The normal starting region for each slugcat
         /// </summary>
-        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatStartingRegion = new Dictionary<SlugcatStats.Name, string>();
+        public static readonly Dictionary<SlugcatStats.Name, string> SlugcatStartingRegion = [];
 
         // { GATE_NAME, IS_LEFT_TRAVEL }
         public static readonly Dictionary<string, bool> OneWayGates = new Dictionary<string, bool>()
@@ -46,10 +46,10 @@ namespace RainWorldRandomizer
         /// <summary>
         /// These gates must always be open to avoid softlock scenarios
         /// </summary>
-        public static readonly HashSet<string> ForceOpenGates = new HashSet<string>()
-        {
+        public static readonly HashSet<string> ForceOpenGates =
+        [
             "GATE_OE_SU", "GATE_SL_MS"
-        };
+        ];
 
         public static void InitializeConstants()
         {
@@ -58,16 +58,17 @@ namespace RainWorldRandomizer
             SlugcatDefaultStartingDen.Clear();
             SlugcatStartingRegion.Clear();
 
-            CompatibleSlugcats.AddRange(new List<SlugcatStats.Name>()
-            {
+            CompatibleSlugcats.AddRange(
+            [
                 SlugcatStats.Name.White,
                 SlugcatStats.Name.Yellow,
                 SlugcatStats.Name.Red,
-            });
+            ]);
 
             SlugcatFoodQuestAccessibility.AddRange(new Dictionary<SlugcatStats.Name, bool[]>
             {
-                { SlugcatStats.Name.White, new bool[] {
+                { SlugcatStats.Name.White,
+                [
                     true, true, true, true, false, true, true, false, true, false, false,
                     true, false, true, false, false, true, false, true, false, true, true,
                     true, true, true, true,
@@ -78,8 +79,9 @@ namespace RainWorldRandomizer
                     false, false, false, false,
                     false, false, false,
                     false, false, false, false,
-                }},
-                { SlugcatStats.Name.Yellow, new bool[] {
+                ]},
+                { SlugcatStats.Name.Yellow,
+                [
                     true, true, true, true, false, true, true, false, true, false, false,
                     true, false, true, false, false, true, false, true, false, true, true,
                     true, true, true, true,
@@ -90,8 +92,9 @@ namespace RainWorldRandomizer
                     false, false, false, false,
                     false, false, false,
                     false, false, false, false
-                }},
-                { SlugcatStats.Name.Red, new bool[] {
+                ]},
+                { SlugcatStats.Name.Red,
+                [
                     true, true, true, true, true, true, true, true, true, true, true,
                     true, true, true, true, true, true, true, true, true, true, true,
                     true, true, true, true,
@@ -102,7 +105,7 @@ namespace RainWorldRandomizer
                     true, true, true, true,
                     true, true, true,
                     false, false, false, false,
-                }},
+                ]},
             });
 
             SlugcatDefaultStartingDen.AddRange(new Dictionary<SlugcatStats.Name, string>
@@ -115,18 +118,19 @@ namespace RainWorldRandomizer
             // Add constant entries that require MSC
             if (ModManager.MSC)
             {
-                CompatibleSlugcats.AddRange(new List<SlugcatStats.Name>
-                {
+                CompatibleSlugcats.AddRange(
+                [
                     MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
                     MoreSlugcatsEnums.SlugcatStatsName.Artificer,
                     MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
                     MoreSlugcatsEnums.SlugcatStatsName.Spear,
                     MoreSlugcatsEnums.SlugcatStatsName.Saint
-                });
+                ]);
 
                 SlugcatFoodQuestAccessibility.AddRange(new Dictionary<SlugcatStats.Name, bool[]>
                 {
-                    { MoreSlugcatsEnums.SlugcatStatsName.Gourmand, new bool[] {
+                    { MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
+                    [
                         true, true, true, true, true, true, true, true, true, true, true,
                         true, true, true, true, true, true, true, true, true, true, true,
                         true, true, true, true,
@@ -137,8 +141,9 @@ namespace RainWorldRandomizer
                         true, true, true, true,
                         true, true, true,
                         false, false, false, false,
-                    }},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Artificer, new bool[] {
+                    ]},
+                    { MoreSlugcatsEnums.SlugcatStatsName.Artificer,
+                    [
                         true, true, true, true, true, true, true, true, false, true, true,
                         true, true, true, true, true, true, true, true, true, true, true,
                         true, true, true, true,
@@ -149,8 +154,9 @@ namespace RainWorldRandomizer
                         true, true, true, true,
                         true, true, true,
                         false, false, false, false,
-                    }},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Spear, new bool[] {
+                    ]},
+                    { MoreSlugcatsEnums.SlugcatStatsName.Spear,
+                    [
                         false, false, true, true, true, false, false, true, false, true, true,
                         true, true, false, true, true, true, true, false, true, false, true,
                         true, true, true, true,
@@ -161,8 +167,9 @@ namespace RainWorldRandomizer
                         true, true, true, true,
                         true, true, true,
                         true, true, true, true,
-                    }},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Rivulet, new bool[] {
+                    ]},
+                    { MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
+                    [
                         true, true, true, true, false, true, true, false, true, false, false,
                         true, false, true, false, false, true, false, true, false, true, true,
                         true, true, true, true,
@@ -173,8 +180,9 @@ namespace RainWorldRandomizer
                         false, false, false, false,
                         false, false, false,
                         false, false, false, false,
-                    }},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Saint, new bool[] {
+                    ]},
+                    { MoreSlugcatsEnums.SlugcatStatsName.Saint,
+                    [
                         true, true, false, true, false, true, false, false, true, false, false,
                         false, false, true, false, false, true, false, true, false, true, false,
                         false, false, false,
@@ -186,8 +194,9 @@ namespace RainWorldRandomizer
                         false, false, false, false,
                         false, false, false,
                         false, false, false, false,
-                    }},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, new bool[] {
+                    ]},
+                    { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel,
+                    [
                         true, true, true, true, true, true, true, true, true, true, true,
                         true, true, true, true, true, true, true, true, true, true, true,
                         true, true, true, true,
@@ -198,7 +207,7 @@ namespace RainWorldRandomizer
                         true, true, true, true,
                         true, true, true,
                         false, false, false, false,
-                    }}
+                    ]}
                 });
 
                 SlugcatDefaultStartingDen.AddRange(new Dictionary<SlugcatStats.Name, string>()

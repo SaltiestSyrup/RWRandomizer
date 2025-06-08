@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RainWorldRandomizer.Generation
 {
-    public class Location
+    public class Location(string id, Location.Type type, AccessRule accessRule)
     {
         public enum Type
         {
@@ -20,16 +20,9 @@ namespace RainWorldRandomizer.Generation
             Shelter
         }
 
-        public string id;
-        public Type type;
-        public AccessRule accessRule;
-
-        public Location(string id, Type type, AccessRule accessRule)
-        {
-            this.id = id;
-            this.type = type;
-            this.accessRule = accessRule;
-        }
+        public string id = id;
+        public Type type = type;
+        public AccessRule accessRule = accessRule;
 
         public bool CanReach(State state) => accessRule.IsMet(state);
 

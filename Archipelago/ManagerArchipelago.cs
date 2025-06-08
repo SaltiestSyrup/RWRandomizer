@@ -12,11 +12,11 @@ namespace RainWorldRandomizer
         public bool locationsLoaded = false;
         public bool gameCompleted = false;
 
-        public static Dictionary<string, string> NameToAPLocation = new Dictionary<string, string>();
-        public static Dictionary<string, string> APLocationToName = new Dictionary<string, string>();
-        public static Dictionary<string, string> NameToAPItem = new Dictionary<string, string>();
-        public static Dictionary<string, string> APItemToName = new Dictionary<string, string>();
-        internal Dictionary<string, bool> locationsStatus = new Dictionary<string, bool>();
+        public static Dictionary<string, string> NameToAPLocation = [];
+        public static Dictionary<string, string> APLocationToName = [];
+        public static Dictionary<string, string> NameToAPItem = [];
+        public static Dictionary<string, string> APItemToName = [];
+        internal Dictionary<string, bool> locationsStatus = [];
 
         public void Init()
         {
@@ -102,7 +102,7 @@ namespace RainWorldRandomizer
             }
 
             // Release checks we found while offline
-            List<long> offlineLocs = new List<long>();
+            List<long> offlineLocs = [];
             foreach (long locID in ArchipelagoConnection.Session.Locations.AllMissingLocations)
             {
                 string loc = GetLocStringIDFromID(locID);
@@ -133,7 +133,7 @@ namespace RainWorldRandomizer
             locationsStatus.Clear();
             foreach (long loc in ArchipelagoConnection.Session.Locations.AllLocations)
             {
-                if (GetLocStringIDFromID(loc) == null)
+                if (GetLocStringIDFromID(loc) is null)
                 {
                     Plugin.Log.LogError($"Location {loc} does not exist in DataPackage");
                     continue;
@@ -179,7 +179,7 @@ namespace RainWorldRandomizer
             }
             else if (item.StartsWith("Passage-"))
             {
-                WinState.EndgameID endgameId = new WinState.EndgameID(item.Substring(8));
+                WinState.EndgameID endgameId = new(item.Substring(8));
                 if (!passageTokensStatus.ContainsKey(endgameId))
                 {
                     passageTokensStatus.Add(endgameId, true);
@@ -188,13 +188,13 @@ namespace RainWorldRandomizer
             else if (item.StartsWith("Object-"))
             {
                 if (!isNew) return; // Don't double gift items, unused ones will be read from file
-                Unlock unlock = new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
+                Unlock unlock = new(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("PearlObject-"))
             {
                 if (!isNew) return;
-                Unlock unlock = new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
+                Unlock unlock = new(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("Trap-"))
@@ -209,31 +209,31 @@ namespace RainWorldRandomizer
             else if (item == "The Glow")
             {
                 _givenNeuronGlow = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                     Plugin.Singleton.Game.GetStorySession.saveState.theGlow = true;
             }
             else if (item == "The Mark")
             {
                 _givenMark = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                     Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
             }
             else if (item == "IdDrone")
             {
                 _givenRobo = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                     Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
             }
             else if (item == "Disconnect_FP")
             {
                 _givenPebblesOff = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                     Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
             }
             else if (item == "Rewrite_Spear_Pearl")
             {
                 _givenSpearPearlRewrite = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState != null)
+                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                     Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
             }
 
@@ -267,7 +267,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static string FindRandomStart(string selectedRegion)
         {
-            Dictionary<string, List<string>> contenders = new Dictionary<string, List<string>>();
+            Dictionary<string, List<string>> contenders = [];
             if (File.Exists(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt")))
             {
                 string[] file = File.ReadAllLines(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt"));
@@ -280,7 +280,7 @@ namespace RainWorldRandomizer
                         {
                             if (!contenders.ContainsKey(region))
                             {
-                                contenders.Add(region, new List<string>());
+                                contenders.Add(region, []);
                             }
                             contenders[region].Add(line);
                         }
@@ -294,7 +294,7 @@ namespace RainWorldRandomizer
 
         public override List<string> GetLocations()
         {
-            return locationsStatus.Keys.ToList();
+            return [.. locationsStatus.Keys];
         }
 
         public override bool LocationExists(string location)
@@ -311,12 +311,12 @@ namespace RainWorldRandomizer
 
         public override bool GiveLocation(string location)
         {
-            if (IsLocationGiven(location) ?? true) return false;
+            if (IsLocationGiven(location) is null or true) return false;
 
             locationsStatus[location] = true;
 
             // We still gave the location, but we're offline so it can't be sent yet
-            if (!(ArchipelagoConnection.Session?.Socket.Connected ?? false))
+            if (ArchipelagoConnection.Session?.Socket.Connected is null or false)
             {
                 Plugin.Log.LogInfo($"Found location while offline: {location}");
                 return true;
@@ -335,10 +335,7 @@ namespace RainWorldRandomizer
 
         // This will have to ask the server to scout the location, which takes time.
         // Thankfully, the only place that uses this is the spoiler menu, which can be re-written for AP
-        public override Unlock GetUnlockAtLocation(string location)
-        {
-            return null;
-        }
+        public override Unlock GetUnlockAtLocation(string location) => null;
 
         public void GiveCompletionCondition(ArchipelagoConnection.CompletionCondition condition)
         {
@@ -368,7 +365,7 @@ namespace RainWorldRandomizer
             if (!locationsLoaded) return;
 
             // Set locations the server says we found
-            if (ArchipelagoConnection.Session != null)
+            if (ArchipelagoConnection.Session is not null)
             {
                 foreach (long locID in ArchipelagoConnection.Session.Locations.AllLocationsChecked)
                 {
@@ -386,16 +383,10 @@ namespace RainWorldRandomizer
                 locationsStatus);
         }
 
-        private struct APReadableNames
+        private struct APReadableNames(Dictionary<string, string> locations, Dictionary<string, string> items)
         {
-            public APReadableNames(Dictionary<string, string> locations, Dictionary<string, string> items)
-            {
-                this.locations = locations;
-                this.items = items;
-            }
-
-            public Dictionary<string, string> locations;
-            public Dictionary<string, string> items;
+            public Dictionary<string, string> locations = locations;
+            public Dictionary<string, string> items = items;
         }
 
         private static void LoadAPLocationDicts()

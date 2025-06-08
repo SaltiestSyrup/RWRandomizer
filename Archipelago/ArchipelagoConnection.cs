@@ -17,8 +17,8 @@ namespace RainWorldRandomizer
     {
         private const string AP_VERSION = "0.6.1";
         public const string GAME_NAME = "Rain World";
-        private static readonly string[] REQUIRED_SLOT_DATA = new string[]
-        {
+        private static readonly string[] REQUIRED_SLOT_DATA =
+        [
             "which_gamestate",
             "passage_progress_without_survivor",
             "which_victory_condition",
@@ -29,7 +29,7 @@ namespace RainWorldRandomizer
             "checks_sheltersanity",
             "checks_flowersanity", // Feel free to change this name if desired
             "checks_foodquest_accessibility",
-        };
+        ];
 
         public static bool Authenticated = false;
         public static bool CurrentlyConnecting = false;
@@ -66,7 +66,7 @@ namespace RainWorldRandomizer
         /// Defined palette for the mod to use when displaying colors
         /// </summary>
         public static Palette<Color> palette =
-            new Palette<Color>(
+            new(
                 Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
                 new Dictionary<PaletteColor, Color>()
                 {
@@ -122,7 +122,7 @@ namespace RainWorldRandomizer
             }
 
             // Create a new manager instance if there isn't one
-            if (Plugin.RandoManager == null || !(Plugin.RandoManager is ManagerArchipelago))
+            if (Plugin.RandoManager is null or not ManagerArchipelago)
             {
                 Plugin.RandoManager = new ManagerArchipelago();
                 (Plugin.RandoManager as ManagerArchipelago).Init();
@@ -225,7 +225,7 @@ namespace RainWorldRandomizer
         /// <returns>True if there was a running session to disconnect</returns>
         public static bool Disconnect(bool resetManager = true)
         {
-            if (Session == null) return false;
+            if (Session is null) return false;
 
             Plugin.Log.LogInfo("Disconnecting from server...");
             Session.Socket.PacketReceived -= PacketListener;
@@ -520,7 +520,7 @@ namespace RainWorldRandomizer
 
         private static void ConstructNewInventory(ReceivedItemsPacket newInventory, long currentIndex)
         {
-            List<string> oldItems = new List<string>();
+            List<string> oldItems = [];
 
             for (int i = 0; i < currentIndex && i < newInventory.Items.Length; i++)
             {
@@ -539,15 +539,15 @@ namespace RainWorldRandomizer
 
         public static void TrySendCurrentRoomPacket(string info)
         {
-            if (!(Session?.Socket.Connected ?? false)) return;
+            if (Session?.Socket.Connected is null or false) return;
             string dataKey = $"RW_{playerName}_room";
 
             // Send a bounce packet
             Session.Socket.SendPacketAsync(new BouncePacket()
             {
-                Games = new List<string> { GAME_NAME },
-                Tags = new List<string> { "Tracker" },
-                Slots = new List<int> { Session.Players.ActivePlayer.Slot },
+                Games = [GAME_NAME],
+                Tags = ["Tracker"],
+                Slots = [Session.Players.ActivePlayer.Slot],
                 Data = new Dictionary<string, JToken> { { dataKey, JToken.FromObject(info) } }
             });
 
@@ -559,10 +559,10 @@ namespace RainWorldRandomizer
             Plugin.Log.LogInfo($"[Server Message] {message}");
 
             if ((message is ItemSendLogMessage || message is PlayerSpecificLogMessage) // Filter only items and player specific messages
-                && !(message is JoinLogMessage) // Filter out join logs
-                && !(message is LeaveLogMessage) // Filter out leave logs
-                && !(message is TagsChangedLogMessage) // Filter out tag change logs
-                && (!(message is ChatLogMessage chatMessage) || !chatMessage.Message.StartsWith("!"))) // Filter out chat commands
+                && message is not JoinLogMessage // Filter out join logs
+                && message is not LeaveLogMessage // Filter out leave logs
+                && message is not TagsChangedLogMessage // Filter out tag change logs
+                && (message is not ChatLogMessage chatMessage || !chatMessage.Message.StartsWith("!"))) // Filter out chat commands
             {
                 Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(message));
             }

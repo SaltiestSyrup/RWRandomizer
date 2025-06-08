@@ -232,14 +232,14 @@ namespace RainWorldRandomizer
 
         public class GateMapDisplay : RoundedRect
         {
-            public Dictionary<string, Node> nodes = new Dictionary<string, Node>();
-            public Dictionary<string, Connector> connectors = new Dictionary<string, Connector>();
+            public Dictionary<string, Node> nodes = [];
+            public Dictionary<string, Connector> connectors = [];
             public IEnumerable<LocationInfo> locationInfos;
             public Node highlightedNode;
             public static string Scug => Plugin.RandoManager.currentSlugcat?.value ?? "White";
             public static string CurrentRegion => (Custom.rainWorld.processManager.currentMainLoop as RainWorldGame)?.world.name;
             public static Color COLOR_ACCESSIBLE = Color.white;
-            public static Color COLOR_INACCESSIBLE = new Color(0.2f, 0.2f, 0.2f);
+            public static Color COLOR_INACCESSIBLE = new(0.2f, 0.2f, 0.2f);
             public static Dictionary<string, string> regionCodeLookup = Plugin.RegionNamesMap.ToDictionary(x => x.Value, x => x.Key);
 
             public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
@@ -318,43 +318,32 @@ namespace RainWorldRandomizer
                         case LocationKind.Broadcast:
                         case LocationKind.Pearl:
                             return location.Split('-')[2];
-
                         case LocationKind.Echo:
                             return location.Split('-')[1];
-
                         case LocationKind.GoldToken:
                             string third = location.Split('-')[2];
-                            switch (third)
+                            return third switch
                             {
-                                case "GWold": return "GW";
-                                case "gutter": return "SB";
-                                default: return third;
-                            }
-
+                                "GWold" => "GW",
+                                "gutter" => "SB",
+                                _ => third,
+                            };
                         case LocationKind.Shelter:
                             return location.Substring(8, 2);
-
                         case LocationKind.FoodQuest:
                             return "<FQ>";
                         case LocationKind.Passage:
                             return "<P>";
-
                         default:
-                            switch (location)
+                            return location switch
                             {
-                                case "Eat_Neuron": return "<P>";
-                                case "Meet_LttM_Spear": return "DM";
-                                case "Kill_FP": return "RM";
-                                case "Gift_Neuron":
-                                case "Meet_LttM":
-                                case "Save_LttM":
-                                case "Ascend_LttM":
-                                    return "SL";
-                                case "Meet_FP":
-                                case "Ascend_FP":
-                                    return "SS";
-                                default: return null;
-                            }
+                                "Eat_Neuron" => "<P>",
+                                "Meet_LttM_Spear" => "DM",
+                                "Kill_FP" => "RM",
+                                "Gift_Neuron" or "Meet_LttM" or "Save_LttM" or "Ascend_LttM" => "SL",
+                                "Meet_FP" or "Ascend_FP" => "SS",
+                                _ => null,
+                            };
                     }
                 }
 
@@ -378,13 +367,13 @@ namespace RainWorldRandomizer
             {
                 // Nodes which are always present, regardless of gamestate.
                 nodes["SB"] = new Node(menu, this, new Vector2(40f, 40f), "SB");
-                nodes["DS"] = new Node(menu, this, new Vector2(100f, 40f), Scug == "Saint" ? "UG" : "DS");
+                nodes["DS"] = new Node(menu, this, new Vector2(100f, 40f), Scug is "Saint" ? "UG" : "DS");
                 nodes["LF"] = new Node(menu, this, new Vector2(40f, 80f), "LF");
                 nodes["SU"] = new Node(menu, this, new Vector2(100f, 80f), "SU");
                 nodes["GW"] = new Node(menu, this, new Vector2(160f, 80f), "GW");
                 nodes["HI"] = new Node(menu, this, new Vector2(100f, 120f), "HI");
-                nodes["SH"] = new Node(menu, this, new Vector2(160f, 120f), Scug == "Saint" ? "CL" : "SH");
-                nodes["SL"] = new Node(menu, this, new Vector2(220f, 120f), Scug == "Artificer" || Scug == "Spear" ? "LM" : "SL");
+                nodes["SH"] = new Node(menu, this, new Vector2(160f, 120f), Scug is "Saint" ? "CL" : "SH");
+                nodes["SL"] = new Node(menu, this, new Vector2(220f, 120f), Scug is "Artificer" or "Spear" ? "LM" : "SL");
                 nodes["SI"] = new Node(menu, this, new Vector2(40f, 160f), "SI");
                 nodes["CC"] = new Node(menu, this, new Vector2(100f, 160f), "CC");
                 nodes["<P>"] = new Node(menu, this, new Vector2(280f, 40f), "P");
@@ -392,16 +381,16 @@ namespace RainWorldRandomizer
                 if (ModManager.MSC)
                 {
                     nodes["VS"] = new Node(menu, this, new Vector2(40f, 120f), "VS");
-                    if (Scug == "White" || Scug == "Yellow" || Scug == "Gourmand") nodes["OE"] = new Node(menu, this, new Vector2(70f, 60f), "OE");
-                    if (Scug == "Artificer") nodes["LC"] = new Node(menu, this, new Vector2(160f, 200f), "LC");
-                    if (Scug != "Artificer") nodes["MS"] = new Node(menu, this, new Vector2(280f, 160f), Scug == "Spear" ? "DM" : "MS");
+                    if (Scug is "White" or "Yellow" or "Gourmand") nodes["OE"] = new Node(menu, this, new Vector2(70f, 60f), "OE");
+                    if (Scug is "Artificer") nodes["LC"] = new Node(menu, this, new Vector2(160f, 200f), "LC");
+                    if (Scug is not "Artificer") nodes["MS"] = new Node(menu, this, new Vector2(280f, 160f), Scug is "Spear" ? "DM" : "MS");
                     nodes["<FQ>"] = new Node(menu, this, new Vector2(280f, 80f), "FQ");
                 }
 
-                if (Scug != "Saint")
+                if (Scug is not "Saint")
                 {
                     nodes["UW"] = new Node(menu, this, new Vector2(160f, 160f), "UW");
-                    nodes["SS"] = new Node(menu, this, new Vector2(220f, 160f), Scug == "Rivulet" ? "RM" : "SS");
+                    nodes["SS"] = new Node(menu, this, new Vector2(220f, 160f), Scug is "Rivulet" ? "RM" : "SS");
                 }
             }
 
@@ -423,7 +412,7 @@ namespace RainWorldRandomizer
                 connectors["GATE_SI_CC"] = new Connector(nodes["SI"].Right, nodes["CC"].Left);
 
 
-                if (Scug != "Saint")
+                if (Scug is not "Saint")
                 {
                     connectors["GATE_CC_UW"] = new Connector(nodes["CC"].Right, nodes["UW"].Left);
                     connectors["GATE_SH_UW"] = new Connector(nodes["UW"].Bottom, nodes["SH"].Top);
@@ -446,22 +435,22 @@ namespace RainWorldRandomizer
                     connectors["GATE_DS_CC"] = Connector.Wrapping(nodes["DS"].Bottom, new Vector2(0f, -30f), nodes["CC"].Top, new Vector2(0f, 30f));
                     connectors["GATE_SL_VS"] = Connector.Wrapping(nodes["VS"].Left, new Vector2(-30f, 0f), nodes["SL"].Right, new Vector2(30f, 0f));
 
-                    if (Scug == "Artificer") connectors["GATE_UW_LC"] = new Connector(nodes["UW"].Top, nodes["LC"].Bottom);
-                    if (Scug == "Spear")
+                    if (Scug is "Artificer") connectors["GATE_UW_LC"] = new Connector(nodes["UW"].Top, nodes["LC"].Bottom);
+                    if (Scug is "Spear")
                     {
                         connectors["GATE_DM_SL"] = new Connector(nodes["SL"].TopRight, nodes["MS"].Bottom);
                         connectors["GATE_SL_DM"] = new Connector(nodes["SL"].Top, nodes["MS"].BottomLeft);
                     }
-                    if (Scug != "Artificer" && Scug != "Spear")
+                    if (Scug is not "Artificer" and not "Spear")
                     {
                         connectors["GATE_MS_SL"] = new Connector(nodes["SL"].TopRight, nodes["MS"].Bottom);
                         connectors["GATE_SL_MS"] = new Connector(nodes["SL"].Top, nodes["MS"].BottomLeft);
                     }
-                    if (Scug != "Saint")
+                    if (Scug is not "Saint")
                     {
                         connectors["GATE_UW_SL"] = new Connector(nodes["SL"].TopLeft, nodes["UW"].BottomRight);
                     }
-                    if (Scug == "White" || Scug == "Yellow" || Scug == "Gourmand")
+                    if (Scug is "White" or "Yellow" or "Gourmand")
                     {
                         connectors["GATE_OE_SU"] = new Connector(true, nodes["SU"].Bottom + new Vector2(-5f, 0f), -10, -10);
                         connectors["GATE_SB_OE"] = new Connector(true, nodes["SB"].Top + new Vector2(5f, 0f), 10, 10);
@@ -490,15 +479,15 @@ namespace RainWorldRandomizer
             /// Note that which region is A and which is B is dependent only on the gate name, not on the physical position of the regions.</returns>
             public static bool[] CanUseGate(string key)
             {
-                switch (key)
+                return key switch
                 {
-                    case "GATE_LF_SB": return Scug == "Saint" ? new bool[] { true, true } : new bool[] { true, false };
-                    case "GATE_SL_MS": return new bool[] { false, true };
-                    case "GATE_OE_SU": return new bool[] { true, false };
-                    case "GATE_UW_SL": return Scug == "Artificer" || Scug == "Spear" ? new bool[] { true, true } : new bool[] { false, false };
-                    case "GATE_SL_VS": return Scug == "Artificer" ? new bool[] { false, false } : new bool[] { true, true };
-                }
-                return new bool[] { true, true };
+                    "GATE_LF_SB" => Scug is "Saint" ? [true, true] : [true, false],
+                    "GATE_SL_MS" => [false, true],
+                    "GATE_OE_SU" => [true, false],
+                    "GATE_UW_SL" => Scug is "Artificer" or "Spear" ? [true, true] : [false, false],
+                    "GATE_SL_VS" => Scug is "Artificer" ? [false, false] : [true, true],
+                    _ => [true, true],
+                };
             }
 
             /// <summary>
@@ -506,7 +495,7 @@ namespace RainWorldRandomizer
             /// </summary>
             public static IEnumerable<string> GetAccessibleNodes(IEnumerable<string> keys)
             {
-                List<string> ret = new List<string>() { GetNodeName(ActualStartRegion), "<FQ>", "<P>" };
+                List<string> ret = [GetNodeName(ActualStartRegion), "<FQ>", "<P>"];
                 Dictionary<string, bool[]> keyDict = keys.ToDictionary(x => x, CanUseGate);
                 bool updated = true;
                 while (updated)
@@ -530,38 +519,38 @@ namespace RainWorldRandomizer
             /// </summary>
             public static string GetNodeName(string code)
             {
-                switch (code)
+                return code switch
                 {
-                    case "LM": return "SL";
-                    case "RM": return "SS";
-                    case "UG": return "DS";
-                    case "DM": return "MS";
-                    case "CL": return "SH";
-                    default: return code;
-                }
+                    "LM" => "SL",
+                    "RM" => "SS",
+                    "UG" => "DS",
+                    "DM" => "MS",
+                    "CL" => "SH",
+                    _ => code,
+                };
             }
 
             /// <summary>Get the code of the region actually represented by a given node.  null if the region does not exist in the current gamestate.</summary>
             public static string GetActualRegion(string node)
             {
                 string scug = Scug;
-                switch (node)
+                return node switch
                 {
-                    case "SL": return scug == "Artificer" || scug == "Spear" ? "LM" : "SL";
-                    case "SS": return scug == "Rivulet" ? "RM" : (scug == "Saint" ? null : "SS");
-                    case "DS": return scug == "Saint" ? "UG" : "DS";
-                    case "MS": return scug == "Spear" ? "DM" : "MS";
-                    case "SH": return scug == "Saint" ? "CL" : "SH";
-                    case "UW": return scug == "Saint" ? null : "UW";
-                    default: return node;
-                }
+                    "SL" => scug is "Artificer" or "Spear" ? "LM" : "SL",
+                    "SS" => scug is "Rivulet" ? "RM" : (scug is "Saint" ? null : "SS"),
+                    "DS" => scug is "Saint" ? "UG" : "DS",
+                    "MS" => scug is "Spear" ? "DM" : "MS",
+                    "SH" => scug is "Saint" ? "CL" : "SH",
+                    "UW" => scug is "Saint" ? null : "UW",
+                    _ => node,
+                };
             }
 
             public class Node : RoundedRect
             {
                 public MenuLabel label;
                 public RoundedRect outer;
-                public static Vector2 SIZE = new Vector2(30f, 20f);
+                public static Vector2 SIZE = new(30f, 20f);
                 public float completion;
                 public bool current;
 
@@ -569,11 +558,14 @@ namespace RainWorldRandomizer
                     : base(menu, owner, pos, SIZE, true)
                 {
                     fillAlpha = 1f;
+
                     label = new MenuLabel(menu, owner, text, pos + (SIZE / 2) + new Vector2(0.01f, 0.01f), default, false);
                     label.label.alignment = FLabelAlignment.Center;
                     subObjects.Add(label);
+
                     outer = new RoundedRect(menu, owner, pos - new Vector2(4f, 4f), size + new Vector2(8f, 8f), false);
                     subObjects.Add(outer);
+
                     this.completion = completion;
 
                     label.label.color = COLOR_INACCESSIBLE;
@@ -604,12 +596,12 @@ namespace RainWorldRandomizer
                     {
                         string text = label.label.text;
                         if (Plugin.RegionNamesMap.TryGetValue(text, out string s)) return s;
-                        switch (label.label.text)
+                        return label.label.text switch
                         {
-                            case "<FQ>": return "Food Quest";
-                            case "<P>": return "Passages";
-                            default: return "Unknown region";
-                        }
+                            "<FQ>" => "Food Quest",
+                            "<P>" => "Passages",
+                            _ => "Unknown region",
+                        };
                     }
                 }
 
@@ -651,7 +643,7 @@ namespace RainWorldRandomizer
                 {
                     Vector2 point = start;
                     bool discardNext = false;
-                    List<Segment> segments = new List<Segment>();
+                    List<Segment> segments = [];
                     foreach (Vector2 offset in offsets)
                     {
                         if (offset == Vector2.zero) { discardNext = true; continue; }
@@ -692,7 +684,7 @@ namespace RainWorldRandomizer
 
                 public static Connector Wrapping(Vector2 startA, Vector2 offsetA, Vector2 startB, Vector2 offsetB, float dashLength = 7f, float dashSpace = 5f)
                 {
-                    List<Segment> segments = new List<Segment>();
+                    List<Segment> segments = [];
                     for (int i = 0; i < 3; i++)
                     {
                         segments.Add(new Segment(
@@ -750,7 +742,7 @@ namespace RainWorldRandomizer
 
             public void UpdateTrackerForRegion(string region)
             {
-                if (!(Plugin.RandoManager is ManagerArchipelago)) return;
+                if (Plugin.RandoManager is not ManagerArchipelago) return;
                 if (!nodes.TryGetValue(GetNodeName(region), out Node node)) return;
 
                 if (highlightedNode != null) highlightedNode.current = false;
@@ -785,7 +777,7 @@ namespace RainWorldRandomizer
 
                 public void Refresh()
                 {
-                    Vector2 pos = new Vector2(20f, 280f);
+                    Vector2 pos = new(20f, 280f);
                     foreach (CheckIcon sprite in _childNodes.OfType<CheckIcon>())
                     {
                         sprite.SetPosition(pos + sprite.Adjustment);
@@ -794,7 +786,7 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                public class CheckIcon : FSprite
+                public class CheckIcon(string element, LocationKind kind, string name) : FSprite(element)
                 {
                     public Vector2 Adjustment
                     {
@@ -803,14 +795,9 @@ namespace RainWorldRandomizer
                             return kind == LocationKind.Pearl ? new Vector2(-6f, 0f) : default;
                         }
                     }
-                    public LocationKind kind;
-                    public string name;
+                    public LocationKind kind = kind;
+                    public string name = name;
 
-                    public CheckIcon(string element, LocationKind kind, string name) : base(element)
-                    {
-                        this.kind = kind;
-                        this.name = name;
-                    }
                     public static CheckIcon New(LocationKind kind, string name, bool is_checked)
                     {
                         string element = "Futile_White";
@@ -836,7 +823,7 @@ namespace RainWorldRandomizer
                                 break;
                             case LocationKind.Pearl:
                                 element = "Symbol_Pearl";
-                                DataPearl.AbstractDataPearl.DataPearlType pearl = new DataPearl.AbstractDataPearl.DataPearlType(name);
+                                DataPearl.AbstractDataPearl.DataPearlType pearl = new(name);
                                 color = DataPearl.UniquePearlMainColor(pearl);
                                 Color? highlight = DataPearl.UniquePearlHighLightColor(pearl);
                                 if (highlight != null)
@@ -883,13 +870,13 @@ namespace RainWorldRandomizer
                                 element = "ShelterMarker";
                                 break;
                             case LocationKind.Other:
-                                if (name == "Eat_Neuron" || name == "Gift_Neuron")
+                                if (name is "Eat_Neuron" or "Gift_Neuron")
                                 {
                                     iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
                                     element = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                                     color = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                                 }
-                                else if (ModManager.MSC && name == "Kill_FP") { element = "GuidanceEnergyCell"; }
+                                else if (ModManager.MSC && name is "Kill_FP") { element = "GuidanceEnergyCell"; }
                                 else if (ModManager.MSC) { element = "GuidancePebbles"; }
                                 break;
                             default:
@@ -898,7 +885,7 @@ namespace RainWorldRandomizer
                                 break;
                         }
 
-                        CheckIcon ret = new CheckIcon(element, kind, name)
+                        CheckIcon ret = new(element, kind, name)
                         {
                             color = is_checked ? color : new Color(0.2f, 0.2f, 0.2f),
                             scale = scale
@@ -917,7 +904,7 @@ namespace RainWorldRandomizer
 
             public PendingItemsDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
             {
-                Unlock.Item[] pendingItems = Plugin.Singleton.itemDeliveryQueue.ToArray();
+                Unlock.Item[] pendingItems = [.. Plugin.Singleton.itemDeliveryQueue];
                 sprites = new FSprite[pendingItems.Length];
                 size = new Vector2(250f, ((pendingItems.Length - 1) / 8 * 30f) + 57f);
 
@@ -957,9 +944,9 @@ namespace RainWorldRandomizer
 
             public FSprite ItemToFSprite(Unlock.Item item)
             {
-                string spriteName = "Futile_White";
+                string spriteName;
                 float spriteScale = 1f;
-                Color spriteColor = Futile.white;
+                Color spriteColor;
 
                 IconSymbol.IconSymbolData iconData;
 
@@ -970,11 +957,11 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
-                    if (item.id == "FireSpear" || item.id == "ExplosiveSpear")
+                    if (item.id is "FireSpear" or "ExplosiveSpear")
                     {
                         iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
                     }
-                    else if (item.id == "ElectricSpear")
+                    else if (item.id is "ElectricSpear")
                     {
                         iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
                     }
@@ -1020,8 +1007,8 @@ namespace RainWorldRandomizer
             public RoundedRect filterSelectRect;
             public SelectOneButton[] filterSelectOptions;
 
-            public List<SpoilerEntry> entries = new List<SpoilerEntry>();
-            public List<SpoilerEntry> filteredEntries = new List<SpoilerEntry>();
+            public List<SpoilerEntry> entries = [];
+            public List<SpoilerEntry> filteredEntries = [];
             public EntryFilterType currentFilter = EntryFilterType.Given;
 
             public float floatScrollPos;
@@ -1053,7 +1040,8 @@ namespace RainWorldRandomizer
                 }
             }
 
-            public SpoilerMenu(Menu.Menu menu, MenuObject owner) : base(menu, owner, new Vector2(menu.manager.rainWorld.screenSize.x * 0.35f, menu.manager.rainWorld.screenSize.y * 0.125f + 60f), default)
+            public SpoilerMenu(Menu.Menu menu, MenuObject owner) : 
+                base(menu, owner, new Vector2(menu.manager.rainWorld.screenSize.x * 0.35f, menu.manager.rainWorld.screenSize.y * 0.125f + 60f), default)
             {
                 menu.manager.menuMic = new MenuMicrophone(menu.manager, menu.manager.soundLoader);
 
@@ -1158,30 +1146,19 @@ namespace RainWorldRandomizer
 
             public void FilterEntries(EntryFilterType filter)
             {
-                Func<SpoilerEntry, bool> predicate;
-
-                switch (filter)
+                Func<SpoilerEntry, bool> predicate = filter switch
                 {
-                    case EntryFilterType.Given:
-                        predicate = (e) =>
-                        {
-                            return (bool)Plugin.RandoManager.IsLocationGiven(e.entryKey);
-                        };
-                        break;
-                    case EntryFilterType.NotGiven:
-                        predicate = (e) =>
-                        {
-                            return !(bool)Plugin.RandoManager.IsLocationGiven(e.entryKey);
-                        };
-                        break;
-                    default:
-                        predicate = (e) =>
-                        {
-                            return true;
-                        };
-                        break;
-                }
-                filteredEntries = entries.Where(predicate).ToList();
+                    EntryFilterType.Given => (e) =>
+                    {
+                        return (bool)Plugin.RandoManager.IsLocationGiven(e.entryKey);
+                    },
+                    EntryFilterType.NotGiven => (e) =>
+                    {
+                        return !(bool)Plugin.RandoManager.IsLocationGiven(e.entryKey);
+                    },
+                    _ => (e) => { return true; },
+                };
+                filteredEntries = [.. entries.Where(predicate)];
             }
 
             public float ValueOfSlider(Slider slider)
@@ -1248,7 +1225,7 @@ namespace RainWorldRandomizer
 
             public int GetCurrentlySelectedOfSeries(string series)
             {
-                if (series == null || series != "FILTER")
+                if (series is null or not "FILTER")
                 {
                     return 0;
                 }
@@ -1257,7 +1234,7 @@ namespace RainWorldRandomizer
 
             public void SetCurrentlySelectedOfSeries(string series, int to)
             {
-                if (series != null && series == "FILTER")
+                if (series is not null and "FILTER")
                 {
                     currentFilter = (EntryFilterType)to;
                     FilterEntries(currentFilter);
@@ -1340,13 +1317,10 @@ namespace RainWorldRandomizer
                     Container.AddChild(unlockSprite);
 
                     // Labels
-                    if (checkType != "FreeCheck")
-                    {
-                        checkLabel = new MenuLabel(menu, this, checkName,
+                    checkLabel = new MenuLabel(menu, this, checkName,
                         new Vector2(0f, 5f),
                         new Vector2(size.x / 2, 20f), false, null);
-                        subObjects.Add(checkLabel);
-                    }
+                    subObjects.Add(checkLabel);
 
                     unlockLabel = new MenuLabel(menu, this, Plugin.RandoManager.GetUnlockAtLocation(entryKey).ToString(),
                         new Vector2(size.x / 2, 5f),
@@ -1358,10 +1332,13 @@ namespace RainWorldRandomizer
                 public override void Update()
                 {
                     base.Update();
+                    SpoilerMenu spoilerMenu = owner as SpoilerMenu;
                     lastFade = fade;
                     lastSelectedBlink = selectedBlink;
 
-                    roundedRect.borderColor = (bool)Plugin.RandoManager.IsLocationGiven(entryKey) ? CollectToken.GreenColor : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey);
+                    roundedRect.borderColor = (bool)Plugin.RandoManager.IsLocationGiven(entryKey) 
+                        ? CollectToken.GreenColor 
+                        : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey);
                     holdButton.greyedOut = (bool)Plugin.RandoManager.IsLocationGiven(entryKey);
 
                     if (Selected)
@@ -1379,17 +1356,17 @@ namespace RainWorldRandomizer
                     lastSelected = Selected;
 
                     int myindex = -1;
-                    for (int i = 0; i < (owner as SpoilerMenu).filteredEntries.Count; i++)
+                    for (int i = 0; i < spoilerMenu.filteredEntries.Count; i++)
                     {
-                        if ((owner as SpoilerMenu).filteredEntries[i] == this)
+                        if (spoilerMenu.filteredEntries[i] == this)
                         {
                             myindex = i;
                             break;
                         }
                     }
 
-                    active = myindex >= (owner as SpoilerMenu).ScrollPos
-                        && myindex < (owner as SpoilerMenu).ScrollPos + (owner as SpoilerMenu).MaxVisibleItems;
+                    active = myindex >= spoilerMenu.ScrollPos
+                        && myindex < spoilerMenu.ScrollPos + spoilerMenu.MaxVisibleItems;
 
                     if (sleep)
                     {
@@ -1400,15 +1377,15 @@ namespace RainWorldRandomizer
                         sleep = false;
                     }
 
-                    float value = ((owner as SpoilerMenu).StepsDownOfItem(myindex) - 1f);
+                    float value = (spoilerMenu.StepsDownOfItem(myindex) - 1f);
                     float fadeTowards = 1f;
-                    if (myindex < (owner as SpoilerMenu).floatScrollPos)
+                    if (myindex < spoilerMenu.floatScrollPos)
                     {
-                        fadeTowards = Mathf.InverseLerp((owner as SpoilerMenu).floatScrollPos - 1f, (owner as SpoilerMenu).floatScrollPos, value);
+                        fadeTowards = Mathf.InverseLerp(spoilerMenu.floatScrollPos - 1f, spoilerMenu.floatScrollPos, value);
                     }
-                    else if (myindex > (owner as SpoilerMenu).floatScrollPos + (owner as SpoilerMenu).MaxVisibleItems - 1)
+                    else if (myindex > spoilerMenu.floatScrollPos + spoilerMenu.MaxVisibleItems - 1)
                     {
-                        float sum = (owner as SpoilerMenu).floatScrollPos + (owner as SpoilerMenu).MaxVisibleItems;
+                        float sum = spoilerMenu.floatScrollPos + spoilerMenu.MaxVisibleItems;
                         fadeTowards = Mathf.InverseLerp(sum, sum - 1, value);
                     }
 
@@ -1501,7 +1478,7 @@ namespace RainWorldRandomizer
                             break;
                         case "Pearl":
                             spriteName = "Symbol_Pearl";
-                            DataPearl.AbstractDataPearl.DataPearlType pearl = new DataPearl.AbstractDataPearl.DataPearlType(name);
+                            DataPearl.AbstractDataPearl.DataPearlType pearl = new(name);
                             spriteColor = DataPearl.UniquePearlMainColor(pearl);
                             Color? highlight = DataPearl.UniquePearlHighLightColor(pearl);
                             if (highlight != null)
@@ -1566,7 +1543,7 @@ namespace RainWorldRandomizer
 
                 public static FSprite UnlockToFSprite(Unlock unlock)
                 {
-                    string spriteName = "Futile_White";
+                    string spriteName;
                     float spriteScale = 1f;
                     Color spriteColor = Futile.white;
 

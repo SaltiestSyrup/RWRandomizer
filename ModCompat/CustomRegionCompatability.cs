@@ -6,8 +6,8 @@ namespace RainWorldRandomizer
     public static class CustomRegionCompatability
     {
         private static bool hasInit = false;
-        public static Dictionary<string, AccessRule> GlobalRuleOverrides = new Dictionary<string, AccessRule>();
-        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> SlugcatRuleOverrides = new Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>>();
+        public static Dictionary<string, AccessRule> GlobalRuleOverrides = [];
+        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> SlugcatRuleOverrides = [];
 
         public static void Init()
         {

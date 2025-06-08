@@ -157,11 +157,12 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Hack Pebbles to give the mark when he otherwise wouldn't
         /// </summary>
+        // TODO: Rewrite Pebbles meet white hook, goto is volatile
         static void PebblesMeetWhiteUpdateIL(ILContext il)
         {
             try
             {
-                ILCursor c = new ILCursor(il);
+                ILCursor c = new(il);
                 c.GotoNext(
                     MoveType.After,
                     x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
@@ -209,7 +210,7 @@ namespace RainWorldRandomizer
         {
             try
             {
-                ILCursor c = new ILCursor(il);
+                ILCursor c = new(il);
                 c.GotoNext(
                     x => x.MatchLdfld<SSOracleBehavior.SubBehavior>(nameof(SSOracleBehavior.SubBehavior.owner)),
                     x => x.MatchLdfld<SSOracleBehavior>(nameof(SSOracleBehavior.playerEnteredWithMark))
@@ -220,7 +221,7 @@ namespace RainWorldRandomizer
                 // Force this check to always return false
                 c.Index += 2;
                 c.Emit(OpCodes.Pop);
-                c.EmitDelegate<Func<bool>>(() => false);
+                c.EmitDelegate(() => false);
             }
             catch (Exception e)
             {
@@ -232,26 +233,25 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Hack Pebbles to behave properly in strange randomizer circumstances for Artificer
         /// </summary>
-        /// <param name="il"></param>
         static void PebblesMeetArtiUpdateIL(ILContext il)
         {
             try
             {
-                ILCursor c = new ILCursor(il);
+                ILCursor c = new(il);
                 c.GotoNext(
                     MoveType.Before,
                     x => x.MatchStfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
                     );
 
                 c.Emit(OpCodes.Pop); // Only set robo if it has been given
-                c.EmitDelegate<Func<bool>>(() => { return Plugin.RandoManager.GivenRobo; });
+                c.EmitDelegate(() => { return Plugin.RandoManager.GivenRobo; });
 
                 // ------
                 c.GotoNext(
                     MoveType.After,
                     x => x.MatchLdarg(0),
                     x => x.MatchLdfld(typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner))),
-                    x => x.MatchLdsfld(typeof(MoreSlugcats.MoreSlugcatsEnums.SSOracleBehaviorAction).GetField(nameof(MoreSlugcats.MoreSlugcatsEnums.SSOracleBehaviorAction.MeetArty_Talking))),
+                    x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SSOracleBehaviorAction).GetField(nameof(MoreSlugcatsEnums.SSOracleBehaviorAction.MeetArty_Talking))),
                     x => x.MatchStfld(typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)))
                     );
 
@@ -281,7 +281,7 @@ namespace RainWorldRandomizer
                 c.Emit(OpCodes.Ldarg_0);
                 c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance));
                 c.Emit(OpCodes.Ldfld, typeof(Player).GetField(nameof(Player.myRobot)));
-                c.EmitDelegate<Func<MoreSlugcats.AncientBot, bool>>(r => { return r == null; });
+                c.EmitDelegate<Func<AncientBot, bool>>(r => { return r == null; });
                 c.Emit(OpCodes.Brfalse, jump);
             }
             catch (Exception e)
@@ -297,81 +297,73 @@ namespace RainWorldRandomizer
         /// <param name="il"></param>
         static void RotCoreRoomUpdateIL(ILContext il)
         {
-            try
+            ILCursor c = new(il);
+
+            // Make the game think the power is still on if we turned it off
+            while (c.TryGotoNext(
+                MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(typeof(UpdatableAndDeletable).GetField(nameof(UpdatableAndDeletable.room))),
+                x => x.MatchLdfld(typeof(Room).GetField(nameof(Room.game))),
+                x => x.MatchLdfld(typeof(RainWorldGame).GetField(nameof(RainWorldGame.session))),
+                x => x.MatchIsinst(typeof(StoryGameSession)),
+                x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
+                x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.miscWorldSaveData))),
+                x => x.MatchLdfld(typeof(MiscWorldSaveData).GetField(nameof(MiscWorldSaveData.pebblesEnergyTaken)))
+                ))
             {
-                ILCursor c = new ILCursor(il);
-
-                // Make the game think the power is still on if we turned it off
-                while (c.TryGotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(UpdatableAndDeletable).GetField(nameof(UpdatableAndDeletable.room))),
-                    x => x.MatchLdfld(typeof(Room).GetField(nameof(Room.game))),
-                    x => x.MatchLdfld(typeof(RainWorldGame).GetField(nameof(RainWorldGame.session))),
-                    x => x.MatchIsinst(typeof(StoryGameSession)),
-                    x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
-                    x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.miscWorldSaveData))),
-                    x => x.MatchLdfld(typeof(MiscWorldSaveData).GetField(nameof(MiscWorldSaveData.pebblesEnergyTaken)))
-                    ))
-                {
-                    //c.Index--;
-                    c.EmitDelegate<Func<bool, bool>>((energyTaken) =>
-                    {
-                        if (RandoOptions.UseEnergyCell)
-                        {
-                            return Plugin.RandoManager.IsLocationGiven("Kill_FP") ?? false;
-                        }
-                        return energyTaken;
-                    });
-                }
-
-                ILCursor c1 = new ILCursor(il);
-
-                // Skip over code for giving player the Mass Rarefaction cell
-                c1.GotoNext(
-                    MoveType.After,
-                    x => x.MatchCallOrCallvirt(typeof(HUD.TextPrompt).GetMethod(nameof(HUD.TextPrompt.AddMessage),
-                        new Type[] { typeof(string), typeof(int), typeof(int), typeof(bool), typeof(bool) }))
-                    );
-
-                ILLabel jump = c1.MarkLabel();
-
-                c1.GotoPrev(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell).GetField(nameof(MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.myEnergyCell), BindingFlags.NonPublic | BindingFlags.Instance)),
-                    x => x.MatchCallOrCallvirt(typeof(Room).GetMethod(nameof(Room.RemoveObject)))
-                    );
-                c1.MoveAfterLabels();
-
-                c1.Emit(OpCodes.Ldarg_0);
-                c1.EmitDelegate<Func<MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell, bool>>(self =>
+                //c.Index--;
+                c.EmitDelegate<Func<bool, bool>>((energyTaken) =>
                 {
                     if (RandoOptions.UseEnergyCell)
                     {
-                        Plugin.RandoManager.GiveLocation("Kill_FP");
-
-                        // If power is not supposed to be off yet, turn it back on
-                        if (!Plugin.RandoManager.GivenPebblesOff)
-                        {
-                            (self.room.game.session as StoryGameSession).saveState.miscWorldSaveData.pebblesEnergyTaken = false;
-                        }
-
-                        self.myEnergyCell = null;
-                        self.ReloadRooms();
-                        return true;
+                        return Plugin.RandoManager.IsLocationGiven("Kill_FP") ?? false;
                     }
-                    else
-                    {
-                        return false;
-                    }
+                    return energyTaken;
                 });
-                c1.Emit(OpCodes.Brtrue, jump);
             }
-            catch (Exception e)
+
+            ILCursor c1 = new(il);
+
+            // Skip over code for giving player the Mass Rarefaction cell
+            c1.GotoNext(
+                MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(HUD.TextPrompt).GetMethod(nameof(HUD.TextPrompt.AddMessage),
+                    [typeof(string), typeof(int), typeof(int), typeof(bool), typeof(bool)]))
+                );
+
+            ILLabel jump = c1.MarkLabel();
+
+            c1.GotoPrev(
+                MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(typeof(MSCRoomSpecificScript.RM_CORE_EnergyCell)
+                    .GetField(nameof(MSCRoomSpecificScript.RM_CORE_EnergyCell.myEnergyCell), BindingFlags.NonPublic | BindingFlags.Instance)),
+                x => x.MatchCallOrCallvirt(typeof(Room).GetMethod(nameof(Room.RemoveObject)))
+                );
+            c1.MoveAfterLabels();
+
+            c1.Emit(OpCodes.Ldarg_0);
+            c1.EmitDelegate(EnergyCellCheck);
+            c1.Emit(OpCodes.Brtrue, jump);
+
+            static bool EnergyCellCheck(MSCRoomSpecificScript.RM_CORE_EnergyCell self)
             {
-                Plugin.Log.LogError("Failed Hooking for RotCoreRoomUpdateIL");
-                Plugin.Log.LogError(e);
+                if (RandoOptions.UseEnergyCell)
+                {
+                    Plugin.RandoManager.GiveLocation("Kill_FP");
+
+                    // If power is not supposed to be off yet, turn it back on
+                    if (!Plugin.RandoManager.GivenPebblesOff)
+                    {
+                        (self.room.game.session as StoryGameSession).saveState.miscWorldSaveData.pebblesEnergyTaken = false;
+                    }
+
+                    self.myEnergyCell = null;
+                    self.ReloadRooms();
+                    return true;
+                }
+                return false;
             }
         }
 
@@ -393,28 +385,20 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Fix LttM wake up cutscene for Hunter to not break without the mark
         /// </summary>
-        /// <param name="il"></param>
         static void ILMoonWakeUpUpdate(ILContext il)
         {
-            try
-            {
-                ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
-                // Replace every instance of casting to SLOracleBehaviorHasMark with the base class
-                while (c.TryGotoNext(
-                    MoveType.Before,
-                    x => x.MatchIsinst(typeof(SLOracleBehaviorHasMark))
-                    ))
-                {
-                    Instruction jump = c.Next.Next;
-                    c.Emit(OpCodes.Isinst, typeof(SLOracleBehavior));
-                    c.Emit(OpCodes.Br, jump);
-                    c.Index++;
-                }
-            }
-            catch (Exception e)
+            // Replace every instance of casting to SLOracleBehaviorHasMark with the base class
+            while (c.TryGotoNext(
+                MoveType.Before,
+                x => x.MatchIsinst(typeof(SLOracleBehaviorHasMark))
+                ))
             {
-                Plugin.Log.LogError(e);
+                Instruction jump = c.Next.Next;
+                c.Emit(OpCodes.Isinst, typeof(SLOracleBehavior));
+                c.Emit(OpCodes.Br, jump);
+                c.Index++;
             }
         }
 
@@ -434,10 +418,9 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Fix Riv ending cutscene to behave properly without the mark
         /// </summary>
-        /// <param name="il"></param>
         static void OracleCtorIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.After,
@@ -473,49 +456,40 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Allow Pebbles to do a violence on Arty if they don't have the drone, and detect Pebbles killing Inv
         /// </summary>
-        /// <param name="il"></param>
         static void IteratorThrowOutBehaviorIL(ILContext il)
         {
-            try
+            ILCursor c = new(il);
+
+            // Add an extra condition for Artificer actually having the Citizen ID drone to not be killed by Pebbles
+            ILLabel jump = null;
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(RainWorldGame).GetProperty(nameof(RainWorldGame.StoryCharacter)).GetGetMethod()),
+                //x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveStateNumber))),
+                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Artificer))),
+                x => x.MatchCallOrCallvirt(out _),
+                x => x.MatchBrfalse(out jump)
+                );
+
+            c.EmitDelegate(() => { return Plugin.RandoManager.GivenRobo; });
+            c.Emit(OpCodes.Brfalse, jump);
+
+
+            ILCursor c1 = new(il);
+
+            // Inv's Meet FP check is given when killed by FP
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(SSOracleBehavior.SubBehavior).GetProperty(nameof(SSOracleBehavior.SubBehavior.player)).GetGetMethod()),
+                x => x.MatchCallOrCallvirt(typeof(Creature).GetMethod(nameof(Creature.Die)))
+                );
+            c.EmitDelegate(() =>
             {
-                ILCursor c = new ILCursor(il);
-
-                // Add an extra condition for Artificer actually having the Citizen ID drone to not be killed by Pebbles
-                ILLabel jump = null;
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchCallOrCallvirt(typeof(RainWorldGame).GetProperty(nameof(RainWorldGame.StoryCharacter)).GetGetMethod()),
-                    //x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveStateNumber))),
-                    x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Artificer))),
-                    x => x.MatchCallOrCallvirt(out _),
-                    x => x.MatchBrfalse(out jump)
-                    );
-
-                c.EmitDelegate<Func<bool>>(() => { return Plugin.RandoManager.GivenRobo; });
-                c.Emit(OpCodes.Brfalse, jump);
-
-
-                ILCursor c1 = new ILCursor(il);
-
-                // Inv's Meet FP check is given when killed by FP
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchCallOrCallvirt(typeof(SSOracleBehavior.SubBehavior).GetProperty(nameof(SSOracleBehavior.SubBehavior.player)).GetGetMethod()),
-                    x => x.MatchCallOrCallvirt(typeof(Creature).GetMethod(nameof(Creature.Die)))
-                    );
-                c.EmitDelegate<Action>(() =>
+                if (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel)
                 {
-                    if (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel)
-                    {
-                        Plugin.RandoManager.GiveLocation("Meet_FP");
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for IteratorThrowOutBehaviorIL");
-                Plugin.Log.LogError(e);
-            }
+                    Plugin.RandoManager.GiveLocation("Meet_FP");
+                }
+            });
         }
 
         /// <summary>
@@ -532,10 +506,12 @@ namespace RainWorldRandomizer
             }
 
             // Don't try to play sound if player doesn't exist
-            if (self.hud.owner == null 
-                || !(self.hud.owner is Player player) 
-                || player.room == null)
+            if (self.hud.owner is null
+                || self.hud.owner is not Player player
+                || player.room is null)
+            {
                 return;
+            }
 
             Room room = player.room;
             for (int i = 0; i < room.physicalObjects.Length; i++)
@@ -601,7 +577,7 @@ namespace RainWorldRandomizer
 
                         oracleBehavior.voice = oracle.room.PlaySound(sound, oracle.firstChunk);
                         oracleBehavior.voice.requireActiveUpkeep = true;
-                        if (oracleBehavior.conversation != null)
+                        if (oracleBehavior.conversation is null)
                         {
                             oracleBehavior.conversation.waitForStill = true;
                         }

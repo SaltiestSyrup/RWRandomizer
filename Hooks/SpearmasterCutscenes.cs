@@ -78,7 +78,7 @@ namespace RainWorldRandomizer
             orig(self);
 
             if (!Plugin.RandoManager.GivenSpearPearlRewrite
-                && self.owner.inspectPearl != null
+                && self.owner.inspectPearl is not null
                 && self.owner.inspectPearl is SpearMasterPearl)
             {
                 self.oracle.room.game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = false;
@@ -92,7 +92,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void ILSSOracleBehaviorUpdate(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.After,
@@ -117,7 +117,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void ILSSOracleMeetPurpleUpdate(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // After 0B83
             c.GotoNext(MoveType.After,
@@ -128,7 +128,9 @@ namespace RainWorldRandomizer
 
             // Explode the pearl
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate<Action<SSOracleBehavior.SSOracleMeetPurple>>((self) =>
+            c.EmitDelegate(DetonatePearl);
+
+            static void DetonatePearl(SSOracleBehavior.SSOracleMeetPurple self)
             {
                 for (int i = 0; i < 20; i++)
                 {
@@ -136,7 +138,7 @@ namespace RainWorldRandomizer
                         RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, UnityEngine.Color.white, null, 30, 120));
                 }
                 self.MySMcore.Destroy();
-            });
+            }
         }
 
         /// <summary>
@@ -144,7 +146,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void ILMoonUpdate(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             for (int i = 0; i < 2; i++)
             {
@@ -167,19 +169,21 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void ILRegurgitate(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchNewobj(typeof(SpearMasterPearl.AbstractSpearMasterPearl)
-                    .GetConstructor(new Type[] {
+                    .GetConstructor(
+                    [
                         typeof(World),
                         typeof(PhysicalObject),
                         typeof(WorldCoordinate),
                         typeof(EntityID),
                         typeof(int),
                         typeof(int),
-                        typeof(PlacedObject.ConsumableObjectData) }))
+                        typeof(PlacedObject.ConsumableObjectData)
+                    ]))
                 );
 
             ILLabel jump = c.MarkLabel();
@@ -187,14 +191,16 @@ namespace RainWorldRandomizer
             c.Index--;
 
             c.Emit(OpCodes.Newobj, typeof(FakeSpearMasterPearl.AbstractFakeSpearMasterPearl)
-                .GetConstructor(new Type[] {
-                        typeof(World),
-                        typeof(PhysicalObject),
-                        typeof(WorldCoordinate),
-                        typeof(EntityID),
-                        typeof(int),
-                        typeof(int),
-                        typeof(PlacedObject.ConsumableObjectData) }));
+                .GetConstructor(
+                [
+                    typeof(World),
+                    typeof(PhysicalObject),
+                    typeof(WorldCoordinate),
+                    typeof(EntityID),
+                    typeof(int),
+                    typeof(int),
+                    typeof(PlacedObject.ConsumableObjectData) 
+                ]));
 
             c.Emit(OpCodes.Br, jump);
         }
@@ -204,7 +210,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void ILAbstractSpearMasterPearlctor(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.After,
@@ -215,14 +221,7 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate<Func<SpearMasterPearl.AbstractSpearMasterPearl, AbstractPhysicalObject.AbstractObjectType>>((self) =>
-            {
-                if (self is FakeSpearMasterPearl.AbstractFakeSpearMasterPearl)
-                {
-                    return RandomizerEnums.AbstractObjectType.SpearmasterpearlFake;
-                }
-                return MoreSlugcatsEnums.AbstractObjectType.Spearmasterpearl;
-            });
+            c.EmitDelegate(ReplacePearlAbstractObjectType);
 
             c.GotoNext(
                 MoveType.After,
@@ -233,27 +232,28 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate<Func<SpearMasterPearl.AbstractSpearMasterPearl, DataPearl.AbstractDataPearl.DataPearlType>>((self) =>
+            c.EmitDelegate(ReplacePearlDataPearlType);
+
+            AbstractPhysicalObject.AbstractObjectType ReplacePearlAbstractObjectType(SpearMasterPearl.AbstractSpearMasterPearl self)
             {
-                if (self is FakeSpearMasterPearl.AbstractFakeSpearMasterPearl)
-                {
-                    return RandomizerEnums.DataPearlType.SpearmasterpearlFake;
-                }
-                return MoreSlugcatsEnums.DataPearlType.Spearmasterpearl;
-            });
+                return self is FakeSpearMasterPearl.AbstractFakeSpearMasterPearl
+                    ? RandomizerEnums.AbstractObjectType.SpearmasterpearlFake
+                    : MoreSlugcatsEnums.AbstractObjectType.Spearmasterpearl;
+            }
+            DataPearl.AbstractDataPearl.DataPearlType ReplacePearlDataPearlType(SpearMasterPearl.AbstractSpearMasterPearl self)
+            {
+                return self is FakeSpearMasterPearl.AbstractFakeSpearMasterPearl
+                    ? RandomizerEnums.DataPearlType.SpearmasterpearlFake
+                    : MoreSlugcatsEnums.DataPearlType.Spearmasterpearl;
+            }
         }
     }
 
     /// <summary>
     /// Fake decoy SpearMasterPearl for use in cutscenes where the player shouldn't actually have the pearl yet
     /// </summary>
-    public class FakeSpearMasterPearl : SpearMasterPearl
+    public class FakeSpearMasterPearl(AbstractPhysicalObject abstractPhysicalObject, World world) : SpearMasterPearl(abstractPhysicalObject, world)
     {
-        public FakeSpearMasterPearl(AbstractPhysicalObject abstractPhysicalObject, World world) : base(abstractPhysicalObject, world)
-        {
-
-        }
-
         // Pearl will destroy itself if it leaves a puppet chamber
         public override void Update(bool eu)
         {
@@ -266,14 +266,9 @@ namespace RainWorldRandomizer
             }
         }
 
-        public class AbstractFakeSpearMasterPearl : AbstractSpearMasterPearl
-        {
-            public AbstractFakeSpearMasterPearl(World world, PhysicalObject realizedObject, WorldCoordinate pos, EntityID ID,
-                int originRoom, int placedObjectIndex, PlacedObject.ConsumableObjectData consumableData)
-                : base(world, realizedObject, pos, ID, originRoom, placedObjectIndex, consumableData)
-            {
-
-            }
-        }
+        public class AbstractFakeSpearMasterPearl(World world, PhysicalObject realizedObject, WorldCoordinate pos, EntityID ID,
+            int originRoom, int placedObjectIndex, PlacedObject.ConsumableObjectData consumableData)
+            : AbstractSpearMasterPearl(world, realizedObject, pos, ID, originRoom, placedObjectIndex, consumableData)
+        { }
     }
 }
