@@ -87,14 +87,15 @@ namespace RainWorldRandomizer.WatcherIntegration
                 if (Plugin.RandoManager.IsLocationGiven(loc) == false) Plugin.RandoManager.GiveLocation(loc);
             }
 
-            /// <summary>Detect, at cycle end, what new fixed warp points have been discovered.</summary>
-            internal static void DetectStaticWarpPoint(SaveState saveState)
+            /// <summary>Detect, at cycle end, what new fixed warp points have been discovered and what regions have been infected.</summary>
+            internal static void DetectFixedWarpPointAndRotSpread(SaveState saveState)
             {
                 foreach (var point in saveState.deathPersistentSaveData.newlyDiscoveredWarpPoints)
-                {
-                    string loc = $"Warp-{point.Key.Split(':')[0].ToUpperInvariant()}";
-                    if (Plugin.RandoManager.IsLocationGiven(loc) == false) Plugin.RandoManager.GiveLocation(loc);
-                }
+                    EntryPoint.TryGiveLocation($"Warp-{point.Key.Split(':')[0].ToUpperInvariant()}");
+
+                foreach (string region in saveState.miscWorldSaveData.regionsInfectedBySentientRot)
+                    if (!Region.HasSentientRotResistance(region))
+                        EntryPoint.TryGiveLocation($"SpreadRot-{region.ToUpperInvariant()}");
             }
             /// <summary>Prevent Spinning Top from spawning if the key is not collected (unless that setting is disabled).</summary>
             private static void SpinningTopKeyCheck(ILContext il)

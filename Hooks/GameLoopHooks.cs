@@ -144,7 +144,7 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                if (ModManager.Watcher) WatcherIntegration.CheckDetection.Hooks.DetectStaticWarpPoint(saveState);
+                if (ModManager.Watcher) WatcherIntegration.CheckDetection.Hooks.DetectFixedWarpPointAndRotSpread(saveState);
             }
 
             orig(self, ID);
