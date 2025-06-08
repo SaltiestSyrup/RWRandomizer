@@ -19,17 +19,17 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Used to override rules for locations. To modify the rules of a location, add its location ID to this dict with the new rule it should follow.
         /// </summary>
-        public static Dictionary<string, AccessRule> GlobalRuleOverrides = new Dictionary<string, AccessRule>();
+        public static Dictionary<string, AccessRule> GlobalRuleOverrides = [];
         /// <summary>
         /// Used to override rules for locations as specific slugcats. Applies on top of <see cref="GlobalRuleOverrides"/>, taking priority over all if playing as the relevant slugcat
         /// </summary>
-        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> SlugcatRuleOverrides = new Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>>();
+        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> SlugcatRuleOverrides = [];
 
         /// <summary>
         /// Combination of <see cref="GlobalRuleOverrides"/> and <see cref="SlugcatRuleOverrides"/> populated in instance constructor.
         /// Any additions to rule overrides must be completed by the time the generator instance is created
         /// </summary>
-        private Dictionary<string, AccessRule> RuleOverrides = new Dictionary<string, AccessRule>();
+        private Dictionary<string, AccessRule> RuleOverrides = [];
 
         private SlugcatStats.Name slugcat;
         private SlugcatStats.Timeline timeline;
@@ -49,8 +49,8 @@ namespace RainWorldRandomizer.Generation
         {
             get
             {
-                return CurrentStage > GenerationStep.NotStarted
-                    && CurrentStage < GenerationStep.Complete;
+                return CurrentStage is > GenerationStep.NotStarted
+                    and < GenerationStep.Complete;
             }
         }
 
@@ -58,14 +58,14 @@ namespace RainWorldRandomizer.Generation
         private Random randomState;
 
         private State state;
-        private List<Item> ItemsToPlace = new List<Item>();
-        private HashSet<string> AllRegions = new HashSet<string>();
+        private List<Item> ItemsToPlace = [];
+        private HashSet<string> AllRegions = [];
         public HashSet<string> AllGates { get; private set; }
         public HashSet<string> UnplacedGates { get; private set; }
         public HashSet<string> AllPassages { get; private set; }
         public Dictionary<Location, Item> RandomizedGame { get; private set; }
 
-        public StringBuilder generationLog = new StringBuilder();
+        public StringBuilder generationLog = new();
         public string customStartDen = "";
         public int generationSeed;
 
@@ -76,10 +76,10 @@ namespace RainWorldRandomizer.Generation
             this.timeline = timeline;
             CurrentStage = GenerationStep.NotStarted;
 
-            AllGates = new HashSet<string>();
-            UnplacedGates = new HashSet<string>();
-            AllPassages = new HashSet<string>();
-            RandomizedGame = new Dictionary<Location, Item>();
+            AllGates = [];
+            UnplacedGates = [];
+            AllPassages = [];
+            RandomizedGame = [];
 
             // Initialize RNG
             // Using inferior System.Random because it's instanced rather than static.
@@ -130,7 +130,7 @@ namespace RainWorldRandomizer.Generation
             generationLog.AppendLine("INITIALIZE STATE");
             CurrentStage = GenerationStep.InitializingState;
             state = new State(slugcat, timeline, RandoOptions.StartMinimumKarma ? 1 : 5);
-            HashSet<Location> locations = new HashSet<Location>();
+            HashSet<Location> locations = [];
 
             // Load Tokens
             if (RandoOptions.UseSandboxTokenChecks)
@@ -148,7 +148,7 @@ namespace RainWorldRandomizer.Generation
             bool regionKitEchoes = RandoOptions.UseEchoChecks && RegionKitCompatibility.Enabled;
             bool doPearlLocations = RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
             bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && RandoOptions.UseSMBroadcasts;
-            List<string> slugcatRegions = SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat)).ToList();
+            List<string> slugcatRegions = [.. SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat))];
             foreach (string region in Region.GetFullRegionOrder(timeline))
             {
                 AccessRule regionAccessRule = new RegionAccessRule(region);
@@ -161,11 +161,11 @@ namespace RainWorldRandomizer.Generation
                         generationLog.AppendLine($"Skip adding locations for impossible region: {region}");
                         continue;
                     }
-                    regionAccessRule = new CompoundAccessRule(new AccessRule[]
-                    {
+                    regionAccessRule = new CompoundAccessRule(
+                    [
                         regionAccessRule,
                         newRules
-                    }, CompoundAccessRule.CompoundOperation.All);
+                    ], CompoundAccessRule.CompoundOperation.All);
                     generationLog.AppendLine($"Applied custom rules for region: {region}");
                 }
                 // Filter out slugcat inaccessible regions unless there is a special rule defined
@@ -219,7 +219,7 @@ namespace RainWorldRandomizer.Generation
                 string gate = Regex.Split(karmaLock, " : ")[0];
                 string[] split = Regex.Split(gate, "_");
                 if (split.Length < 3) continue; // Ignore abnormal gates
-                string[] regions = new string[2] { split[1], split[2] };
+                string[] regions = [split[1], split[2]];
 
                 // Skip if gate already accounted for
                 if (AllGates.Contains(gate)) continue;
@@ -301,7 +301,7 @@ namespace RainWorldRandomizer.Generation
                 if (RandoOptions.UsePassageChecks)
                 {
                     // TODO: Mother, Hunter, Monk, Outlaw, and Saint currently have placeholder rules as in-depth requirements are a difficult problem to solve
-                    AccessRule accessRule = new AccessRule();
+                    AccessRule accessRule = new();
                     switch (passage)
                     {
                         case "Martyr":
@@ -315,13 +315,13 @@ namespace RainWorldRandomizer.Generation
                                 CompoundAccessRule.CompoundOperation.AtLeast, 5);
                             break;
                         case "Pilgrim":
-                            List<string> echoRegions = new List<string>();
+                            List<string> echoRegions = [];
                             foreach (string region in SlugcatStats.SlugcatStoryRegions(slugcat))
                             {
                                 if (World.CheckForRegionGhost(slugcat, region)) echoRegions.Add(region);
                             }
                             accessRule = new CompoundAccessRule(
-                                echoRegions.Select(r => new RegionAccessRule(r)).ToArray(),
+                                [.. echoRegions.Select(r => new RegionAccessRule(r))],
                                 CompoundAccessRule.CompoundOperation.All);
                             break;
                         case "Survivor":
@@ -336,12 +336,12 @@ namespace RainWorldRandomizer.Generation
                                 CompoundAccessRule.CompoundOperation.Any);
                             break;
                         case "Traveller":
-                            List<AccessRule> regions = new List<AccessRule>();
+                            List<AccessRule> regions = [];
                             foreach (string reg in SlugcatStats.SlugcatStoryRegions(slugcat))
                             {
                                 regions.Add(new RegionAccessRule(reg));
                             }
-                            accessRule = new CompoundAccessRule(regions.ToArray(),
+                            accessRule = new CompoundAccessRule([.. regions],
                                 CompoundAccessRule.CompoundOperation.All);
                             break;
                         case "Chieftain":
@@ -368,18 +368,18 @@ namespace RainWorldRandomizer.Generation
                                 CompoundAccessRule.CompoundOperation.AtLeast, 5);
                             break;
                         case "Scholar":
-                            List<AccessRule> rules = new List<AccessRule>()
-                            {
+                            List<AccessRule> rules =
+                            [
                                 new AccessRule("The_Mark"),
                                 new CompoundAccessRule(AccessRuleConstants.Regions,
                                     CompoundAccessRule.CompoundOperation.AtLeast, 3)
-                            };
+                            ];
                             if (slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Yellow
                                 || (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
                             {
                                 rules.Add(new RegionAccessRule("SL"));
                             }
-                            accessRule = new CompoundAccessRule(rules.ToArray(),
+                            accessRule = new CompoundAccessRule([.. rules],
                                 CompoundAccessRule.CompoundOperation.All);
                             break;
                     }
@@ -422,12 +422,12 @@ namespace RainWorldRandomizer.Generation
             // Create Food Quest locations
             if (ModManager.MSC && RandoOptions.UseFoodQuest)
             {
-                List<AccessRule> allGourmRules = new List<AccessRule>();
+                List<AccessRule> allGourmRules = [];
                 foreach (WinState.GourmandTrackerData data in WinState.GourmandPassageTracker)
                 {
                     if (data.type == AbstractPhysicalObject.AbstractObjectType.Creature)
                     {
-                        List<CreatureAccessRule> rules = new List<CreatureAccessRule>();
+                        List<CreatureAccessRule> rules = [];
                         foreach (CreatureTemplate.Type type in data.crits)
                         {
                             rules.Add(new CreatureAccessRule(type));
@@ -447,14 +447,14 @@ namespace RainWorldRandomizer.Generation
                         // TODO: Add support for creatures that are PlacedObjects
                         else if (data.crits[0] == CreatureTemplate.Type.Hazer)
                         {
-                            rule = new CompoundAccessRule(new AccessRule[]
-                            {
+                            rule = new CompoundAccessRule(
+                            [
                                 new RegionAccessRule("LF"),
                                 new RegionAccessRule("DS"),
                                 new RegionAccessRule("GW"),
                                 new RegionAccessRule("HI"),
                                 new RegionAccessRule("SL")
-                            }, CompoundAccessRule.CompoundOperation.Any);
+                            ], CompoundAccessRule.CompoundOperation.Any);
                         }
 
                         allGourmRules.Add(rule);
@@ -468,7 +468,7 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
                 locations.Add(new Location("Passage-Gourmand", Location.Type.Passage,
-                        new CompoundAccessRule(allGourmRules.ToArray(), CompoundAccessRule.CompoundOperation.All)));
+                        new CompoundAccessRule([.. allGourmRules], CompoundAccessRule.CompoundOperation.All)));
             }
 
             // Create Special locations
@@ -484,11 +484,11 @@ namespace RainWorldRandomizer.Generation
                     case "Gourmand":
                     case "Sofanthiel":
                         locations.Add(new Location("Meet_LttM", Location.Type.Story,
-                            new CompoundAccessRule(new AccessRule[]
-                            {
+                            new CompoundAccessRule(
+                            [
                                 new RegionAccessRule("SL"),
-                                new AccessRule("The_Mark")
-                            }, CompoundAccessRule.CompoundOperation.All)));
+                                new("The_Mark")
+                            ], CompoundAccessRule.CompoundOperation.All)));
                         locations.Add(new Location("Meet_FP", Location.Type.Story,
                             new RegionAccessRule("SS")));
                         break;
@@ -502,11 +502,11 @@ namespace RainWorldRandomizer.Generation
                     // Hunter Saves LttM, which is a seperate check
                     case "Red":
                         locations.Add(new Location("Save_LttM", Location.Type.Story,
-                            new CompoundAccessRule(new AccessRule[]
-                            {
+                            new CompoundAccessRule(
+                            [
                                 new RegionAccessRule("SL"),
-                                new AccessRule("Object-NSHSwarmer")
-                            }, CompoundAccessRule.CompoundOperation.All)));
+                                new("Object-NSHSwarmer")
+                            ], CompoundAccessRule.CompoundOperation.All)));
                         locations.Add(new Location("Meet_FP", Location.Type.Story,
                             new RegionAccessRule("SS")));
                         break;
@@ -518,11 +518,11 @@ namespace RainWorldRandomizer.Generation
                     // Rivulet does a murder in RM, seperate check
                     case "Rivulet":
                         locations.Add(new Location("Meet_LttM", Location.Type.Story,
-                            new CompoundAccessRule(new AccessRule[]
-                            {
+                            new CompoundAccessRule(
+                            [
                                 new RegionAccessRule("SL"),
-                                new AccessRule("The_Mark")
-                            }, CompoundAccessRule.CompoundOperation.All)));
+                                new("The_Mark")
+                            ], CompoundAccessRule.CompoundOperation.All)));
                         if (RandoOptions.UseEnergyCell)
                         {
                             locations.Add(new Location("Kill_FP", Location.Type.Story,
@@ -532,17 +532,17 @@ namespace RainWorldRandomizer.Generation
                     // Saint has 2 seperate checks here for ascending
                     case "Saint":
                         locations.Add(new Location("Ascend_LttM", Location.Type.Story,
-                            new CompoundAccessRule(new AccessRule[]
-                            {
+                            new CompoundAccessRule(
+                            [
                                 new RegionAccessRule("SL"),
                                 new KarmaAccessRule(10)
-                            }, CompoundAccessRule.CompoundOperation.All)));
+                            ], CompoundAccessRule.CompoundOperation.All)));
                         locations.Add(new Location("Ascend_FP", Location.Type.Story,
-                            new CompoundAccessRule(new AccessRule[]
-                            {
+                            new CompoundAccessRule(
+                            [
                                 new RegionAccessRule("CL"),
                                 new KarmaAccessRule(10)
-                            }, CompoundAccessRule.CompoundOperation.All)));
+                            ], CompoundAccessRule.CompoundOperation.All)));
                         break;
                 }
             }
@@ -651,7 +651,7 @@ namespace RainWorldRandomizer.Generation
                 throw new GenerationFailureException("Too few locations present to make a valid seed");
             }
 
-            List<Item> itemsToAdd = new List<Item>();
+            List<Item> itemsToAdd = [];
             int hunterCyclesAdded = 0;
             while (state.AllLocations.Count > ItemsToPlace.Count + itemsToAdd.Count)
             {
@@ -671,7 +671,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     // Duplicate a random gate item
                     IEnumerable<Item> gateItems = ItemsToPlace.Where(i => i.type == Item.Type.Gate);
-                    Item gate = new Item(gateItems.ElementAt(randomState.Next(gateItems.Count())))
+                    Item gate = new(gateItems.ElementAt(randomState.Next(gateItems.Count())))
                     {
                         importance = Item.Importance.Filler
                     };
@@ -714,8 +714,8 @@ namespace RainWorldRandomizer.Generation
             {
                 // All gates adjacent to exactly one of the currently accessible regions
                 // Additionally includes other progression to spread them throughout play
-                List<Item> placeableGates = new List<Item>();
-                List<Item> placeableOtherProg = new List<Item>();
+                List<Item> placeableGates = [];
+                List<Item> placeableOtherProg = [];
                 foreach (Item i in ItemsToPlace)
                 {
                     if (i.importance == Item.Importance.Progression)
@@ -782,10 +782,10 @@ namespace RainWorldRandomizer.Generation
             int progLeftToPlace;
             do
             {
-                List<Item> placeableProg = ItemsToPlace.Where((i) =>
+                List<Item> placeableProg = [.. ItemsToPlace.Where((i) =>
                 {
                     return i.importance == Item.Importance.Progression;
-                }).ToList();
+                })];
 
                 // Detect possible failure
                 if (state.AvailableLocations.Count == 0)
@@ -847,7 +847,7 @@ namespace RainWorldRandomizer.Generation
         {
             if (CurrentStage != GenerationStep.Complete) return null;
 
-            Dictionary<string, Unlock> output = new Dictionary<string, Unlock>();
+            Dictionary<string, Unlock> output = [];
             foreach (var placement in RandomizedGame)
             {
                 if (!output.ContainsKey(placement.Key.id))
@@ -856,7 +856,6 @@ namespace RainWorldRandomizer.Generation
                 }
                 else
                 {
-
                     Plugin.Log.LogWarning($"Tried to place double location: {placement.Key.id}");
                 }
             }
@@ -907,27 +906,27 @@ namespace RainWorldRandomizer.Generation
 
         public static void GenerateCustomRules()
         {
-            SlugcatRuleOverrides.Add(SlugcatStats.Name.White, new Dictionary<string, AccessRule>());
-            SlugcatRuleOverrides.Add(SlugcatStats.Name.Yellow, new Dictionary<string, AccessRule>());
-            SlugcatRuleOverrides.Add(SlugcatStats.Name.Red, new Dictionary<string, AccessRule>());
+            SlugcatRuleOverrides.Add(SlugcatStats.Name.White, []);
+            SlugcatRuleOverrides.Add(SlugcatStats.Name.Yellow, []);
+            SlugcatRuleOverrides.Add(SlugcatStats.Name.Red, []);
 
             if (ModManager.MSC)
             {
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Gourmand, new Dictionary<string, AccessRule>());
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Artificer, new Dictionary<string, AccessRule>());
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, new Dictionary<string, AccessRule>());
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Spear, new Dictionary<string, AccessRule>());
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Saint, new Dictionary<string, AccessRule>());
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, new Dictionary<string, AccessRule>());
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Gourmand, []);
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Artificer, []);
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, []);
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Spear, []);
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Saint, []);
+                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, []);
             }
 
             // SB ravine checks only reachable from LF side
-            AccessRule subRavineRule = new CompoundAccessRule(new AccessRule[]
-            {
+            AccessRule subRavineRule = new CompoundAccessRule(
+            [
                 new GateAccessRule("GATE_LF_SB"),
                 new RegionAccessRule("LF"),
                 new RegionAccessRule("SB")
-            }, CompoundAccessRule.CompoundOperation.All);
+            ], CompoundAccessRule.CompoundOperation.All);
             GlobalRuleOverrides.Add("Echo-SB", subRavineRule);
             GlobalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
 
@@ -935,65 +934,64 @@ namespace RainWorldRandomizer.Generation
             if (ModManager.MSC)
             {
                 // OE isn't filtered out by timeline so it needs a manual rule here
-                GlobalRuleOverrides.Add("Region-OE", new MultiSlugcatAccessRule(new SlugcatStats.Name[]
-                {
+                GlobalRuleOverrides.Add("Region-OE", new MultiSlugcatAccessRule(
+                [
                     SlugcatStats.Name.White,
                     SlugcatStats.Name.Yellow,
                     MoreSlugcatsEnums.SlugcatStatsName.Gourmand
-                }));
+                ]));
                 // Outer Expanse requires the Mark for Gourmand
                 SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Gourmand].Add("Region-OE", new AccessRule("The_Mark"));
 
                 // if Arty, Metro requires drone and mark
                 // else require option
                 GlobalRuleOverrides.Add("Region-LC", new OptionAccessRule("ForceOpenMetropolis"));
-                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Artificer].Add("Region-LC", new CompoundAccessRule(new AccessRule[]
-                {
-                    new AccessRule("The_Mark"),
-                    new AccessRule("IdDrone")
-                }, CompoundAccessRule.CompoundOperation.All));
+                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Artificer].Add("Region-LC", new CompoundAccessRule(
+                [
+                    new("The_Mark"),
+                    new("IdDrone")
+                ], CompoundAccessRule.CompoundOperation.All));
 
                 // Submerged Superstructure should only be open if playing Riv or setting allows it
-                GlobalRuleOverrides.Add("Region-MS", new CompoundAccessRule(new AccessRule[]
-                {
+                GlobalRuleOverrides.Add("Region-MS", new CompoundAccessRule(
+                [
                     new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet),
                     new OptionAccessRule("ForceOpenSubmerged")
-                }, CompoundAccessRule.CompoundOperation.Any));
+                ], CompoundAccessRule.CompoundOperation.Any));
 
                 // Filtration pearl only reachable from OE
-                GlobalRuleOverrides.Add("Pearl-SU_filt", new CompoundAccessRule(new AccessRule[]
-                {
+                GlobalRuleOverrides.Add("Pearl-SU_filt", new CompoundAccessRule(
+                [
                     new RegionAccessRule("OE"),
                     new RegionAccessRule("SU"),
-                    new MultiSlugcatAccessRule(new SlugcatStats.Name[]
-                    {
+                    new MultiSlugcatAccessRule(
+                    [
                         SlugcatStats.Name.White,
                         SlugcatStats.Name.Yellow,
                         MoreSlugcatsEnums.SlugcatStatsName.Gourmand
-                    })
-                }, CompoundAccessRule.CompoundOperation.All));
+                    ])
+                ], CompoundAccessRule.CompoundOperation.All));
                 // Spearmaster can easily reach SU_filt if spawn is not randomized
                 SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Spear].Add("Pearl-SU_filt", new OptionAccessRule("RandomizeSpawnLocation", true));
 
                 // Token cache fails to filter this pearl to only Past GW
-                GlobalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(new AccessRule[]
-                {
+                GlobalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(
+                [
                     new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore),
                     new RegionAccessRule("GW")
-                }, CompoundAccessRule.CompoundOperation.All));
+                ], CompoundAccessRule.CompoundOperation.All));
 
                 // This chatlog is also in SB ravine
                 GlobalRuleOverrides.Add("Broadcast-Chatlog_SB0", subRavineRule);
 
                 // Rubicon isn't blocked by a gate so it never gets marked as accessible
                 // Remove Rubicon from requirements and substitute Karma 10
-                List<AccessRule> travellerRule = SlugcatStats.SlugcatStoryRegions(MoreSlugcatsEnums.SlugcatStatsName.Saint)
-                    .Except(new string[] { "HR" })
-                    .Select<string, AccessRule>(r => new RegionAccessRule(r))
-                    .ToList();
+                List<AccessRule> travellerRule = [.. SlugcatStats.SlugcatStoryRegions(MoreSlugcatsEnums.SlugcatStatsName.Saint)
+                    .Except(["HR"])
+                    .Select<string, AccessRule>(r => new RegionAccessRule(r))];
                 travellerRule.Add(new KarmaAccessRule(10));
                 SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Saint].Add("Passage-Traveller", new CompoundAccessRule(
-                    travellerRule.ToArray(), CompoundAccessRule.CompoundOperation.All));
+                    [.. travellerRule], CompoundAccessRule.CompoundOperation.All));
             }
 
             // Inbuilt custom region rules
@@ -1003,7 +1001,7 @@ namespace RainWorldRandomizer.Generation
 
         public string FindRandomStart(SlugcatStats.Name slugcat)
         {
-            Dictionary<string, List<string>> contenders = new Dictionary<string, List<string>>();
+            Dictionary<string, List<string>> contenders = [];
             if (File.Exists(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt")))
             {
                 string[] file = File.ReadAllLines(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt"));
@@ -1016,7 +1014,7 @@ namespace RainWorldRandomizer.Generation
                         {
                             if (!contenders.ContainsKey(region))
                             {
-                                contenders.Add(region, new List<string>());
+                                contenders.Add(region, []);
                             }
                             contenders[region].Add(line);
                         }

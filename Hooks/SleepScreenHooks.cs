@@ -62,7 +62,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void CreateCollectiblesTrackerIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // After label at 0071
             c.GotoNext(MoveType.After,
@@ -76,13 +76,13 @@ namespace RainWorldRandomizer
             // Overwrite mined save data info with our own
             c.EmitDelegate<Action<CollectiblesTracker.SaveGameData>>((collectionData) =>
             {
-                collectionData.unlockedGolds = FoundTokensOfType<MultiplayerUnlocks.LevelUnlockID>().Cast<MultiplayerUnlocks.LevelUnlockID>().ToList();
-                collectionData.unlockedBlues = FoundTokensOfType<MultiplayerUnlocks.SandboxUnlockID>().Cast<MultiplayerUnlocks.SandboxUnlockID>().ToList();
+                collectionData.unlockedGolds = [.. FoundTokensOfType<MultiplayerUnlocks.LevelUnlockID>().Cast<MultiplayerUnlocks.LevelUnlockID>()];
+                collectionData.unlockedBlues = [.. FoundTokensOfType<MultiplayerUnlocks.SandboxUnlockID>().Cast<MultiplayerUnlocks.SandboxUnlockID>()];
                 if (ModManager.MSC)
                 {
-                    collectionData.unlockedGreens = FoundTokensOfType<MultiplayerUnlocks.SlugcatUnlockID>().Cast<MultiplayerUnlocks.SlugcatUnlockID>().ToList();
-                    collectionData.unlockedGreys = FoundTokensOfType<ChatlogData.ChatlogID>().Cast<ChatlogData.ChatlogID>().ToList();
-                    collectionData.unlockedReds = FoundTokensOfType<MultiplayerUnlocks.SafariUnlockID>().Cast<MultiplayerUnlocks.SafariUnlockID>().ToList();
+                    collectionData.unlockedGreens = [.. FoundTokensOfType<MultiplayerUnlocks.SlugcatUnlockID>().Cast<MultiplayerUnlocks.SlugcatUnlockID>()];
+                    collectionData.unlockedGreys = [.. FoundTokensOfType<ChatlogData.ChatlogID>().Cast<ChatlogData.ChatlogID>()];
+                    collectionData.unlockedReds = [.. FoundTokensOfType<MultiplayerUnlocks.SafariUnlockID>().Cast<MultiplayerUnlocks.SafariUnlockID>()];
                 }
             });
 
@@ -109,7 +109,7 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldloc_0);
             c.Emit(OpCodes.Ldloc, 5);
             c.Emit(OpCodes.Ldarg, 5);
-            c.EmitDelegate<Action<CollectiblesTracker, RainWorld, int, SlugcatStats.Name>>(AddPearlsAndEchoesToTracker);
+            c.EmitDelegate(AddPearlsAndEchoesToTracker);
         }
 
         /// <summary>
@@ -117,25 +117,14 @@ namespace RainWorldRandomizer
         /// </summary>
         private static List<ExtEnumBase> FoundTokensOfType<T>() where T : ExtEnumBase
         {
-            List<ExtEnumBase> output = new List<ExtEnumBase>();
-
-            string startPattern;
-            switch (typeof(T).Name)
+            List<ExtEnumBase> output = [];
+            string startPattern = typeof(T).Name switch
             {
-                case "LevelUnlockID":
-                    startPattern = "Token-L-";
-                    break;
-                case "SafariUnlockID":
-                    startPattern = "Token-S-";
-                    break;
-                case "ChatlogID":
-                    startPattern = "Broadcast-";
-                    break;
-                default:
-                    startPattern = "Token-";
-                    break;
-            }
-
+                "LevelUnlockID" => "Token-L-",
+                "SafariUnlockID" => "Token-S-",
+                "ChatlogID" => "Broadcast-",
+                _ => "Token-",
+            };
             foreach (string loc in Plugin.RandoManager.GetLocations())
             {
                 if (loc.StartsWith(startPattern))
@@ -149,7 +138,7 @@ namespace RainWorldRandomizer
                     }
 
                     if (ExtEnumBase.TryParse(typeof(T), trimmedLoc.Substring(startPattern.Length), false, out ExtEnumBase value)
-                        && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                        && Plugin.RandoManager.IsLocationGiven(loc) is true)
                     {
                         output.Add(value);
                     }
@@ -165,14 +154,14 @@ namespace RainWorldRandomizer
         private static void AddPearlsAndEchoesToTracker(CollectiblesTracker self, RainWorld rainWorld, int i, SlugcatStats.Name saveSlot)
         {
             // The position in IL this is placed necessitates a duplicate check for if the region has been visited
-            if (self.collectionData == null || !self.collectionData.regionsVisited.Contains(self.displayRegions[i]))
+            if (self.collectionData is null || !self.collectionData.regionsVisited.Contains(self.displayRegions[i]))
             {
                 return;
             }
 
             // Find pearls and Echoes to place on tracker
-            List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = new List<DataPearl.AbstractDataPearl.DataPearlType>();
-            List<GhostWorldPresence.GhostID> foundEchoes = new List<GhostWorldPresence.GhostID>();
+            List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = [];
+            List<GhostWorldPresence.GhostID> foundEchoes = [];
             foreach (string loc in Plugin.RandoManager.GetLocations())
             {
                 if (loc.StartsWith("Pearl-"))
@@ -182,7 +171,7 @@ namespace RainWorldRandomizer
                     string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
 
                     if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), trimmedLoc.Substring(6), false, out ExtEnumBase value)
-                        && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                        && Plugin.RandoManager.IsLocationGiven(loc) is true)
                     {
                         foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
                     }
@@ -190,7 +179,7 @@ namespace RainWorldRandomizer
 
                 if (loc.StartsWith("Echo-")
                     && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), loc.Substring(5), false, out ExtEnumBase value1)
-                    && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                    && Plugin.RandoManager.IsLocationGiven(loc) is true)
                 {
                     foundEchoes.Add((GhostWorldPresence.GhostID)value1);
                 }
@@ -238,10 +227,10 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Stores fake passage token UI elements
         /// </summary>
-        private static ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>> passageTokensUI = new ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>>();
+        private static ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>> passageTokensUI = new();
 
         // Add a button to SleepAndDeathScreen allowing free passage to the starting shelter
-        private static ConditionalWeakTable<SleepAndDeathScreen, SimpleButton> passageHomeButton = new ConditionalWeakTable<SleepAndDeathScreen, SimpleButton>();
+        private static ConditionalWeakTable<SleepAndDeathScreen, SimpleButton> passageHomeButton = new();
         public static SimpleButton GetPassageHomeButton(this SleepAndDeathScreen self)
         {
             if (passageHomeButton.TryGetValue(self, out SimpleButton button))
@@ -252,7 +241,7 @@ namespace RainWorldRandomizer
         }
         public static void CreatePassageHomeButton(this SleepAndDeathScreen self)
         {
-            SimpleButton button = new SimpleButton(self, self.pages[0], self.Translate("RETURN HOME"), "RETURN_HOME",
+            SimpleButton button = new(self, self.pages[0], self.Translate("RETURN HOME"), "RETURN_HOME",
                 new Vector2(self.LeftHandButtonsPosXAdd, 60f), new Vector2(110f, 30f));
             passageHomeButton.Add(self, button);
             self.pages[0].subObjects.Add(button);
@@ -276,13 +265,13 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            List<FakeEndgameToken> fakePassageTokens = new List<FakeEndgameToken>();
+            List<FakeEndgameToken> fakePassageTokens = [];
             int index = 0;
             foreach (WinState.EndgameID id in Plugin.RandoManager.GetPassageTokensStatus().Keys)
             {
-                if (id == MoreSlugcats.MoreSlugcatsEnums.EndgameID.Gourmand) continue;
+                if (id == MoreSlugcatsEnums.EndgameID.Gourmand) continue;
 
-                if ((Plugin.RandoManager.HasPassageToken(id) ?? false)
+                if (Plugin.RandoManager.HasPassageToken(id) is true
                     && (menu as KarmaLadderScreen).winState.GetTracker(id, true).consumed == false)
                 {
                     fakePassageTokens.Add(new FakeEndgameToken(menu, self, Vector2.zero, id, container, index));
@@ -313,25 +302,21 @@ namespace RainWorldRandomizer
         {
             orig(self);
             SimpleButton button = self.GetPassageHomeButton();
-            if (button != null)
-            {
-                button.buttonBehav.greyedOut = self.ButtonsGreyedOut || self.goalMalnourished;
-                button.black = Mathf.Max(0f, button.black - 0.0125f);
-            }
+            if (button is null) return;
+
+            button.buttonBehav.greyedOut = self.ButtonsGreyedOut || self.goalMalnourished;
+            button.black = Mathf.Max(0f, button.black - 0.0125f);
         }
 
         private static string OnSleepAndDeathScreenUpdateInfoText(On.Menu.SleepAndDeathScreen.orig_UpdateInfoText orig, SleepAndDeathScreen self)
         {
             string origResult = orig(self);
 
-            if (self.selectedObject is SimpleButton button)
+            if (self.selectedObject is SimpleButton button
+                && button.signalText.Equals("RETURN_HOME"))
             {
-                if (button.signalText.Equals("RETURN_HOME"))
-                {
-                    return self.Translate("Fast travel to the shelter you started the campaign in");
-                }
+                return self.Translate("Fast travel to the shelter you started the campaign in");
             }
-
             return origResult;
         }
 
@@ -342,7 +327,7 @@ namespace RainWorldRandomizer
         {
             orig(self, sender, message);
 
-            if (message != null && message.Equals("RETURN_HOME"))
+            if (message is not null && message.Equals("RETURN_HOME"))
             {
                 // Set startup condition
                 self.manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.FastTravel;
@@ -371,7 +356,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void EndgameTokensCtorIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.After,
@@ -392,7 +377,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void AddPassageButtonIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // Remove check for Hunter / Saint to let them use passages
             c.GotoNext(
@@ -412,7 +397,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void SleepAndDeathScreenGetDataFromGameIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.After,
@@ -459,8 +444,7 @@ namespace RainWorldRandomizer
 
             foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {
-                if (passage.Value
-                    && !self.GetTracker(passage.Key, true).consumed)
+                if (passage.Value && !self.GetTracker(passage.Key, true).consumed)
                 {
                     return passage.Key;
                 }
@@ -481,8 +465,7 @@ namespace RainWorldRandomizer
 
             foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {
-                if (passage.Value
-                    && !self.GetTracker(passage.Key, true).consumed)
+                if (passage.Value && !self.GetTracker(passage.Key, true).consumed)
                 {
                     self.GetTracker(passage.Key, true).consumed = true;
                     return;

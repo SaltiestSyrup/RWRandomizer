@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -43,7 +41,7 @@ namespace RainWorldRandomizer.Generation
         public override string ToString() => id;
 
         // --- Static Helpers ---
-        public static readonly Dictionary<string, int> junkItemWeights = new Dictionary<string, int>()
+        public static readonly Dictionary<string, int> junkItemWeights = new()
         {
             { "Object-Spear", 20 },
             { "Object-FireSpear", 12 },
@@ -56,7 +54,7 @@ namespace RainWorldRandomizer.Generation
             { "Object-KarmaFlower", 5 },
             { "Object-VultureMask", 3 },
         };
-        public static readonly Dictionary<string, int> junkItemWeightsDLCShared = new Dictionary<string, int>()
+        public static readonly Dictionary<string, int> junkItemWeightsDLCShared = new()
         {
             { "Object-ElectricSpear", 3 },
             { "Object-SingularityBomb", 1 },
@@ -64,8 +62,8 @@ namespace RainWorldRandomizer.Generation
 
         public static Item RandomJunkItem(ref Random random)
         {
-            List<string> items = junkItemWeights.Keys.ToList();
-            List<int> weights = junkItemWeights.Values.ToList();
+            List<string> items = [.. junkItemWeights.Keys];
+            List<int> weights = [.. junkItemWeights.Values];
 
             if (ModManager.DLCShared)
             {

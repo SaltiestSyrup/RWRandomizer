@@ -52,15 +52,12 @@ namespace RainWorldRandomizer
         public static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
         {
             if (ID == ProcessManager.ProcessID.Game
-                && (Plugin.RandoManager == null || !Plugin.RandoManager.isRandomizerActive))
+                && (Plugin.RandoManager is null || !Plugin.RandoManager.isRandomizerActive))
             {
                 // If we don't have a manager yet, create one
-                if (Plugin.RandoManager == null)
-                {
-                    Plugin.RandoManager = new ManagerVanilla();
-                }
+                Plugin.RandoManager ??= new ManagerVanilla();
 
-                if (self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat == null)
+                if (self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat is null)
                 {
                     Plugin.Log.LogError("No slugcat selected");
                 }
@@ -83,7 +80,7 @@ namespace RainWorldRandomizer
             if (ID == ProcessManager.ProcessID.MainMenu)
             {
                 // Turn off randomizer when quitting to menu
-                if (Plugin.RandoManager != null) Plugin.RandoManager.isRandomizerActive = false;
+                if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
             }
 
             if (ID == ProcessManager.ProcessID.SleepScreen)
@@ -91,7 +88,7 @@ namespace RainWorldRandomizer
                 // Check for any new passages
                 foreach (string check in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
                 {
-                    WinState.EndgameID id = new WinState.EndgameID(check, false);
+                    WinState.EndgameID id = new(check, false);
 
                     SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
 
@@ -114,8 +111,8 @@ namespace RainWorldRandomizer
                         continue;
                     }
 
-                    if (!(Plugin.RandoManager.IsLocationGiven($"Passage-{check}") ?? true) // if location exists and is not given
-                        && saveState.deathPersistentSaveData.winState.GetTracker(id, false) != null)
+                    if (Plugin.RandoManager.IsLocationGiven($"Passage-{check}") == false // if location exists and is not given
+                        && saveState.deathPersistentSaveData.winState.GetTracker(id, false) is not null)
                     {
                         WinState.EndgameTracker tracker = saveState.deathPersistentSaveData.winState.GetTracker(id, false);
 
@@ -174,7 +171,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void RainWorldGameCtorIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // Add shelter delivery after overworld is created, but before first room is realized
             c.GotoNext(
@@ -186,26 +183,27 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldloc_0); // num, is the room index of the spawn room
-            c.EmitDelegate<Action<RainWorldGame, int>>((self, roomIndex) =>
+            c.EmitDelegate(SpawnDeliveryItems);
+
+            static void SpawnDeliveryItems(RainWorldGame self, int roomIndex)
             {
                 // Spawn pending items in spawn room
-                if (RandoOptions.ItemShelterDelivery)
+                if (!RandoOptions.ItemShelterDelivery) return;
+                
+                while (Plugin.Singleton.itemDeliveryQueue.Count > 0)
                 {
-                    while (Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                    AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
+                    try
                     {
-                        AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
-                        try
-                        {
-                            self.world.GetAbstractRoom(roomIndex).AddEntity(obj);
-                        }
-                        catch (Exception e)
-                        {
-                            Plugin.Log.LogError("Failed to spawn object in starting room");
-                            Plugin.Log.LogError(e);
-                        }
+                        self.world.GetAbstractRoom(roomIndex).AddEntity(obj);
+                    }
+                    catch (Exception e)
+                    {
+                        Plugin.Log.LogError("Failed to spawn object in starting room");
+                        Plugin.Log.LogError(e);
                     }
                 }
-            });
+            }
         }
 
         /// <summary>
@@ -216,7 +214,7 @@ namespace RainWorldRandomizer
             if (!Plugin.RandoManager.isRandomizerActive
                 || self.room.game.manager.fadeToBlack >= 1f
                 || self.phase != HardmodeStart.Phase.Init
-                || self.nshSwarmer == null)
+                || self.nshSwarmer is null)
             {
                 orig(self, eu);
                 return;
@@ -237,19 +235,13 @@ namespace RainWorldRandomizer
                 }
             }
 
-            if (player == null)
-            {
-                player = self.room.game.Players[0].realizedCreature as Player;
-            }
+            player ??= self.room.game.Players[0].realizedCreature as Player;
 
             player.objectInStomach = null;
 
             foreach (Creature.Grasp grasp in player.grasps)
             {
-                if (grasp != null
-                    && grasp.grabbed != null
-                    && grasp.grabbed.abstractPhysicalObject != null
-                    && grasp.grabbed.abstractPhysicalObject.type == AbstractPhysicalObject.AbstractObjectType.NSHSwarmer)
+                if (grasp?.grabbed?.abstractPhysicalObject?.type == AbstractPhysicalObject.AbstractObjectType.NSHSwarmer)
                 {
                     grasp.grabbed.AllGraspsLetGoOfThisObject(true);
                     self.room.game.GetStorySession.RemovePersistentTracker(grasp.grabbed.abstractPhysicalObject);
@@ -278,7 +270,7 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Singleton.DisplayLegacyNotification();
                 }
-                else if (HudExtension.CurrentChatLog != null)
+                else if (HudExtension.CurrentChatLog is not null)
                 {
                     HudExtension.CurrentChatLog.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
                 }
@@ -382,66 +374,58 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void ILCycleCompleted(ILContext il)
         {
-            try
+            ILCursor c = new(il);
+            c.GotoNext(
+                x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField("karmaCap")),
+                x => x.MatchLdcI4(4)
+                );
+
+            // Remove the check for if the player has at least 5 karma
+            // for the Survivor passage increase
+            c.Index += 1;
+            c.EmitDelegate<Func<int, int>>((orig) =>
             {
-                ILCursor c = new ILCursor(il);
-                c.GotoNext(
-                    x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField("karmaCap")),
-                    x => x.MatchLdcI4(4)
-                    );
-
-                // Remove the check for if the player has at least 5 karma
-                // for the Survivor passage increase
-                c.Index += 1;
-                c.EmitDelegate<Func<int, int>>((orig) =>
+                // Remain as normal in AP
+                if (Plugin.RandoManager is ManagerArchipelago)
                 {
-                    // Remain as normal in AP
-                    if (Plugin.RandoManager is ManagerArchipelago)
-                    {
-                        return orig;
-                    }
-                    else
-                    {
-                        return 4;
-                    }
-                });
+                    return orig;
+                }
+                else
+                {
+                    return 4;
+                }
+            });
 
-                // Fake the "Passage Progress without Survivor" option if needed
-                ILCursor c1 = new ILCursor(il);
+            // Fake the "Passage Progress without Survivor" option if needed
+            ILCursor c1 = new(il);
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(MMF).GetField(nameof(MMF.cfgSurvivorPassageNotRequired))),
+                x => x.MatchCallOrCallvirt(typeof(Configurable<bool>).GetProperty(nameof(Configurable<bool>.Value)).GetGetMethod())
+                );
+
+            c.EmitDelegate<Func<bool, bool>>((config) =>
+            {
+                if (Plugin.RandoManager is ManagerArchipelago)
+                {
+                    return ArchipelagoConnection.PPwS != ArchipelagoConnection.PPwSBehavior.Disabled;
+                }
+                return config;
+            });
+
+            // Conditionally remove the hardcoded Survivor checks on other passages
+            // (branch interception at 049f, 04ed, 0570, 0599, 05ea, 06e8, 07bb).
+            c.GotoNext(x => x.MatchRet());  // 0480
+            for (int i = 0; i < 7; i++)
+            {
                 c.GotoNext(
                     MoveType.After,
-                    x => x.MatchLdsfld(typeof(MMF).GetField(nameof(MMF.cfgSurvivorPassageNotRequired))),
-                    x => x.MatchCallOrCallvirt(typeof(Configurable<bool>).GetProperty(nameof(Configurable<bool>.Value)).GetGetMethod())
+                    x => x.MatchLdloc(12),
+                    x => x.MatchCallOrCallvirt(typeof(WinState.EndgameTracker).GetProperty(nameof(WinState.EndgameTracker.GoalAlreadyFullfilled)).GetGetMethod())
                     );
-
-                c.EmitDelegate<Func<bool, bool>>((config) =>
-                {
-                    if (Plugin.RandoManager is ManagerArchipelago)
-                    {
-                        return ArchipelagoConnection.PPwS != ArchipelagoConnection.PPwSBehavior.Disabled;
-                    }
-                    return config;
-                });
-
-                // Conditionally remove the hardcoded Survivor checks on other passages
-                // (branch interception at 049f, 04ed, 0570, 0599, 05ea, 06e8, 07bb).
-                c.GotoNext(x => x.MatchRet());  // 0480
-                for (int i = 0; i < 7; i++)
-                {
-                    c.GotoNext(
-                        MoveType.After,
-                        x => x.MatchLdloc(12),
-                        x => x.MatchCallOrCallvirt(typeof(WinState.EndgameTracker).GetProperty(nameof(WinState.EndgameTracker.GoalAlreadyFullfilled)).GetGetMethod())
-                        );
-                    bool BypassHardcodedSurvivorRequirement(bool prev) =>
-                        prev || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.PPwS == ArchipelagoConnection.PPwSBehavior.Bypassed);
-                    c.EmitDelegate<Func<bool, bool>>(BypassHardcodedSurvivorRequirement);
-                }
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for CycleCompleted");
-                Plugin.Log.LogError(e);
+                static bool BypassHardcodedSurvivorRequirement(bool prev) =>
+                    prev || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.PPwS == ArchipelagoConnection.PPwSBehavior.Bypassed);
+                c.EmitDelegate(BypassHardcodedSurvivorRequirement);
             }
         }
 

@@ -182,7 +182,7 @@ namespace RainWorldRandomizer
             get
             {
                 return allowMetroForOthers.Value
-                    && !(Plugin.RandoManager is ManagerArchipelago);
+                    && Plugin.RandoManager is not ManagerArchipelago;
             }
         }
         public static bool ForceOpenSubmerged
@@ -190,7 +190,7 @@ namespace RainWorldRandomizer
             get
             {
                 return allowSubmergedForOthers.Value
-                    && !(Plugin.RandoManager is ManagerArchipelago);
+                    && Plugin.RandoManager is not ManagerArchipelago;
             }
         }
         public static bool UseFoodQuest

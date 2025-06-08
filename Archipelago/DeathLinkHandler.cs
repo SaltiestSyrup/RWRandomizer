@@ -4,7 +4,6 @@ using MonoMod.Cil;
 using MoreSlugcats;
 using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -23,7 +22,7 @@ namespace RainWorldRandomizer
         {
             get
             {
-                return service != null && ArchipelagoConnection.Session.ConnectionInfo.Tags.Contains("DeathLink");
+                return service is not null && ArchipelagoConnection.Session.ConnectionInfo.Tags.Contains("DeathLink");
             }
             set
             {
@@ -92,7 +91,7 @@ namespace RainWorldRandomizer
         private static void OnPlayerDie(On.RainWorldGame.orig_GoToDeathScreen orig, RainWorldGame self)
         {
             if (!Active
-                || lastDeathWasLink 
+                || lastDeathWasLink
                 || receiveDeathCooldown > 0
                 || self.manager.upcomingProcess != null)
             {
@@ -150,7 +149,7 @@ namespace RainWorldRandomizer
         // TODO: DeathLink deaths currently still display karma decreasing animation even when overwritten
         private static void DeathPersistentSaveDataToStringIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.After,

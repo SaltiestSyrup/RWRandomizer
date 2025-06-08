@@ -15,8 +15,8 @@ namespace RainWorldRandomizer
         /// Matches gate strings to whether they have been opened.
         /// Gate strings match pattern "GATE_[Region1]_[Region2]"
         /// </summary>
-        protected Dictionary<string, bool> gatesStatus = new Dictionary<string, bool>();
-        protected Dictionary<WinState.EndgameID, bool> passageTokensStatus = new Dictionary<WinState.EndgameID, bool>();
+        protected Dictionary<string, bool> gatesStatus = [];
+        protected Dictionary<WinState.EndgameID, bool> passageTokensStatus = [];
 
         // These are all properties so the get / set can be modified if needed
         public virtual int CurrentMaxKarma
@@ -213,7 +213,6 @@ namespace RainWorldRandomizer
 
             try { Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = CurrentMaxKarma; }
             catch { }
-            ;
         }
     }
 }

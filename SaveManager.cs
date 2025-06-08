@@ -47,7 +47,7 @@ namespace RainWorldRandomizer
         // Meant for vanilla saves only
         public static Dictionary<string, Unlock> LoadSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
-            Dictionary<string, Unlock> game = new Dictionary<string, Unlock>();
+            Dictionary<string, Unlock> game = [];
 
             if (IsThereALegacySavedGame(slugcat, saveSlot))
             {
@@ -59,14 +59,14 @@ namespace RainWorldRandomizer
             if (int.TryParse(file[0], out int seed))
             {
                 Plugin.RandoManager.currentSeed = seed;
-                file = file.Skip(1).ToArray();
+                file = [.. file.Skip(1)];
             }
             else
             {
                 // New save file includes additional line to store starting den
                 Plugin.RandoManager.customStartDen = Regex.Split(file[0], "->")[1]; // StartingDen->SU_S01
                 Plugin.RandoManager.currentSeed = int.Parse(file[1]);
-                file = file.Skip(2).ToArray();
+                file = [.. file.Skip(2)];
             }
 
             foreach (string line in file)
@@ -87,7 +87,7 @@ namespace RainWorldRandomizer
                     type = (Unlock.UnlockType)t;
                 }
 
-                Unlock unlock = new Unlock(
+                Unlock unlock = new(
                     type,
                     unlockString[1],
                     bool.Parse(unlockString[2]));
@@ -101,7 +101,7 @@ namespace RainWorldRandomizer
         // Load game from legacy .json format
         private static Dictionary<string, Unlock> DeserializeGameFromJson(SlugcatStats.Name slugcat, int saveSlot)
         {
-            Dictionary<string, Unlock> game = new Dictionary<string, Unlock>();
+            Dictionary<string, Unlock> game = [];
 
             string[] json = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.json"));
 
@@ -157,7 +157,7 @@ namespace RainWorldRandomizer
 
         public static Queue<Unlock.Item> LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
         {
-            Queue<Unlock.Item> itemQueue = new Queue<Unlock.Item>();
+            Queue<Unlock.Item> itemQueue = [];
 
             if (!File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt")))
                 return itemQueue;
@@ -282,16 +282,10 @@ namespace RainWorldRandomizer
         }
         */
 
-        public struct APSave
+        public struct APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
         {
-            public APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
-            {
-                this.lastIndex = lastIndex;
-                this.locationsStatus = locationsStatus;
-            }
-
-            public long lastIndex;
-            public Dictionary<string, bool> locationsStatus;
+            public long lastIndex = lastIndex;
+            public Dictionary<string, bool> locationsStatus = locationsStatus;
         }
 
         // AP saves store the found locations under a save ID, which is a string of pattern "[Generation Seed]_[Player Name]"
@@ -306,7 +300,7 @@ namespace RainWorldRandomizer
 
             StreamWriter saveFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
 
-            APSave save = new APSave(lastIndex, locationsStatus);
+            APSave save = new(lastIndex, locationsStatus);
 
             string jsonSave = JsonConvert.SerializeObject(save, Formatting.Indented);
             saveFile.Write(jsonSave);
@@ -366,10 +360,10 @@ namespace RainWorldRandomizer
             string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_save_registry.txt");
             if (!File.Exists(path))
             {
-                return new Dictionary<string, long>();
+                return [];
             }
 
-            return JsonConvert.DeserializeObject<Dictionary<string, long>>(File.ReadAllText(path)) ?? new Dictionary<string, long>();
+            return JsonConvert.DeserializeObject<Dictionary<string, long>>(File.ReadAllText(path)) ?? [];
         }
 
         #endregion

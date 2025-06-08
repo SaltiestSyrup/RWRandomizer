@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Mono.Cecil.Cil;
+﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MoreSlugcats;
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -17,10 +17,7 @@ namespace RainWorldRandomizer
         {
             get
             {
-                if (_enabled == null)
-                {
-                    _enabled = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("aissurtievos.improvedcollectiblestracker");
-                }
+                _enabled ??= BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("aissurtievos.improvedcollectiblestracker");
                 return (bool)_enabled;
             }
         }
@@ -42,7 +39,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void GenerateRegionTokensIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // After label at 004A
             c.GotoNext(MoveType.After,
@@ -54,14 +51,14 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldarg_2);
             c.Emit(OpCodes.Ldarg, 4);
             c.Emit(OpCodes.Ldarg_3);
-            c.EmitDelegate<Action<CollectiblesTracker, SlugcatStats.Name, RainWorld, string>>(AddPearlsAndEchoesToTracker);
+            c.EmitDelegate(AddPearlsAndEchoesToTracker);
         }
 
         private static void AddPearlsAndEchoesToTracker(CollectiblesTracker self, SlugcatStats.Name saveSlot, RainWorld rainWorld, string region)
         {
             // Find pearls and Echoes to place on tracker
-            List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = new List<DataPearl.AbstractDataPearl.DataPearlType>();
-            List<GhostWorldPresence.GhostID> foundEchoes = new List<GhostWorldPresence.GhostID>();
+            List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = [];
+            List<GhostWorldPresence.GhostID> foundEchoes = [];
             foreach (string loc in Plugin.RandoManager.GetLocations())
             {
                 if (loc.StartsWith("Pearl-"))

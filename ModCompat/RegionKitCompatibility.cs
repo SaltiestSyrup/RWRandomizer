@@ -12,10 +12,7 @@ namespace RainWorldRandomizer
         {
             get
             {
-                if (_enabled == null)
-                {
-                    _enabled = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("rwmodding.coreorg.rk");
-                }
+                _enabled ??= BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("rwmodding.coreorg.rk");
                 return (bool)_enabled;
             }
         }
