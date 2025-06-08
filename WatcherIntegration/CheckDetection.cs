@@ -17,6 +17,10 @@ namespace RainWorldRandomizer.WatcherIntegration
                 IL.Room.Loaded += SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat += LetThemWander;
                 On.SlugcatStats.SlugcatStoryRegions += WatcherStoryRegions;
+                On.Watcher.WarpSpawningRipple.Success += DetectThroneWarpCreation;
+                IL.Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils.Update += DetectPrince;
+
+                Plugin.Log.LogDebug("");
             }
 
             internal static void RemoveHooks()
@@ -26,6 +30,34 @@ namespace RainWorldRandomizer.WatcherIntegration
                 IL.Room.Loaded -= SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat -= LetThemWander;
                 On.SlugcatStats.SlugcatStoryRegions -= WatcherStoryRegions;
+                On.Watcher.WarpSpawningRipple.Success -= DetectThroneWarpCreation;
+                IL.Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils.Update -= DetectPrince;
+            }
+
+            /// <summary>Detect when a new Throne room opens up after a Prince encounter.</summary>
+            private static void DetectPrince(ILContext il)
+            {
+                ILCursor c = new(il);
+
+                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(HUD.HUD).GetMethod(nameof(HUD.HUD.ResetMap))));  // 042c
+                c.MoveBeforeLabels();  // keep cursor inside the conditional
+                c.Emit(OpCodes.Ldarg_0);  // WORA_KarmaSigils this
+                static void Delegate(Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils self)
+                {
+                    if (self.room.game.GetStorySession?.saveState.miscWorldSaveData.numberOfPrinceEncounters is int nope)
+                        EntryPoint.TryGiveLocation($"Prince-{nope + 1}");
+                }
+                c.EmitDelegate(Delegate);
+            }
+
+            /// <summary>Detect when a Throne dynamic warp is successfully created.</summary>
+            private static void DetectThroneWarpCreation(On.Watcher.WarpSpawningRipple.orig_Success orig, Watcher.WarpSpawningRipple self, float duration, bool bad, bool weird, bool strong)
+            {
+                orig(self, duration, bad, weird, strong);
+                if (DynamicWarpTargetting.GetWarpSourceKind(self.room.abstractRoom.name) == DynamicWarpTargetting.WarpSourceKind.Throne)
+                {
+                    EntryPoint.TryGiveLocation($"ThroneWarp-{self.room.abstractRoom.name.Substring(11)}");
+                }
             }
 
             internal static List<string> watcherStoryRegions = new()

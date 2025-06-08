@@ -24,5 +24,15 @@ namespace RainWorldRandomizer.WatcherIntegration
             Completion.Hooks.RemoveHooks();
         }
         internal static string Region(this string self) => self?.Split('_')[0].ToUpperInvariant();
+
+        internal static void TryGiveLocation(string loc)
+        {
+            switch (Plugin.RandoManager.IsLocationGiven(loc))
+            {
+                case null: Plugin.Log.LogDebug($"Giving {loc}?   nope, location does not exist"); break;
+                case true: Plugin.Log.LogDebug($"Giving {loc}?   nope, location is already given"); break;
+                case false: Plugin.Log.LogDebug($"Giving {loc}?   {(Plugin.RandoManager.GiveLocation(loc) ? "yes" : "nope, giving failed")}"); break;
+            }
+        }
     }
 }

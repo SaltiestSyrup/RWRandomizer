@@ -12,7 +12,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal enum WarpSourceKind { Other, Normal, Throne, Permarotted, Unrottable }
         internal static WarpSourceKind GetWarpSourceKind(string room)
         {
-            if (room.ToUpperInvariant().StartsWith("WORA_THRONE")) return WarpSourceKind.Throne;
+            if (room.ToUpperInvariant() is "WORA_THRONE10" or "WORA_THRONE09" or "WORA_THRONE07" or "WORA_THRONE05") return WarpSourceKind.Throne;
             string region = room.Split('_')[0];
             if (Region.IsSentientRotRegion(region)) return WarpSourceKind.Permarotted;
             if (Region.HasSentientRotResistance(region)) return WarpSourceKind.Unrottable;
