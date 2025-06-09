@@ -10,6 +10,15 @@ namespace RainWorldRandomizer
 {
     public class OptionsMenu : OptionInterface
     {
+        /// <summary>X offset for options on the left side of the screen</summary>
+        private const float LEFT_OPTION_X = 20f;
+        /// <summary>X offset for options on the right side of the screen</summary>
+        private const float RIGHT_OPTION_X = 420f;
+        /// <summary>Y offset for options to start at</summary>
+        private const float FIRST_LINE_Y = 550f;
+        /// <summary>How far to decrement Y for a new line</summary>
+        private const float NEWLINE_DECREMENT = 35f;
+
         private Configurable<bool>[] boolConfigOrderGen1;
         private Configurable<bool>[] boolConfigOrderGen2;
         private Configurable<bool>[] boolConfigOrderMSC;
@@ -144,6 +153,30 @@ namespace RainWorldRandomizer
 
         public override void Initialize()
         {
+            // REMIX MENU REWORK
+            // Use boxes to organize settings:
+            //  General:
+            //      Seed
+            //      Misc generation
+            //      Check settings
+            //      Global settings
+            //  MSC:
+            //      Unlock regions
+            //      Campaign checks
+            //  AP:
+            //      Enable AP
+            //      Connection fields
+            //      DeathLink
+            //      Other settings
+            //      Connect status box
+            //      Slot data summary
+
+            // (X) - Make generic function for spawning option
+            // ( ) - Create option group class to organize and apply changes to many options
+            // ( ) - Standalone options should grey out when AP enabled
+            // ( ) - Put the option groups into visual boxes
+            // ( ) - Apply colors to groups (maybe, will see if it looks good)
+
             base.Initialize();
 
             List<OpTab> _tabs =
@@ -165,22 +198,15 @@ namespace RainWorldRandomizer
         public void PopulateBaseTab()
         {
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Base"));
-            float runningY = 550f;
+            float runningY = FIRST_LINE_Y;
 
             OpLabel standaloneConfigsLabel = new(40f, runningY, Translate("Standalone Options"));
-            runningY -= 35;
+            Tabs[tabIndex].AddItems(standaloneConfigsLabel);
+            runningY -= NEWLINE_DECREMENT;
 
             // Seed options
-            OpCheckBox useSeedCheckbox = new(RandoOptions.useSeed, 20f, runningY)
-            {
-                description = Translate(RandoOptions.useSeed.info.description)
-            };
-            OpLabel useSeedLabel = new(60f, runningY, Translate(RandoOptions.useSeed.info.Tags[0] as string))
-            {
-                bumpBehav = useSeedCheckbox.bumpBehav,
-                description = useSeedCheckbox.description
-            };
-            runningY -= 35;
+            OpCheckBox useSeedCheckbox = AddCheckBox(RandoOptions.useSeed, new(LEFT_OPTION_X, runningY), tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
             OpTextBox seedText = new(RandoOptions.seed, new Vector2(25f, runningY), 100f)
             {
@@ -188,17 +214,10 @@ namespace RainWorldRandomizer
             };
             // Make the seed field be active only when useSeed is selected
             seedText.OnUpdate += () => { seedText.greyedOut = !useSeedCheckbox.GetValueBool(); };
-            runningY -= 35;
+            Tabs[tabIndex].AddItems(seedText);
+            runningY -= NEWLINE_DECREMENT;
 
-            Tabs[tabIndex].AddItems(
-            [
-                standaloneConfigsLabel,
-                useSeedCheckbox,
-                useSeedLabel,
-                seedText
-            ]);
-
-            if (boolConfigOrderGen1 == null)
+            if (boolConfigOrderGen1 is null)
             {
                 PopulateConfigurableArrays();
             }
@@ -208,29 +227,15 @@ namespace RainWorldRandomizer
             {
                 if (config == null)
                 {
-                    runningY -= 35;
+                    runningY -= NEWLINE_DECREMENT;
                     continue;
                 }
 
-                OpCheckBox opCheckBox = new(config, new Vector2(20f, runningY))
-                {
-                    description = Translate(config.info.description)
-                };
-
-                Tabs[tabIndex].AddItems(
-                [
-                    opCheckBox,
-                    new OpLabel(60f, runningY, Translate(config.info.Tags[0] as string))
-                    {
-                        bumpBehav = opCheckBox.bumpBehav,
-                        description = opCheckBox.description
-                    }
-                ]);
-
-                runningY -= 35;
+                AddCheckBox(config, new(LEFT_OPTION_X, runningY), tabIndex);
+                runningY -= NEWLINE_DECREMENT;
             }
 
-            OpUpdown hunterCyclesUpDown = new(RandoOptions.hunterCyclesDensity, new Vector2(20f, runningY), 100f)
+            OpUpdown hunterCyclesUpDown = new(RandoOptions.hunterCyclesDensity, new Vector2(LEFT_OPTION_X, runningY), 100f)
             {
                 description = Translate(RandoOptions.hunterCyclesDensity.info.description)
             };
@@ -239,48 +244,27 @@ namespace RainWorldRandomizer
                 bumpBehav = hunterCyclesUpDown.bumpBehav,
                 description = hunterCyclesUpDown.description
             };
-            Tabs[tabIndex].AddItems(
-            [
-                hunterCyclesUpDown,
-                hunterCyclesLabel
-            ]);
-            runningY -= 35;
+            Tabs[tabIndex].AddItems(hunterCyclesUpDown, hunterCyclesLabel);
+            runningY -= NEWLINE_DECREMENT;
 
             // ----- Right side configs -----
-            runningY = 550f;
+            runningY = FIRST_LINE_Y;
 
             OpLabel globalConfigsLabel = new(440f, runningY, Translate("Global Options"));
-            Tabs[tabIndex].AddItems(
-            [
-                globalConfigsLabel
-            ]);
-            runningY -= 35;
+            Tabs[tabIndex].AddItems(globalConfigsLabel);
+            runningY -= NEWLINE_DECREMENT;
 
             // Add boolean configs
             foreach (Configurable<bool> config in boolConfigOrderGen2)
             {
                 if (config == null)
                 {
-                    runningY -= 35;
+                    runningY -= NEWLINE_DECREMENT;
                     continue;
                 }
 
-                OpCheckBox opCheckBox = new(config, new Vector2(420f, runningY))
-                {
-                    description = Translate(config.info.description)
-                };
-
-                Tabs[tabIndex].AddItems(
-                [
-                    opCheckBox,
-                    new OpLabel(460f, runningY, Translate(config.info.Tags[0] as string))
-                    {
-                        bumpBehav = opCheckBox.bumpBehav,
-                        description = opCheckBox.description
-                    }
-                ]);
-
-                runningY -= 35;
+                AddCheckBox(config, new(RIGHT_OPTION_X, runningY), tabIndex);
+                runningY -= NEWLINE_DECREMENT;
             }
         }
 
@@ -289,33 +273,19 @@ namespace RainWorldRandomizer
             if (!ModManager.MSC) return;
 
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Downpour"));
-            float runningY = 550f;
+            float runningY = FIRST_LINE_Y;
 
             // Add boolean configs
             foreach (Configurable<bool> config in boolConfigOrderMSC)
             {
                 if (config == null)
                 {
-                    runningY -= 35;
+                    runningY -= NEWLINE_DECREMENT;
                     continue;
                 }
 
-                OpCheckBox opCheckBox = new(config, new Vector2(20f, runningY))
-                {
-                    description = Translate(config.info.description)
-                };
-
-                Tabs[tabIndex].AddItems(
-                [
-                    opCheckBox,
-                    new OpLabel(60f, runningY, Translate(config.info.Tags[0] as string))
-                    {
-                        bumpBehav = opCheckBox.bumpBehav,
-                        description = opCheckBox.description
-                    }
-                ]);
-
-                runningY -= 35;
+                AddCheckBox(config, new(LEFT_OPTION_X, runningY), tabIndex);
+                runningY -= NEWLINE_DECREMENT;
             }
         }
 
@@ -323,62 +293,22 @@ namespace RainWorldRandomizer
         {
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Archipelago"));
             // ----- Left side Configurables -----
-            float runningY = 550f;
+            float runningY = FIRST_LINE_Y;
 
-            OpCheckBox APCheckBox = new(RandoOptions.archipelago, new Vector2(20f, runningY))
-            {
-                description = Translate(RandoOptions.archipelago.info.description)
-            };
-            OpLabel APLabel = new(60f, runningY, Translate(RandoOptions.archipelago.info.Tags[0] as string))
-            {
-                bumpBehav = APCheckBox.bumpBehav,
-                description = APCheckBox.description
-            };
-            runningY -= 35;
+            OpCheckBox APCheckBox = AddCheckBox(RandoOptions.archipelago, new(LEFT_OPTION_X, runningY), tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
-            OpTextBox hostNameTextBox = new(RandoOptions.archipelagoHostName, new Vector2(20f, runningY), 200f)
-            {
-                description = Translate(RandoOptions.archipelagoHostName.info.description)
-            };
-            OpLabel hostNameLabel = new(240f, runningY, Translate(RandoOptions.archipelagoHostName.info.Tags[0] as string))
-            {
-                bumpBehav = hostNameTextBox.bumpBehav,
-                description = hostNameTextBox.description
-            };
-            runningY -= 35;
+            OpTextBox hostNameTextBox = AddTextBox(RandoOptions.archipelagoHostName, new(LEFT_OPTION_X, runningY), 200f, tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
-            OpTextBox portTextBox = new(RandoOptions.archipelagoPort, new Vector2(20f, runningY), 55f)
-            {
-                description = Translate(RandoOptions.archipelagoPort.info.description)
-            };
-            OpLabel portLabel = new(95f, runningY, Translate(RandoOptions.archipelagoPort.info.Tags[0] as string))
-            {
-                bumpBehav = portTextBox.bumpBehav,
-                description = portTextBox.description
-            };
-            runningY -= 35;
+            OpTextBox portTextBox = AddTextBox(RandoOptions.archipelagoPort, new(LEFT_OPTION_X, runningY), 55f, tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
-            OpTextBox slotNameTextBox = new(RandoOptions.archipelagoSlotName, new Vector2(20f, runningY), 200f)
-            {
-                description = Translate(RandoOptions.archipelagoSlotName.info.description)
-            };
-            OpLabel slotNameLabel = new(240f, runningY, Translate(RandoOptions.archipelagoSlotName.info.Tags[0] as string))
-            {
-                bumpBehav = slotNameTextBox.bumpBehav,
-                description = slotNameTextBox.description
-            };
-            runningY -= 35;
+            OpTextBox slotNameTextBox = AddTextBox(RandoOptions.archipelagoSlotName, new(LEFT_OPTION_X, runningY), 200f, tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
-            OpTextBox passwordTextBox = new(RandoOptions.archipelagoPassword, new Vector2(20f, runningY), 200f)
-            {
-                description = Translate(RandoOptions.archipelagoPassword.info.description)
-            };
-            OpLabel passwordLabel = new(240f, runningY, Translate(RandoOptions.archipelagoPassword.info.Tags[0] as string))
-            {
-                bumpBehav = passwordTextBox.bumpBehav,
-                description = passwordTextBox.description
-            };
-            runningY -= 35;
+            OpTextBox passwordTextBox = AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f, tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
             OpSimpleButton connectButton = new(new Vector2(20f, runningY), new Vector2(60f, 20f), "Connect")
             {
@@ -388,77 +318,38 @@ namespace RainWorldRandomizer
             {
                 description = "Disconnect from the current session"
             };
-            runningY -= 35;
+            Tabs[tabIndex].AddItems(connectButton, disconnectButton);
+            runningY -= NEWLINE_DECREMENT;
 
             // ----- Status Information -----
             OpLabelLong connectResultLabel = new(new Vector2(20f, runningY - 100f), new Vector2(320f, 100f), "");
             OpLabelLong slotDataLabelLeft = new(new Vector2(350f, runningY - 100f), new Vector2(200f, 100f), "", false);
-            OpLabelLong slotDataLabelRight = new(new Vector2(550f, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
-
-            Tabs[tabIndex].AddItems(
-            [
-                APCheckBox,
-                APLabel,
-                hostNameTextBox,
-                hostNameLabel,
-                portTextBox,
-                portLabel,
-                slotNameTextBox,
-                slotNameLabel,
-                passwordTextBox,
-                passwordLabel,
-                connectButton,
-                disconnectButton,
-                connectResultLabel,
-                slotDataLabelLeft,
-                slotDataLabelRight,
-            ]);
+            OpLabelLong slotDataLabelRight = new(new Vector2(FIRST_LINE_Y, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
+            Tabs[tabIndex].AddItems(connectResultLabel, slotDataLabelLeft, slotDataLabelRight);
 
             // ----- Right side Configurables -----
-            runningY = 550f;
+            runningY = FIRST_LINE_Y;
 
             OpLabel deathLinkLabel = new(440f, runningY, Translate("Death Link Settings"));
             deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
-            runningY -= 35;
+            Tabs[tabIndex].AddItems(deathLinkLabel);
+            runningY -= NEWLINE_DECREMENT;
 
-            OpCheckBox deathLinkOverrideCheckbox = new(RandoOptions.archipelagoDeathLinkOverride, new Vector2(420f, runningY))
-            {
-                description = Translate(RandoOptions.archipelagoDeathLinkOverride.info.description)
-            };
-            OpLabel deathLinkOverrrideLabel = new(460f, runningY, Translate(RandoOptions.archipelagoDeathLinkOverride.info.Tags[0] as string))
-            {
-                bumpBehav = deathLinkOverrideCheckbox.bumpBehav,
-                description = deathLinkOverrideCheckbox.description
-            };
-            runningY -= 35;
+            OpCheckBox deathLinkOverrideCheckbox = AddCheckBox(RandoOptions.archipelagoDeathLinkOverride, new(RIGHT_OPTION_X, runningY), tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
-            OpCheckBox noKarmaLossCheckBox = new(RandoOptions.archipelagoPreventDLKarmaLoss, new Vector2(420f, runningY))
-            {
-                description = Translate(RandoOptions.archipelagoPreventDLKarmaLoss.info.description)
-            };
-            OpLabel noKarmaLossLabel = new(460f, runningY, Translate(RandoOptions.archipelagoPreventDLKarmaLoss.info.Tags[0] as string))
-            {
-                bumpBehav = noKarmaLossCheckBox.bumpBehav,
-                description = noKarmaLossCheckBox.description
-            };
-            runningY -= 35;
+            OpCheckBox noKarmaLossCheckBox = AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X, runningY), tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
-            OpCheckBox ignoreMenuDeathsCheckBox = new(RandoOptions.archipelagoIgnoreMenuDL, new Vector2(420f, runningY))
-            {
-                description = Translate(RandoOptions.archipelagoIgnoreMenuDL.info.description)
-            };
-            OpLabel ignoreMenuDeathsLabel = new(460f, runningY, Translate(RandoOptions.archipelagoIgnoreMenuDL.info.Tags[0] as string))
-            {
-                bumpBehav = ignoreMenuDeathsCheckBox.bumpBehav,
-                description = ignoreMenuDeathsCheckBox.description
-            };
-            runningY -= 35;
+            OpCheckBox ignoreMenuDeathsCheckBox = AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X, runningY), tabIndex);
+            runningY -= NEWLINE_DECREMENT;
 
             OpSimpleButton clearSavesButton = new(new Vector2(490f, 10f), new Vector2(100f, 25f), "Clear Save Files")
             {
                 colorEdge = new Color(0.85f, 0.35f, 0.4f),
                 description = Translate("Delete ALL Archipelago save games. It's a good idea to do this periodically to save space")
             };
+            Tabs[tabIndex].AddItems(clearSavesButton);
 
             // ----- Update / Button Logic -----
 
@@ -553,21 +444,6 @@ namespace RainWorldRandomizer
             };
 
             clearSavesButton.OnClick += AskToClearSaveFiles;
-
-            // ----- Populate Tab -----
-            Tabs[tabIndex].AddItems(
-            [
-                //disableNotificationBox,
-                //disableNotificationLabel,
-                deathLinkLabel,
-                deathLinkOverrideCheckbox,
-                deathLinkOverrrideLabel,
-                noKarmaLossCheckBox,
-                noKarmaLossLabel,
-                ignoreMenuDeathsCheckBox,
-                ignoreMenuDeathsLabel,
-                clearSavesButton,
-            ]);
         }
 
         private void AskToClearSaveFiles(UIfocusable trigger)
@@ -583,6 +459,36 @@ namespace RainWorldRandomizer
                 Environment.NewLine,
                 Translate("Are you sure you want to delete your saves?")
             }), new Action(SaveManager.DeleteAllAPSaves));
+        }
+
+        private OpCheckBox AddCheckBox(Configurable<bool> config, Vector2 offset, int tabIndex)
+        {
+            OpCheckBox checkbox = new(config, offset.x, offset.y)
+            {
+                description = Translate(config.info.description)
+            };
+            OpLabel label = new(offset.x + 40f, offset.y, Translate(config.info.Tags[0] as string))
+            {
+                bumpBehav = checkbox.bumpBehav,
+                description = checkbox.description
+            };
+            Tabs[tabIndex].AddItems(checkbox, label);
+            return checkbox;
+        }
+
+        private OpTextBox AddTextBox(ConfigurableBase config, Vector2 offset, float sizeX, int tabIndex)
+        {
+            OpTextBox textbox = new(config, offset, sizeX)
+            {
+                description = Translate(config.info.description)
+            };
+            OpLabel label = new(offset.x + sizeX + 20f, offset.y, Translate(config.info.Tags[0] as string))
+            {
+                bumpBehav = textbox.bumpBehav,
+                description = textbox.description
+            };
+            Tabs[tabIndex].AddItems(textbox, label);
+            return textbox;
         }
 
         public void PopulateConfigurableArrays()
