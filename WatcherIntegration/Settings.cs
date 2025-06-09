@@ -65,6 +65,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             Settings.rippleReq = rippleReq;
             Settings.spinningTopKeys = spinningTopKeys;
             Settings.rottedRegionTarget = rottedRegionTarget;
+            Items.ResetItems();
         }
     }
 }

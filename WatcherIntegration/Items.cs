@@ -70,5 +70,12 @@ namespace RainWorldRandomizer.WatcherIntegration
                 case "Ripple": RippleIncrements++; UpdateRipple(); break;
             }
         }
+
+        internal static void ResetItems()
+        {
+            CollectedDynamicKeys.Clear();
+            CollectedStaticKeys.Clear();
+            RippleIncrements = 0;
+        }
     }
 }
