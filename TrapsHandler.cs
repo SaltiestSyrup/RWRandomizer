@@ -37,7 +37,7 @@ namespace RainWorldRandomizer
             public void Activate(RainWorldGame game)
             {
                 Plugin.Log.LogInfo($"Trap Triggered! ({id})");
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Trap Triggered! ({id})", 
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Trap Triggered! ({id})",
                     ArchipelagoConnection.palette[Archipelago.MultiClient.Net.Colors.PaletteColor.Red]));
                 definition.onTrigger(game);
                 timer = definition.duration;
@@ -68,41 +68,32 @@ namespace RainWorldRandomizer
             public void NewRoom(RainWorldGame game) => definition.onNewRoom(game);
         }
 
-        public readonly struct TrapDefinition
+        public readonly struct TrapDefinition(Action<RainWorldGame> TriggerAction, Action<RainWorldGame> DisableAction = null,
+            Action<RainWorldGame> UpdateAction = null, Action<RainWorldGame> NewRoomAction = null, int duration = 0)
         {
             /// <summary>
             /// How many game ticks (40/s) the effect should last. 0 for single activation traps
             /// </summary>
-            public readonly int duration;
+            public readonly int duration = duration;
             /// <summary>
             /// Action called when the trap first triggers
             /// </summary>
-            public readonly Action<RainWorldGame> onTrigger;
+            public readonly Action<RainWorldGame> onTrigger = TriggerAction;
             /// <summary>
             /// Action called every update while active
             /// </summary>
-            public readonly Action<RainWorldGame> onUpdate;
+            public readonly Action<RainWorldGame> onUpdate = UpdateAction ?? ((game) => { });
             /// <summary>
             /// Action called when the duration expires. Trap is deleted right after
             /// </summary>
-            public readonly Action<RainWorldGame> onDeactivate;
+            public readonly Action<RainWorldGame> onDeactivate = DisableAction ?? ((game) => { });
             /// <summary>
             /// Action called when a player enters a new room. Useful for room-only effects that need re-triggering
             /// </summary>
-            public readonly Action<RainWorldGame> onNewRoom;
-
-            public TrapDefinition(Action<RainWorldGame> TriggerAction, Action<RainWorldGame> DisableAction = null,
-                Action<RainWorldGame> UpdateAction = null, Action<RainWorldGame> NewRoomAction = null, int duration = 0)
-            {
-                onTrigger = TriggerAction;
-                onDeactivate = DisableAction ?? ((game) => { });
-                onUpdate = UpdateAction ?? ((game) => { });
-                onNewRoom = NewRoomAction ?? ((game) => { });
-                this.duration = duration;
-            }
+            public readonly Action<RainWorldGame> onNewRoom = NewRoomAction ?? ((game) => { });
         }
 
-        private static readonly Dictionary<string, TrapDefinition> trapDefinitions = new Dictionary<string, TrapDefinition>()
+        private static readonly Dictionary<string, TrapDefinition> trapDefinitions = new()
         {
             { "Stun", new TrapDefinition(TrapStun) },
             { "Timer", new TrapDefinition(game => { TrapCycleTimer(game); }) },
@@ -126,11 +117,11 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Traps waiting to be activated
         /// </summary>
-        private static Queue<Trap> pendingTrapQueue = new Queue<Trap>();
+        private static Queue<Trap> pendingTrapQueue = new();
         /// <summary>
         /// Traps with a duration that are currently active
         /// </summary>
-        private static HashSet<Trap> activeTraps = new HashSet<Trap>();
+        private static HashSet<Trap> activeTraps = [];
         private static Action<RainWorldGame> TrapUpdate = (game) => { };
 
         public static void ApplyHooks()
@@ -302,7 +293,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// All rooms currently affected by gravity trap. Rooms may be null if player has unloaded them
         /// </summary>
-        private static List<WeakReference<Room>> gravityTrappedRooms = new List<WeakReference<Room>>();
+        private static List<WeakReference<Room>> gravityTrappedRooms = [];
 
         /// <summary>Sets the gravity to 0 (Does not apply to rooms with <see cref="AntiGravity"/> or other gravity effects)</summary>
         private static void TrapGravityActivate(this RainWorldGame game)
@@ -352,7 +343,7 @@ namespace RainWorldRandomizer
 
         private static void ILGlobalRainUpdate(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // --- Redirect if statement
 
@@ -385,7 +376,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ILGetPreCycleRainIntensity(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // First return at 001C
             c.GotoNext(x => x.MatchRet());
@@ -403,7 +394,7 @@ namespace RainWorldRandomizer
         /// <param name="il"></param>
         private static void ILPreTimer(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(RainCycle).GetField(nameof(RainCycle.preTimer))));
             c.EmitDelegate<Func<int, int>>(preTimer =>
@@ -418,7 +409,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ILElectricDeathIntensity(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(RainCycle).GetField(nameof(RainCycle.preTimer))));
             c.EmitDelegate<Func<int, int>>(preTimer =>

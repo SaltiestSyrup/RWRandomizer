@@ -27,7 +27,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static Dictionary<string, string> readableItemNames = new Dictionary<string, string>()
+        public static Dictionary<string, string> readableItemNames = new()
         {
             { "NHSSwarmer", "Slag Keys" },
             { "Red_stomach", "Hunter's Pearl" },
@@ -39,7 +39,7 @@ namespace RainWorldRandomizer
             { "VultureMask", "Vulture Mask" },
         };
 
-        public static Dictionary<Item, int> junkItems = new Dictionary<Item, int>()
+        public static Dictionary<Item, int> junkItems = new()
         {
             { new Item("Spear", AbstractPhysicalObject.AbstractObjectType.Spear), 20 },
             { IDToItem("FireSpear"), 12 },
@@ -63,27 +63,25 @@ namespace RainWorldRandomizer
         public UnlockType Type { get; private set; }
         public bool IsGiven { get; private set; } = false;
 
-        public class UnlockType : ExtEnum<UnlockType>
+        public class UnlockType(string value, bool register = false) : ExtEnum<UnlockType>(value, register)
         {
-            public static readonly UnlockType Gate = new UnlockType("Gate", true);
-            public static readonly UnlockType Token = new UnlockType("Token", true);
-            public static readonly UnlockType Karma = new UnlockType("Karma", true);
-            public static readonly UnlockType Glow = new UnlockType("Neuron_Glow", true);
-            public static readonly UnlockType Mark = new UnlockType("The_Mark", true);
-            public static readonly UnlockType Item = new UnlockType("Item", true);
-            public static readonly UnlockType ItemPearl = new UnlockType("ItemPearl", true);
-            public static readonly UnlockType HunterCycles = new UnlockType("HunterCycles", true);
-            public static readonly UnlockType IdDrone = new UnlockType("IdDrone", true);
-            public static readonly UnlockType DisconnectFP = new UnlockType("DisconnectFP", true);
-            public static readonly UnlockType RewriteSpearPearl = new UnlockType("RewriteSpearPearl", true);
-
-            public UnlockType(string value, bool register = false) : base(value, register) { }
+            public static readonly UnlockType Gate = new("Gate", true);
+            public static readonly UnlockType Token = new("Token", true);
+            public static readonly UnlockType Karma = new("Karma", true);
+            public static readonly UnlockType Glow = new("Neuron_Glow", true);
+            public static readonly UnlockType Mark = new("The_Mark", true);
+            public static readonly UnlockType Item = new("Item", true);
+            public static readonly UnlockType ItemPearl = new("ItemPearl", true);
+            public static readonly UnlockType HunterCycles = new("HunterCycles", true);
+            public static readonly UnlockType IdDrone = new("IdDrone", true);
+            public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
+            public static readonly UnlockType RewriteSpearPearl = new("RewriteSpearPearl", true);
 
             [Obsolete("Only here for backwards compatability with SaveManager integer parsing")]
-            public static UnlockType[] typeOrder = new UnlockType[]
-            {
+            public static UnlockType[] typeOrder =
+            [
                 Gate, Token, Karma, Glow, Mark, Item, ItemPearl, HunterCycles, IdDrone, DisconnectFP, RewriteSpearPearl
-            };
+            ];
         }
 
         public Unlock(UnlockType type, string ID, bool isGiven = false)
@@ -185,31 +183,20 @@ namespace RainWorldRandomizer
 
         public string UnlockCompleteMessage()
         {
-            switch (Type.value)
+            return Type.value switch
             {
-                case "Gate":
-                    return $"Unlocked Gate: {Plugin.GateToString(ID, Plugin.RandoManager.currentSlugcat)}";
-                case "Token":
-                    return $"Unlocked Passage Token: {ID}";
-                case "Karma":
-                    return "Unlocked Karma Increase";
-                case "Neuron_Glow":
-                    return "Unlocked Neuron Glow";
-                case "The_Mark":
-                    return "Unlocked The Mark";
-                case "Item":
-                    return $"Found {ItemToEncodedIcon((Item)item)}";
-                case "HunterCycles":
-                    return "Increased Lifespan";
-                case "IdDrone":
-                    return "Found Citizen ID Drone";
-                case "DisconnectFP":
-                    return "Disconnected Five Pebbles";
-                case "RewriteSpearPearl":
-                    return "Unlocked Broadcast Encoding";
-                default:
-                    return $"Unlocked {ID}";
-            }
+                "Gate" => $"Unlocked Gate: {Plugin.GateToString(ID, Plugin.RandoManager.currentSlugcat)}",
+                "Token" => $"Unlocked Passage Token: {ID}",
+                "Karma" => "Unlocked Karma Increase",
+                "Neuron_Glow" => "Unlocked Neuron Glow",
+                "The_Mark" => "Unlocked The Mark",
+                "Item" => $"Found {ItemToEncodedIcon((Item)item)}",
+                "HunterCycles" => "Increased Lifespan",
+                "IdDrone" => "Found Citizen ID Drone",
+                "DisconnectFP" => "Disconnected Five Pebbles",
+                "RewriteSpearPearl" => "Unlocked Broadcast Encoding",
+                _ => $"Unlocked {ID}",
+            };
         }
 
         public static Item RandomJunkItem()
@@ -219,14 +206,11 @@ namespace RainWorldRandomizer
 
             if (ModManager.MSC)
             {
-                if (junkItemsMSC == null)
+                junkItemsMSC ??= new Dictionary<Item, int>()
                 {
-                    junkItemsMSC = new Dictionary<Item, int>()
-                    {
-                        { IDToItem("ElectricSpear"), 3 },
-                        { new Item("Singularity Bomb", DLCSharedEnums.AbstractObjectType.SingularityBomb), 1 }
-                    };
-                }
+                    { IDToItem("ElectricSpear"), 3 },
+                    { new Item("Singularity Bomb", DLCSharedEnums.AbstractObjectType.SingularityBomb), 1 }
+                };
                 items.AddRange(junkItemsMSC.Keys);
                 weights.AddRange(junkItemsMSC.Values);
             }
@@ -249,33 +233,19 @@ namespace RainWorldRandomizer
 
         public override string ToString()
         {
-            switch (Type.value)
+            return Type.value switch
             {
-                case "Gate":
-                    return Plugin.GateToShortString(ID, Plugin.RandoManager.currentSlugcat);
-                case "Token":
-                    return ID;
-                case "Karma":
-                    return "Karma Increase";
-                case "Neuron_Glow":
-                    return "Neuron Glow";
-                case "The_Mark":
-                    return "The Mark";
-                case "Item":
-                    return item.Value.name;
-                case "HunterCycles":
-                    if (ModManager.MMF)
-                    {
-                        return $"+{MoreSlugcats.MMF.cfgHunterBonusCycles.Value} Cycles";
-                    }
-                    return "+5 Cycles";
-                case "IdDrone":
-                    return "Citizen ID Drone";
-                case "DisconnectFP":
-                    return "Disconnect Pebbles";
-                default:
-                    return ID;
-            }
+                "Gate" => Plugin.GateToShortString(ID, Plugin.RandoManager.currentSlugcat),
+                "Token" => ID,
+                "Karma" => "Karma Increase",
+                "Neuron_Glow" => "Neuron Glow",
+                "The_Mark" => "The Mark",
+                "Item" => item.Value.name,
+                "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
+                "IdDrone" => "Citizen ID Drone",
+                "DisconnectFP" => "Disconnect Pebbles",
+                _ => ID
+            };
         }
 
         public static string IDToString(string item)
@@ -288,9 +258,9 @@ namespace RainWorldRandomizer
             if (isPearl)
                 return new Item(IDToString(id), new DataPearl.AbstractDataPearl.DataPearlType(id));
 
-            if (id == "FireSpear" || id == "ExplosiveSpear")
+            if (id is "FireSpear" or "ExplosiveSpear")
                 return new Item("Explosive Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
-            if (id == "ElectricSpear")
+            if (id is "ElectricSpear")
                 return new Item("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
 
             return new Item(IDToString(id), new AbstractPhysicalObject.AbstractObjectType(id));

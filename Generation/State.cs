@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer.Generation
 {
-    public class State
+    public class State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int startKarma)
     {
         /// <summary>
         /// Every location in the state. Does not change after initialization.
@@ -22,31 +20,18 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public HashSet<Location> AvailableLocations { get; private set; }
 
-        public SlugcatStats.Name Slugcat { get; private set; }
-        public SlugcatStats.Timeline Timeline { get; private set; }
-        public int MaxKarma { get; private set; }
-        public HashSet<string> SpecialProg { get; private set; }
-        public HashSet<string> Regions { get; private set; }
-        public HashSet<string> Gates { get; private set; }
-        public HashSet<CreatureTemplate.Type> Creatures { get; private set; }
-        public HashSet<AbstractPhysicalObject.AbstractObjectType> Objects { get; private set; }
-        
-        public State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int startKarma)
-        {
-            Slugcat = slugcat;
-            Timeline = timeline;
-            MaxKarma = startKarma;
-
-            SpecialProg = new HashSet<string>();
-            Regions = new HashSet<string>();
-            Gates = new HashSet<string>();
-            Creatures = new HashSet<CreatureTemplate.Type>();
-            Objects = new HashSet<AbstractPhysicalObject.AbstractObjectType>();
-        }
+        public SlugcatStats.Name Slugcat { get; private set; } = slugcat;
+        public SlugcatStats.Timeline Timeline { get; private set; } = timeline;
+        public int MaxKarma { get; private set; } = startKarma;
+        public HashSet<string> SpecialProg { get; private set; } = [];
+        public HashSet<string> Regions { get; private set; } = [];
+        public HashSet<string> Gates { get; private set; } = [];
+        public HashSet<CreatureTemplate.Type> Creatures { get; private set; } = [];
+        public HashSet<AbstractPhysicalObject.AbstractObjectType> Objects { get; private set; } = [];
 
         public void DefineLocs(HashSet<Location> allLocs)
         {
-            AllLocations = new HashSet<Location>();
+            AllLocations = [];
 
             foreach (Location loc in allLocs)
             {
@@ -57,10 +42,9 @@ namespace RainWorldRandomizer.Generation
                 if (AllLocations.Contains(loc, new LocationIDComparer()))
                 {
                     Location mergedLoc = AllLocations.First(l => l.id == loc.id);
-                    mergedLoc.accessRule = new CompoundAccessRule(new AccessRule[]
-                    {
-                        mergedLoc.accessRule, loc.accessRule
-                    }, CompoundAccessRule.CompoundOperation.Any);
+                    mergedLoc.accessRule = new CompoundAccessRule(
+                        [ mergedLoc.accessRule, loc.accessRule], 
+                        CompoundAccessRule.CompoundOperation.Any);
                 }
                 else
                 {
@@ -68,8 +52,8 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
-            UnreachedLocations = new HashSet<Location>(AllLocations);
-            AvailableLocations = new HashSet<Location>();
+            UnreachedLocations = [.. AllLocations];
+            AvailableLocations = [];
         }
 
         /// <summary>
@@ -149,7 +133,7 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
-            List<Location> newLocs = UnreachedLocations.Where(r => r.CanReach(this)).ToList();
+            List<Location> newLocs = [.. UnreachedLocations.Where(r => r.CanReach(this))];
             UnreachedLocations.ExceptWith(newLocs);
             AvailableLocations.UnionWith(newLocs);
         }

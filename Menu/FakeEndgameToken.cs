@@ -39,8 +39,10 @@ namespace RainWorldRandomizer
             container.AddChild(symbolSprite);
             circleSprite = new FSprite("EndGameCircle", true);
             container.AddChild(circleSprite);
-            glowSprite = new FSprite("Futile_White", true);
-            glowSprite.shader = menu.manager.rainWorld.Shaders["FlatLight"];
+            glowSprite = new FSprite("Futile_White", true)
+            {
+                shader = menu.manager.rainWorld.Shaders["FlatLight"]
+            };
             container.AddChild(glowSprite);
 
             float x = 20f + 40f * (index % 5);
@@ -82,7 +84,13 @@ namespace RainWorldRandomizer
             Vector2 vector = DrawPos(timeStacker);
             float num = Mathf.Lerp(lastFade, fade, timeStacker);
             float num2 = Mathf.Lerp(0f, 1f, superGlow);
-            Color color = Color.Lerp(Menu.Menu.MenuRGB(Menu.Menu.MenuColors.DarkGrey), Color.Lerp(Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey), Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White), superGlow), num2);
+            Color color = Color.Lerp(
+                Menu.Menu.MenuRGB(Menu.Menu.MenuColors.DarkGrey),
+                Color.Lerp(
+                    Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey),
+                    Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
+                    superGlow),
+                num2);
             symbolSprite.x = vector.x;
             symbolSprite.y = vector.y;
             circleSprite.x = vector.x;
@@ -94,7 +102,7 @@ namespace RainWorldRandomizer
             glowSprite.color = color;
             symbolSprite.alpha = num;
             circleSprite.alpha = num;
-            glowSprite.scale = Mathf.Lerp(3f, 5f + num2, num) + superGlow * Mathf.Lerp(0.75f, 1f, UnityEngine.Random.value);
+            glowSprite.scale = Mathf.Lerp(3f, 5f + num2, num) + superGlow * Mathf.Lerp(0.75f, 1f, Random.value);
             glowSprite.alpha = Mathf.Lerp(0f, 0.3f, num2) * num;
         }
 

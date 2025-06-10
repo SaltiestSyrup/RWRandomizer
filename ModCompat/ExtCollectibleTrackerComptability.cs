@@ -11,10 +11,7 @@ namespace RainWorldRandomizer
         {
             get
             {
-                if (_enabled == null)
-                {
-                    _enabled = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("franklygd.extendedcollectiblestracker");
-                }
+                _enabled ??= BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("franklygd.extendedcollectiblestracker");
                 return (bool)_enabled;
             }
         }

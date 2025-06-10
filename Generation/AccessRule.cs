@@ -8,7 +8,7 @@ namespace RainWorldRandomizer.Generation
     /// <summary>
     /// Base class for all rules, acts as a wildcard by itself.
     /// </summary>
-    public class AccessRule
+    public class AccessRule(string requirementName = "")
     {
         public const string IMPOSSIBLE_ID = "IMPOSSIBLE";
 
@@ -27,17 +27,11 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Allows for quick checking of the type of rule this is without using Type checking
         /// </summary>
-        public AccessRuleType Type { get; protected set; }
+        public AccessRuleType Type { get; protected set; } = AccessRuleType.Wildcard;
         /// <summary>
         /// Name of the rule, what is searched for within State
         /// </summary>
-        public string ReqName { get; protected set; }
-
-        public AccessRule(string requirementName = "")
-        {
-            Type = AccessRuleType.Wildcard;
-            this.ReqName = requirementName;
-        }
+        public string ReqName { get; protected set; } = requirementName;
 
         /// <summary>
         /// Returns whether this rule's requirements have been met
@@ -73,7 +67,7 @@ namespace RainWorldRandomizer.Generation
 
         public override bool IsMet(State state)
         {
-            return ReqName != null && state.Regions.Contains(ReqName);
+            return ReqName is not null && state.Regions.Contains(ReqName);
         }
 
         public override bool IsPossible(State state)
@@ -92,7 +86,7 @@ namespace RainWorldRandomizer.Generation
     /// </summary>
     public class KarmaAccessRule : AccessRule
     {
-        private int reqAmount;
+        private readonly int reqAmount;
 
         public KarmaAccessRule(int amount)
         {
@@ -108,7 +102,7 @@ namespace RainWorldRandomizer.Generation
 
         public override bool IsPossible(State state)
         {
-            return reqAmount > 0 && reqAmount <= 10;
+            return reqAmount is > 0 and <= 10;
         }
 
         public override string ToString()
@@ -144,7 +138,7 @@ namespace RainWorldRandomizer.Generation
     /// </summary>
     public class CreatureAccessRule : AccessRule
     {
-        private CreatureTemplate.Type creature;
+        private readonly CreatureTemplate.Type creature;
 
         public CreatureAccessRule(CreatureTemplate.Type creature)
         {
@@ -169,7 +163,7 @@ namespace RainWorldRandomizer.Generation
     /// </summary>
     public class ObjectAccessRule : AccessRule
     {
-        private AbstractPhysicalObject.AbstractObjectType item;
+        private readonly AbstractPhysicalObject.AbstractObjectType item;
 
         public ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType item)
         {
@@ -211,7 +205,7 @@ namespace RainWorldRandomizer.Generation
     /// </summary>
     public class SlugcatAccessRule : AccessRule
     {
-        private SlugcatStats.Name slugcat;
+        private readonly SlugcatStats.Name slugcat;
 
         public SlugcatAccessRule(SlugcatStats.Name slugcat)
         {
@@ -244,8 +238,8 @@ namespace RainWorldRandomizer.Generation
             AtOrAfter,
         }
 
-        private TimelineOperation operation;
-        private SlugcatStats.Timeline timeline;
+        private readonly TimelineOperation operation;
+        private readonly SlugcatStats.Timeline timeline;
 
         public TimelineAccessRule(SlugcatStats.Timeline timeline, TimelineOperation operation)
         {
@@ -258,32 +252,24 @@ namespace RainWorldRandomizer.Generation
 
         public override bool IsPossible(State state)
         {
-            switch (operation)
+            return operation switch
             {
-                case TimelineOperation.At:
-                    return state.Timeline == timeline;
-                case TimelineOperation.AtOrBefore:
-                    return SlugcatStats.AtOrBeforeTimeline(state.Timeline, timeline);
-                case TimelineOperation.AtOrAfter:
-                    return SlugcatStats.AtOrAfterTimeline(state.Timeline, timeline);
-                default:
-                    return false;
-            }
+                TimelineOperation.At => state.Timeline == timeline,
+                TimelineOperation.AtOrBefore => SlugcatStats.AtOrBeforeTimeline(state.Timeline, timeline),
+                TimelineOperation.AtOrAfter => SlugcatStats.AtOrAfterTimeline(state.Timeline, timeline),
+                _ => false,
+            };
         }
 
         public override string ToString()
         {
-            switch (operation)
+            return operation switch
             {
-                case TimelineOperation.At:
-                    return $"Playing at timeline: {ReqName}";
-                case TimelineOperation.AtOrBefore:
-                    return $"Playing at or before timeline: {ReqName}";
-                case TimelineOperation.AtOrAfter:
-                    return $"Playing at or after timeline: {ReqName}";
-                default:
-                    return $"Unknown timeline operation: {ReqName}";
-            }
+                TimelineOperation.At => $"Playing at timeline: {ReqName}",
+                TimelineOperation.AtOrBefore => $"Playing at or before timeline: {ReqName}",
+                TimelineOperation.AtOrAfter => $"Playing at or after timeline: {ReqName}",
+                _ => $"Unknown timeline operation: {ReqName}",
+            };
         }
     }
 
@@ -292,8 +278,8 @@ namespace RainWorldRandomizer.Generation
     /// </summary>
     public class OptionAccessRule : AccessRule
     {
-        private PropertyInfo optionProperty;
-        private bool inverted;
+        private readonly PropertyInfo optionProperty;
+        private readonly bool inverted;
 
         /// <summary>
         /// Set location possiblity based on if <paramref name="optionName"/> is enabled.
@@ -306,7 +292,7 @@ namespace RainWorldRandomizer.Generation
             ReqName = $"Option-{optionName}";
             this.inverted = inverted;
 
-            optionProperty = typeof(RandoOptions).GetProperty(optionName, BindingFlags.Public | BindingFlags.Static, null, typeof(bool), new Type[0], null);
+            optionProperty = typeof(RandoOptions).GetProperty(optionName, BindingFlags.Public | BindingFlags.Static, null, typeof(bool), [], null);
 
             if (optionProperty == null)
             {
@@ -354,7 +340,7 @@ namespace RainWorldRandomizer.Generation
             /// <summary>
             /// At least one of the rules must be satisfied
             /// </summary>
-            Any, 
+            Any,
             /// <summary>
             /// At least <see cref="valAmount"/> of the rules must be satisfied
             /// </summary>
@@ -377,60 +363,45 @@ namespace RainWorldRandomizer.Generation
 
         public override bool IsMet(State state)
         {
-            switch (operation)
+            return operation switch
             {
-                case CompoundOperation.All:
-                    return accessRules.All(r => r.IsMet(state));
-                case CompoundOperation.Any:
-                    return accessRules.Any(r => r.IsMet(state));
-                case CompoundOperation.AtLeast:
-                    int count = accessRules.Sum((r) => { return r.IsMet(state) ? 1 : 0; });
-                    return count >= valAmount;
-                default:
-                    return false;
-            }
+                CompoundOperation.All => accessRules.All(r => r.IsMet(state)),
+                CompoundOperation.Any => accessRules.Any(r => r.IsMet(state)),
+                CompoundOperation.AtLeast => accessRules.Sum((r) => { return r.IsMet(state) ? 1 : 0; }) >= valAmount,
+                _ => false,
+            };
         }
 
         public override bool IsPossible(State state)
         {
-            switch (operation)
+            return operation switch
             {
-                case CompoundOperation.All:
-                    return accessRules.All(r => r.IsPossible(state));
-                case CompoundOperation.Any:
-                    return accessRules.Any(r => r.IsPossible(state));
-                case CompoundOperation.AtLeast:
-                    int count = accessRules.Sum((r) => { return r.IsPossible(state) ? 1 : 0; });
-                    return count >= valAmount;
-                default:
-                    return false;
-            }
+                CompoundOperation.All => accessRules.All(r => r.IsPossible(state)),
+                CompoundOperation.Any => accessRules.Any(r => r.IsPossible(state)),
+                CompoundOperation.AtLeast => accessRules.Sum((r) => { return r.IsPossible(state) ? 1 : 0; }) >= valAmount,
+                _ => false,
+            };
         }
 
         public override string ToString()
         {
             string joinedRules = string.Join(", ", accessRules.Select(r => r.ToString()));
-            switch (operation)
+            return operation switch
             {
-                case CompoundOperation.All:
-                    return $"ALL of: ({joinedRules})";
-                case CompoundOperation.Any:
-                    return $"ANY of: ({joinedRules})";
-                case CompoundOperation.AtLeast:
-                    return $"At least {valAmount} of: ({joinedRules})";
-                default:
-                    return $"Invalid compound operation containing: ({joinedRules})";
-            }
+                CompoundOperation.All => $"ALL of: ({joinedRules})",
+                CompoundOperation.Any => $"ANY of: ({joinedRules})",
+                CompoundOperation.AtLeast => $"At least {valAmount} of: ({joinedRules})",
+                _ => $"Invalid compound operation containing: ({joinedRules})",
+            };
         }
     }
 
     /// <summary>
     /// Shorthand for a rule allowing any of the given slugcats to be used
     /// </summary>
-    public class MultiSlugcatAccessRule : CompoundAccessRule
-    {
-        public MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats) : base(slugcats.Select((scug) => new SlugcatAccessRule(scug)).ToArray(), CompoundOperation.Any) { }
-    }
+    public class MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats) 
+        : CompoundAccessRule([.. slugcats.Select((scug) => new SlugcatAccessRule(scug))], CompoundOperation.Any)
+    { }
 
     public static class AccessRuleConstants
     {
@@ -440,24 +411,24 @@ namespace RainWorldRandomizer.Generation
 
         public static void InitConstants()
         {
-            NeuronAccess = new CompoundAccessRule(new AccessRule[]
-            {
+            NeuronAccess = new CompoundAccessRule(
+            [
                 new RegionAccessRule("SS"),
                 new RegionAccessRule("SL"),
                 new RegionAccessRule("DM"),
                 new RegionAccessRule("CL"),
                 new RegionAccessRule("RM"),
-            }, CompoundAccessRule.CompoundOperation.Any);
+            ], CompoundAccessRule.CompoundOperation.Any);
 
-            List<AccessRule> lizards = new List<AccessRule>
-            {
+            List<AccessRule> lizards =
+            [
                 new CreatureAccessRule(CreatureTemplate.Type.BlueLizard),
                 new CreatureAccessRule(CreatureTemplate.Type.PinkLizard),
                 new CreatureAccessRule(CreatureTemplate.Type.GreenLizard),
                 new CreatureAccessRule(CreatureTemplate.Type.YellowLizard),
                 new CreatureAccessRule(CreatureTemplate.Type.BlackLizard),
                 new CreatureAccessRule(CreatureTemplate.Type.WhiteLizard)
-            };
+            ];
 
             if (ModManager.DLCShared)
             {
@@ -466,11 +437,11 @@ namespace RainWorldRandomizer.Generation
                 lizards.Add(new CreatureAccessRule(DLCSharedEnums.CreatureTemplateType.ZoopLizard));
                 lizards.Add(new CreatureAccessRule(DLCSharedEnums.CreatureTemplateType.SpitLizard));
             }
-            Lizards = lizards.ToArray();
+            Lizards = [.. lizards];
 
             List<string> regionStrings = Region.GetFullRegionOrder();
             Regions = new AccessRule[regionStrings.Count];
-            for(int i = 0; i < Regions.Length; i++)
+            for (int i = 0; i < Regions.Length; i++)
             {
                 Regions[i] = new RegionAccessRule(regionStrings[i]);
             }

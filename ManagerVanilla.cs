@@ -20,7 +20,7 @@ namespace RainWorldRandomizer
         public const int MIN_PASSAGE_TOKENS = 5;
 
         // Values for completed checks
-        public Dictionary<string, Unlock> randomizerKey = new Dictionary<string, Unlock>();
+        public Dictionary<string, Unlock> randomizerKey = [];
 
         // Called when player starts or continues a run
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
@@ -91,7 +91,7 @@ namespace RainWorldRandomizer
                     return;
                 }
 
-                VanillaGenerator generator = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
+                VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
                     RandoOptions.UseSetSeed ? RandoOptions.SetSeed : UnityEngine.Random.Range(0, int.MaxValue));
                 Exception generationException = null;
                 bool timedOut = false;
@@ -113,7 +113,7 @@ namespace RainWorldRandomizer
                     // Existing gates that didn't have an item placed start open
                     foreach (string gate in generator.AllGates)
                     {
-                        if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate) ? true : false);
+                        if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate));
                     }
 
                     // Write new save game
@@ -243,7 +243,7 @@ namespace RainWorldRandomizer
 
         public override List<string> GetLocations()
         {
-            return randomizerKey.Keys.ToList();
+            return [.. randomizerKey.Keys];
         }
 
         public override bool LocationExists(string location)

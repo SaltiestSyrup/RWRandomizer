@@ -23,7 +23,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Tracks Karma flowers placed in rooms via room settings. Flowers from other sources are not added to this table. 
         /// </summary>
-        private static ConditionalWeakTable<AbstractPhysicalObject, FlowerData> trackedFlowers = new ConditionalWeakTable<AbstractPhysicalObject, FlowerData>();
+        private static ConditionalWeakTable<AbstractPhysicalObject, FlowerData> trackedFlowers = new();
 
         /// <summary>
         /// Register any flowers to the CWT when a room is loaded

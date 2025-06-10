@@ -9,7 +9,7 @@ namespace RainWorldRandomizer
     public class CollectTokenHandler
     {
         public SlugcatStats.Name tokensLoadedFor = null;
-        public Dictionary<string, string[]> availableTokens = new Dictionary<string, string[]>();
+        public Dictionary<string, string[]> availableTokens = [];
 
         public void ApplyHooks()
         {
@@ -48,7 +48,7 @@ namespace RainWorldRandomizer
 
             for (int i = 0; i < allRegions.Count; i++)
             {
-                List<string> idsToAdd = new List<string>();
+                List<string> idsToAdd = [];
                 string regionLower = allRegions[i].ToLowerInvariant();
 
                 foreach (var token in rainWorld.regionBlueTokens[regionLower])
@@ -83,7 +83,7 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                availableTokens.Add(allRegions[i], idsToAdd.ToArray());
+                availableTokens.Add(allRegions[i], [.. idsToAdd]);
             }
             tokensLoadedFor = slugcat;
         }
@@ -143,7 +143,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public void ILRoomLoaded(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // Fetch the local variable index of "num11", which represents the index within placedObjects the loop is processing
             int localVarIndex = -1;
@@ -156,7 +156,7 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
-                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), new Type[] { typeof(string), typeof(bool) }))
+                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), [typeof(string), typeof(bool)]))
                 );
 
             InjectHasTokenCheck();
@@ -165,7 +165,7 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
-                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), new Type[] { typeof(MultiplayerUnlocks.SlugcatUnlockID) }))
+                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), [typeof(MultiplayerUnlocks.SlugcatUnlockID)]))
                 );
 
             InjectHasTokenCheck();
@@ -180,14 +180,14 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldloc, localVarIndex);
-            c.EmitDelegate((Func<Room, int, bool>)AlreadyHasToken);
+            c.EmitDelegate(AlreadyHasToken);
             c.Emit(OpCodes.Brfalse, broadcastJump);
 
             // safari
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
-                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), new Type[] { typeof(MultiplayerUnlocks.SafariUnlockID) }))
+                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), [typeof(MultiplayerUnlocks.SafariUnlockID)]))
                 );
 
             InjectHasTokenCheck();
@@ -215,7 +215,7 @@ namespace RainWorldRandomizer
             // Ignore developer commentary setting and localization check
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldloc, localVarIndex);
-            c.EmitDelegate((Func<Room, int, bool>)AlreadyHasToken);
+            c.EmitDelegate(AlreadyHasToken);
             c.Emit(OpCodes.Brfalse, devJumpTrue);
             c.Emit(OpCodes.Br, devJumpFalse);
 
@@ -226,7 +226,7 @@ namespace RainWorldRandomizer
 
                 c.Emit(OpCodes.Ldarg_0);
                 c.Emit(OpCodes.Ldloc, localVarIndex);
-                c.EmitDelegate((Func<Room, int, bool>)AlreadyHasToken);
+                c.EmitDelegate(AlreadyHasToken);
             }
         }
 
@@ -270,7 +270,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private void CollectTokenUpdateIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // Get devToken property at 0010
             c.GotoNext(
@@ -297,17 +297,17 @@ namespace RainWorldRandomizer
         /// </summary>
         private void Player_ProcessChatLog(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // Prevent stun and mushroom effect (branch interception at 0026).
             c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<ChatlogData.ChatlogID>).GetMethod("op_Inequality")));
             bool PreventStun(bool prev) => prev && !RandoOptions.DisableTokenPopUps;
-            c.EmitDelegate<Func<bool, bool>>(PreventStun);
+            c.EmitDelegate(PreventStun);
 
             // Prevent chatlog from being displayed (branch interception at 00b1).
             c.GotoNext(MoveType.Before, x => x.MatchLdcI4(60));  // 00aa
             int PreventChatlog(int prev) => RandoOptions.DisableTokenPopUps ? 59 : prev;
-            c.EmitDelegate<Func<int, int>>(PreventChatlog);
+            c.EmitDelegate(PreventChatlog);
         }
 
         /// <summary>
@@ -315,12 +315,12 @@ namespace RainWorldRandomizer
         /// </summary>
         private void Player_InitChatLog(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             // Prevent the `for` loop from running (branch interception at 0038).
             c.GotoNext(MoveType.Before, x => x.MatchConvI4());  // 0037
-            int PreventStop(int prev) => RandoOptions.DisableTokenPopUps ? 0 : prev;
-            c.EmitDelegate<Func<int, int>>(PreventStop);
+            static int PreventStop(int prev) => RandoOptions.DisableTokenPopUps ? 0 : prev;
+            c.EmitDelegate(PreventStop);
         }
     }
 }

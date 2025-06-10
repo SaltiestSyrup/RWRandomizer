@@ -101,7 +101,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void MainMenuCtorIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.After,
@@ -110,7 +110,7 @@ namespace RainWorldRandomizer
                 );
 
             c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldstr, Plugin.RandoManager == null ? "STORY" : "RANDOMIZER");
+            c.Emit(OpCodes.Ldstr, Plugin.RandoManager is null ? "STORY" : "RANDOMIZER");
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace RainWorldRandomizer
                 if (Plugin.RandoManager.customStartDen.Equals(""))
                 {
                     Plugin.Log.LogError("Tried to set starting den while custom den unset");
-                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("ERROR: Failed to set correct starting den", UnityEngine.Color.red));
+                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("ERROR: Failed to set correct starting den", Color.red));
                     return;
                 }
                 self.denPosition = Plugin.RandoManager.customStartDen;
@@ -148,14 +148,14 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void SlugcatSelectOverrideDeadCheckIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
-            FieldInfo[] flags = new FieldInfo[3]
-            {
+            FieldInfo[] flags =
+            [
                 typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.redIsDead)),
                 typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.artificerIsDead)),
                 typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.saintIsDead))
-            };
+            ];
 
             // The check is the same for all 3 cases, so just loop through them
             for (int i = 0; i < flags.Length; i++)
@@ -169,11 +169,11 @@ namespace RainWorldRandomizer
                     );
 
                 c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate<Func<SlugcatSelectMenu, bool>>(OverrideIsDead);
+                c.EmitDelegate(OverrideIsDead);
                 c.Emit(OpCodes.Brfalse, jump);
             }
 
-            bool OverrideIsDead(SlugcatSelectMenu menu)
+            static bool OverrideIsDead(SlugcatSelectMenu menu)
             {
                 SlugcatStats.Name slugcat = menu.slugcatPages[menu.slugcatPageIndex].slugcatNumber;
                 int saveSlot = menu.manager.rainWorld.options.saveSlot;
@@ -185,11 +185,12 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Disable start game button if proper conditions are not met
         /// </summary>
+        // TODO: Rewrite this hook to shorten goto
         private static void SlugcatSelectMenuUpdateIL(ILContext il)
         {
             try
             {
-                ILCursor c1 = new ILCursor(il);
+                ILCursor c1 = new(il);
 
                 ILLabel resultJump = null;
                 c1.GotoNext(MoveType.Before,
@@ -205,7 +206,7 @@ namespace RainWorldRandomizer
                     );
 
                 // Move the label a step back, to ldc.i4.1
-                ILCursor c2 = new ILCursor(il);
+                ILCursor c2 = new(il);
                 c2.GotoLabel(resultJump, MoveType.Before);
                 c2.Index--;
                 resultJump = c2.MarkLabel();
@@ -255,11 +256,11 @@ namespace RainWorldRandomizer
 
                     if (Plugin.defaultGateRequirements.ContainsKey(split[0])) continue;
 
-                    Plugin.defaultGateRequirements.Add(split[0], new RegionGate.GateRequirement[2]
-                    {
-                        new RegionGate.GateRequirement(split[1]),
-                        new RegionGate.GateRequirement(split[2])
-                    });
+                    Plugin.defaultGateRequirements.Add(split[0],
+                    [
+                        new(split[1]),
+                        new(split[2])
+                    ]);
                 }
             }
         }
@@ -269,7 +270,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void CanUseUnlockedGatesIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             ILLabel jump = null;
             c.GotoNext(
@@ -279,7 +280,7 @@ namespace RainWorldRandomizer
                 x => x.MatchBrtrue(out jump)
                 );
 
-            c.EmitDelegate<Func<bool>>(() =>
+            c.EmitDelegate(() =>
             {
                 if (Plugin.RandoManager is ManagerArchipelago)
                 {
@@ -295,7 +296,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ILSpawnGhost(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(
                 MoveType.Before,
@@ -307,16 +308,16 @@ namespace RainWorldRandomizer
             // Modify echo spawning conditions based on settings
             c.Emit(OpCodes.Ldloc_0); // ghostID
             c.Emit(OpCodes.Ldloc_2); // flag for if echo should be spawned
-            c.EmitDelegate<Func<World, GhostWorldPresence.GhostID, bool, bool>>(CustomEchoLogic);
+            c.EmitDelegate(CustomEchoLogic);
             c.Emit(OpCodes.Stloc_2);
 
             c.Emit(OpCodes.Ldarg_0); // We interuppted after a ldarg_0, so put that back before we leave
 
-            bool CustomEchoLogic(World self, GhostWorldPresence.GhostID ghostID, bool spawnEcho)
+            static bool CustomEchoLogic(World self, GhostWorldPresence.GhostID ghostID, bool spawnEcho)
             {
                 // Use default logic if karma cap >= 5 or we're not in a mode where this applies
                 if (!Plugin.RandoManager.isRandomizerActive
-                    || !(Plugin.RandoManager is ManagerArchipelago)
+                    || Plugin.RandoManager is not ManagerArchipelago
                     || self.game.GetStorySession?.saveState.deathPersistentSaveData.karmaCap >= 4)
                 {
                     return spawnEcho;
@@ -407,7 +408,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void AddMSCRoomSpecificScriptIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
             // Check if room is GW_A25 at 018F
             c.GotoNext(x => x.MatchLdstr("GW_A25"));
             // After hasRobo load at 01D8
@@ -426,7 +427,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void CutsceneArtificerUpdateIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
             // After myRobot load at 0018
             c.GotoNext(
                 MoveType.After,
@@ -434,7 +435,7 @@ namespace RainWorldRandomizer
                 );
             // Skip cutscene if we saw it instead of if robo is present
             c.Emit(OpCodes.Pop);
-            c.EmitDelegate<Func<bool>>(() => hasSeenArtyStart);
+            c.EmitDelegate(() => hasSeenArtyStart);
 
             // Jump further into method to dodge first call to Destroy()
             c.GotoNext(x => x.MatchLdsfld(typeof(CutsceneArtificer.Phase).GetField(nameof(CutsceneArtificer.Phase.End))));
@@ -460,14 +461,14 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void HUD_InitSinglePlayerHud(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
                 x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
                 );
             c.MoveAfterLabels();
-            c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
+            c.EmitDelegate(YesItIsMeGourmand);
         }
 
         /// <summary>
@@ -475,7 +476,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void PlayerSessionRecord_AddEat(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
             for (int i = 0; i < 2; i++)
             {
                 c.GotoNext(
@@ -484,7 +485,7 @@ namespace RainWorldRandomizer
                     x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
                     );
                 c.MoveAfterLabels();
-                c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
+                c.EmitDelegate(YesItIsMeGourmand);
             }
 
             // Allow popcorn seeds to count as popcorn plants (argument interception at 0231).
@@ -496,14 +497,14 @@ namespace RainWorldRandomizer
                 return (ModManager.MSC && prev == DLCSharedEnums.AbstractObjectType.Seed) ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
             }
 
-            c.EmitDelegate<Func<AbstractPhysicalObject.AbstractObjectType, AbstractPhysicalObject.AbstractObjectType>>(TreatSeedsAsCobs);
+            c.EmitDelegate(TreatSeedsAsCobs);
 
         }
 
         [Obsolete("Not currently applied")]
         private static void WinStateCreateTrackerIL(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.EndgameID).GetField(nameof(MoreSlugcatsEnums.EndgameID.Gourmand))),
@@ -511,7 +512,7 @@ namespace RainWorldRandomizer
             );
             c.MoveAfterLabels();
 
-            c.EmitDelegate<Func<bool, bool>>(YesItIsMeGourmand);
+            c.EmitDelegate(YesItIsMeGourmand);
         }
 
         private static bool YesItIsMeGourmand(bool prev) => RandoOptions.UseFoodQuest || prev;
@@ -521,12 +522,12 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void SpearmasterMushroomAddEat(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             c.GotoNext(x => x.MatchIsinst<Mushroom>());
             c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
 
-            void Delegate(Spear self, PhysicalObject obj)
+            static void Delegate(Spear self, PhysicalObject obj)
             {
                 // Previous IL has already checked whether it's a live Spearmaster needle.
                 if (self.room?.game.GetStorySession?.playerSessionRecords is PlayerSessionRecord[] records)
@@ -537,7 +538,7 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldarg_1);
-            c.EmitDelegate<Action<Spear, PhysicalObject>>(Delegate);
+            c.EmitDelegate(Delegate);
 
             // Detect spearing neuron for Eat_Neuron check
             c.GotoNext(x => x.MatchIsinst<OracleSwarmer>());
@@ -555,7 +556,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ILFoodQuestUpdateNextPredictedItem(ILContext il)
         {
-            ILCursor c = new ILCursor(il);
+            ILCursor c = new(il);
 
             ILLabel jump = null;
             c.GotoNext(
@@ -587,41 +588,41 @@ namespace RainWorldRandomizer
         {
             orig();
             // Order must match APWorld.
-            WinState.GourmandTrackerData[] data = new WinState.GourmandTrackerData[]
-            {
-                new WinState.GourmandTrackerData(AbstractPhysicalObject.AbstractObjectType.SeedCob, null),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.VultureGrub }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.SmallNeedleWorm, CreatureTemplate.Type.BigNeedleWorm }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.GreenLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BlueLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.PinkLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.WhiteLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.RedLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.SpitLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.ZoopLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { MoreSlugcatsEnums.CreatureTemplateType.TrainLizard }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BigSpider }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.SpitterSpider }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.MotherSpider }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Vulture }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.KingVulture }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.MirosVulture }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.LanternMouse }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.Yeek }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.DropBug }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.MirosBird }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.Scavenger, DLCSharedEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, DLCSharedEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.PoleMimic }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.TentaclePlant }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { CreatureTemplate.Type.BigEel }),
-                new WinState.GourmandTrackerData(null, new CreatureTemplate.Type[] { DLCSharedEnums.CreatureTemplateType.Inspector }),
-            };
+            WinState.GourmandTrackerData[] data =
+            [
+                new(AbstractPhysicalObject.AbstractObjectType.SeedCob, null),
+                new(null, [CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede]),
+                new(null, [CreatureTemplate.Type.VultureGrub]),
+                new(null, [CreatureTemplate.Type.SmallNeedleWorm, CreatureTemplate.Type.BigNeedleWorm]),
+                new(null, [CreatureTemplate.Type.GreenLizard]),
+                new(null, [CreatureTemplate.Type.BlueLizard]),
+                new(null, [CreatureTemplate.Type.PinkLizard]),
+                new(null, [CreatureTemplate.Type.WhiteLizard]),
+                new(null, [CreatureTemplate.Type.RedLizard]),
+                new(null, [DLCSharedEnums.CreatureTemplateType.SpitLizard]),
+                new(null, [DLCSharedEnums.CreatureTemplateType.ZoopLizard]),
+                new(null, [MoreSlugcatsEnums.CreatureTemplateType.TrainLizard]),
+                new(null, [CreatureTemplate.Type.BigSpider]),
+                new(null, [CreatureTemplate.Type.SpitterSpider]),
+                new(null, [DLCSharedEnums.CreatureTemplateType.MotherSpider]),
+                new(null, [CreatureTemplate.Type.Vulture]),
+                new(null, [CreatureTemplate.Type.KingVulture]),
+                new(null, [DLCSharedEnums.CreatureTemplateType.MirosVulture]),
+                new(null, [CreatureTemplate.Type.LanternMouse]),
+                new(null, [CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB]),
+                new(null, [DLCSharedEnums.CreatureTemplateType.Yeek]),
+                new(null, [CreatureTemplate.Type.DropBug]),
+                new(null, [CreatureTemplate.Type.MirosBird]),
+                new(null, [CreatureTemplate.Type.Scavenger, DLCSharedEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing]),
+                new(null, [CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, DLCSharedEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy]),
+                new(null, [CreatureTemplate.Type.PoleMimic]),
+                new(null, [CreatureTemplate.Type.TentaclePlant]),
+                new(null, [CreatureTemplate.Type.BigEel]),
+                new(null, [DLCSharedEnums.CreatureTemplateType.Inspector]),
+            ];
 
-            unexpanded = WinState.GourmandPassageTracker.ToArray();
-            expanded = unexpanded.Concat(data).ToArray();
+            unexpanded = [.. WinState.GourmandPassageTracker];
+            expanded = [.. unexpanded, .. data];
         }
 
         internal static WinState.GourmandTrackerData[] unexpanded;

@@ -13,7 +13,7 @@ namespace RainWorldRandomizer
 {
     public static class HudExtension
     {
-        public static WeakReference<ChatLog> _chatLog = new WeakReference<ChatLog>(null);
+        public static WeakReference<ChatLog> _chatLog = new(null);
         public static ChatLog CurrentChatLog
         {
             get
@@ -64,7 +64,7 @@ namespace RainWorldRandomizer
         }
 
         private FContainer container;
-        private Queue<ChatMessage> messages = new Queue<ChatMessage>();
+        private Queue<ChatMessage> messages = new();
 
         public Vector2 pos;
 
@@ -75,7 +75,6 @@ namespace RainWorldRandomizer
 
             // A whole bunch of test messages for debugging
             /*
-            AddMessage("");
             AddMessage("This is a message showcasing the new Icon system. I can display anything I want, such as Icon{BubbleGrass}, " +
                 "or Icon{ScavengerBomb}. A check can display an icon to log what the player received, like \"Found Icon{EnergyCell}\"," +
                 " or a player who wants to for whatever reason can use them as well. If someone tries to type an invalid icon, it will display as a" +
@@ -177,15 +176,15 @@ namespace RainWorldRandomizer
             /// <summary>Single part white message</summary>
             public MessageText(string message)
             {
-                strings = new string[] { message };
-                colors = new Color[] { Color.white };
+                strings = [message];
+                colors = [Color.white];
             }
 
             /// <summary>Single part colored message</summary>
             public MessageText(string message, Color color)
             {
-                strings = new string[] { message };
-                colors = new Color[] { color };
+                strings = [message];
+                colors = [color];
             }
 
             /// <summary> Multi-part colored message</summary>
@@ -198,8 +197,8 @@ namespace RainWorldRandomizer
             /// <summary>Import a message from an Archipelago <see cref="LogMessage"/></summary>
             public MessageText(LogMessage logMessage)
             {
-                strings = logMessage.Parts.Select(p => p.Text).ToArray();
-                colors = logMessage.Parts.Select(p => ArchipelagoConnection.palette[p.PaletteColor]).ToArray();
+                strings = [.. logMessage.Parts.Select(p => p.Text)];
+                colors = [.. logMessage.Parts.Select(p => ArchipelagoConnection.palette[p.PaletteColor])];
             }
         }
 
@@ -239,12 +238,12 @@ namespace RainWorldRandomizer
                 font = Futile.atlasManager.GetFontWithName(Custom.GetFont());
                 yPos = -MSG_SIZE_Y;
                 text = string.Join("", strings);
-                wrapIndices = new List<int>();
+                wrapIndices = [];
 
                 #region String parsing / part list creation
-                List<string> capturedIDs = new List<string>();
+                List<string> capturedIDs = [];
                 int[] baseColorIndices = new int[strings.Length];
-                List<int> iconIndices = new List<int>();
+                List<int> iconIndices = [];
 
                 int charIndex = 0;
                 for (int i = 0; i < strings.Length; i++)
@@ -283,7 +282,7 @@ namespace RainWorldRandomizer
                 string fullText = string.Join("", strings);
                 string wrappedText = fullText.WrapText(false, MSG_SIZE_X);
 
-                List<int> wrapTextIndices = new List<int>();
+                List<int> wrapTextIndices = [];
 
                 // Trim line breaks and index them
                 string[] splitByLine = Regex.Split(wrappedText, Environment.NewLine);
@@ -297,9 +296,9 @@ namespace RainWorldRandomizer
 
                 // Split message apart one more time, at each important split index
                 List<int> unionIndices = baseColorIndices.Union(iconIndices).Union(wrapTextIndices).ToList();
-                Queue<Color> colorQueue = new Queue<Color>(colors);
-                List<StringBuilder> finalTextList = new List<StringBuilder>(1) { new StringBuilder(wrappedText[0].ToString()) };
-                List<Color> finalColorList = new List<Color>(1) { colorQueue.Peek() };
+                Queue<Color> colorQueue = new(colors);
+                List<StringBuilder> finalTextList = [new StringBuilder(wrappedText[0].ToString())];
+                List<Color> finalColorList = [colorQueue.Peek()];
                 int partIndex = 0;
                 for (int i = 1; i < wrappedText.Length; i++)
                 {
@@ -441,7 +440,7 @@ namespace RainWorldRandomizer
             private IconSymbol CreateIcon(string iconID, float xOffset)
             {
                 // This should automatically default to the "Futile_White" sprite if data is invalid
-                MultiplayerUnlocks.SandboxUnlockID iconData = new MultiplayerUnlocks.SandboxUnlockID(iconID, false);
+                MultiplayerUnlocks.SandboxUnlockID iconData = new(iconID, false);
                 IconSymbol icon = IconSymbol.CreateIconSymbol(
                     MultiplayerUnlocks.SymbolDataForSandboxUnlock(iconData),
                     owner.hud.fContainers[1]);
@@ -454,7 +453,7 @@ namespace RainWorldRandomizer
 
             private FLabel CreateLabel(string text, float xOffset, Color? color = null)
             {
-                FLabel label = new FLabel(Custom.GetFont(), text)
+                FLabel label = new(Custom.GetFont(), text)
                 {
                     color = color == null ? new Color(1f, 1f, 1f) : (Color)color,
                     x = xOffset,
