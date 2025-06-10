@@ -523,8 +523,12 @@ namespace RainWorldRandomizer
 
         private class OptionGroup(OptionInterface owner, string name)
         {
+            private const float VERTICAL_MARGIN = 5f;
+            private const float HORIZONTAL_MARGIN = 5f;
+
             public OptionInterface owner = owner;
             public string name = name;
+            public OpRect boundingRect;
             public List<UIelement> elements = [];
 
             private bool _disabled = false;
@@ -596,9 +600,33 @@ namespace RainWorldRandomizer
                 return textbox;
             }
 
+            /// <summary>
+            /// Finalize contents and add to options tab
+            /// </summary>
+            /// <param name="tabIndex">Index in <see cref="OptionInterface.Tabs"/> to place group</param>
             public void AddToTab(int tabIndex)
             {
-                owner.Tabs[tabIndex].AddItems([.. elements]);
+                boundingRect = GenerateBoundingRect();
+                owner.Tabs[tabIndex].AddItems([.. elements, boundingRect]);
+            }
+
+            private OpRect GenerateBoundingRect()
+            {
+                Vector2 minPos = elements.Count > 0 ? elements[0].pos : Vector2.zero;
+                Vector2 maxPos = Vector2.zero;
+                foreach (UIelement element in elements)
+                {
+                    Vector2 upperBound = element.pos + element.size;
+                    if (element is OpLabel label) upperBound = label.pos + label.GetDisplaySize();
+
+                    if (element.pos.x < minPos.x) minPos.x = element.pos.x;
+                    if (element.pos.y < minPos.y) minPos.y = element.pos.y;
+                    if (upperBound.x > maxPos.x) maxPos.x = upperBound.x;
+                    if (upperBound.y > maxPos.y) maxPos.y = upperBound.y;
+                }
+
+                Vector2 marginVector = new(HORIZONTAL_MARGIN, VERTICAL_MARGIN);
+                return new(minPos - marginVector, maxPos - minPos + (marginVector * 2), 0f);
             }
 
             private static void ApplyColorToElement(UIelement element, Color color)
