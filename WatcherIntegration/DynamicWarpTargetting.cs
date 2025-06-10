@@ -72,7 +72,9 @@ namespace RainWorldRandomizer.WatcherIntegration
                 if (relevantMode.Predetermined())
                 {
                     // If we need the key but do not have it, set a failure reason and return empty.
-                    if (relevantMode == DynWarpMode.UnlockablePredetermined && !Items.CollectedDynamicKeys.Contains(region))
+                    if (relevantMode == DynWarpMode.UnlockablePredetermined 
+                        && sourceKind is not WarpSourceKind.Permarotted or WarpSourceKind.Unrottable
+                        && !Items.CollectedDynamicKeys.Contains(region))
                     {
                         failureReason = FailureReason.MissingSourceKey;
                         return new();
