@@ -10,6 +10,8 @@ namespace RainWorldRandomizer.WatcherIntegration
     internal static class DynamicWarpTargetting
     {
         internal enum WarpSourceKind { Other, Normal, Throne, Permarotted, Unrottable }
+
+        /// <summary>Get the kind of dynamic warp that would be performed from this room.</summary>
         internal static WarpSourceKind GetWarpSourceKind(string room)
         {
             if (room.ToUpperInvariant() is "WORA_THRONE10" or "WORA_THRONE09" or "WORA_THRONE07" or "WORA_THRONE05") return WarpSourceKind.Throne;
@@ -77,18 +79,18 @@ namespace RainWorldRandomizer.WatcherIntegration
                         && !Items.CollectedDynamicKeys.Contains(region))
                     {
                         failureReason = FailureReason.MissingSourceKey;
-                        return new();
+                        return [];
                     }
                     // Specifically in the Throne, we need to index the mapping with the room; otherwise, index with the region.
                     if (predetermination.TryGetValue(sourceKind == WarpSourceKind.Throne ? roomName : region, out string destRoom))
                     {
-                        return new() { destRoom };
+                        return [ destRoom ];
                     }
 
                     // Ideally this failure state never happens - it would imply either custom regions,
                     // some sort of generation failure, or incomplete slot data.
                     failureReason = FailureReason.MissingPredetermination;
-                    return new();
+                    return [];
                 }
 
                 // For a non-predetermined mode, get the ordinarily valid candidate targets.
@@ -97,7 +99,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 // If, for some reason, there are no valid candidate to begin with,
                 // something else has gone wrong and we don't need to bother with a custom failure reason.
                 if (candidates.Count == 0) return candidates;
-                Plugin.Log.LogDebug($"Original candidates for dynamic warp: [{string.Join(",", candidates)}]");
+                //Plugin.Log.LogDebug($"Original candidates for dynamic warp: [{string.Join(",", candidates)}]");
 
                 // Otherwise, we may need to filter this list, depending on the warp mode.
                 IEnumerable<string> regionFilter = null;
@@ -112,14 +114,16 @@ namespace RainWorldRandomizer.WatcherIntegration
                 if (regionFilter != null)
                 {
                     regionFilter = regionFilter.Select(x => x.ToUpperInvariant());
-                    candidates = candidates.Where(x => regionFilter.Contains(x.Region())).ToList();
+                    candidates = [.. candidates.Where(x => regionFilter.Contains(x.Region()))];
                     if (candidates.Count == 0) failureReason = latentFR;
                 }
-                Plugin.Log.LogDebug($"Filtered candidates for dynamic warp: [{string.Join(",", candidates)}]");
+                //Plugin.Log.LogDebug($"Filtered candidates for dynamic warp: [{string.Join(",", candidates)}]");
                 return candidates;
             }
 
             internal enum FailureReason { MissingSourceKey, MissingPredetermination, NoOtherVisitedRegions, NoUsableDynamicKeys, NoValidStaticPoolTargets }
+
+            /// <summary>The AP-specific reason, if any, that the next dynamic warp might fail.</summary>
             internal static FailureReason? failureReason = null;
 
             /// <summary>Waive Ripple requirements if set, and store the list of visited regions for efficiency.</summary>

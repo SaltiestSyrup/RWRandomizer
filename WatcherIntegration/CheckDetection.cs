@@ -75,12 +75,12 @@ namespace RainWorldRandomizer.WatcherIntegration
                 }
             }
 
-            internal static List<string> watcherStoryRegions = new()
-            { 
+            internal static List<string> watcherStoryRegions =
+            [
                 "WARA", "WARB", "WARC", "WARD", "WARE", "WARF", "WARG", "WAUA", "WBLA", 
                 "WDSR", "WGWR", "WHIR", "WORA", "WPTA", "WRFA", "WRFB", "WRRA", "WRSA", 
                 "WSKA", "WSKB", "WSKC", "WSKD", "WSSR", "WSUR", "WTDA", "WTDB", "WVWA" 
-            };
+            ];
 
             /// <summary>Return a relevant list of regions for Watcher.</summary>
             private static List<string> WatcherStoryRegions(On.SlugcatStats.orig_SlugcatStoryRegions orig, SlugcatStats.Name i) 

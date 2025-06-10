@@ -10,9 +10,9 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static int RippleIncrements;
         /// <summary>What the minimum and maximum Ripple should be, based on <see cref="RippleIncrements"/>.</summary>
         internal static Vector2 Ripple => new(Mathf.Max(1f, -1f + RippleIncrements / 2f), Mathf.Min(5f, 1f + RippleIncrements / 2f));
-        internal static List<string> collectedDynamicKeys = new();
+        internal static List<string> collectedDynamicKeys = [];
         internal static List<string> CollectedDynamicKeys => collectedDynamicKeys;  // this could get from where the data actually gets stored later
-        internal static List<string> collectedStaticKeys = new();
+        internal static List<string> collectedStaticKeys = [];
         internal static List<string> CollectedStaticKeys => collectedDynamicKeys;
 
         internal struct StaticKey
@@ -61,7 +61,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
         internal static void ReceiveItem(string item)
         {
-            string[] split = item.Split(new char[] { '-' }, 2);
+            string[] split = item.Split(['-'], 2);
 
             switch (split[0])  // switch on first part of item name
             {
