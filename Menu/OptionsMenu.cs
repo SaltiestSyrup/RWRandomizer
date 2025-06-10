@@ -14,7 +14,8 @@ namespace RainWorldRandomizer
         /// <summary>X offset for options on the left side of the screen</summary>
         private const float LEFT_OPTION_X = 20f;
         /// <summary>X offset for options on the right side of the screen</summary>
-        private const float RIGHT_OPTION_X = 420f;
+        private const float RIGHT_OPTION_X = 320f;
+        private const float GROUP_SIZE_X = 260f;
         /// <summary>Y offset for options to start at</summary>
         private const float FIRST_LINE_Y = 550f;
         /// <summary>How far to decrement Y for a new line</summary>
@@ -69,7 +70,7 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("The percentage amount of filler items that will be cycle increases when playing as Hunter (1 is 100%)." +
                     "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
                     new ConfigAcceptableRange<float>(0, 1), "",
-                    ["Hunter max cycle increases"]));
+                    ["Hunter cycle increases"]));
 
             RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
@@ -175,7 +176,7 @@ namespace RainWorldRandomizer
             // (X) - Make generic function for spawning option
             // (X) - Create option group class to organize and apply changes to many options
             // (X) - Standalone options should grey out when AP enabled
-            // ( ) - Put the option groups into visual boxes
+            // (X) - Put the option groups into visual boxes
             // ( ) - Apply colors to groups (maybe, will see if it looks good)
 
             base.Initialize();
@@ -201,41 +202,39 @@ namespace RainWorldRandomizer
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Base"));
             float runningY = FIRST_LINE_Y;
 
-            OpLabel standaloneConfigsLabel = new(40f, runningY, Translate("Standalone Options"));
+            OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Standalone Options"));
             Tabs[tabIndex].AddItems(standaloneConfigsLabel);
             runningY -= NEWLINE_DECREMENT;
 
             // Seed
-            OptionGroup seedGroup = new(this, "Seed");
+            OptionGroup seedGroup = new(this, "Seed", new(10f, 10f));
             OpCheckBox useSeedCheckbox = seedGroup.AddCheckBox(RandoOptions.useSeed, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
 
-            OpTextBox seedText = new(RandoOptions.seed, new Vector2(25f, runningY), 100f)
+            OpTextBox seedText = new(RandoOptions.seed, new Vector2(125f, runningY), 100f)
             {
-                description = Translate(RandoOptions.seed.info.description)
+                description = Translate(RandoOptions.seed.info.description),
             };
             seedGroup.AddElements(seedText);
-            runningY -= NEWLINE_DECREMENT;
+            runningY -= NEWLINE_DECREMENT * 1.5f;
 
             // Make the seed field be active only when useSeed is selected
             void UseSeedChange() => seedText.greyedOut = seedGroup.Disabled || !useSeedCheckbox.GetValueBool();
 
-            UseSeedChange();
-            useSeedCheckbox.OnChange += UseSeedChange;
+            seedText.OnUpdate += UseSeedChange; // Can't get the box to start greyed, just set on Update
             seedGroup.AddToTab(tabIndex);
             optionGroups.Add(seedGroup);
 
             // Misc Generation
-            OptionGroup miscGroup = new(this, "Misc_Generation");
+            OptionGroup miscGroup = new(this, "Misc_Generation", new(10f, 10f), new(GROUP_SIZE_X, 0f));
             miscGroup.AddCheckBox(RandoOptions.randomizeSpawnLocation, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             miscGroup.AddCheckBox(RandoOptions.startMinKarma, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 2;
+            runningY -= NEWLINE_DECREMENT * 1.5f;
             miscGroup.AddToTab(tabIndex);
             optionGroups.Add(miscGroup);
 
             // Checks
-            OptionGroup checksGroup = new(this, "Checks");
+            OptionGroup checksGroup = new(this, "Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
             checksGroup.AddCheckBox(RandoOptions.useSandboxTokenChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.usePearlChecks, new(LEFT_OPTION_X, runningY));
@@ -245,22 +244,22 @@ namespace RainWorldRandomizer
             checksGroup.AddCheckBox(RandoOptions.usePassageChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useSpecialChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 2;
+            runningY -= NEWLINE_DECREMENT * 1.5f;
             checksGroup.AddToTab(tabIndex);
             optionGroups.Add(checksGroup);
 
             // Filler Items
-            OptionGroup fillerGroup = new(this, "Filler_Items");
+            OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(GROUP_SIZE_X, 0f));
             fillerGroup.AddCheckBox(RandoOptions.giveItemUnlocks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
 
-            OpUpdown hunterCyclesUpDown = new(RandoOptions.hunterCyclesDensity, new Vector2(LEFT_OPTION_X, runningY), 100f)
+            OpUpdown hunterCyclesUpDown = new(RandoOptions.hunterCyclesDensity, new Vector2(LEFT_OPTION_X, runningY), 60f)
             {
                 description = Translate(RandoOptions.hunterCyclesDensity.info.description)
             };
-            OpLabel hunterCyclesLabel = new(LEFT_OPTION_X + 120f, runningY, Translate(RandoOptions.hunterCyclesDensity.info.Tags[0] as string))
+            OpLabel hunterCyclesLabel = new(LEFT_OPTION_X + 80f, runningY, Translate(RandoOptions.hunterCyclesDensity.info.Tags[0] as string))
             {
                 bumpBehav = hunterCyclesUpDown.bumpBehav,
                 description = hunterCyclesUpDown.description
@@ -275,11 +274,11 @@ namespace RainWorldRandomizer
             // ----- Right side configs -----
             runningY = FIRST_LINE_Y;
 
-            OpLabel globalConfigsLabel = new(440f, runningY, Translate("Global Options"));
+            OpLabel globalConfigsLabel = new(RIGHT_OPTION_X + 15f, runningY, Translate("Global Options"));
             Tabs[tabIndex].AddItems(globalConfigsLabel);
             runningY -= NEWLINE_DECREMENT;
 
-            OptionGroup globalGroup = new(this, "Global");
+            OptionGroup globalGroup = new(this, "Global", new(10f, 10f), new(GROUP_SIZE_X, 0f));
             globalGroup.AddCheckBox(RandoOptions.itemShelterDelivery, new(RIGHT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             globalGroup.AddCheckBox(RandoOptions.disableNotificationQueue, new(RIGHT_OPTION_X, runningY));
@@ -301,14 +300,14 @@ namespace RainWorldRandomizer
             float runningY = FIRST_LINE_Y;
 
             // Open optional regions
-            OptionGroup unlockRegionsGroup = new(this, "MSC_Regions");
+            OptionGroup unlockRegionsGroup = new(this, "MSC_Regions", new(10f, 10f));
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowMetroForOthers, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT * 2;
 
             // Check types
-            OptionGroup checksGroup = new(this, "MSC_Checks");
+            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f));
             unlockRegionsGroup.AddCheckBox(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             unlockRegionsGroup.AddCheckBox(RandoOptions.useEnergyCell, new(LEFT_OPTION_X, runningY));
@@ -331,9 +330,9 @@ namespace RainWorldRandomizer
             float runningY = FIRST_LINE_Y;
 
             OpCheckBox APCheckBox = AddCheckBox(RandoOptions.archipelago, new(LEFT_OPTION_X, runningY), tabIndex);
-            runningY -= NEWLINE_DECREMENT;
+            runningY -= NEWLINE_DECREMENT * 1.5f;
 
-            OptionGroup connectionGroup = new(this, "AP_Connection");
+            OptionGroup connectionGroup = new(this, "AP_Connection", new(10f, 10f));
             OpTextBox hostNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoHostName, new(LEFT_OPTION_X, runningY), 200f);
             runningY -= NEWLINE_DECREMENT;
             OpTextBox portTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPort, new(LEFT_OPTION_X, runningY), 55f);
@@ -343,11 +342,11 @@ namespace RainWorldRandomizer
             OpTextBox passwordTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f);
             runningY -= NEWLINE_DECREMENT;
 
-            OpSimpleButton connectButton = new(new Vector2(20f, runningY), new Vector2(60f, 20f), "Connect")
+            OpSimpleButton connectButton = new(new Vector2(LEFT_OPTION_X, runningY), new Vector2(60f, 20f), "Connect")
             {
                 description = "Attempt to connect to the Archipelago server"
             };
-            OpSimpleButton disconnectButton = new(new Vector2(100f, runningY), new Vector2(80f, 20f), "Disconnect")
+            OpSimpleButton disconnectButton = new(new Vector2(LEFT_OPTION_X + 80f, runningY), new Vector2(80f, 20f), "Disconnect")
             {
                 description = "Disconnect from the current session"
             };
@@ -357,31 +356,37 @@ namespace RainWorldRandomizer
             optionGroups.Add(connectionGroup);
 
             // ----- Status Information -----
-            OptionGroup statusGroup = new(this, "AP_Status");
-            OpLabelLong connectResultLabel = new(new Vector2(20f, runningY - 100f), new Vector2(320f, 100f), "");
-            OpLabelLong slotDataLabelLeft = new(new Vector2(350f, runningY - 100f), new Vector2(200f, 100f), "", false);
-            OpLabelLong slotDataLabelRight = new(new Vector2(FIRST_LINE_Y, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
-            statusGroup.AddElements(connectResultLabel, slotDataLabelLeft,  slotDataLabelRight);
+            OptionGroup statusGroup = new(this, "AP_Status", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
+            OpLabelLong connectResultLabel = new(new Vector2(LEFT_OPTION_X, 60f), new Vector2(GROUP_SIZE_X, runningY - 60f), "");
+            statusGroup.AddElements(connectResultLabel);
             statusGroup.AddToTab(tabIndex);
             optionGroups.Add(statusGroup);
 
             // ----- Right side Configurables -----
             runningY = FIRST_LINE_Y;
 
-            OptionGroup deathLinkGroup = new(this, "AP_DeathLink");
-            OpLabel deathLinkLabel = new(440f, runningY, Translate("Death Link Settings"));
-            deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
-            deathLinkGroup.AddElements(deathLinkLabel);
-            runningY -= NEWLINE_DECREMENT;
+            OptionGroup deathLinkGroup = new(this, "AP_DeathLink", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
+            //OpLabel deathLinkLabel = new(RIGHT_OPTION_X + 45f, runningY, Translate("Death Link Settings"));
+            //deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
+            //deathLinkGroup.AddElements(deathLinkLabel);
+            //runningY -= NEWLINE_DECREMENT;
 
-            OpCheckBox deathLinkOverrideCheckbox = deathLinkGroup.AddCheckBox(RandoOptions.archipelagoDeathLinkOverride, new(RIGHT_OPTION_X, runningY));
+            OpCheckBox deathLinkOverrideCheckbox = deathLinkGroup.AddCheckBox(RandoOptions.archipelagoDeathLinkOverride, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
-            deathLinkGroup.AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X, runningY));
+            deathLinkGroup.AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
-            deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X, runningY));
+            deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
             deathLinkGroup.AddToTab(tabIndex);
             optionGroups.Add(deathLinkGroup);
+
+            // Slot data information
+            OptionGroup slotDataGroup = new(this, "AP_Slot_Data", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
+            OpLabelLong slotDataLabelLeft = new(new Vector2(RIGHT_OPTION_X, 60f), new Vector2(200f, runningY - 60f), "", false);
+            OpLabelLong slotDataLabelRight = new(new Vector2(RIGHT_OPTION_X + 210f, 60f), new Vector2(50f, runningY - 60f), "", false, FLabelAlignment.Right);
+            slotDataGroup.AddElements(slotDataLabelLeft, slotDataLabelRight);
+            slotDataGroup.AddToTab(tabIndex);
+            optionGroups.Add(slotDataGroup);
 
             OpSimpleButton clearSavesButton = new(new Vector2(490f, 10f), new Vector2(100f, 25f), "Clear Save Files")
             {
@@ -428,33 +433,37 @@ namespace RainWorldRandomizer
                 deathLinkOverrideCheckbox.SetValueBool(DeathLinkHandler.Active);
 
                 // Create / Update slot data information
-                slotDataLabelLeft.text =
-                    $"Current Settings Information\n\n" +
-                    $"Using MSC:\n" +
-                    $"Using Watcher:\n" +
-                    $"Chosen Slugcat:\n" +
-                    $"Using Random Start:\n" +
-                    $"Chosen Starting Room:\n" +
-                    $"Completion Condition:\n" +
-                    $"Passage Progress w/o Survivor:\n" +
-                    $"Using DeathLink:\n" +
-                    $"Food Quest:\n" +
-                    $"Shelter-sanity:\n" +
-                    $"Flower-sanity:\n" +
-                    $"Dev token checks:";
-                slotDataLabelRight.text =
-                    $"\n\n{ArchipelagoConnection.IsMSC}\n" +
-                    $"{ArchipelagoConnection.IsWatcher}\n" +
-                    $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
-                    $"{ArchipelagoConnection.useRandomStart}\n" +
-                    $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}\n" +
-                    $"{ArchipelagoConnection.completionCondition}\n" +
-                    $"{ArchipelagoConnection.PPwS}\n" +
-                    $"{DeathLinkHandler.Active}\n" +
-                    $"{ArchipelagoConnection.foodQuest}\n" +
-                    $"{ArchipelagoConnection.sheltersanity}\n" +
-                    $"{ArchipelagoConnection.flowersanity}\n" +
-                    $"{ArchipelagoConnection.devTokenChecks}";
+                slotDataLabelLeft.text = string.Join("\n", 
+                [
+                    "Current Settings Information\n",
+                    "Using MSC:",
+                    "Using Watcher:",
+                    "Chosen Slugcat:",
+                    "Using Random Start:",
+                    "Chosen Starting Room:",
+                    "Completion Condition:",
+                    "Passage Progress w/o Survivor:",
+                    "Using DeathLink:",
+                    "Food Quest:",
+                    "Shelter-sanity:",
+                    "Flower-sanity:",
+                    "Dev token checks:",
+                ]);
+                slotDataLabelRight.text = string.Join("\n", 
+                [
+                    $"\n\n{ArchipelagoConnection.IsMSC}",
+                    $"{ArchipelagoConnection.IsWatcher}",
+                    $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}",
+                    $"{ArchipelagoConnection.useRandomStart}",
+                    $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}",
+                    $"{ArchipelagoConnection.completionCondition}",
+                    $"{ArchipelagoConnection.PPwS}",
+                    $"{DeathLinkHandler.Active}",
+                    $"{ArchipelagoConnection.foodQuest}",
+                    $"{ArchipelagoConnection.sheltersanity}",
+                    $"{ArchipelagoConnection.flowersanity}",
+                    $"{ArchipelagoConnection.devTokenChecks}",
+                ]);
             };
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
@@ -521,15 +530,14 @@ namespace RainWorldRandomizer
             return textbox;
         }
 
-        private class OptionGroup(OptionInterface owner, string name)
+        private class OptionGroup(OptionInterface owner, string name, Vector2 margins, Vector2 customSize = new())
         {
-            private const float VERTICAL_MARGIN = 5f;
-            private const float HORIZONTAL_MARGIN = 5f;
-
             public OptionInterface owner = owner;
             public string name = name;
             public OpRect boundingRect;
             public List<UIelement> elements = [];
+            private Vector2 margins = margins;
+            public Vector2 customSize = customSize;
 
             private bool _disabled = false;
             public bool Disabled
@@ -625,8 +633,11 @@ namespace RainWorldRandomizer
                     if (upperBound.y > maxPos.y) maxPos.y = upperBound.y;
                 }
 
-                Vector2 marginVector = new(HORIZONTAL_MARGIN, VERTICAL_MARGIN);
-                return new(minPos - marginVector, maxPos - minPos + (marginVector * 2), 0f);
+                // Apply custom sizing overrides
+                if (customSize.x > 0) maxPos.x = minPos.x + customSize.x;
+                if (customSize.y > 0) maxPos.y = minPos.y + customSize.y;
+
+                return new(minPos - margins, maxPos - minPos + (margins * 2), 0f);
             }
 
             private static void ApplyColorToElement(UIelement element, Color color)
@@ -636,6 +647,12 @@ namespace RainWorldRandomizer
                 else if (element is OpTextBox textBox) textBox.colorEdge = color;
                 else if (element is OpUpdown upDown) upDown.colorEdge = color;
             }
+        }
+
+        private class SlotDataEntry(Vector2 pos, Vector2 size, string leftText, string rightText) : UIelement(pos, size)
+        {
+            public OpLabel leftLabel = new(pos, size, leftText, FLabelAlignment.Left);
+            public OpLabel rightLabel = new(pos, size, rightText, FLabelAlignment.Right);
         }
     }
 }
