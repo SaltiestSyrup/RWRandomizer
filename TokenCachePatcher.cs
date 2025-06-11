@@ -72,21 +72,7 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Brfalse, jump);
             c.Emit(OpCodes.Ldloc, 15);
 
-            static bool ForceBuildCache(bool fileExists)
-            {
-                string path = AssetManager.ResolveFilePath(string.Join("",
-                [
-                    "World",
-                    Path.DirectorySeparatorChar.ToString(),
-                    "IndexMaps",
-                    Path.DirectorySeparatorChar.ToString(),
-                    Path.DirectorySeparatorChar.ToString(),
-                    "randomizercachesu.txt" // Arbitrary part of randomizer cache to validate it exists
-                ]));
-
-                return fileExists || !File.Exists(path);
-            }
-
+            static bool ForceBuildCache(bool fileExists) => true;
             static bool CancelDeleteFile(string filePath) => File.Exists(filePath);
         }
 
