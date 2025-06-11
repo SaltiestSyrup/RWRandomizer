@@ -20,6 +20,12 @@ namespace RainWorldRandomizer
         /// <summary>How far to decrement Y for a new line</summary>
         private const float NEWLINE_DECREMENT = 35f;
 
+        //new(183, 96, 25);
+        private static Color NewColor(int r, int g, int b) => new(r / 255f, g / 255f, b / 255f);
+        private readonly Color baseTabColor = NewColor(157, 56, 129);
+        private readonly Color downpourTabColor = NewColor(129, 157, 56);
+        private readonly Color archipelagoTabColor = NewColor(56, 129, 157);
+
         private List<OptionGroup> optionGroups = [];
         private List<OptionGroup> standaloneExclusiveGroups = [];
 
@@ -180,15 +186,24 @@ namespace RainWorldRandomizer
 
             base.Initialize();
 
-            List<OpTab> _tabs =
-            [
-                new OpTab(this, Translate("Base")),
+            List<OpTab> _tabs = 
+            [ 
+                new OpTab(this, Translate("Base")) 
+                {
+                    colorButton = baseTabColor,
+                }
             ];
             if (ModManager.MSC)
             {
-                _tabs.Add(new OpTab(this, Translate("Downpour")));
+                _tabs.Add(new OpTab(this, Translate("Downpour"))
+                {
+                    colorButton = downpourTabColor,
+                });
             }
-            _tabs.Add(new OpTab(this, Translate("Archipelago")));
+            _tabs.Add(new OpTab(this, Translate("Archipelago"))
+            {
+                colorButton = archipelagoTabColor,
+            });
             Tabs = [.. _tabs];
 
             PopulateBaseTab();
