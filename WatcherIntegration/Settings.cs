@@ -9,9 +9,11 @@ namespace RainWorldRandomizer.WatcherIntegration
     {
         internal enum DynWarpMode { Ignored, Visited, StaticPool, UNUSED, UnlockablePool, StaticPredetermined, UnlockablePredetermined }
         internal enum RippleReqMode { Unaltered, None }
+        internal enum DynWarpFailureMode { Nothing, OuterRim }
 
         internal static DynWarpMode modeNormal;
         internal static DynWarpMode modeThrone;
+        internal static DynWarpFailureMode warpFailureMode;
         internal static IEnumerable<string> targetPool;
         internal static IDictionary<string, string> predetermination;
         internal static RippleReqMode rippleReq;
@@ -56,13 +58,14 @@ namespace RainWorldRandomizer.WatcherIntegration
                     data.GetDict("predetermined_warps")?.SelectStringKeys() ?? [],
                     (RippleReqMode)data.GetSimple("dynamic_warp_ripple_req", 0L),
                     data.GetSimple("spinning_top_keys", 0L) == 2L,
-                    data.GetSimple("rotted_region_target", 18L)
+                    data.GetSimple("rotted_region_target", 18L),
+                    (DynWarpFailureMode)data.GetSimple("dynamic_warp_failure_mode", 1L)
                     );
             }
             catch (Exception e) { Plugin.Log.LogError(e); }
         }
 
-        internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, RippleReqMode rippleReq, bool spinningTopKeys, long rottedRegionTarget)
+        internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, RippleReqMode rippleReq, bool spinningTopKeys, long rottedRegionTarget, DynWarpFailureMode failureMode)
         {
             Settings.modeNormal = modeNormal;
             Settings.modeThrone = modeThrone;
@@ -71,6 +74,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             Settings.rippleReq = rippleReq;
             Settings.spinningTopKeys = spinningTopKeys;
             Settings.rottedRegionTarget = rottedRegionTarget;
+            Settings.warpFailureMode = failureMode;
             Items.ResetItems();
         }
     }
