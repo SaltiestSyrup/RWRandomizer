@@ -20,7 +20,6 @@ namespace RainWorldRandomizer
         /// <summary>How far to decrement Y for a new line</summary>
         private const float NEWLINE_DECREMENT = 35f;
 
-        //new(183, 96, 25);
         private static Color NewColor(int r, int g, int b) => new(r / 255f, g / 255f, b / 255f);
         private readonly Color baseTabColor = NewColor(157, 56, 129);
         private readonly Color downpourTabColor = NewColor(129, 157, 56);
@@ -159,31 +158,6 @@ namespace RainWorldRandomizer
 
         public override void Initialize()
         {
-            // REMIX MENU REWORK
-            // Use boxes to organize settings:
-            //  General:
-            //      Seed
-            //      Misc generation
-            //      Check settings
-            //      Filler item settings
-            //      Global settings
-            //  MSC:
-            //      Unlock regions
-            //      Campaign checks
-            //  AP:
-            //      Enable AP
-            //      Connection fields
-            //      DeathLink
-            //      Other settings
-            //      Connect status box
-            //      Slot data summary
-
-            // (X) - Make generic function for spawning option
-            // (X) - Create option group class to organize and apply changes to many options
-            // (X) - Standalone options should grey out when AP enabled
-            // (X) - Put the option groups into visual boxes
-            // ( ) - Apply colors to groups (maybe, will see if it looks good)
-
             base.Initialize();
 
             List<OpTab> _tabs = 
