@@ -154,6 +154,16 @@ namespace RainWorldRandomizer
             RandoOptions.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
                 new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
                     ["Ignore Menu DeathLinks"]));
+
+            RandoOptions.trapMinimumCooldown = config.Bind<int>("TrapMinimumCooldown", 30,
+                new ConfigurableInfo("The minimum amount of time between trap triggers (in seconds)",
+                new ConfigAcceptableRange<int>(1, 600), "",
+                    ["Minimum Trap Cooldown"]));
+
+            RandoOptions.trapMaximumCooldown = config.Bind<int>("TrapMaximumCooldown", 90,
+                new ConfigurableInfo("The maximum amount of time between trap triggers (in seconds)", 
+                    new ConfigAcceptableRange<int>(1, 600), "",
+                    ["Maximum Trap Cooldown"]));
         }
 
         public override void Initialize()
@@ -242,17 +252,7 @@ namespace RainWorldRandomizer
             runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
-
-            OpUpdown hunterCyclesUpDown = new(RandoOptions.hunterCyclesDensity, new Vector2(LEFT_OPTION_X, runningY), 60f)
-            {
-                description = Translate(RandoOptions.hunterCyclesDensity.info.description)
-            };
-            OpLabel hunterCyclesLabel = new(LEFT_OPTION_X + 80f, runningY, Translate(RandoOptions.hunterCyclesDensity.info.Tags[0] as string))
-            {
-                bumpBehav = hunterCyclesUpDown.bumpBehav,
-                description = hunterCyclesUpDown.description
-            };
-            fillerGroup.AddElements(hunterCyclesUpDown, hunterCyclesLabel);
+            fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
             fillerGroup.AddToTab(tabIndex);
             optionGroups.Add(fillerGroup);
 
@@ -368,9 +368,17 @@ namespace RainWorldRandomizer
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X + 30f, runningY));
-            runningY -= NEWLINE_DECREMENT;
+            runningY -= NEWLINE_DECREMENT * 1.7f;
             deathLinkGroup.AddToTab(tabIndex);
             optionGroups.Add(deathLinkGroup);
+
+            OptionGroup trapGroup = new(this, "AP_Traps", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
+            OpUpdown trapMinUpDown = trapGroup.AddUpDown(RandoOptions.trapMinimumCooldown, true, new(RIGHT_OPTION_X + 30f, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            OpUpdown trapMaxUpDown = trapGroup.AddUpDown(RandoOptions.trapMaximumCooldown, true, new(RIGHT_OPTION_X + 30f, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            trapGroup.AddToTab(tabIndex);
+            optionGroups.Add(trapGroup);
 
             // Slot data information
             runningY = Mathf.Min(runningY, 322.5f);
@@ -402,6 +410,7 @@ namespace RainWorldRandomizer
                 }
                 connectionGroup.Disabled = APDisabled;
                 deathLinkGroup.Disabled = APDisabled;
+                trapGroup.Disabled = APDisabled;
                 foreach (OptionGroup group in standaloneExclusiveGroups)
                 {
                     group.Disabled = !APDisabled;
@@ -473,6 +482,22 @@ namespace RainWorldRandomizer
             {
                 // TODO: DeathLink probably shouldn't send a toggle to server every time the box is clicked, change to happen on apply settings
                 DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
+            };
+
+            // Add logic to prevent minimum > maximum and vice versa
+            trapMinUpDown.OnChange += () =>
+            {
+                if (trapMinUpDown.GetValueInt() > trapMaxUpDown.GetValueInt())
+                {
+                    trapMaxUpDown.SetValueInt(trapMinUpDown.GetValueInt());
+                }
+            };
+            trapMaxUpDown.OnChange += () =>
+            {
+                if (trapMaxUpDown.GetValueInt() < trapMinUpDown.GetValueInt())
+                {
+                    trapMinUpDown.SetValueInt(trapMaxUpDown.GetValueInt());
+                }
             };
 
             clearSavesButton.OnClick += AskToClearSaveFiles;
@@ -600,6 +625,21 @@ namespace RainWorldRandomizer
                 };
                 AddElements(textbox, label);
                 return textbox;
+            }
+
+            public OpUpdown AddUpDown(ConfigurableBase config, bool isInt, Vector2 offset, float sizeX)
+            {
+                OpUpdown upDown = new(isInt, config, offset, sizeX)
+                {
+                    description = Translate(config.info.description)
+                };
+                OpLabel label = new(offset.x + sizeX + 20f, offset.y, Translate(config.info.Tags[0] as string))
+                {
+                    bumpBehav = upDown.bumpBehav,
+                    description = upDown.description
+                };
+                AddElements(upDown, label);
+                return upDown;
             }
 
             /// <summary>

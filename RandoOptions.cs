@@ -44,6 +44,8 @@ namespace RainWorldRandomizer
         public static Configurable<bool> archipelagoDeathLinkOverride;
         public static Configurable<bool> archipelagoPreventDLKarmaLoss;
         public static Configurable<bool> archipelagoIgnoreMenuDL;
+        public static Configurable<int> trapMinimumCooldown;
+        public static Configurable<int> trapMaximumCooldown;
 
         // Base
         public static bool UseSetSeed

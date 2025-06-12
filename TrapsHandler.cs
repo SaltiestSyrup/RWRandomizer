@@ -9,12 +9,6 @@ namespace RainWorldRandomizer
 {
     public static class TrapsHandler
     {
-        // TODO: Make these options driven
-        /// <summary> Lowest possible trap cooldown in seconds </summary>
-        public const int TRAP_COOLDOWN_LOW = 30;
-        /// <summary> Highest possible trap cooldown in seconds </summary>
-        public const int TRAP_COOLDOWN_HIGH = 90;
-
         private class Trap
         {
             public string id;
@@ -162,7 +156,7 @@ namespace RainWorldRandomizer
         private static void ResetCooldown()
         {
             // Set the new countdown randomly in desired range * the default frame rate
-            currentCooldown = UnityEngine.Random.Range(TRAP_COOLDOWN_LOW, TRAP_COOLDOWN_HIGH) * 40;
+            currentCooldown = UnityEngine.Random.Range(RandoOptions.trapMinimumCooldown.Value, RandoOptions.trapMaximumCooldown.Value) * 40;
         }
 
         public static void OnRainWorldGameUpdate(On.RainWorldGame.orig_Update orig, RainWorldGame self)
@@ -170,7 +164,7 @@ namespace RainWorldRandomizer
             orig(self);
             if (self.GamePaused) return;
 
-            // Decrement countdown every frame
+            // Decrement countdown every tick
             if (currentCooldown > 0)
             {
                 currentCooldown--;
@@ -262,7 +256,7 @@ namespace RainWorldRandomizer
                     continue;
                 }
 
-                AbstractCreature crit = new AbstractCreature(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
+                AbstractCreature crit = new(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
 
                 chosenRoom.AddEntity(crit);
 
