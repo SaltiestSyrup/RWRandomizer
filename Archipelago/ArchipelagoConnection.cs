@@ -19,15 +19,19 @@ namespace RainWorldRandomizer
         public const string GAME_NAME = "Rain World";
         private static readonly string[] REQUIRED_SLOT_DATA =
         [
-            "which_gamestate",
+            "which_campaign",
+            "which_game_version",
+            "is_msc_enabled",
+            "is_watcher_enabled",
             "passage_progress_without_survivor",
             "which_victory_condition",
             "checks_foodquest",
             "which_gate_behavior",
             "starting_room",
             "difficulty_echo_low_karma",
-            "checks_sheltersanity",
-            "checks_flowersanity", // Feel free to change this name if desired
+            //"checks_sheltersanity",
+            //"checks_flowersanity",
+            //"checks_devtokens",
             "checks_foodquest_accessibility",
         ];
 
@@ -321,26 +325,10 @@ namespace RainWorldRandomizer
                 if (!slotData.ContainsKey(key)) return SlotDataResult.MissingData;
             }
 
-            // which_gamestate is the old value, and will be ignored in favor of which_campaign and others if present
-            long worldStateIndex = (long)slotData["which_gamestate"];
-            long desiredGameVersion = -1;
-            long shouldHaveMSC = -1;
-            long shouldHaveWatcher = -1;
-            string campaignString = "";
-            if (slotData.ContainsKey("which_campaign"))
-            {
-                if (!slotData.TryGetValue("which_game_version", out object v1)
-                    || !slotData.TryGetValue("is_msc_enabled", out object v2)
-                    || !slotData.TryGetValue("is_watcher_enabled", out object v3)
-                    || !slotData.TryGetValue("which_campaign", out object v4))
-                    return SlotDataResult.MissingData;
-
-                worldStateIndex = -1;
-                desiredGameVersion = (long)v1;
-                shouldHaveMSC = (long)v2;
-                shouldHaveWatcher = (long)v3;
-                campaignString = (string)v4;
-            }
+            long desiredGameVersion = (long)slotData["which_game_version"];
+            long shouldHaveMSC = (long)slotData["is_msc_enabled"];
+            long shouldHaveWatcher = (long)slotData["is_watcher_enabled"];
+            string campaignString = (string)slotData["which_campaign"];
 
             long PPwS = (long)slotData["passage_progress_without_survivor"];
             long completionType = (long)slotData["which_victory_condition"];
@@ -348,12 +336,12 @@ namespace RainWorldRandomizer
             long desiredGateBehavior = (long)slotData["which_gate_behavior"];
             string startingShelter = (string)slotData["starting_room"];
             long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
-            long sheltersanity = (long)slotData["checks_sheltersanity"];
-            long flowersanity = (long)slotData["checks_flowersanity"];
-            long devTokenChecks = (long)slotData["checks_devtokens"];
             long foodQuestAccessibility = (long)slotData["checks_foodquest_accessibility"];
-            // DeathLink we can live without receiving
-            long deathLink = slotData.ContainsKey("death_link") ? (long)slotData["death_link"] : -1;
+            // These values will assume a setting if not received
+            long deathLink = slotData.TryGetValue("death_link", out object v5) ? (long)v5 : -1;
+            long sheltersanity = slotData.TryGetValue("checks_sheltersanity", out object v6) ? (long)v6 : -1;
+            long flowersanity = slotData.TryGetValue("checks_flowersanity", out object v7) ? (long)v7 : -1;
+            long devTokenChecks = slotData.TryGetValue("checks_devtokens", out object v8) ? (long)v8 : -1;
 
             // Check game version
             // Only a warning for now until there's some actual logic difference between versions
@@ -399,71 +387,6 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            // If the new slot data wasn't present this old logic will be used
-            switch (worldStateIndex)
-            {
-                case 0:
-                    IsMSC = false;
-                    Slugcat = SlugcatStats.Name.Yellow;
-                    completionCondition = CompletionCondition.Ascension;
-                    break;
-                case 1:
-                    IsMSC = false;
-                    Slugcat = SlugcatStats.Name.White;
-                    completionCondition = CompletionCondition.Ascension;
-                    break;
-                case 2:
-                    IsMSC = false;
-                    Slugcat = SlugcatStats.Name.Red;
-                    completionCondition = CompletionCondition.Ascension;
-                    break;
-                case 10:
-                    IsMSC = true;
-                    Slugcat = SlugcatStats.Name.Yellow;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case 11:
-                    IsMSC = true;
-                    Slugcat = SlugcatStats.Name.White;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case 12:
-                    IsMSC = true;
-                    Slugcat = SlugcatStats.Name.Red;
-                    completionCondition = CompletionCondition.Ascension;
-                    break;
-                case 13:
-                    IsMSC = true;
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Gourmand;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case 14:
-                    IsMSC = true;
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Artificer;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing;
-                    break;
-                case 15:
-                    IsMSC = true;
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Rivulet;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon;
-                    break;
-                case 16:
-                    IsMSC = true;
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Spear;
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger;
-                    break;
-                case 17:
-                    IsMSC = true;
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Saint;
-                    completionCondition = CompletionCondition.Rubicon;
-                    break;
-                case 18:
-                    IsMSC = true;
-                    Slugcat = MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
-                    completionCondition = CompletionCondition.Ascension;
-                    break;
-            }
-
             if (ModManager.MSC != IsMSC
                 || ModManager.Watcher != IsWatcher)
             {
@@ -481,15 +404,19 @@ namespace RainWorldRandomizer
             gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
 
             ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
-            ArchipelagoConnection.sheltersanity = sheltersanity > 0;
-            ArchipelagoConnection.flowersanity = flowersanity > 0;
-            ArchipelagoConnection.devTokenChecks = devTokenChecks > 0;
+            ArchipelagoConnection.sheltersanity = sheltersanity != 0; // Assumed true if undefined (-1)
+            ArchipelagoConnection.flowersanity = flowersanity != 0; // Assumed true if undefined (-1)
+            ArchipelagoConnection.devTokenChecks = devTokenChecks != 0; // Assumed true if undefined (-1)
             ArchipelagoConnection.echoDifficulty = (EchoLowKarmaDifficulty)echoDifficulty;
 
             DeathLinkHandler.Active = deathLink > 0;
 
-            foodQuest = IsMSC && (Slugcat.value == "Gourmand" || foodQuestAccess == 2) ?
-                (foodQuestAccessibility > 0 ? FoodQuestBehavior.Expanded : FoodQuestBehavior.Enabled) : FoodQuestBehavior.Disabled;
+            foodQuest = IsMSC && 
+                (Slugcat.value == "Gourmand" || foodQuestAccess == 2) 
+                ? (foodQuestAccessibility > 0 
+                    ? FoodQuestBehavior.Expanded 
+                    : FoodQuestBehavior.Enabled) 
+                : FoodQuestBehavior.Disabled;
             ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
             WinState.GourmandPassageTracker = foodQuest == FoodQuestBehavior.Expanded ? MiscHooks.expanded : MiscHooks.unexpanded;
 
