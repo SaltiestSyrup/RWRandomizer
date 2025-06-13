@@ -39,7 +39,6 @@ namespace RainWorldRandomizer
 
         public void OnMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
         {
-            //menu = self;
             orig(self, manager, game);
             if (!Plugin.RandoManager.isRandomizerActive) return;
 
@@ -80,7 +79,7 @@ namespace RainWorldRandomizer
             orig(self);
             if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
 
-            spoilerButton = new SimpleButton(self, self.pages[0], self.Translate("SHOW SPOILERS"), "SHOW_SPOILERS",
+            spoilerButton = new SimpleButton(self, self.pages[0], self.Translate("RANDOMIZER"), "SHOW_SPOILERS",
                 new Vector2(self.ContinueAndExitButtonsXPos - 460.2f - self.moveLeft, 15f),
                 new Vector2(110f, 30f));
 
@@ -100,47 +99,6 @@ namespace RainWorldRandomizer
             spoilerButton = null;
         }
 
-        public void SpawnConfirmButtonsForSpoilers(PauseMenu self)
-        {
-            if (self.continueButton != null)
-            {
-                self.continueButton.RemoveSprites();
-                self.pages[0].RemoveSubObject(self.continueButton);
-            }
-            self.continueButton = null;
-            if (self.exitButton != null)
-            {
-                self.exitButton.RemoveSprites();
-                self.pages[0].RemoveSubObject(self.exitButton);
-            }
-            if (spoilerButton != null)
-            {
-                spoilerButton.RemoveSprites();
-                self.pages[0].RemoveSubObject(spoilerButton);
-            }
-            spoilerButton = null;
-
-            self.confirmYesButton = new SimpleButton(self, self.pages[0], self.Translate("YES"), "YES_SPOILERS",
-                new Vector2(self.ContinueAndExitButtonsXPos - 180.2f - self.moveLeft, 15f),
-                new Vector2(110f, 30f));
-            self.confirmNoButton = new SimpleButton(self, self.pages[0], self.Translate("NO"), "NO_SPOILERS",
-                new Vector2(self.ContinueAndExitButtonsXPos - 320.2f - self.moveLeft, 15f),
-                new Vector2(110f, 30f));
-            self.confirmMessage = new MenuLabel(self, self.pages[0], self.Translate("Are you sure you want to spoil the seed for this run?"),
-                self.confirmNoButton.pos, new Vector2(10f, 30f), false, null);
-            self.confirmMessage.label.alignment = FLabelAlignment.Left;
-            self.confirmMessage.pos = new Vector2(self.confirmMessage.pos.x - self.confirmMessage.label.textRect.width - 40f, self.confirmMessage.pos.y);
-
-            self.pages[0].subObjects.Add(self.confirmYesButton);
-            self.pages[0].subObjects.Add(self.confirmNoButton);
-            self.pages[0].subObjects.Add(self.confirmMessage);
-
-            self.confirmYesButton.nextSelectable[1] = self.confirmYesButton;
-            self.confirmYesButton.nextSelectable[3] = self.confirmYesButton;
-            self.confirmNoButton.nextSelectable[1] = self.confirmNoButton;
-            self.confirmNoButton.nextSelectable[3] = self.confirmNoButton;
-        }
-
         public void OnMenuSignal(On.Menu.PauseMenu.orig_Singal orig, PauseMenu self, MenuObject sender, string message)
         {
             orig(self, sender, message);
@@ -150,28 +108,7 @@ namespace RainWorldRandomizer
             {
                 if (message == "SHOW_SPOILERS")
                 {
-                    if (hasSeenSpoilers)
-                    {
-                        ToggleSpoilerMenu(self);
-                    }
-                    else
-                    {
-                        SpawnConfirmButtonsForSpoilers(self);
-                    }
-                    self.PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
-                }
-
-                if (message == "YES_SPOILERS")
-                {
                     ToggleSpoilerMenu(self);
-                    hasSeenSpoilers = true;
-                    self.SpawnExitContinueButtons();
-                    self.PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
-                }
-
-                if (message == "NO_SPOILERS")
-                {
-                    self.SpawnExitContinueButtons();
                     self.PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
                 }
             }
