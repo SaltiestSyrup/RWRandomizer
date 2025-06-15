@@ -278,6 +278,7 @@ namespace RainWorldRandomizer
                 region = region.ToLowerInvariant();
                 lock (regionObjects)
                 {
+                    if (roomAccessibilities.ContainsKey(region)) roomAccessibilities = [];
                     regionObjects[region] = [];
                     regionObjectsAccessibility[region] = [];
                 }
@@ -649,7 +650,7 @@ namespace RainWorldRandomizer
                     if (worldFile[j] == "" || worldFile[j].StartsWith("//")) continue;
                     string[] split = Regex.Split(worldFile[j], " : ");
 
-                    List<SlugcatStats.Name> slugcats;
+                    List<SlugcatStats.Name> slugcats;// = [new SlugcatStats.Name(split[0])];
                     // Pull slugcats out of parenthesis if present
                     Match match = Regex.Match(split[0], "\\((.+)\\)");
                     if (match.Success)
@@ -904,6 +905,15 @@ namespace RainWorldRandomizer
             for (int i = 0; i < regionCreatures[regionUpper].Count; i++)
             {
                 Plugin.Log.LogDebug($"\t{regionCreatures[regionUpper][i]}: {string.Join(", ", regionCreaturesAccessibility[regionUpper][i].Select(c => c.value))}");
+            }
+            */
+
+            /* Log all room access
+            foreach (var pair in accessibility)
+            {
+                string slugcats = "";
+                pair.Value.ForEach(v =>  slugcats += $"{v}, ");
+                Plugin.Log.LogDebug($"{pair.Key} => {slugcats}");
             }
             */
 
