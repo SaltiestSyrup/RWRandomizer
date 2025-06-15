@@ -37,7 +37,7 @@ namespace RainWorldRandomizer
                 if (entity is AbstractPhysicalObject abstractObj
                     && abstractObj.type == AbstractPhysicalObject.AbstractObjectType.KarmaFlower)
                 {
-                    if (trackedFlowers.TryGetValue(abstractObj, out _)) continue;
+                    if (trackedFlowers.TryGetValue(abstractObj, out _) || string.IsNullOrEmpty(abstractObj.placedObjectOrigin)) continue;
                     trackedFlowers.Add(abstractObj, new FlowerData(abstractObj));
                 }
             }
