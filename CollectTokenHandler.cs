@@ -19,6 +19,7 @@ namespace RainWorldRandomizer
             try
             {
                 IL.Room.Loaded += ILRoomLoaded;
+                IL.CollectToken.Update += CollectTokenUpdateIL;
                 IL.Player.ProcessChatLog += Player_ProcessChatLog;
                 IL.Player.InitChatLog += Player_InitChatLog;
             }
@@ -34,6 +35,7 @@ namespace RainWorldRandomizer
             On.CollectToken.Pop -= OnTokenPop;
 
             IL.Room.Loaded -= ILRoomLoaded;
+            IL.CollectToken.Update -= CollectTokenUpdateIL;
             IL.Player.ProcessChatLog -= Player_ProcessChatLog;
             IL.Player.InitChatLog -= Player_InitChatLog;
         }
