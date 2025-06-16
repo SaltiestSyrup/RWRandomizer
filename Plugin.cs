@@ -18,13 +18,13 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.3.0";
+        public const string PLUGIN_VERSION = "1.3.1";
 
         internal static ManualLogSource Log;
 
         public bool hasInitialized = false;
         public static Plugin Singleton = null;
-        public static ArchipelagoConnection APConnection = new ArchipelagoConnection();
+        public static ArchipelagoConnection APConnection = new();
         public static ManagerBase RandoManager = null;
         public CollectTokenHandler collectTokenHandler;
         public MenuExtension seedViewer;
@@ -47,10 +47,10 @@ namespace RainWorldRandomizer
         }
 
         // Queue of pending notifications to be sent to the player in-game
-        public Queue<ChatLog.MessageText> notifQueue = new Queue<ChatLog.MessageText>();
+        public Queue<ChatLog.MessageText> notifQueue = new();
         // Queue of items that the player has recieved and not claimed
-        public Queue<Unlock.Item> lastItemDeliveryQueue = new Queue<Unlock.Item>();
-        public Queue<Unlock.Item> itemDeliveryQueue = new Queue<Unlock.Item>();
+        public Queue<Unlock.Item> lastItemDeliveryQueue = new();
+        public Queue<Unlock.Item> itemDeliveryQueue = new();
 
         // A map of every region to it's display name
         public static Dictionary<string, string> RegionNamesMap = [];
@@ -67,7 +67,7 @@ namespace RainWorldRandomizer
                     .Except(
                     [
                         "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS",
-                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS" 
+                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS"
                     ])
                     .Any();
             }
@@ -368,7 +368,7 @@ namespace RainWorldRandomizer
             RegionGate.GateRequirement[] newRequirements =
                 defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
                 ? (RegionGate.GateRequirement[])v.Clone()
-                : [ RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
+                : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
 
             if (gateName.Equals("GATE_OE_SU")) hasKeyForGate = true;
             if (gateName.Equals("GATE_SL_MS")
