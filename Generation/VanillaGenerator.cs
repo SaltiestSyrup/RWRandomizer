@@ -14,7 +14,7 @@ namespace RainWorldRandomizer.Generation
 {
     public class VanillaGenerator
     {
-        public const float OTHER_PROG_PLACEMENT_CHANCE = 0.6f;
+        public const float OTHER_PROG_PLACEMENT_CHANCE = 0.2f;
 
         /// <summary>
         /// Used to override rules for locations. To modify the rules of a location, add its location ID to this dict with the new rule it should follow.
