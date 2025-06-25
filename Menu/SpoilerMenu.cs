@@ -556,14 +556,14 @@ namespace RainWorldRandomizer
                 subObjects.Add(tabWrapper);
 
                 cheatHoldButton = new OpHoldButton(default, size, " ", 40f)
-                { description = entryKey };
+                { description = "Hold: Cheat collect this location" };
                 cheatHoldButton.OnPressDone += OnPressDone;
                 cheatHoldButtonWrapper = new UIelementWrapper(tabWrapper, cheatHoldButton);
 
                 revealHoldButton = new OpHoldButton(
                     new Vector2(size.x / 2 + 7f, 0f),
                     new Vector2(size.x / 2 - 7f, size.y), "???", 40f)
-                { description = "Hint this location" };
+                { description = "Hold: Hint this location" };
                 revealHoldButton.OnPressDone += (trigger) => forceShowItem = true;
                 revealHoldButtonWrapper = new UIelementWrapper(tabWrapper, revealHoldButton);
 
