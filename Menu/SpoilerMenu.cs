@@ -22,7 +22,6 @@ namespace RainWorldRandomizer
         public VerticalSlider scrollSlider;
 
         public RoundedRect filterSelectRect;
-        public SelectOneButton[] filterSelectOptions;
         public SimpleButton sortSelectButton;
         public SimpleButton filterSelectButton;
         public OpHoldButton showSpoilersHoldButton;
@@ -46,6 +45,16 @@ namespace RainWorldRandomizer
             Given,
             NotGiven,
         }
+        public string FilterTypeDisplayName(EntryFilterType self)
+        {
+            return self switch
+            {
+                EntryFilterType.None => "NONE",
+                EntryFilterType.Given => "FOUND",
+                EntryFilterType.NotGiven => "NOT FOUND",
+                _ => "UNKNOWN"
+            };
+        }
 
         public enum EntrySortType
         {
@@ -56,7 +65,7 @@ namespace RainWorldRandomizer
         }
         public string SortTypeDisplayName(EntrySortType self)
         {
-            return self switch 
+            return self switch
             {
                 EntrySortType.LocName => "LOCATION NAME",
                 EntrySortType.LocType => "LOCATION TYPE",
@@ -96,9 +105,7 @@ namespace RainWorldRandomizer
 
             // Bounding box
             roundedRect = new RoundedRect(menu, this, default, size, true)
-            {
-                fillAlpha = 0.9f
-            };
+            { fillAlpha = 0.9f };
             subObjects.Add(roundedRect);
 
             // Entries
@@ -126,49 +133,36 @@ namespace RainWorldRandomizer
             subObjects.Add(scrollSlider);
 
             // Filter Menu
-            filterSelectRect = new RoundedRect(menu, this, new Vector2(0f, -78f - 40f), new Vector2(size.x, 50f + 40f), true)
-            {
-                fillAlpha = 0.9f
-            };
+            filterSelectRect = new RoundedRect(menu, this, new Vector2(0.01f, -98.01f), new Vector2(size.x, 70f), true)
+            { fillAlpha = 0.9f };
             subObjects.Add(filterSelectRect);
 
             float margin = 10f;
-            Vector2 buttonSize = new((filterSelectRect.size.x - (6f * margin)) / 3f, (filterSelectRect.size.y - 40f) / 2);
-            float lowerMargin = (filterSelectRect.size.x - (2f * buttonSize.x)) / 3;
+            Vector2 buttonSize = new((filterSelectRect.size.x - (6f * margin)) / 3f, filterSelectRect.size.y - 20f);
 
-            filterSelectOptions = new SelectOneButton[3];
-            filterSelectOptions[0] = new SelectOneButton(menu, this, menu.Translate("SHOW ALL"), "FILTER",
-                new(margin, filterSelectRect.pos.y + buttonSize.y + 20f), //new Vector2(size.x / 28, filterSelectRect.pos.y + 10f),
-                buttonSize,
-                filterSelectOptions, 0);
-            filterSelectOptions[1] = new SelectOneButton(menu, this, menu.Translate("SHOW COMPLETE"), "FILTER",
-                new((3f * margin) + buttonSize.x, filterSelectRect.pos.y + buttonSize.y + 20f), //new Vector2(10 * size.x / 28, filterSelectRect.pos.y + 10f),
-                buttonSize,
-                filterSelectOptions, 1);
-            filterSelectOptions[2] = new SelectOneButton(menu, this, menu.Translate("SHOW INCOMPLETE"), "FILTER",
-                new((5f * margin) + (2f * buttonSize.x), filterSelectRect.pos.y + buttonSize.y + 20f), //new Vector2(19 * size.x / 28, filterSelectRect.pos.y + 10f),
-                buttonSize,
-                filterSelectOptions, 2);
-            subObjects.AddRange(filterSelectOptions);
+            // Filter / Sort toggles
+            filterSelectButton = new SimpleButton(menu, this, menu.Translate($"FILTER BY\n{FilterTypeDisplayName(currentFilter)}"), "FILTER",
+                new(margin, filterSelectRect.pos.y + 10f),
+                buttonSize);
+            subObjects.Add(filterSelectButton);
+
+            sortSelectButton = new SimpleButton(menu, this, menu.Translate($"SORT BY\n{SortTypeDisplayName(currentSorting)}"), "SORT",
+                new((3f * margin) + buttonSize.x + 0.01f, filterSelectRect.pos.y + 10f),
+                buttonSize);
+            subObjects.Add(sortSelectButton);
 
             // Show all spoilers
             tabWrapper = new MenuTabWrapper(menu, this);
             subObjects.Add(tabWrapper);
 
-            showSpoilersHoldButton = new OpHoldButton(new(lowerMargin, filterSelectRect.pos.y + 10f), buttonSize, "REVEAL SPOILERS", 40f)
-            {
-                description = "Reveal spoilers for all items"
-            };
+            showSpoilersHoldButton = new OpHoldButton(
+                new((5f * margin) + (2f * buttonSize.x), filterSelectRect.pos.y + 10f),
+                buttonSize, "REVEAL SPOILERS", 40f)
+            { description = "Reveal spoilers for all items" };
             //showSpoilersHoldButton.OnPressDone += OnPressDone;
             holdButtonWrapper = new UIelementWrapper(tabWrapper, showSpoilersHoldButton);
 
-            sortSelectButton = new SimpleButton(menu, this, menu.Translate("SORT BY"), "SORT",
-                new((2f * lowerMargin) + buttonSize.x, filterSelectRect.pos.y + 10f),
-                buttonSize);
-            subObjects.Add(sortSelectButton);
-
             FilterEntries(EntryFilterType.Given);
-            SortEntries(EntrySortType.LocName);
         }
 
         public override void Update()
@@ -326,16 +320,21 @@ namespace RainWorldRandomizer
                 case "DOWN":
                     AddScroll(1);
                     return;
+                case "FILTER":
+                    if (Enum.IsDefined(typeof(EntryFilterType), currentFilter + 1)) currentFilter++;
+                    else currentFilter = 0;
+
+                    filterSelectButton.menuLabel.text = $"FILTER BY\n{FilterTypeDisplayName(currentFilter)}";
+                    FilterEntries(currentFilter);
+                    return;
                 case "SORT":
-                    if (Enum.IsDefined(typeof(EntrySortType), currentSorting + 1))
-                    {
-                        currentSorting++;
-                    }
-                    else { currentSorting = 0; }
-                    sortSelectButton.menuLabel.text = SortTypeDisplayName(currentSorting);
+                    if (Enum.IsDefined(typeof(EntrySortType), currentSorting + 1)) currentSorting++;
+                    else currentSorting = 0;
+
+                    sortSelectButton.menuLabel.text = $"SORT BY\n{SortTypeDisplayName(currentSorting)}";
                     SortEntries(currentSorting);
                     return;
-            }
+                }
         }
 
         public int GetCurrentlySelectedOfSeries(string series)
