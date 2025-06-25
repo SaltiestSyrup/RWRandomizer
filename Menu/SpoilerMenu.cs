@@ -5,6 +5,7 @@ using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -22,10 +23,16 @@ namespace RainWorldRandomizer
 
         public RoundedRect filterSelectRect;
         public SelectOneButton[] filterSelectOptions;
+        public SimpleButton sortSelectButton;
+        public SimpleButton filterSelectButton;
+        public OpHoldButton showSpoilersHoldButton;
+        public MenuTabWrapper tabWrapper;
+        public UIelementWrapper holdButtonWrapper;
 
         public List<SpoilerEntry> entries = [];
         public List<SpoilerEntry> filteredEntries = [];
         public EntryFilterType currentFilter = EntryFilterType.Given;
+        public EntrySortType currentSorting = EntrySortType.LocName;
 
         public float floatScrollPos;
         public float floatScrollVel;
@@ -38,6 +45,25 @@ namespace RainWorldRandomizer
             None,
             Given,
             NotGiven,
+        }
+
+        public enum EntrySortType
+        {
+            LocName,
+            LocType,
+            ItemName,
+            ItemType,
+        }
+        public string SortTypeDisplayName(EntrySortType self)
+        {
+            return self switch 
+            {
+                EntrySortType.LocName => "LOCATION NAME",
+                EntrySortType.LocType => "LOCATION TYPE",
+                EntrySortType.ItemName => "ITEM NAME",
+                EntrySortType.ItemType => "ITEM TYPE",
+                _ => "UNKNOWN"
+            };
         }
 
         public int ScrollPos { get; set; }
@@ -100,23 +126,49 @@ namespace RainWorldRandomizer
             subObjects.Add(scrollSlider);
 
             // Filter Menu
-            filterSelectRect = new RoundedRect(menu, this, new Vector2(0f, -78f), new Vector2(size.x, 50f), true);
+            filterSelectRect = new RoundedRect(menu, this, new Vector2(0f, -78f - 40f), new Vector2(size.x, 50f + 40f), true)
+            {
+                fillAlpha = 0.9f
+            };
+            subObjects.Add(filterSelectRect);
+
+            float margin = 10f;
+            Vector2 buttonSize = new((filterSelectRect.size.x - (6f * margin)) / 3f, (filterSelectRect.size.y - 40f) / 2);
+            float lowerMargin = (filterSelectRect.size.x - (2f * buttonSize.x)) / 3;
 
             filterSelectOptions = new SelectOneButton[3];
             filterSelectOptions[0] = new SelectOneButton(menu, this, menu.Translate("SHOW ALL"), "FILTER",
-                new Vector2(size.x / 28, filterSelectRect.pos.y + 10f),
-                new Vector2(2f * size.x / 7, filterSelectRect.size.y - 20f),
+                new(margin, filterSelectRect.pos.y + buttonSize.y + 20f), //new Vector2(size.x / 28, filterSelectRect.pos.y + 10f),
+                buttonSize,
                 filterSelectOptions, 0);
             filterSelectOptions[1] = new SelectOneButton(menu, this, menu.Translate("SHOW COMPLETE"), "FILTER",
-                new Vector2(10 * size.x / 28, filterSelectRect.pos.y + 10f),
-                new Vector2(2f * size.x / 7, filterSelectRect.size.y - 20f),
+                new((3f * margin) + buttonSize.x, filterSelectRect.pos.y + buttonSize.y + 20f), //new Vector2(10 * size.x / 28, filterSelectRect.pos.y + 10f),
+                buttonSize,
                 filterSelectOptions, 1);
             filterSelectOptions[2] = new SelectOneButton(menu, this, menu.Translate("SHOW INCOMPLETE"), "FILTER",
-                new Vector2(19 * size.x / 28, filterSelectRect.pos.y + 10f),
-                new Vector2(2f * size.x / 7, filterSelectRect.size.y - 20f),
+                new((5f * margin) + (2f * buttonSize.x), filterSelectRect.pos.y + buttonSize.y + 20f), //new Vector2(19 * size.x / 28, filterSelectRect.pos.y + 10f),
+                buttonSize,
                 filterSelectOptions, 2);
             subObjects.AddRange(filterSelectOptions);
+
+            // Show all spoilers
+            tabWrapper = new MenuTabWrapper(menu, this);
+            subObjects.Add(tabWrapper);
+
+            showSpoilersHoldButton = new OpHoldButton(new(lowerMargin, filterSelectRect.pos.y + 10f), buttonSize, "REVEAL SPOILERS", 40f)
+            {
+                description = "Reveal spoilers for all items"
+            };
+            //showSpoilersHoldButton.OnPressDone += OnPressDone;
+            holdButtonWrapper = new UIelementWrapper(tabWrapper, showSpoilersHoldButton);
+
+            sortSelectButton = new SimpleButton(menu, this, menu.Translate("SORT BY"), "SORT",
+                new((2f * lowerMargin) + buttonSize.x, filterSelectRect.pos.y + 10f),
+                buttonSize);
+            subObjects.Add(sortSelectButton);
+
             FilterEntries(EntryFilterType.Given);
+            SortEntries(EntrySortType.LocName);
         }
 
         public override void Update()
@@ -160,6 +212,9 @@ namespace RainWorldRandomizer
             sliderValue = Custom.LerpAndTick(sliderValue, Mathf.InverseLerp(0f, sliderValueCap, floatScrollPos), 0.02f, 0.05f);
         }
 
+        /// <summary>
+        /// Filter the entries by an <see cref="EntryFilterType"/>
+        /// </summary>
         public void FilterEntries(EntryFilterType filter)
         {
             Func<SpoilerEntry, bool> predicate = filter switch
@@ -175,9 +230,45 @@ namespace RainWorldRandomizer
                 }
                 ,
                 _ => (e) => { return true; }
-                ,
             };
             filteredEntries = [.. entries.Where(predicate)];
+            SortEntries(currentSorting);
+        }
+
+        /// <summary>
+        /// Sort the currently filtered entries by an <see cref="EntrySortType"/>
+        /// </summary>
+        public void SortEntries(EntrySortType sortBy)
+        {
+            Comparison<SpoilerEntry> comparison = sortBy switch
+            {
+                EntrySortType.LocName => (SpoilerEntry x, SpoilerEntry y) =>
+                {
+                    return string.Compare(x.checkName, y.checkName);
+                }
+                ,
+                EntrySortType.LocType => (SpoilerEntry x, SpoilerEntry y) =>
+                {
+                    return string.Compare(x.checkType, y.checkType);
+                }
+                ,
+                EntrySortType.ItemName => (SpoilerEntry x, SpoilerEntry y) =>
+                {
+                    return string.Compare(x.item.ID, y.item.ID);
+                }
+                ,
+                EntrySortType.ItemType => (SpoilerEntry x, SpoilerEntry y) =>
+                {
+                    return string.Compare(x.item.Type.value, y.item.Type.value);
+                }
+                ,
+                _ => (SpoilerEntry x, SpoilerEntry y) =>
+                {
+                    return string.Compare(x.checkType, y.checkType);
+                }
+            };
+
+            filteredEntries.Sort(comparison);
         }
 
         public float ValueOfSlider(Slider slider)
@@ -227,18 +318,23 @@ namespace RainWorldRandomizer
         public override void Singal(MenuObject sender, string message)
         {
             base.Singal(sender, message);
-            if (message != null)
+            switch (message)
             {
-                if (message == "UP")
-                {
+                case "UP":
                     AddScroll(-1);
                     return;
-                }
-                if (message == "DOWN")
-                {
+                case "DOWN":
                     AddScroll(1);
                     return;
-                }
+                case "SORT":
+                    if (Enum.IsDefined(typeof(EntrySortType), currentSorting + 1))
+                    {
+                        currentSorting++;
+                    }
+                    else { currentSorting = 0; }
+                    sortSelectButton.menuLabel.text = SortTypeDisplayName(currentSorting);
+                    SortEntries(currentSorting);
+                    return;
             }
         }
 
@@ -265,6 +361,7 @@ namespace RainWorldRandomizer
             public readonly string entryKey;
             public readonly string checkType;
             public readonly string checkName;
+            public readonly Unlock item;
 
             public RoundedRect roundedRect;
             public FSprite arrow;
@@ -289,6 +386,7 @@ namespace RainWorldRandomizer
             public SpoilerEntry(Menu.Menu menu, MenuObject owner, Vector2 pos, Vector2 size, string entryKey) : base(menu, owner, pos, size)
             {
                 this.entryKey = entryKey;
+                item = Plugin.RandoManager.GetUnlockAtLocation(entryKey);
                 string[] split = Regex.Split(entryKey, "-");
                 if (split.Length > 1)
                 {
@@ -332,7 +430,7 @@ namespace RainWorldRandomizer
                 checkSprite = CheckToFSprite(checkType, checkName);
                 Container.AddChild(checkSprite);
 
-                unlockSprite = UnlockToFSprite(Plugin.RandoManager.GetUnlockAtLocation(entryKey));
+                unlockSprite = UnlockToFSprite(item);
                 Container.AddChild(unlockSprite);
 
                 // Labels
@@ -341,7 +439,7 @@ namespace RainWorldRandomizer
                     new Vector2(size.x / 2, 20f), false, null);
                 subObjects.Add(checkLabel);
 
-                unlockLabel = new MenuLabel(menu, this, Plugin.RandoManager.GetUnlockAtLocation(entryKey).ToString(),
+                unlockLabel = new MenuLabel(menu, this, item.ToString(),
                     new Vector2(size.x / 2, 5f),
                     new Vector2(size.x / 2, 20f), false, null);
 
