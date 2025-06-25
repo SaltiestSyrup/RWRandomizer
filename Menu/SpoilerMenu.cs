@@ -33,6 +33,7 @@ namespace RainWorldRandomizer
         public EntryFilterType currentFilter = EntryFilterType.Given;
         public EntrySortType currentSorting = EntrySortType.LocName;
 
+        public bool fullSpoilerMode;
         public float floatScrollPos;
         public float floatScrollVel;
         private float sliderValue;
@@ -141,12 +142,12 @@ namespace RainWorldRandomizer
             Vector2 buttonSize = new((filterSelectRect.size.x - (6f * margin)) / 3f, filterSelectRect.size.y - 20f);
 
             // Filter / Sort toggles
-            filterSelectButton = new SimpleButton(menu, this, menu.Translate($"FILTER BY\n{FilterTypeDisplayName(currentFilter)}"), "FILTER",
+            filterSelectButton = new SimpleButton(menu, this, menu.Translate($"FILTERED BY\n{FilterTypeDisplayName(currentFilter)}"), "FILTER",
                 new(margin, filterSelectRect.pos.y + 10f),
                 buttonSize);
             subObjects.Add(filterSelectButton);
 
-            sortSelectButton = new SimpleButton(menu, this, menu.Translate($"SORT BY\n{SortTypeDisplayName(currentSorting)}"), "SORT",
+            sortSelectButton = new SimpleButton(menu, this, menu.Translate($"SORTED BY\n{SortTypeDisplayName(currentSorting)}"), "SORT",
                 new((3f * margin) + buttonSize.x + 0.01f, filterSelectRect.pos.y + 10f),
                 buttonSize);
             subObjects.Add(sortSelectButton);
@@ -158,8 +159,11 @@ namespace RainWorldRandomizer
             showSpoilersHoldButton = new OpHoldButton(
                 new((5f * margin) + (2f * buttonSize.x), filterSelectRect.pos.y + 10f),
                 buttonSize, "REVEAL SPOILERS", 40f)
-            { description = "Reveal spoilers for all items" };
-            //showSpoilersHoldButton.OnPressDone += OnPressDone;
+            {
+                description = "Reveal spoilers for all items",
+                colorEdge = new Color(0.85f, 0.35f, 0.4f)
+            };
+            showSpoilersHoldButton.OnPressDone += (trigger) => fullSpoilerMode = true;
             holdButtonWrapper = new UIelementWrapper(tabWrapper, showSpoilersHoldButton);
 
             FilterEntries(EntryFilterType.Given);
@@ -248,12 +252,16 @@ namespace RainWorldRandomizer
                 ,
                 EntrySortType.ItemName => (SpoilerEntry x, SpoilerEntry y) =>
                 {
-                    return string.Compare(x.item.ID, y.item.ID);
+                    string xStr = x.ShowItem ? x.item.ID : null;
+                    string yStr = y.ShowItem ? y.item.ID : null;
+                    return string.Compare(xStr, yStr);
                 }
                 ,
                 EntrySortType.ItemType => (SpoilerEntry x, SpoilerEntry y) =>
                 {
-                    return string.Compare(x.item.Type.value, y.item.Type.value);
+                    string xStr = x.ShowItem ? x.item.Type.value : null;
+                    string yStr = y.ShowItem ? y.item.Type.value : null;
+                    return string.Compare(xStr, yStr);
                 }
                 ,
                 _ => (SpoilerEntry x, SpoilerEntry y) =>
@@ -324,14 +332,14 @@ namespace RainWorldRandomizer
                     if (Enum.IsDefined(typeof(EntryFilterType), currentFilter + 1)) currentFilter++;
                     else currentFilter = 0;
 
-                    filterSelectButton.menuLabel.text = $"FILTER BY\n{FilterTypeDisplayName(currentFilter)}";
+                    filterSelectButton.menuLabel.text = $"FILTERED BY\n{FilterTypeDisplayName(currentFilter)}";
                     FilterEntries(currentFilter);
                     return;
                 case "SORT":
                     if (Enum.IsDefined(typeof(EntrySortType), currentSorting + 1)) currentSorting++;
                     else currentSorting = 0;
 
-                    sortSelectButton.menuLabel.text = $"SORT BY\n{SortTypeDisplayName(currentSorting)}";
+                    sortSelectButton.menuLabel.text = $"SORTED BY\n{SortTypeDisplayName(currentSorting)}";
                     SortEntries(currentSorting);
                     return;
                 }
@@ -369,11 +377,15 @@ namespace RainWorldRandomizer
             public MenuLabel checkLabel;
             public MenuLabel unlockLabel;
 
-            public OpHoldButton holdButton;
             public MenuTabWrapper tabWrapper;
-            public UIelementWrapper holdButtonWrapper;
+            public OpHoldButton revealHoldButton;
+            public UIelementWrapper revealHoldButtonWrapper;
+            public OpHoldButton cheatHoldButton;
+            public UIelementWrapper cheatHoldButtonWrapper;
 
             // Render variables
+            private bool displayComplete;
+            public bool forceShowItem;
             public bool active;
             public bool sleep;
             public float fade;
@@ -382,10 +394,14 @@ namespace RainWorldRandomizer
             public float lastSelectedBlink;
             public bool lastSelected;
 
+            public bool ShowItem => displayComplete || forceShowItem;
+
             public SpoilerEntry(Menu.Menu menu, MenuObject owner, Vector2 pos, Vector2 size, string entryKey) : base(menu, owner, pos, size)
             {
                 this.entryKey = entryKey;
                 item = Plugin.RandoManager.GetUnlockAtLocation(entryKey);
+                displayComplete = Plugin.RandoManager.IsLocationGiven(entryKey) ?? false;
+
                 string[] split = Regex.Split(entryKey, "-");
                 if (split.Length > 1)
                 {
@@ -402,19 +418,23 @@ namespace RainWorldRandomizer
                 tabWrapper = new MenuTabWrapper(menu, this);
                 subObjects.Add(tabWrapper);
 
-                holdButton = new OpHoldButton(default, size, " ", 40f)
-                {
-                    description = entryKey
-                };
-                holdButton.OnPressDone += OnPressDone;
+                cheatHoldButton = new OpHoldButton(default, size, " ", 40f)
+                { description = entryKey };
+                cheatHoldButton.OnPressDone += OnPressDone;
+                cheatHoldButtonWrapper = new UIelementWrapper(tabWrapper, cheatHoldButton);
 
-                holdButtonWrapper = new UIelementWrapper(tabWrapper, holdButton);
+                revealHoldButton = new OpHoldButton(
+                    new Vector2(size.x / 2 + 7f, 0f),
+                    new Vector2(size.x / 2 - 7f, size.y), "???", 40f)
+                { description = "Hint this location" };
+                revealHoldButton.OnPressDone += (trigger) => forceShowItem = true;
+                revealHoldButtonWrapper = new UIelementWrapper(tabWrapper, revealHoldButton);
 
                 // Bounding box
                 roundedRect = new RoundedRect(menu, this, default, size, true)
                 {
                     fillAlpha = 0.0f,
-                    borderColor = (bool)Plugin.RandoManager.IsLocationGiven(entryKey) ? CollectToken.GreenColor : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey)
+                    borderColor = displayComplete ? CollectToken.GreenColor : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey)
                 };
                 subObjects.Add(roundedRect);
 
@@ -441,7 +461,6 @@ namespace RainWorldRandomizer
                 unlockLabel = new MenuLabel(menu, this, item.ToString(),
                     new Vector2(size.x / 2, 5f),
                     new Vector2(size.x / 2, 20f), false, null);
-
                 subObjects.Add(unlockLabel);
             }
 
@@ -449,13 +468,21 @@ namespace RainWorldRandomizer
             {
                 base.Update();
                 SpoilerMenu spoilerMenu = owner as SpoilerMenu;
+                displayComplete = Plugin.RandoManager.IsLocationGiven(entryKey) ?? false;
+                forceShowItem |= spoilerMenu.fullSpoilerMode;
                 lastFade = fade;
                 lastSelectedBlink = selectedBlink;
 
-                roundedRect.borderColor = (bool)Plugin.RandoManager.IsLocationGiven(entryKey)
+                roundedRect.borderColor = displayComplete
                     ? CollectToken.GreenColor
                     : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey);
-                holdButton.greyedOut = (bool)Plugin.RandoManager.IsLocationGiven(entryKey);
+                cheatHoldButton.greyedOut = !forceShowItem || displayComplete;
+                revealHoldButton.greyedOut = ShowItem;
+
+                if (ShowItem)
+                {
+                    revealHoldButton.Hide();
+                }
 
                 if (Selected)
                 {
@@ -512,7 +539,8 @@ namespace RainWorldRandomizer
                 {
                     sleep = true;
                     // Disable sprites
-                    holdButton.Hide();
+                    cheatHoldButton.Hide();
+                    revealHoldButton.Hide();
                     for (int i = 0; i < 17; i++)
                     {
                         roundedRect.sprites[i].isVisible = false;
@@ -539,18 +567,20 @@ namespace RainWorldRandomizer
                 float alpha = Mathf.Pow(smoothedFade, 2f);
                 arrow.alpha = alpha;
                 checkLabel.label.alpha = alpha;
-                unlockLabel.label.alpha = alpha;
+                unlockLabel.label.alpha = ShowItem ? alpha : 0f;
                 checkSprite.alpha = alpha;
-                unlockSprite.alpha = alpha;
+                unlockSprite.alpha = ShowItem ? alpha : 0f;
 
                 for (int j = 0; j < 8; j++)
                 {
-                    holdButton._rectH.sprites[j].alpha = alpha;
+                    cheatHoldButton._rectH.sprites[j].alpha = alpha;
+                    //revealHoldButton._rectH.sprites[j].alpha = 0f;
                 }
 
                 if (smoothedFade > 0f)
                 {
-                    holdButton.Show();
+                    cheatHoldButton.Show();
+                    if (!ShowItem) revealHoldButton.Show();
                     for (int i = 0; i < 9; i++)
                     {
                         roundedRect.sprites[i].alpha = smoothedFade * 0.5f;
