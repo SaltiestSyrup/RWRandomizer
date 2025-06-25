@@ -1,25 +1,42 @@
 ﻿using Menu;
-using Menu.Remix;
-using Menu.Remix.MixedUI;
-using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace RainWorldRandomizer
 {
-    public class MenuExtension
+    public static class MenuExtension
     {
-        public bool hasSeenSpoilers = false;
+        public static bool displaySpoilerMenu = false;
+        public static WeakReference<SimpleButton> _spoilerButton = new(null);
+        public static SimpleButton SpoilerButton
+        {
+            get
+            {
+                if (_spoilerButton.TryGetTarget(out SimpleButton button)) return button;
+                else return null;
+            }
+            set
+            {
+                _spoilerButton.SetTarget(value);
+            }
+        }
+        public static WeakReference<SpoilerMenu> _spoilerMenu = new(null);
+        public static SpoilerMenu SpoilerMenu
+        {
+            get
+            {
+                if (_spoilerMenu.TryGetTarget(out SpoilerMenu menu)) return menu;
+                else return null;
+            }
+            set
+            {
+                _spoilerMenu.SetTarget(value);
+            }
+        }
 
-        public bool displaySpoilerMenu = false;
-        public SimpleButton spoilerButton;
-        public SpoilerMenu spoilerMenu;
-        public PendingItemsDisplay pendingItemsDisplay;
-
-        public void ApplyHooks()
+        public static void ApplyHooks()
         {
             On.Menu.PauseMenu.ctor += OnMenuCtor;
             On.Menu.PauseMenu.Singal += OnMenuSignal;
@@ -28,7 +45,7 @@ namespace RainWorldRandomizer
             On.Menu.PauseMenu.SpawnConfirmButtons += OnSpawnConfirmButtons;
         }
 
-        public void RemoveHooks()
+        public static void RemoveHooks()
         {
             On.Menu.PauseMenu.ctor -= OnMenuCtor;
             On.Menu.PauseMenu.Singal -= OnMenuSignal;
@@ -37,7 +54,7 @@ namespace RainWorldRandomizer
             On.Menu.PauseMenu.SpawnConfirmButtons -= OnSpawnConfirmButtons;
         }
 
-        public void OnMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
+        public static void OnMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
         {
             orig(self, manager, game);
             if (!Plugin.RandoManager.isRandomizerActive) return;
@@ -62,44 +79,44 @@ namespace RainWorldRandomizer
 
             if (RandoOptions.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
             {
-                pendingItemsDisplay = new PendingItemsDisplay(self, self.pages[0],
+                PendingItemsDisplay pendingItemsDisplay = new(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));
                 self.pages[0].subObjects.Add(pendingItemsDisplay);
             }
         }
 
-        public void OnMenuShutdownProcess(On.Menu.PauseMenu.orig_ShutDownProcess orig, PauseMenu self)
+        public static void OnMenuShutdownProcess(On.Menu.PauseMenu.orig_ShutDownProcess orig, PauseMenu self)
         {
             displaySpoilerMenu = false;
             orig(self);
         }
 
-        public void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
+        public static void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
         {
             orig(self);
             if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
 
-            spoilerButton = new SimpleButton(self, self.pages[0], self.Translate("RANDOMIZER"), "SHOW_SPOILERS",
+            SpoilerButton = new SimpleButton(self, self.pages[0], self.Translate("RANDOMIZER"), "SHOW_SPOILERS",
                 new Vector2(self.ContinueAndExitButtonsXPos - 460.2f - self.moveLeft, 15f),
                 new Vector2(110f, 30f));
 
-            self.pages[0].subObjects.Add(spoilerButton);
-            spoilerButton.nextSelectable[1] = spoilerButton;
-            spoilerButton.nextSelectable[3] = spoilerButton;
+            self.pages[0].subObjects.Add(SpoilerButton);
+            SpoilerButton.nextSelectable[1] = SpoilerButton;
+            SpoilerButton.nextSelectable[3] = SpoilerButton;
         }
 
-        public void OnSpawnConfirmButtons(On.Menu.PauseMenu.orig_SpawnConfirmButtons orig, PauseMenu self)
+        public static void OnSpawnConfirmButtons(On.Menu.PauseMenu.orig_SpawnConfirmButtons orig, PauseMenu self)
         {
             orig(self);
-            if (spoilerButton != null)
+            if (SpoilerButton != null)
             {
-                spoilerButton.RemoveSprites();
-                self.pages[0].RemoveSubObject(spoilerButton);
+                SpoilerButton.RemoveSprites();
+                self.pages[0].RemoveSubObject(SpoilerButton);
             }
-            spoilerButton = null;
+            SpoilerButton = null;
         }
 
-        public void OnMenuSignal(On.Menu.PauseMenu.orig_Singal orig, PauseMenu self, MenuObject sender, string message)
+        public static void OnMenuSignal(On.Menu.PauseMenu.orig_Singal orig, PauseMenu self, MenuObject sender, string message)
         {
             orig(self, sender, message);
             if (!Plugin.RandoManager.isRandomizerActive) return;
@@ -114,161 +131,160 @@ namespace RainWorldRandomizer
             }
         }
 
-        public void ToggleSpoilerMenu(PauseMenu self)
+        public static void ToggleSpoilerMenu(PauseMenu self)
         {
             displaySpoilerMenu = !displaySpoilerMenu;
             if (displaySpoilerMenu)
             {
-                spoilerMenu = new SpoilerMenu(self, self.pages[0]);
-                self.pages[0].subObjects.Add(spoilerMenu);
+                SpoilerMenu = new SpoilerMenu(self, self.pages[0]);
+                self.pages[0].subObjects.Add(SpoilerMenu);
             }
             else
             {
-                if (spoilerMenu != null)
+                if (SpoilerMenu != null)
                 {
-                    spoilerMenu.RemoveSprites();
-                    self.pages[0].RemoveSubObject(spoilerMenu);
+                    SpoilerMenu.RemoveSprites();
+                    self.pages[0].RemoveSubObject(SpoilerMenu);
                 }
-                spoilerMenu = null;
+                SpoilerMenu = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Simple list display of all found gates
+    /// </summary>
+    public class GatesDisplay : RectangularMenuObject
+    {
+        public RoundedRect roundedRect;
+        public MenuLabel[] menuLabels;
+
+        public GatesDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
+        {
+            List<string> openedGates = [.. Plugin.RandoManager.GetGatesStatus().Where(g => g.Value).Select(g => g.Key)];
+            menuLabels = new MenuLabel[openedGates.Count + 1];
+            size = new Vector2(300f, (menuLabels.Length * 15f) + 20f);
+
+            roundedRect = new RoundedRect(menu, this, new Vector2(0f, -size.y), size, true)
+            {
+                fillAlpha = 1f
+            };
+            subObjects.Add(roundedRect);
+
+            menuLabels[0] = new MenuLabel(menu, this, "Currently Unlocked Gates:", new Vector2(10f, -13f), default, false, null);
+            menuLabels[0].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
+            menuLabels[0].label.alignment = FLabelAlignment.Left;
+            subObjects.Add(menuLabels[0]);
+
+            for (int i = 1; i < menuLabels.Length; i++)
+            {
+                menuLabels[i] = new MenuLabel(menu, this,
+                    Plugin.GateToString(openedGates[i - 1], Plugin.RandoManager.currentSlugcat),
+                    new Vector2(10f, -15f - (15f * i)), default, false, null);
+                menuLabels[i].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
+                menuLabels[i].label.alignment = FLabelAlignment.Left;
+                subObjects.Add(menuLabels[i]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Simple display of items pending delivery
+    /// </summary>
+    public class PendingItemsDisplay : RectangularMenuObject
+    {
+        public RoundedRect roundedRect;
+        public MenuLabel label;
+        public FSprite[] sprites;
+
+        public PendingItemsDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
+        {
+            Unlock.Item[] pendingItems = [.. Plugin.Singleton.itemDeliveryQueue];
+            sprites = new FSprite[pendingItems.Length];
+            size = new Vector2(250f, ((pendingItems.Length - 1) / 8 * 30f) + 57f);
+
+            myContainer = new FContainer();
+            owner.Container.AddChild(myContainer);
+
+            roundedRect = new RoundedRect(menu, this, new Vector2(0f, -size.y), size, true)
+            {
+                fillAlpha = 1f
+            };
+            subObjects.Add(roundedRect);
+
+            label = new MenuLabel(menu, this, "Pending items:", new Vector2(10f, -13f), default, false, null);
+            label.label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
+            label.label.alignment = FLabelAlignment.Left;
+            subObjects.Add(label);
+
+            for (int i = 0; i < pendingItems.Length; i++)
+            {
+                sprites[i] = ItemToFSprite(pendingItems[i]);
+                Container.AddChild(sprites[i]);
             }
         }
 
-
-        /// <summary>
-        /// Simple list display of all found gates
-        /// </summary>
-        public class GatesDisplay : RectangularMenuObject
+        public override void GrafUpdate(float timeStacker)
         {
-            public RoundedRect roundedRect;
-            public MenuLabel[] menuLabels;
+            base.GrafUpdate(timeStacker);
 
-            public GatesDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
+            for (int i = 0; i < sprites.Length; i++)
             {
-                List<string> openedGates = [.. Plugin.RandoManager.GetGatesStatus().Where(g => g.Value).Select(g => g.Key)];
-                menuLabels = new MenuLabel[openedGates.Count + 1];
-                size = new Vector2(300f, (menuLabels.Length * 15f) + 20f);
-
-                roundedRect = new RoundedRect(menu, this, new Vector2(0f, -size.y), size, true)
-                {
-                    fillAlpha = 1f
-                };
-                subObjects.Add(roundedRect);
-
-                menuLabels[0] = new MenuLabel(menu, this, "Currently Unlocked Gates:", new Vector2(10f, -13f), default, false, null);
-                menuLabels[0].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
-                menuLabels[0].label.alignment = FLabelAlignment.Left;
-                subObjects.Add(menuLabels[0]);
-
-                for (int i = 1; i < menuLabels.Length; i++)
-                {
-                    menuLabels[i] = new MenuLabel(menu, this,
-                        Plugin.GateToString(openedGates[i - 1], Plugin.RandoManager.currentSlugcat),
-                        new Vector2(10f, -15f - (15f * i)), default, false, null);
-                    menuLabels[i].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
-                    menuLabels[i].label.alignment = FLabelAlignment.Left;
-                    subObjects.Add(menuLabels[i]);
-                }
+                sprites[i].isVisible = true;
+                sprites[i].x = DrawX(timeStacker) + (30f * (i % 8)) + 20f;
+                sprites[i].y = DrawY(timeStacker) - (30f * Mathf.FloorToInt(i / 8)) - 35f;
+                sprites[i].alpha = 1f;
             }
         }
 
-        /// <summary>
-        /// Simple display of items pending delivery
-        /// </summary>
-        public class PendingItemsDisplay : RectangularMenuObject
+        public FSprite ItemToFSprite(Unlock.Item item)
         {
-            public RoundedRect roundedRect;
-            public MenuLabel label;
-            public FSprite[] sprites;
+            string spriteName;
+            float spriteScale = 1f;
+            Color spriteColor;
 
-            public PendingItemsDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
+            IconSymbol.IconSymbolData iconData;
+
+            if (item.id == "KarmaFlower")
             {
-                Unlock.Item[] pendingItems = [.. Plugin.Singleton.itemDeliveryQueue];
-                sprites = new FSprite[pendingItems.Length];
-                size = new Vector2(250f, ((pendingItems.Length - 1) / 8 * 30f) + 57f);
-
-                myContainer = new FContainer();
-                owner.Container.AddChild(myContainer);
-
-                roundedRect = new RoundedRect(menu, this, new Vector2(0f, -size.y), size, true)
-                {
-                    fillAlpha = 1f
-                };
-                subObjects.Add(roundedRect);
-
-                label = new MenuLabel(menu, this, "Pending items:", new Vector2(10f, -13f), default, false, null);
-                label.label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
-                label.label.alignment = FLabelAlignment.Left;
-                subObjects.Add(label);
-
-                for (int i = 0; i < pendingItems.Length; i++)
-                {
-                    sprites[i] = ItemToFSprite(pendingItems[i]);
-                    Container.AddChild(sprites[i]);
-                }
+                spriteName = "FlowerMarker";
+                spriteColor = RainWorld.GoldRGB;
             }
-
-            public override void GrafUpdate(float timeStacker)
+            else
             {
-                base.GrafUpdate(timeStacker);
-
-                for (int i = 0; i < sprites.Length; i++)
+                if (item.id is "FireSpear" or "ExplosiveSpear")
                 {
-                    sprites[i].isVisible = true;
-                    sprites[i].x = DrawX(timeStacker) + (30f * (i % 8)) + 20f;
-                    sprites[i].y = DrawY(timeStacker) - (30f * Mathf.FloorToInt(i / 8)) - 35f;
-                    sprites[i].alpha = 1f;
+                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
                 }
-            }
-
-            public FSprite ItemToFSprite(Unlock.Item item)
-            {
-                string spriteName;
-                float spriteScale = 1f;
-                Color spriteColor;
-
-                IconSymbol.IconSymbolData iconData;
-
-                if (item.id == "KarmaFlower")
+                else if (item.id is "ElectricSpear")
                 {
-                    spriteName = "FlowerMarker";
-                    spriteColor = RainWorld.GoldRGB;
+                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
+                }
+                else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))
+                {
+                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
                 }
                 else
                 {
-                    if (item.id is "FireSpear" or "ExplosiveSpear")
-                    {
-                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
-                    }
-                    else if (item.id is "ElectricSpear")
-                    {
-                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
-                    }
-                    else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))
-                    {
-                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
-                    }
-                    else
-                    {
-                        iconData = new IconSymbol.IconSymbolData();
-                    }
-
-                    spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
-                    spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
+                    iconData = new IconSymbol.IconSymbolData();
                 }
 
-                try
+                spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
+                spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
+            }
+
+            try
+            {
+                return new FSprite(spriteName, true)
                 {
-                    return new FSprite(spriteName, true)
-                    {
-                        scale = spriteScale,
-                        color = spriteColor,
-                    };
-                }
-                catch
-                {
-                    Plugin.Log.LogError($"Failed to load sprite '{spriteName}'");
-                    return new FSprite("Futile_White", true);
-                }
+                    scale = spriteScale,
+                    color = spriteColor,
+                };
+            }
+            catch
+            {
+                Plugin.Log.LogError($"Failed to load sprite '{spriteName}'");
+                return new FSprite("Futile_White", true);
             }
         }
     }
