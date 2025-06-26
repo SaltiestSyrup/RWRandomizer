@@ -1,6 +1,8 @@
 # Rain World Randomizer
 This is a randomizer mod that forces players to complete "checks" to unlock various game elements such as gates to other regions and karma increases.
-Gates to other regions will start locked, and must be opened through progression
+Gates to other regions will start locked, and must be opened through progression.
+
+The Steam Workshop page for this mod can be [found here](https://steamcommunity.com/sharedfiles/filedetails/?id=3323349183).
 
 ## How it works
 In order to progress in the game, you will have to complete certain checks, such as:
@@ -16,18 +18,23 @@ These will unlock progression in the form of:
 - Passage tokens
 - Story items
 
-Most of these can be toggled on or off in the Remix settings to customize your playstyle
+Most of these can be toggled on or off in the Remix settings to customize your generation.
+**Note**: If too many check types are disabled, you may be unable to generate. It is recommended to enable as many as you're comfortable with for the best experience.
 
 # Archipelago
-The mod is currently in an alpha state for Archipelago support. The latest release can be found in the releases page
+The mod is currently in a beta state for Archipelago, a multi-game randomizer tool. Instructions for setting up Archipelago can be found at the [website](https://archipelago.gg/).
 
-## Mod Installation
-Download the latest version, and unzip it into your game's mod directory
-(`steamapps\common\Rain World\RainWorld_Data\StreamingAssets\mods`).
+The latest release for the APworld needed to use Archipelago with this game can be [found here](https://github.com/alphappy/ArchipelagoRW/releases).
 
-When you boot up the game, you should see it in the Remix menu. Enable it, and you will get a prompt to restart your game. 
-You should now return to the Remix menu and click the enabled mod to access the Remix settings. Once there, click on the Archipelago tab and check the box labeled "Enabled Archipelago". 
-The options should light up, and you can now enter the login information to connect to your MultiWorld. Once the information is entered, click "Connect" and the game will attempt to connect to the server.
-Once connected, you can start the game by going into story mode as normal and starting a new game as the slugcat specified in your .yaml
+Thorough documentation for this game's Archipelago implementation can be [found here](https://github.com/alphappy/ArchipelagoRW/blob/main/worlds/rain_world/docs/README.md).
 
-Note: Make sure if you're using "Passage Progress without Survivor" to have the Remix mod enabled. Your enabled DLC mods must also match exactly with your .yaml
+# Manual Installation
+You may want to manually install this mod rather than using Steam if you need an older version for Archipelago or Rain World 1.9
+
+Instructions for doing so:
+1. Download the desired version from the [releases page](https://github.com/SaltiestSyrup/RWRandomizer/releases)
+2. Find your game's mod directory at `Rain World\RainWorld_Data\StreamingAssets\mods`
+   - For Steam installations, your game folder can be found by clicking the gear icon on the game's page in Steam, and selecting "View local files"
+3. Extract the downloaded zip file into the mod directory, so that you see the "rwrandomizer" folder next to the other base game mods
+4. You should now be able to launch the game and enable it via Remix
+

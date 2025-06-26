@@ -25,9 +25,11 @@ namespace RainWorldRandomizer
         public static void ApplyHooks()
         {
             On.RainWorld.ReadTokenCache += OnReadTokenCache;
+            On.Menu.InitializationScreen.Update += OnInitializationScreenUpdate;
 
             try
             {
+                IL.ProcessManager.Update += ILProcessManagerUpdate;
                 IL.RainWorld.BuildTokenCache += ILBuildTokenCache;
             }
             catch (Exception e)
@@ -39,7 +41,58 @@ namespace RainWorldRandomizer
         public static void RemoveHooks()
         {
             On.RainWorld.ReadTokenCache -= OnReadTokenCache;
+            On.Menu.InitializationScreen.Update -= OnInitializationScreenUpdate;
+            IL.ProcessManager.Update -= ILProcessManagerUpdate;
             IL.RainWorld.BuildTokenCache -= ILBuildTokenCache;
+        }
+
+        private static void ILProcessManagerUpdate(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            // File exists check at 0708
+            c.GotoNext(MoveType.After,
+                x => x.MatchLdloc(15),
+                x => x.MatchCallOrCallvirt(typeof(File).GetMethod(nameof(File.Exists)))
+                );
+
+            // Start building token cache if randomizer is missing files
+            c.EmitDelegate(ForceBuildCache);
+
+            // File deletion at 0749
+            c.GotoNext(MoveType.After,
+                x => x.MatchLdloc(15),
+                x => x.MatchCallOrCallvirt(typeof(File).GetMethod(nameof(File.Delete)))
+                );
+
+            // Skip deleting "recomputetokencache.txt" if it doesn't exist
+            ILLabel jump = c.MarkLabel();
+            c.Index--;
+            c.EmitDelegate(CancelDeleteFile);
+            c.Emit(OpCodes.Brfalse, jump);
+            c.Emit(OpCodes.Ldloc, 15);
+
+            static bool ForceBuildCache(bool fileExists) => true;
+            static bool CancelDeleteFile(string filePath) => File.Exists(filePath);
+        }
+
+        private static void OnInitializationScreenUpdate(On.Menu.InitializationScreen.orig_Update orig, Menu.InitializationScreen self)
+        {
+            if (self.currentStep == Menu.InitializationScreen.InitializationStep.VALIDATE_MODS)
+            {
+                string path = AssetManager.ResolveFilePath(string.Join("",
+                [
+                    "World",
+                    Path.DirectorySeparatorChar.ToString(),
+                    "IndexMaps",
+                    Path.DirectorySeparatorChar.ToString(),
+                    Path.DirectorySeparatorChar.ToString(),
+                    "randomizercachesu.txt" // Arbitrary part of randomizer cache to validate it exists
+                ]));
+
+                self.filesInBadState = !File.Exists(path);
+            }
+            orig(self);
         }
 
         /// <summary>
@@ -53,7 +106,7 @@ namespace RainWorldRandomizer
                 room = room.Substring(0, room.IndexOf("_setting")).ToLower();
                 if (GetRoomAccessibility(region).ContainsKey(room))
                 {
-                    return tokenClearance.Intersect(GetRoomAccessibility(region)[room]).ToList();
+                    return [.. tokenClearance.Intersect(GetRoomAccessibility(region)[room])];
                 }
                 return [];
             }
@@ -225,6 +278,7 @@ namespace RainWorldRandomizer
                 region = region.ToLowerInvariant();
                 lock (regionObjects)
                 {
+                    if (roomAccessibilities.ContainsKey(region)) roomAccessibilities = [];
                     regionObjects[region] = [];
                     regionObjectsAccessibility[region] = [];
                 }
@@ -596,7 +650,7 @@ namespace RainWorldRandomizer
                     if (worldFile[j] == "" || worldFile[j].StartsWith("//")) continue;
                     string[] split = Regex.Split(worldFile[j], " : ");
 
-                    List<SlugcatStats.Name> slugcats;
+                    List<SlugcatStats.Name> slugcats;// = [new SlugcatStats.Name(split[0])];
                     // Pull slugcats out of parenthesis if present
                     Match match = Regex.Match(split[0], "\\((.+)\\)");
                     if (match.Success)
@@ -851,6 +905,15 @@ namespace RainWorldRandomizer
             for (int i = 0; i < regionCreatures[regionUpper].Count; i++)
             {
                 Plugin.Log.LogDebug($"\t{regionCreatures[regionUpper][i]}: {string.Join(", ", regionCreaturesAccessibility[regionUpper][i].Select(c => c.value))}");
+            }
+            */
+
+            /* Log all room access
+            foreach (var pair in accessibility)
+            {
+                string slugcats = "";
+                pair.Value.ForEach(v =>  slugcats += $"{v}, ");
+                Plugin.Log.LogDebug($"{pair.Key} => {slugcats}");
             }
             */
 

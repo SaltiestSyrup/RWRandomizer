@@ -10,9 +10,23 @@ namespace RainWorldRandomizer
 {
     public class OptionsMenu : OptionInterface
     {
-        private Configurable<bool>[] boolConfigOrderGen1;
-        private Configurable<bool>[] boolConfigOrderGen2;
-        private Configurable<bool>[] boolConfigOrderMSC;
+        /// <summary>X offset for options on the left side of the screen</summary>
+        private const float LEFT_OPTION_X = 20f;
+        /// <summary>X offset for options on the right side of the screen</summary>
+        private const float RIGHT_OPTION_X = 320f;
+        private const float GROUP_SIZE_X = 260f;
+        /// <summary>Y offset for options to start at</summary>
+        private const float FIRST_LINE_Y = 550f;
+        /// <summary>How far to decrement Y for a new line</summary>
+        private const float NEWLINE_DECREMENT = 35f;
+
+        private static Color NewColor(int r, int g, int b) => new(r / 255f, g / 255f, b / 255f);
+        private readonly Color baseTabColor = NewColor(157, 56, 129);
+        private readonly Color downpourTabColor = NewColor(129, 157, 56);
+        private readonly Color archipelagoTabColor = NewColor(56, 129, 157);
+
+        private List<OptionGroup> optionGroups = [];
+        private List<OptionGroup> standaloneExclusiveGroups = [];
 
         public OptionsMenu()
         {
@@ -25,42 +39,42 @@ namespace RainWorldRandomizer
                     new ConfigAcceptableRange<int>(0, int.MaxValue), ""));
 
             RandoOptions.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", true,
-                new ConfigurableInfo("Include Arena mode / Safari tokens as checks", null, "",
+                new ConfigurableInfo("Include checks for finding collectible tokens", null, "",
                     ["Use Sandbox tokens as checks"]));
 
             RandoOptions.usePearlChecks = config.Bind<bool>("usePearlChecks", true,
-                new ConfigurableInfo("Include pearls as checks", null, "",
+                new ConfigurableInfo("Include checks for bringing colored pearls to a den", null, "",
                     ["Use Pearls as checks"]));
 
             RandoOptions.useEchoChecks = config.Bind<bool>("useEchoChecks", true,
-                new ConfigurableInfo("Include Echoes as checks", null, "",
+                new ConfigurableInfo("Include checks for meeting Echoes", null, "",
                     ["Use Echoes as checks"]));
 
             RandoOptions.usePassageChecks = config.Bind<bool>("usePassageChecks", true,
-                new ConfigurableInfo("Include Passages as checks", null, "",
+                new ConfigurableInfo("Include checks for completing Passages", null, "",
                     ["Use Passages as checks"]));
 
             RandoOptions.useSpecialChecks = config.Bind<bool>("useSpecialChecks", true,
-                new ConfigurableInfo("Include story objectives as checks", null, "",
+                new ConfigurableInfo("Include checks for story objectives", null, "",
                     ["Use Special checks"]));
 
             RandoOptions.giveItemUnlocks = config.Bind<bool>("giveItemUnlocks", true,
-                new ConfigurableInfo("Whether the game can give you random items as the result of some checks", null, "",
-                    ["Use Item unlocks"]));
+                new ConfigurableInfo("Whether random objects will be used as filler items. If not, extra gate keys will be added instead", null, "",
+                    ["Use random objects as filler"]));
 
             RandoOptions.itemShelterDelivery = config.Bind<bool>("itemShelterDelivery", false,
-                new ConfigurableInfo("Whether items should be delivered in the next shelter instead of placed inside slugcat's stomach", null, "",
+                new ConfigurableInfo("Whether objects should be delivered in the next shelter instead of placed inside slugcat's stomach", null, "",
                     ["Deliver items in shelters"]));
 
             RandoOptions.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
-                new ConfigurableInfo("Whether the game will randomize passage tokens", null, "",
-                    ["Use Passage tokens"]));
+                new ConfigurableInfo("Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages", null, "",
+                    ["Use Passage tokens as filler"]));
 
             RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
-                new ConfigurableInfo("The percentage amount of filler that will be replaced by cycle increases when playing as Hunter (1 is 100%)." +
+                new ConfigurableInfo("The percentage amount of filler items that will be cycle increases when playing as Hunter (1 is 100%)." +
                     "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
                     new ConfigAcceptableRange<float>(0, 1), "",
-                    ["Hunter max cycle increases"]));
+                    ["Hunter cycle increases"]));
 
             RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
@@ -73,88 +87,107 @@ namespace RainWorldRandomizer
 
             RandoOptions.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
                 new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
-                ["Disable notifications"]));
+                    ["Disable notifications"]));
 
             RandoOptions.disableTokenText = config.Bind<bool>("DisableTokenText", true,
                 new ConfigurableInfo("Prevent pop-up text and chatlogs from appearing when collecting tokens", null, "",
-                ["Disable token text"]));
+                    ["Disable token text"]));
 
             RandoOptions.legacyNotifications = config.Bind<bool>("LegacyNotifications", false,
-                new ConfigurableInfo("Disable new notification system in favor of old one using tutorial text", null, "",
-                ["Enable Legacy notifications"]));
+                new ConfigurableInfo("Use bottom of screen 'tutorial' text for notifications instead of chat feature", null, "",
+                    ["Enable legacy notifications"]));
 
             RandoOptions.useGateMap = config.Bind<bool>("UseGateMap", false,
                 new ConfigurableInfo("Use a gate map instead of the gate key list on the pause screen", null, "",
-                ["Use gate map"]));
+                    ["Use gate map"]));
 
             // ----- MSC -----
             RandoOptions.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
-                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (Where applicable)", null, "",
-                ["Open Metropolis"]));
+                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (When possible)", null, "",
+                    ["Open Metropolis"]));
 
             RandoOptions.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
-                new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (Where applicable)", null, "",
-                ["Open Submerged Superstructure"]));
+                new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
+                    ["Open Submerged Superstructure"]));
 
             RandoOptions.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", true,
                 new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check", null, "",
-                ["Use Food quest checks"]));
+                    ["Use Food quest checks"]));
 
             RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
                 new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized", null, "",
-                ["Use Mass Rarefaction cell"]));
+                    ["Use Mass Rarefaction cell"]));
 
             RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
                 new ConfigurableInfo("Include Spearmaster's broadcast tokens as checks", null, "",
-                ["Use Broadcasts"]));
+                    ["Use Broadcasts"]));
 
             // ----- Archipelago -----
             RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
-                new ConfigurableInfo("Enable Archipelago mode. Other tabs' settings will be ignored in favor of .yaml settings", null, "",
-                ["Enable Archipelago"]));
+                new ConfigurableInfo("Enable Archipelago mode. Standalone settings will be ignored in favor of .yaml settings", null, "",
+                    ["Enable Archipelago"]));
 
             RandoOptions.archipelagoHostName = config.Bind<string>("ArchipelagoHostName", "archipelago.gg",
                 new ConfigurableInfo("Host name for server connection. Leave as archipelago.gg if using the website", null, "",
-                ["Host Name"]));
+                    ["Host Name"]));
 
             RandoOptions.archipelagoPort = config.Bind<int>("ArchipelagoPort", 38281,
                 new ConfigurableInfo("Port for server connection", null, "",
-                ["Port"]));
+                    ["Port"]));
 
             RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
-                new ConfigurableInfo("Your player name for server connection", null, "",
-                ["Player Name"]));
+                new ConfigurableInfo("Your slot name for server connection", null, "",
+                    ["Slot Name"]));
 
             RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
                 new ConfigurableInfo("Password for server connection (Optional)", null, "",
-                ["Password"]));
+                    ["Password"]));
 
             RandoOptions.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
                 new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here", null, "",
-                ["Enable DeathLink"]));
+                    ["Enable DeathLink"]));
 
             RandoOptions.archipelagoPreventDLKarmaLoss = config.Bind<bool>("ArchipelagoPreventDLKarmaLoss", false,
                 new ConfigurableInfo("Whether deaths received from DeathLink should ignore the normal karma loss mechanics", null, "",
-                ["Prevent Karma Loss"]));
+                    ["Prevent DeathLink Karma Loss"]));
 
             RandoOptions.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
                 new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
-                ["Ignore Menu Deaths"]));
+                    ["Ignore Menu DeathLinks"]));
+
+            RandoOptions.trapMinimumCooldown = config.Bind<int>("TrapMinimumCooldown", 30,
+                new ConfigurableInfo("The minimum amount of time between trap triggers (in seconds)",
+                new ConfigAcceptableRange<int>(1, 600), "",
+                    ["Minimum Trap Cooldown"]));
+
+            RandoOptions.trapMaximumCooldown = config.Bind<int>("TrapMaximumCooldown", 90,
+                new ConfigurableInfo("The maximum amount of time between trap triggers (in seconds)", 
+                    new ConfigAcceptableRange<int>(1, 600), "",
+                    ["Maximum Trap Cooldown"]));
         }
 
         public override void Initialize()
         {
             base.Initialize();
 
-            List<OpTab> _tabs =
-            [
-                new OpTab(this, Translate("Base")),
+            List<OpTab> _tabs = 
+            [ 
+                new OpTab(this, Translate("Base")) 
+                {
+                    colorButton = baseTabColor,
+                }
             ];
             if (ModManager.MSC)
             {
-                _tabs.Add(new OpTab(this, Translate("Downpour")));
+                _tabs.Add(new OpTab(this, Translate("Downpour"))
+                {
+                    colorButton = downpourTabColor,
+                });
             }
-            _tabs.Add(new OpTab(this, Translate("Archipelago")));
+            _tabs.Add(new OpTab(this, Translate("Archipelago"))
+            {
+                colorButton = archipelagoTabColor,
+            });
             Tabs = [.. _tabs];
 
             PopulateBaseTab();
@@ -165,123 +198,86 @@ namespace RainWorldRandomizer
         public void PopulateBaseTab()
         {
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Base"));
-            float runningY = 550f;
+            float runningY = FIRST_LINE_Y;
 
-            OpLabel standaloneConfigsLabel = new(40f, runningY, Translate("Standalone Options"));
-            runningY -= 35;
+            OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Standalone Options"));
+            Tabs[tabIndex].AddItems(standaloneConfigsLabel);
+            runningY -= NEWLINE_DECREMENT;
 
-            // Seed options
-            OpCheckBox useSeedCheckbox = new(RandoOptions.useSeed, 20f, runningY)
-            {
-                description = Translate(RandoOptions.useSeed.info.description)
-            };
-            OpLabel useSeedLabel = new(60f, runningY, Translate(RandoOptions.useSeed.info.Tags[0] as string))
-            {
-                bumpBehav = useSeedCheckbox.bumpBehav,
-                description = useSeedCheckbox.description
-            };
-            runningY -= 35;
+            // Seed
+            OptionGroup seedGroup = new(this, "Seed", new(10f, 10f));
+            OpCheckBox useSeedCheckbox = seedGroup.AddCheckBox(RandoOptions.useSeed, new(LEFT_OPTION_X, runningY));
 
-            OpTextBox seedText = new(RandoOptions.seed, new Vector2(25f, runningY), 100f)
+            OpTextBox seedText = new(RandoOptions.seed, new Vector2(125f, runningY), 100f)
             {
-                description = Translate(RandoOptions.seed.info.description)
+                description = Translate(RandoOptions.seed.info.description),
             };
+            seedGroup.AddElements(seedText);
+            runningY -= NEWLINE_DECREMENT * 1.5f;
+
             // Make the seed field be active only when useSeed is selected
-            seedText.OnUpdate += () => { seedText.greyedOut = !useSeedCheckbox.GetValueBool(); };
-            runningY -= 35;
+            void UseSeedChange() => seedText.greyedOut = seedGroup.Disabled || !useSeedCheckbox.GetValueBool();
 
-            Tabs[tabIndex].AddItems(
-            [
-                standaloneConfigsLabel,
-                useSeedCheckbox,
-                useSeedLabel,
-                seedText
-            ]);
+            seedText.OnUpdate += UseSeedChange; // Can't get the box to start greyed, just set on Update
+            seedGroup.AddToTab(tabIndex);
+            optionGroups.Add(seedGroup);
 
-            if (boolConfigOrderGen1 == null)
-            {
-                PopulateConfigurableArrays();
-            }
+            // Misc Generation
+            OptionGroup miscGroup = new(this, "Misc_Generation", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            miscGroup.AddCheckBox(RandoOptions.randomizeSpawnLocation, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            miscGroup.AddCheckBox(RandoOptions.startMinKarma, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT * 1.5f;
+            miscGroup.AddToTab(tabIndex);
+            optionGroups.Add(miscGroup);
 
-            // Add boolean configs
-            foreach (Configurable<bool> config in boolConfigOrderGen1)
-            {
-                if (config == null)
-                {
-                    runningY -= 35;
-                    continue;
-                }
+            // Checks
+            OptionGroup checksGroup = new(this, "Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            checksGroup.AddCheckBox(RandoOptions.useSandboxTokenChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.usePearlChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useEchoChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.usePassageChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useSpecialChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT * 1.5f;
+            checksGroup.AddToTab(tabIndex);
+            optionGroups.Add(checksGroup);
 
-                OpCheckBox opCheckBox = new(config, new Vector2(20f, runningY))
-                {
-                    description = Translate(config.info.description)
-                };
+            // Filler Items
+            OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            fillerGroup.AddCheckBox(RandoOptions.giveItemUnlocks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
+            fillerGroup.AddToTab(tabIndex);
+            optionGroups.Add(fillerGroup);
 
-                Tabs[tabIndex].AddItems(
-                [
-                    opCheckBox,
-                    new OpLabel(60f, runningY, Translate(config.info.Tags[0] as string))
-                    {
-                        bumpBehav = opCheckBox.bumpBehav,
-                        description = opCheckBox.description
-                    }
-                ]);
-
-                runningY -= 35;
-            }
-
-            OpUpdown hunterCyclesUpDown = new(RandoOptions.hunterCyclesDensity, new Vector2(20f, runningY), 100f)
-            {
-                description = Translate(RandoOptions.hunterCyclesDensity.info.description)
-            };
-            OpLabel hunterCyclesLabel = new(140f, runningY, Translate(RandoOptions.hunterCyclesDensity.info.Tags[0] as string))
-            {
-                bumpBehav = hunterCyclesUpDown.bumpBehav,
-                description = hunterCyclesUpDown.description
-            };
-            Tabs[tabIndex].AddItems(
-            [
-                hunterCyclesUpDown,
-                hunterCyclesLabel
-            ]);
-            runningY -= 35;
+            // Populate group set for disbling when AP
+            standaloneExclusiveGroups.AddRange([seedGroup, miscGroup, checksGroup, fillerGroup]);
 
             // ----- Right side configs -----
-            runningY = 550f;
+            runningY = FIRST_LINE_Y;
 
-            OpLabel globalConfigsLabel = new(440f, runningY, Translate("Global Options"));
-            Tabs[tabIndex].AddItems(
-            [
-                globalConfigsLabel
-            ]);
-            runningY -= 35;
+            OpLabel globalConfigsLabel = new(RIGHT_OPTION_X + 15f, runningY, Translate("Global Options"));
+            Tabs[tabIndex].AddItems(globalConfigsLabel);
+            runningY -= NEWLINE_DECREMENT;
 
-            // Add boolean configs
-            foreach (Configurable<bool> config in boolConfigOrderGen2)
-            {
-                if (config == null)
-                {
-                    runningY -= 35;
-                    continue;
-                }
-
-                OpCheckBox opCheckBox = new(config, new Vector2(420f, runningY))
-                {
-                    description = Translate(config.info.description)
-                };
-
-                Tabs[tabIndex].AddItems(
-                [
-                    opCheckBox,
-                    new OpLabel(460f, runningY, Translate(config.info.Tags[0] as string))
-                    {
-                        bumpBehav = opCheckBox.bumpBehav,
-                        description = opCheckBox.description
-                    }
-                ]);
-
-                runningY -= 35;
-            }
+            OptionGroup globalGroup = new(this, "Global", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            globalGroup.AddCheckBox(RandoOptions.itemShelterDelivery, new(RIGHT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            globalGroup.AddCheckBox(RandoOptions.disableNotificationQueue, new(RIGHT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            globalGroup.AddCheckBox(RandoOptions.disableTokenText, new(RIGHT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            globalGroup.AddCheckBox(RandoOptions.legacyNotifications, new(RIGHT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            globalGroup.AddCheckBox(RandoOptions.useGateMap, new(RIGHT_OPTION_X, runningY));
+            globalGroup.AddToTab(tabIndex);
+            optionGroups.Add(globalGroup);
         }
 
         public void PopulateDownpourTab()
@@ -289,176 +285,116 @@ namespace RainWorldRandomizer
             if (!ModManager.MSC) return;
 
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Downpour"));
-            float runningY = 550f;
+            float runningY = FIRST_LINE_Y;
 
-            // Add boolean configs
-            foreach (Configurable<bool> config in boolConfigOrderMSC)
-            {
-                if (config == null)
-                {
-                    runningY -= 35;
-                    continue;
-                }
+            OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Standalone Options"));
+            Tabs[tabIndex].AddItems(standaloneConfigsLabel);
+            runningY -= NEWLINE_DECREMENT;
 
-                OpCheckBox opCheckBox = new(config, new Vector2(20f, runningY))
-                {
-                    description = Translate(config.info.description)
-                };
+            // Open optional regions
+            OptionGroup unlockRegionsGroup = new(this, "MSC_Regions", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            unlockRegionsGroup.AddCheckBox(RandoOptions.allowMetroForOthers, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT * 1.5f;
 
-                Tabs[tabIndex].AddItems(
-                [
-                    opCheckBox,
-                    new OpLabel(60f, runningY, Translate(config.info.Tags[0] as string))
-                    {
-                        bumpBehav = opCheckBox.bumpBehav,
-                        description = opCheckBox.description
-                    }
-                ]);
+            // Check types
+            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            checksGroup.AddCheckBox(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useEnergyCell, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useSMTokens, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
 
-                runningY -= 35;
-            }
+            // Add to tab
+            unlockRegionsGroup.AddToTab(tabIndex);
+            checksGroup.AddToTab(tabIndex);
+
+            optionGroups.AddRange([unlockRegionsGroup, checksGroup]);
+            standaloneExclusiveGroups.AddRange([unlockRegionsGroup, checksGroup]);
         }
 
         public void PopulateArchipelagoTab()
         {
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Archipelago"));
             // ----- Left side Configurables -----
-            float runningY = 550f;
+            float runningY = FIRST_LINE_Y;
 
-            OpCheckBox APCheckBox = new(RandoOptions.archipelago, new Vector2(20f, runningY))
-            {
-                description = Translate(RandoOptions.archipelago.info.description)
-            };
-            OpLabel APLabel = new(60f, runningY, Translate(RandoOptions.archipelago.info.Tags[0] as string))
-            {
-                bumpBehav = APCheckBox.bumpBehav,
-                description = APCheckBox.description
-            };
-            runningY -= 35;
+            OpCheckBox APCheckBox = AddCheckBox(RandoOptions.archipelago, new(LEFT_OPTION_X, runningY), tabIndex);
+            runningY -= NEWLINE_DECREMENT * 1.5f;
 
-            OpTextBox hostNameTextBox = new(RandoOptions.archipelagoHostName, new Vector2(20f, runningY), 200f)
-            {
-                description = Translate(RandoOptions.archipelagoHostName.info.description)
-            };
-            OpLabel hostNameLabel = new(240f, runningY, Translate(RandoOptions.archipelagoHostName.info.Tags[0] as string))
-            {
-                bumpBehav = hostNameTextBox.bumpBehav,
-                description = hostNameTextBox.description
-            };
-            runningY -= 35;
+            OptionGroup connectionGroup = new(this, "AP_Connection", new(10f, 10f));
+            OpTextBox hostNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoHostName, new(LEFT_OPTION_X, runningY), 200f);
+            runningY -= NEWLINE_DECREMENT;
+            OpTextBox portTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPort, new(LEFT_OPTION_X, runningY), 55f);
+            runningY -= NEWLINE_DECREMENT;
+            OpTextBox slotNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoSlotName, new(LEFT_OPTION_X, runningY), 200f);
+            runningY -= NEWLINE_DECREMENT;
+            OpTextBox passwordTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f);
+            runningY -= NEWLINE_DECREMENT;
 
-            OpTextBox portTextBox = new(RandoOptions.archipelagoPort, new Vector2(20f, runningY), 55f)
-            {
-                description = Translate(RandoOptions.archipelagoPort.info.description)
-            };
-            OpLabel portLabel = new(95f, runningY, Translate(RandoOptions.archipelagoPort.info.Tags[0] as string))
-            {
-                bumpBehav = portTextBox.bumpBehav,
-                description = portTextBox.description
-            };
-            runningY -= 35;
-
-            OpTextBox slotNameTextBox = new(RandoOptions.archipelagoSlotName, new Vector2(20f, runningY), 200f)
-            {
-                description = Translate(RandoOptions.archipelagoSlotName.info.description)
-            };
-            OpLabel slotNameLabel = new(240f, runningY, Translate(RandoOptions.archipelagoSlotName.info.Tags[0] as string))
-            {
-                bumpBehav = slotNameTextBox.bumpBehav,
-                description = slotNameTextBox.description
-            };
-            runningY -= 35;
-
-            OpTextBox passwordTextBox = new(RandoOptions.archipelagoPassword, new Vector2(20f, runningY), 200f)
-            {
-                description = Translate(RandoOptions.archipelagoPassword.info.description)
-            };
-            OpLabel passwordLabel = new(240f, runningY, Translate(RandoOptions.archipelagoPassword.info.Tags[0] as string))
-            {
-                bumpBehav = passwordTextBox.bumpBehav,
-                description = passwordTextBox.description
-            };
-            runningY -= 35;
-
-            OpSimpleButton connectButton = new(new Vector2(20f, runningY), new Vector2(60f, 20f), "Connect")
+            OpSimpleButton connectButton = new(new Vector2(LEFT_OPTION_X, runningY), new Vector2(60f, 20f), "Connect")
             {
                 description = "Attempt to connect to the Archipelago server"
             };
-            OpSimpleButton disconnectButton = new(new Vector2(100f, runningY), new Vector2(80f, 20f), "Disconnect")
+            OpSimpleButton disconnectButton = new(new Vector2(LEFT_OPTION_X + 80f, runningY), new Vector2(80f, 20f), "Disconnect")
             {
                 description = "Disconnect from the current session"
             };
-            runningY -= 35;
+            connectionGroup.AddElements(connectButton, disconnectButton);
+            runningY -= NEWLINE_DECREMENT;
+            connectionGroup.AddToTab(tabIndex);
+            optionGroups.Add(connectionGroup);
 
             // ----- Status Information -----
-            OpLabelLong connectResultLabel = new(new Vector2(20f, runningY - 100f), new Vector2(320f, 100f), "");
-            OpLabelLong slotDataLabelLeft = new(new Vector2(350f, runningY - 100f), new Vector2(200f, 100f), "", false);
-            OpLabelLong slotDataLabelRight = new(new Vector2(550f, runningY - 100f), new Vector2(50f, 100f), "", false, FLabelAlignment.Right);
-
-            Tabs[tabIndex].AddItems(
-            [
-                APCheckBox,
-                APLabel,
-                hostNameTextBox,
-                hostNameLabel,
-                portTextBox,
-                portLabel,
-                slotNameTextBox,
-                slotNameLabel,
-                passwordTextBox,
-                passwordLabel,
-                connectButton,
-                disconnectButton,
-                connectResultLabel,
-                slotDataLabelLeft,
-                slotDataLabelRight,
-            ]);
+            OptionGroup statusGroup = new(this, "AP_Status", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
+            OpLabelLong connectResultLabel = new(new Vector2(LEFT_OPTION_X, 60f), new Vector2(GROUP_SIZE_X, runningY - 60f), "");
+            statusGroup.AddElements(connectResultLabel);
+            statusGroup.AddToTab(tabIndex);
+            optionGroups.Add(statusGroup);
 
             // ----- Right side Configurables -----
-            runningY = 550f;
+            runningY = FIRST_LINE_Y;
 
-            OpLabel deathLinkLabel = new(440f, runningY, Translate("Death Link Settings"));
-            deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
-            runningY -= 35;
+            OptionGroup deathLinkGroup = new(this, "AP_DeathLink", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
+            //OpLabel deathLinkLabel = new(RIGHT_OPTION_X + 45f, runningY, Translate("Death Link Settings"));
+            //deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
+            //deathLinkGroup.AddElements(deathLinkLabel);
+            //runningY -= NEWLINE_DECREMENT;
 
-            OpCheckBox deathLinkOverrideCheckbox = new(RandoOptions.archipelagoDeathLinkOverride, new Vector2(420f, runningY))
-            {
-                description = Translate(RandoOptions.archipelagoDeathLinkOverride.info.description)
-            };
-            OpLabel deathLinkOverrrideLabel = new(460f, runningY, Translate(RandoOptions.archipelagoDeathLinkOverride.info.Tags[0] as string))
-            {
-                bumpBehav = deathLinkOverrideCheckbox.bumpBehav,
-                description = deathLinkOverrideCheckbox.description
-            };
-            runningY -= 35;
+            OpCheckBox deathLinkOverrideCheckbox = deathLinkGroup.AddCheckBox(RandoOptions.archipelagoDeathLinkOverride, new(RIGHT_OPTION_X + 30f, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            deathLinkGroup.AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X + 30f, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X + 30f, runningY));
+            runningY -= NEWLINE_DECREMENT * 1.7f;
+            deathLinkGroup.AddToTab(tabIndex);
+            optionGroups.Add(deathLinkGroup);
 
-            OpCheckBox noKarmaLossCheckBox = new(RandoOptions.archipelagoPreventDLKarmaLoss, new Vector2(420f, runningY))
-            {
-                description = Translate(RandoOptions.archipelagoPreventDLKarmaLoss.info.description)
-            };
-            OpLabel noKarmaLossLabel = new(460f, runningY, Translate(RandoOptions.archipelagoPreventDLKarmaLoss.info.Tags[0] as string))
-            {
-                bumpBehav = noKarmaLossCheckBox.bumpBehav,
-                description = noKarmaLossCheckBox.description
-            };
-            runningY -= 35;
+            OptionGroup trapGroup = new(this, "AP_Traps", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
+            OpUpdown trapMinUpDown = trapGroup.AddUpDown(RandoOptions.trapMinimumCooldown, true, new(RIGHT_OPTION_X + 30f, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            OpUpdown trapMaxUpDown = trapGroup.AddUpDown(RandoOptions.trapMaximumCooldown, true, new(RIGHT_OPTION_X + 30f, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            trapGroup.AddToTab(tabIndex);
+            optionGroups.Add(trapGroup);
 
-            OpCheckBox ignoreMenuDeathsCheckBox = new(RandoOptions.archipelagoIgnoreMenuDL, new Vector2(420f, runningY))
-            {
-                description = Translate(RandoOptions.archipelagoIgnoreMenuDL.info.description)
-            };
-            OpLabel ignoreMenuDeathsLabel = new(460f, runningY, Translate(RandoOptions.archipelagoIgnoreMenuDL.info.Tags[0] as string))
-            {
-                bumpBehav = ignoreMenuDeathsCheckBox.bumpBehav,
-                description = ignoreMenuDeathsCheckBox.description
-            };
-            runningY -= 35;
+            // Slot data information
+            runningY = Mathf.Min(runningY, 322.5f);
+            OptionGroup slotDataGroup = new(this, "AP_Slot_Data", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
+            OpLabelLong slotDataLabelLeft = new(new Vector2(RIGHT_OPTION_X, 60f), new Vector2(200f, runningY - 60f), "", false);
+            OpLabelLong slotDataLabelRight = new(new Vector2(RIGHT_OPTION_X + 210f, 60f), new Vector2(50f, runningY - 60f), "", false, FLabelAlignment.Right);
+            slotDataGroup.AddElements(slotDataLabelLeft, slotDataLabelRight);
+            slotDataGroup.AddToTab(tabIndex);
+            optionGroups.Add(slotDataGroup);
 
             OpSimpleButton clearSavesButton = new(new Vector2(490f, 10f), new Vector2(100f, 25f), "Clear Save Files")
             {
                 colorEdge = new Color(0.85f, 0.35f, 0.4f),
                 description = Translate("Delete ALL Archipelago save games. It's a good idea to do this periodically to save space")
             };
+            Tabs[tabIndex].AddItems(clearSavesButton);
 
             // ----- Update / Button Logic -----
 
@@ -472,26 +408,18 @@ namespace RainWorldRandomizer
                     slotDataLabelLeft.text = "";
                     slotDataLabelRight.text = "";
                 }
-                // Disable options while AP is off
-                hostNameTextBox.greyedOut = APDisabled;
-                portTextBox.greyedOut = APDisabled;
-                slotNameTextBox.greyedOut = APDisabled;
-                passwordTextBox.greyedOut = APDisabled;
-                connectButton.greyedOut = APDisabled;
-                disconnectButton.greyedOut = APDisabled;
-                //disableNotificationBox.greyedOut = APDisabled;
-                deathLinkLabel.bumpBehav.greyedOut = APDisabled;
-                deathLinkOverrideCheckbox.greyedOut = APDisabled;
-                noKarmaLossCheckBox.greyedOut = APDisabled;
-                ignoreMenuDeathsCheckBox.greyedOut = APDisabled;
+                connectionGroup.Disabled = APDisabled;
+                deathLinkGroup.Disabled = APDisabled;
+                trapGroup.Disabled = APDisabled;
+                foreach (OptionGroup group in standaloneExclusiveGroups)
+                {
+                    group.Disabled = !APDisabled;
+                }
             }
 
             // Call the function once to initialize
             APCheckedChange();
-            APCheckBox.OnChange += () =>
-            {
-                APCheckedChange();
-            };
+            APCheckBox.OnChange += APCheckedChange;
 
             // Attempt AP connection on click
             connectButton.OnClick += (trigger) =>
@@ -507,33 +435,37 @@ namespace RainWorldRandomizer
                 deathLinkOverrideCheckbox.SetValueBool(DeathLinkHandler.Active);
 
                 // Create / Update slot data information
-                slotDataLabelLeft.text =
-                    $"Current Settings Information\n\n" +
-                    $"Using MSC:\n" +
-                    $"Using Watcher:\n" +
-                    $"Chosen Slugcat:\n" +
-                    $"Using Random Start:\n" +
-                    $"Chosen Starting Room:\n" +
-                    $"Completion Condition:\n" +
-                    $"Passage Progress w/o Survivor:\n" +
-                    $"Using DeathLink:\n" +
-                    $"Food Quest:\n" +
-                    $"Shelter-sanity:\n" +
-                    $"Flower-sanity:\n" +
-                    $"Dev token checks:";
-                slotDataLabelRight.text =
-                    $"\n\n{ArchipelagoConnection.IsMSC}\n" +
-                    $"{ArchipelagoConnection.IsWatcher}\n" +
-                    $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}\n" +
-                    $"{ArchipelagoConnection.useRandomStart}\n" +
-                    $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}\n" +
-                    $"{ArchipelagoConnection.completionCondition}\n" +
-                    $"{ArchipelagoConnection.PPwS}\n" +
-                    $"{DeathLinkHandler.Active}\n" +
-                    $"{ArchipelagoConnection.foodQuest}\n" +
-                    $"{ArchipelagoConnection.sheltersanity}\n" +
-                    $"{ArchipelagoConnection.flowersanity}\n" +
-                    $"{ArchipelagoConnection.devTokenChecks}";
+                slotDataLabelLeft.text = string.Join("\n",
+                [
+                    "Current Settings Information\n",
+                    "Using MSC:",
+                    "Using Watcher:",
+                    "Chosen Slugcat:",
+                    "Using Random Start:",
+                    "Chosen Starting Room:",
+                    "Completion Condition:",
+                    "Passage Progress w/o Survivor:",
+                    "Using DeathLink:",
+                    "Food Quest:",
+                    "Shelter-sanity:",
+                    "Flower-sanity:",
+                    "Dev token checks:",
+                ]);
+                slotDataLabelRight.text = string.Join("\n",
+                [
+                    $"\n\n{ArchipelagoConnection.IsMSC}",
+                    $"{ArchipelagoConnection.IsWatcher}",
+                    $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}",
+                    $"{ArchipelagoConnection.useRandomStart}",
+                    $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}",
+                    $"{ArchipelagoConnection.completionCondition}",
+                    $"{ArchipelagoConnection.PPwS}",
+                    $"{DeathLinkHandler.Active}",
+                    $"{ArchipelagoConnection.foodQuest}",
+                    $"{ArchipelagoConnection.sheltersanity}",
+                    $"{ArchipelagoConnection.flowersanity}",
+                    $"{ArchipelagoConnection.devTokenChecks}",
+                ]);
             };
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
@@ -552,75 +484,210 @@ namespace RainWorldRandomizer
                 DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
             };
 
-            clearSavesButton.OnClick += AskToClearSaveFiles;
+            // Add logic to prevent minimum > maximum and vice versa
+            trapMinUpDown.OnChange += () =>
+            {
+                if (trapMinUpDown.GetValueInt() > trapMaxUpDown.GetValueInt())
+                {
+                    trapMaxUpDown.SetValueInt(trapMinUpDown.GetValueInt());
+                }
+            };
+            trapMaxUpDown.OnChange += () =>
+            {
+                if (trapMaxUpDown.GetValueInt() < trapMinUpDown.GetValueInt())
+                {
+                    trapMinUpDown.SetValueInt(trapMaxUpDown.GetValueInt());
+                }
+            };
 
-            // ----- Populate Tab -----
-            Tabs[tabIndex].AddItems(
-            [
-                //disableNotificationBox,
-                //disableNotificationLabel,
-                deathLinkLabel,
-                deathLinkOverrideCheckbox,
-                deathLinkOverrrideLabel,
-                noKarmaLossCheckBox,
-                noKarmaLossLabel,
-                ignoreMenuDeathsCheckBox,
-                ignoreMenuDeathsLabel,
-                clearSavesButton,
-            ]);
+            clearSavesButton.OnClick += AskToClearSaveFiles;
         }
 
         private void AskToClearSaveFiles(UIfocusable trigger)
         {
             if (ConfigContainer.mute) return;
 
-            ConfigConnector.CreateDialogBoxYesNo(string.Concat(new string[]
-            {
+            ConfigConnector.CreateDialogBoxYesNo(string.Concat(
+            [
                 Translate("This will delete ALL of your saved Archipelago randomizer games."),
                 Environment.NewLine,
                 Translate("Be sure you don't plan to return to any of your games before doing this."),
                 Environment.NewLine,
                 Environment.NewLine,
                 Translate("Are you sure you want to delete your saves?")
-            }), new Action(SaveManager.DeleteAllAPSaves));
+            ]), new Action(SaveManager.DeleteAllAPSaves));
         }
 
-        public void PopulateConfigurableArrays()
+        private OpCheckBox AddCheckBox(Configurable<bool> config, Vector2 offset, int tabIndex)
         {
-            // Null indicates a line break
-            boolConfigOrderGen1 =
-            [
-                RandoOptions.randomizeSpawnLocation,
-                RandoOptions.startMinKarma,
-                null,
-                RandoOptions.useSandboxTokenChecks,
-                RandoOptions.usePearlChecks,
-                RandoOptions.useEchoChecks,
-                RandoOptions.usePassageChecks,
-                RandoOptions.useSpecialChecks,
-                null,
-                RandoOptions.giveItemUnlocks,
-                RandoOptions.givePassageUnlocks,
-            ];
+            OpCheckBox checkbox = new(config, offset.x, offset.y)
+            {
+                description = Translate(config.info.description)
+            };
+            OpLabel label = new(offset.x + 40f, offset.y, Translate(config.info.Tags[0] as string))
+            {
+                bumpBehav = checkbox.bumpBehav,
+                description = checkbox.description
+            };
+            Tabs[tabIndex].AddItems(checkbox, label);
+            return checkbox;
+        }
 
-            boolConfigOrderGen2 =
-            [
-                RandoOptions.itemShelterDelivery,
-                RandoOptions.disableNotificationQueue,
-                RandoOptions.disableTokenText,
-                RandoOptions.legacyNotifications,
-                RandoOptions.useGateMap,
-            ];
+        private OpTextBox AddTextBox(ConfigurableBase config, Vector2 offset, float sizeX, int tabIndex)
+        {
+            OpTextBox textbox = new(config, offset, sizeX)
+            {
+                description = Translate(config.info.description)
+            };
+            OpLabel label = new(offset.x + sizeX + 20f, offset.y, Translate(config.info.Tags[0] as string))
+            {
+                bumpBehav = textbox.bumpBehav,
+                description = textbox.description
+            };
+            Tabs[tabIndex].AddItems(textbox, label);
+            return textbox;
+        }
 
-            boolConfigOrderMSC =
-            [
-                RandoOptions.allowMetroForOthers,
-                RandoOptions.allowSubmergedForOthers,
-                null,
-                RandoOptions.useFoodQuestChecks,
-                RandoOptions.useEnergyCell,
-                RandoOptions.useSMTokens,
-            ];
+        private class OptionGroup(OptionInterface owner, string name, Vector2 margins, Vector2 customSize = new())
+        {
+            public OptionInterface owner = owner;
+            public string name = name;
+            public OpRect boundingRect = null;
+            public List<UIelement> elements = [];
+            private Vector2 margins = margins;
+            public Vector2 customSize = customSize;
+
+            private bool _disabled = false;
+            public bool Disabled
+            {
+                get { return _disabled; }
+                set
+                {
+                    _disabled = value;
+                    // Grey out each focusable element
+                    elements.ForEach(e => { if (e is UIfocusable f) f.greyedOut = value; });
+                }
+            }
+
+            private Color _color = Menu.MenuColorEffect.rgbMediumGrey;
+            public Color Color
+            {
+                get { return _color; }
+                set
+                {
+                    _color = value;
+                    if (boundingRect is not null) boundingRect.colorEdge = value;
+                    elements.ForEach(e => { ApplyColorToElement(e, value); });
+                }
+            }
+
+            public void AddElements(params UIelement[] elements)
+            {
+                foreach (var element in elements)
+                {
+                    if (element is UIfocusable f) f.greyedOut = Disabled;
+                    ApplyColorToElement(element, Color);
+                }
+                this.elements.AddRange(elements);
+            }
+
+            public OpCheckBox AddCheckBox(Configurable<bool> config, Vector2 offset)
+            {
+                OpCheckBox checkbox = new(config, offset.x, offset.y)
+                {
+                    description = Translate(config.info.description),
+                    greyedOut = Disabled,
+                    colorEdge = Color
+                };
+                OpLabel label = new(offset.x + 40f, offset.y, Translate(config.info.Tags[0] as string))
+                {
+                    bumpBehav = checkbox.bumpBehav,
+                    description = checkbox.description,
+                    color = Color
+                };
+                AddElements(checkbox, label);
+                return checkbox;
+            }
+
+            public OpTextBox AddTextBox(ConfigurableBase config, Vector2 offset, float sizeX)
+            {
+                OpTextBox textbox = new(config, offset, sizeX)
+                {
+                    description = Translate(config.info.description),
+                    greyedOut = Disabled,
+                    colorEdge = Color
+                };
+                OpLabel label = new(offset.x + sizeX + 20f, offset.y, Translate(config.info.Tags[0] as string))
+                {
+                    bumpBehav = textbox.bumpBehav,
+                    description = textbox.description,
+                    color = Color
+                };
+                AddElements(textbox, label);
+                return textbox;
+            }
+
+            public OpUpdown AddUpDown(ConfigurableBase config, bool isInt, Vector2 offset, float sizeX)
+            {
+                OpUpdown upDown = new(isInt, config, offset, sizeX)
+                {
+                    description = Translate(config.info.description)
+                };
+                OpLabel label = new(offset.x + sizeX + 20f, offset.y, Translate(config.info.Tags[0] as string))
+                {
+                    bumpBehav = upDown.bumpBehav,
+                    description = upDown.description
+                };
+                AddElements(upDown, label);
+                return upDown;
+            }
+
+            /// <summary>
+            /// Finalize contents and add to options tab
+            /// </summary>
+            /// <param name="tabIndex">Index in <see cref="OptionInterface.Tabs"/> to place group</param>
+            public void AddToTab(int tabIndex)
+            {
+                boundingRect = GenerateBoundingRect();
+                boundingRect.colorEdge = _color;
+                owner.Tabs[tabIndex].AddItems([.. elements, boundingRect]);
+            }
+
+            private OpRect GenerateBoundingRect()
+            {
+                Vector2 minPos = elements.Count > 0 ? elements[0].pos : Vector2.zero;
+                Vector2 maxPos = Vector2.zero;
+                foreach (UIelement element in elements)
+                {
+                    Vector2 upperBound = element.pos + element.size;
+                    if (element is OpLabel label) upperBound = label.pos + label.GetDisplaySize();
+
+                    if (element.pos.x < minPos.x) minPos.x = element.pos.x;
+                    if (element.pos.y < minPos.y) minPos.y = element.pos.y;
+                    if (upperBound.x > maxPos.x) maxPos.x = upperBound.x;
+                    if (upperBound.y > maxPos.y) maxPos.y = upperBound.y;
+                }
+
+                // Apply custom sizing overrides
+                if (customSize.x > 0) maxPos.x = minPos.x + customSize.x;
+                if (customSize.y > 0) maxPos.y = minPos.y + customSize.y;
+
+                return new(minPos - margins, maxPos - minPos + (margins * 2), 0f);
+            }
+
+            private static void ApplyColorToElement(UIelement element, Color color)
+            {
+                if (element is OpLabel label) label.color = color;
+                else if (element is OpCheckBox checkBox) checkBox.colorEdge = color;
+                else if (element is OpTextBox textBox) textBox.colorEdge = color;
+                else if (element is OpUpdown upDown) upDown.colorEdge = color;
+            }
+        }
+
+        private class SlotDataEntry(Vector2 pos, Vector2 size, string leftText, string rightText) : UIelement(pos, size)
+        {
+            public OpLabel leftLabel = new(pos, size, leftText, FLabelAlignment.Left);
+            public OpLabel rightLabel = new(pos, size, rightText, FLabelAlignment.Right);
         }
     }
 }
