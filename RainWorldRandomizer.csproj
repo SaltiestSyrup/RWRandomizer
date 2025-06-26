@@ -107,6 +107,8 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Hooks\FlowerCheckHandler.cs" />
     <Compile Include="Generation\AccessRule.cs" />
+    <Compile Include="Menu\GateMapDisplay.cs" />
+    <Compile Include="Menu\SpoilerMenu.cs" />
     <Compile Include="TokenCachePatcher.cs" />
     <Compile Include="Generation\Item.cs" />
     <Compile Include="Generation\Location.cs" />

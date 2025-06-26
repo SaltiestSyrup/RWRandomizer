@@ -27,7 +27,6 @@ namespace RainWorldRandomizer
         public static ArchipelagoConnection APConnection = new();
         public static ManagerBase RandoManager = null;
         public CollectTokenHandler collectTokenHandler;
-        public MenuExtension seedViewer;
 
         private OptionsMenu options;
 
@@ -97,7 +96,6 @@ namespace RainWorldRandomizer
             // Assign as vanilla until decided otherwise
             RandoManager = new ManagerVanilla();
             collectTokenHandler = new CollectTokenHandler();
-            seedViewer = new MenuExtension();
             Log = Logger;
 
             // Register Enums
@@ -108,7 +106,7 @@ namespace RainWorldRandomizer
             try
             {
                 collectTokenHandler.ApplyHooks();
-                seedViewer.ApplyHooks();
+                MenuExtension.ApplyHooks();
                 HudExtension.ApplyHooks();
                 TokenCachePatcher.ApplyHooks();
 
@@ -154,7 +152,7 @@ namespace RainWorldRandomizer
             try
             {
                 collectTokenHandler.RemoveHooks();
-                seedViewer.RemoveHooks();
+                MenuExtension.RemoveHooks();
                 HudExtension.RemoveHooks();
                 TokenCachePatcher.RemoveHooks();
 
