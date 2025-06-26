@@ -258,7 +258,7 @@ namespace RainWorldRandomizer
                 Dictionary<string, bool> gates = 
                     Scug is not "Watcher" 
                     ? Plugin.RandoManager.GetGatesStatus()
-                    : Items.CollectedStaticKeys.ToDictionary(x => x, x => true);
+                    : Items.CollectedStaticKeys.Union(watcherUnkeyableWarps).ToDictionary(x => x, x => true);
 
                 foreach (var pair in gates)
                 {
@@ -389,6 +389,11 @@ namespace RainWorldRandomizer
                 null, "WTDB", "WARG", "WSKD", "WTDB*", "WRFB*", "WARF*",
                 "WPTA", "WRRA", "WSKB", "WARF", null, null, null,
                 "WVWA", "WRFB", "WRFA", "WSKA", null, null, null,
+            ];
+
+            internal static List<string> watcherUnkeyableWarps = 
+            [
+                "WORA-WSSR", "WORA-WSUR", "WGWR-WORA", "WHIR-WORA", "WDSR-WORA", "WARA-WRSA"
             ];
 
             public void CreateNodes()
@@ -560,6 +565,16 @@ namespace RainWorldRandomizer
                     "GATE_OE_SU" => [true, false],
                     "GATE_UW_SL" => Scug is "Artificer" or "Spear" ? [true, true] : [false, false],
                     "GATE_SL_VS" => Scug is "Artificer" ? [false, false] : [true, true],
+
+                    "Warp-WBLA-WSSR" => [true, false],
+                    "Warp-WARD-WSSR" => [true, false],
+                    "Warp-WORA-WSSR" => [false, true],
+                    "Warp-WORA-WSUR" => [false, true],
+                    "Warp-WGWR-WORA" => [true, false],
+                    "Warp-WHIR-WORA" => [true, false],
+                    "Warp-WDSR-WORA" => [true, false],
+                    "Warp-WARA-WRSA" => [false, true],
+
                     _ => [true, true],
                 };
             }
@@ -570,6 +585,7 @@ namespace RainWorldRandomizer
             public static IEnumerable<string> GetAccessibleNodes(IEnumerable<string> keys)
             {
                 List<string> ret = [GetNodeName(ActualStartRegion), "<FQ>", "<P>"];
+                if (Scug is "Watcher") keys = keys.Union(watcherUnkeyableWarps);
                 Dictionary<string, bool[]> keyDict = keys.ToDictionary(x => x, CanUseGate);
                 bool updated = true;
                 while (updated)
