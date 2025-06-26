@@ -258,11 +258,11 @@ namespace RainWorldRandomizer
                 Dictionary<string, bool> gates = 
                     Scug is not "Watcher" 
                     ? Plugin.RandoManager.GetGatesStatus()
-                    : WatcherIntegration.Items.CollectedStaticKeys.ToDictionary(x => x, x => true);
+                    : Items.CollectedStaticKeys.ToDictionary(x => x, x => true);
 
                 foreach (var pair in gates)
                 {
-                    if (connectors.TryGetValue(pair.Key, out Connector connector))
+                    if (connectors.TryGetValue(Scug is "Watcher" ? $"Warp-{pair.Key}" : pair.Key, out Connector connector))
                     {
                         connector.Color = pair.Value ? COLOR_ACCESSIBLE : COLOR_INACCESSIBLE;
                     }
@@ -577,12 +577,27 @@ namespace RainWorldRandomizer
                     updated = false;
                     foreach (var pair in keyDict)
                     {
-                        string[] split = Scug is "Watcher" ? $"Warp-{pair.Key}".Split('-') : pair.Key.Split('_');
-                        string left = GetNodeName(split[1]);
-                        string right = GetNodeName(split[2]);
-                        bool[] usable = pair.Value;
-                        if (usable[0] && ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); updated = true; }
-                        else if (usable[1] && !ret.Contains(left) && ret.Contains(right)) { ret.Add(left); updated = true; }
+                        if (Scug is "Watcher")
+                        {
+                            string[] split = pair.Key.Split('-');
+                            string left = GetNodeName(split[0]);
+                            string right = GetNodeName(split[1]);
+                            bool[] usable = pair.Value;
+                            if (usable[0] && ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); ret.Add($"{right}*"); updated = true; }
+                            else if (usable[1] && !ret.Contains(left) && ret.Contains(right)) { ret.Add(left); ret.Add($"{left}*"); updated = true; }
+
+                            if (usable[0] && ret.Contains($"{left}*") && !ret.Contains($"{right}*")) { ret.Add(right); ret.Add($"{right}*"); updated = true; }
+                            else if (usable[1] && !ret.Contains($"{left}*") && ret.Contains($"{right}*")) { ret.Add(left); ret.Add($"{left}*"); updated = true; }
+                        }
+                        else
+                        {
+                            string[] split = pair.Key.Split('_');
+                            string left = GetNodeName(split[1]);
+                            string right = GetNodeName(split[2]);
+                            bool[] usable = pair.Value;
+                            if (usable[0] && ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); updated = true; }
+                            else if (usable[1] && !ret.Contains(left) && ret.Contains(right)) { ret.Add(left); updated = true; }
+                        }
                     }
                 }
                 return ret;
@@ -831,6 +846,7 @@ namespace RainWorldRandomizer
             {
                 if (Plugin.RandoManager is not ManagerArchipelago) return;
                 if (!nodes.TryGetValue(GetNodeName(region), out Node node)) return;
+                if (Scug is "Watcher" && region.EndsWith("*")) region = region.Substring(0, 4);
 
                 if (highlightedNode != null) highlightedNode.current = false;
                 highlightedNode = node;
