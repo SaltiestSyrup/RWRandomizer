@@ -135,11 +135,11 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Port for server connection", null, "",
                     ["Port"]));
 
-            RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
+            RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", " ",
                 new ConfigurableInfo("Your slot name for server connection", null, "",
                     ["Slot Name"]));
 
-            RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
+            RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", " ",
                 new ConfigurableInfo("Password for server connection (Optional)", null, "",
                     ["Password"]));
 
