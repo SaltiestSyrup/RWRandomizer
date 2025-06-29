@@ -69,6 +69,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 string region = roomName.Region();
                 WarpSourceKind sourceKind = GetWarpSourceKind(roomName);
                 DynWarpMode relevantMode = sourceKind == WarpSourceKind.Throne ? modeThrone : modeNormal;
+                List<string> candidates = [];
 
                 // For a predetermined mode, we return a single room early instead of running the original method.
                 if (relevantMode.Predetermined())
@@ -79,45 +80,56 @@ namespace RainWorldRandomizer.WatcherIntegration
                         && !Items.CollectedDynamicKeys.Contains(region))
                     {
                         failureReason = FailureReason.MissingSourceKey;
-                        return [];
                     }
                     // Specifically in the Throne, we need to index the mapping with the room; otherwise, index with the region.
                     if (predetermination.TryGetValue(sourceKind == WarpSourceKind.Throne ? roomName : region, out string destRoom))
                     {
-                        return [ destRoom ];
+                        candidates = [ destRoom ];
+                    }
+                    else
+                    {
+                        // Ideally this failure state never happens - it would imply either custom regions,
+                        // some sort of generation failure, or incomplete slot data.
+                        failureReason = FailureReason.MissingPredetermination;
+                    }
+                }
+                else if (relevantMode is not DynWarpMode.Ignored)
+                {
+                    // For a non-predetermined mode, get the ordinarily valid candidate targets.
+                    candidates = orig(room, spreadingRot);
+
+                    // If, for some reason, there are no valid candidate to begin with,
+                    // something else has gone wrong and we don't need to bother with a custom failure reason.
+                    if (candidates.Count == 0) return candidates;
+                    //Plugin.Log.LogDebug($"Original candidates for dynamic warp: [{string.Join(",", candidates)}]");
+
+                    // Otherwise, we may need to filter this list, depending on the warp mode.
+                    IEnumerable<string> regionFilter = null;
+                    FailureReason? latentFR = null;
+                    switch (relevantMode)
+                    {
+                        case DynWarpMode.Visited: regionFilter = visitedRegions; latentFR = FailureReason.NoOtherVisitedRegions; break;
+                        case DynWarpMode.StaticPool: regionFilter = targetPool; latentFR = FailureReason.NoValidStaticPoolTargets; break;
+                        case DynWarpMode.UnlockablePool: regionFilter = Items.CollectedDynamicKeys; latentFR = FailureReason.NoUsableDynamicKeys; break;
                     }
 
-                    // Ideally this failure state never happens - it would imply either custom regions,
-                    // some sort of generation failure, or incomplete slot data.
-                    failureReason = FailureReason.MissingPredetermination;
-                    return [];
+                    if (regionFilter != null)
+                    {
+                        regionFilter = regionFilter.Select(x => x.ToUpperInvariant());
+                        candidates = [.. candidates.Where(x => regionFilter.Contains(x.Region()))];
+                        if (candidates.Count == 0) failureReason = latentFR;
+                    }
+                    //Plugin.Log.LogDebug($"Filtered candidates for dynamic warp: [{string.Join(",", candidates)}]");
                 }
 
-                // For a non-predetermined mode, get the ordinarily valid candidate targets.
-                List<string> candidates = orig(room, spreadingRot);
-
-                // If, for some reason, there are no valid candidate to begin with,
-                // something else has gone wrong and we don't need to bother with a custom failure reason.
-                if (candidates.Count == 0) return candidates;
-                //Plugin.Log.LogDebug($"Original candidates for dynamic warp: [{string.Join(",", candidates)}]");
-
-                // Otherwise, we may need to filter this list, depending on the warp mode.
-                IEnumerable<string> regionFilter = null;
-                FailureReason? latentFR = null;
-                switch (relevantMode)
+                // If we aren't allowing warps to fail, find a WORA target instead.
+                if (candidates.Count == 0 && warpFailureMode is DynWarpFailureMode.OuterRim)
                 {
-                    case DynWarpMode.Visited: regionFilter = visitedRegions; latentFR = FailureReason.NoOtherVisitedRegions; break;
-                    case DynWarpMode.StaticPool: regionFilter = targetPool; latentFR = FailureReason.NoValidStaticPoolTargets; break;
-                    case DynWarpMode.UnlockablePool: regionFilter = Items.CollectedDynamicKeys; latentFR = FailureReason.NoUsableDynamicKeys; break;
+                    failureReason = null;
+                    // If no targets are normally possible for some reason, ensure that we still go to WORA.
+                    candidates = Watcher.WarpPoint.GetAvailableOuterRimWarpTargets(room, false) is { Count: > 0 } targetsWORA ? targetsWORA : ["WORA_START"];
                 }
 
-                if (regionFilter != null)
-                {
-                    regionFilter = regionFilter.Select(x => x.ToUpperInvariant());
-                    candidates = [.. candidates.Where(x => regionFilter.Contains(x.Region()))];
-                    if (candidates.Count == 0) failureReason = latentFR;
-                }
-                //Plugin.Log.LogDebug($"Filtered candidates for dynamic warp: [{string.Join(",", candidates)}]");
                 return candidates;
             }
 
