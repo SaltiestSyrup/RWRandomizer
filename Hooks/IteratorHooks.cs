@@ -208,26 +208,18 @@ namespace RainWorldRandomizer
         /// </summary>
         static void PebblesMeetYellowOrGourmandUpdateIL(ILContext il)
         {
-            try
-            {
-                ILCursor c = new(il);
-                c.GotoNext(
-                    x => x.MatchLdfld<SSOracleBehavior.SubBehavior>(nameof(SSOracleBehavior.SubBehavior.owner)),
-                    x => x.MatchLdfld<SSOracleBehavior>(nameof(SSOracleBehavior.playerEnteredWithMark))
-                    );
+            ILCursor c = new(il);
+            c.GotoNext(
+                x => x.MatchLdfld<SSOracleBehavior.SubBehavior>(nameof(SSOracleBehavior.SubBehavior.owner)),
+                x => x.MatchLdfld<SSOracleBehavior>(nameof(SSOracleBehavior.playerEnteredWithMark))
+                );
 
-                c.MoveAfterLabels();
+            c.MoveAfterLabels();
 
-                // Force this check to always return false
-                c.Index += 2;
-                c.Emit(OpCodes.Pop);
-                c.EmitDelegate(() => false);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for PebblesUpdateYellow");
-                Plugin.Log.LogError(e);
-            }
+            // Force this check to always return false
+            c.Index += 2;
+            c.Emit(OpCodes.Pop);
+            c.EmitDelegate(() => false);
         }
 
         /// <summary>
@@ -235,60 +227,52 @@ namespace RainWorldRandomizer
         /// </summary>
         static void PebblesMeetArtiUpdateIL(ILContext il)
         {
-            try
-            {
-                ILCursor c = new(il);
-                c.GotoNext(
-                    MoveType.Before,
-                    x => x.MatchStfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
-                    );
+            ILCursor c = new(il);
+            c.GotoNext(
+                MoveType.Before,
+                x => x.MatchStfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
+                );
 
-                c.Emit(OpCodes.Pop); // Only set robo if it has been given
-                c.EmitDelegate(() => { return Plugin.RandoManager.GivenRobo; });
+            c.Emit(OpCodes.Pop); // Only set robo if it has been given
+            c.EmitDelegate(() => { return Plugin.RandoManager.GivenRobo; });
 
-                // ------
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner))),
-                    x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SSOracleBehaviorAction).GetField(nameof(MoreSlugcatsEnums.SSOracleBehaviorAction.MeetArty_Talking))),
-                    x => x.MatchStfld(typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)))
-                    );
+            // ------
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner))),
+                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SSOracleBehaviorAction).GetField(nameof(MoreSlugcatsEnums.SSOracleBehaviorAction.MeetArty_Talking))),
+                x => x.MatchStfld(typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)))
+                );
 
-                // Throw Arty out after trying to give mark if no robot
-                c.Index--;
-                c.Emit(OpCodes.Pop);
-                c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.ThrowOut_ThrowOut)));
+            // Throw Arty out after trying to give mark if no robot
+            c.Index--;
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.ThrowOut_ThrowOut)));
 
-                c.Index++;
-                c.Emit(OpCodes.Ldarg_0);
-                c.Emit(OpCodes.Callvirt, typeof(SSOracleBehavior.SubBehavior).GetMethod(nameof(SSOracleBehavior.SubBehavior.Deactivate)));
+            c.Index++;
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Callvirt, typeof(SSOracleBehavior.SubBehavior).GetMethod(nameof(SSOracleBehavior.SubBehavior.Deactivate)));
 
-                // ------
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance)),
-                    x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.myRobot))),
-                    x => x.MatchLdflda(out _),
-                    x => x.MatchInitobj(out _)
-                    );
+            // ------
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance)),
+                x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.myRobot))),
+                x => x.MatchLdflda(out _),
+                x => x.MatchInitobj(out _)
+                );
 
-                ILLabel jump = c.MarkLabel();
+            ILLabel jump = c.MarkLabel();
 
-                // Add a null check for this.player.myRobot
-                c.Index -= 5;
-                c.Emit(OpCodes.Ldarg_0);
-                c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance));
-                c.Emit(OpCodes.Ldfld, typeof(Player).GetField(nameof(Player.myRobot)));
-                c.EmitDelegate<Func<AncientBot, bool>>(r => { return r == null; });
-                c.Emit(OpCodes.Brfalse, jump);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for PebblesMeetArtiUpdateIL");
-                Plugin.Log.LogError(e);
-            }
+            // Add a null check for this.player.myRobot
+            c.Index -= 5;
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance));
+            c.Emit(OpCodes.Ldfld, typeof(Player).GetField(nameof(Player.myRobot)));
+            c.EmitDelegate<Func<AncientBot, bool>>(r => { return r == null; });
+            c.Emit(OpCodes.Brfalse, jump);
         }
 
         /// <summary>

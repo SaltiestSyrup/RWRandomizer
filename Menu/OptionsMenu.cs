@@ -135,6 +135,7 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Port for server connection", null, "",
                     ["Port"]));
 
+            // Default value must contain a space to allow spaces in the field
             RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", " ",
                 new ConfigurableInfo("Your slot name for server connection", null, "",
                     ["Slot Name"]));

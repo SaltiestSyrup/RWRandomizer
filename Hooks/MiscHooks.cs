@@ -175,48 +175,24 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Disable start game button if proper conditions are not met
         /// </summary>
-        // TODO: Rewrite this hook to shorten goto
         private static void SlugcatSelectMenuUpdateIL(ILContext il)
         {
-            try
+            ILCursor c1 = new(il);
+
+            // Check slugcat unlocked at 0362
+            c1.GotoNext(MoveType.After, 
+                x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.SlugcatUnlocked)))
+                );
+            c1.Emit(OpCodes.Ldarg_0);
+            c1.EmitDelegate(CanPlaySlugcat);
+
+            static bool CanPlaySlugcat(bool orig, SlugcatSelectMenu self)
             {
-                ILCursor c1 = new(il);
+                if (!RandoOptions.archipelago.Value) return orig;
 
-                ILLabel resultJump = null;
-                c1.GotoNext(MoveType.Before,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.slugcatPageIndex))),
-                    x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.colorFromIndex))),
-                    x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.SlugcatUnlocked))),
-                    x => x.MatchLdcI4(0),
-                    x => x.MatchCeq(),
-                    x => x.MatchBr(out resultJump)
-                    );
-
-                // Move the label a step back, to ldc.i4.1
-                ILCursor c2 = new(il);
-                c2.GotoLabel(resultJump, MoveType.Before);
-                c2.Index--;
-                resultJump = c2.MarkLabel();
-
-                c1.Emit(OpCodes.Ldarg_0);
-                // When AP is enabled, start game button should only be available if AP is connected and the correct slugcat is chosen
-                c1.EmitDelegate<Func<SlugcatSelectMenu, bool>>((self) =>
-                {
-                    return !RandoOptions.archipelago.Value
-                        || (Plugin.RandoManager is ManagerArchipelago manager
-                            && manager.locationsLoaded
-                            && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex)
-                            && ModManager.MSC == ArchipelagoConnection.IsMSC);
-                });
-                c1.Emit(OpCodes.Brfalse, resultJump);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for SlugcatSelectMenuUpdate");
-                Plugin.Log.LogError(e);
+                return Plugin.RandoManager is ManagerArchipelago manager
+                    && manager.locationsLoaded
+                    && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex);
             }
         }
 
@@ -488,7 +464,6 @@ namespace RainWorldRandomizer
             }
 
             c.EmitDelegate(TreatSeedsAsCobs);
-
         }
 
         [Obsolete("Not currently applied")]
