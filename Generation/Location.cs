@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace RainWorldRandomizer.Generation
 {
     public class Location(string id, Location.Type type, AccessRule accessRule)
@@ -21,6 +16,7 @@ namespace RainWorldRandomizer.Generation
         }
 
         public string id = id;
+        public bool hasReached;
         public Type type = type;
         public AccessRule accessRule = accessRule;
 
