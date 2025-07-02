@@ -50,6 +50,8 @@ namespace RainWorldRandomizer.Generation
 
         public override string ToString()
         {
+            if (ReqName is "") return "Always met";
+            if (ReqName is IMPOSSIBLE_ID) return "Impossible";
             return $"Has item {ReqName}";
         }
     }
@@ -67,7 +69,7 @@ namespace RainWorldRandomizer.Generation
 
         public override bool IsMet(State state)
         {
-            return ReqName is not null && state.Regions.Contains(ReqName);
+            return ReqName is not null && state.HasRegion(ReqName);
         }
 
         public override bool IsPossible(State state)

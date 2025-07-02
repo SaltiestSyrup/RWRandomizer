@@ -20,14 +20,51 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public HashSet<Location> AvailableLocations { get; private set; }
 
+        public HashSet<RandoRegion> AllRegions { get; private set; }
+        public HashSet<RandoRegion> UnreachedRegions { get; private set; }
+        public HashSet<RandoRegion> AvailableRegions { get; private set; }
+
         public SlugcatStats.Name Slugcat { get; private set; } = slugcat;
         public SlugcatStats.Timeline Timeline { get; private set; } = timeline;
         public int MaxKarma { get; private set; } = startKarma;
         public HashSet<string> SpecialProg { get; private set; } = [];
-        public HashSet<string> Regions { get; private set; } = [];
+        //public HashSet<string> Regions { get; private set; } = [];
         public HashSet<string> Gates { get; private set; } = [];
         public HashSet<CreatureTemplate.Type> Creatures { get; private set; } = [];
         public HashSet<AbstractPhysicalObject.AbstractObjectType> Objects { get; private set; } = [];
+
+        public void DefineLocs(HashSet<RandoRegion> allRegions)
+        {
+            AllRegions = allRegions;
+            AllLocations = [];
+
+            foreach (RandoRegion region in AllRegions)
+            {
+                foreach(Location loc in region.allLocations)
+                {
+                    // If a location with the same name already exists, combine their AccessRules
+                    // and consider them the same location. This effectively means when the same
+                    // location is collectible in multiple places, it will be deemed accessible
+                    // once BOTH conditions are met.
+                    if (AllLocations.Contains(loc, new LocationIDComparer()))
+                    {
+                        Location oldLoc = AllLocations.First(l => l.id == loc.id);
+                        AccessRule mergedRule = new CompoundAccessRule(
+                            [oldLoc.accessRule, loc.accessRule],
+                            CompoundAccessRule.CompoundOperation.All);
+                        
+                        loc.accessRule = mergedRule;
+                        oldLoc = loc;
+                    }
+                    else AllLocations.Add(loc);
+                }
+            }
+
+            UnreachedRegions = [.. AllRegions];
+            AvailableRegions = [];
+            UnreachedLocations = [.. AllLocations];
+            AvailableLocations = [];
+        }
 
         public void DefineLocs(HashSet<Location> allLocs)
         {
@@ -59,10 +96,15 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Directly add a region to this state
         /// </summary>
-        /// <param name="regionShort"></param>
-        public void AddRegion(string regionShort)
+        /// <param name="ID"></param>
+        public void AddRegion(string ID)
         {
-            Regions.Add(regionShort);
+            RandoRegion region = AllRegions.First(r => r.ID == ID);
+            UnreachedRegions.Remove(region);
+            AvailableRegions.Add(region);
+            region.hasReached = true;
+            AddRegionCreaturesAndObjects(region);
+            //Regions.Add(regionShort);
             RecalculateState();
         }
 
@@ -72,7 +114,7 @@ namespace RainWorldRandomizer.Generation
         public void AddGate(string gateName)
         {
             Gates.Add(gateName);
-            UpdateGate(gateName);
+            //UpdateGate(gateName);
             RecalculateState();
         }
 
@@ -86,6 +128,16 @@ namespace RainWorldRandomizer.Generation
             RecalculateState();
         }
 
+        public bool HasRegion(string regionShort)
+        {
+            return AvailableRegions.Any(r => r.ID == regionShort);
+        }
+
+        public bool HasAllRegions()
+        {
+            return AllRegions.SetEquals(AvailableRegions);
+        }
+
         public Location PopRandomLocation(ref Random random)
         {
             if (AvailableLocations.Count == 0) return null;
@@ -95,47 +147,100 @@ namespace RainWorldRandomizer.Generation
             return chosen;
         }
 
+        public void FindAndRemoveLocation(Location loc)
+        {
+            AllLocations.Remove(loc);
+            UnreachedLocations.Remove(loc);
+            AvailableLocations.Remove(loc);
+
+            foreach (RandoRegion region in AllRegions)
+            {
+                region.allLocations.Remove(loc);
+            }
+        }
+
         /// <summary>
         /// Recompute the current State by searching unreached locations for newly reachable ones
         /// </summary>
         private void RecalculateState()
         {
-            // Loop through and update every gate in state
-            bool madeProgress;
-            do
-            {
-                madeProgress = false;
-                foreach (string gate in Gates)
-                {
-                    madeProgress |= UpdateGate(gate);
-                }
-            }
-            // If the last loop added a region, it must be searched again
-            while (madeProgress);
+            UpdateRegions();
 
-            // Add any new region's placed objects
-            foreach (string region in Regions)
+            HashSet<Location> newLocs = [];
+            foreach (RandoRegion region in AvailableRegions)
             {
-                string regionLower = region.ToLowerInvariant();
-                for (int i = 0; i < TokenCachePatcher.regionObjects[regionLower].Count; i++)
+                // Skip if region checks are fully accessible
+                if (!region.allLocationsReached)
                 {
-                    if (TokenCachePatcher.regionObjectsAccessibility[regionLower][i].Contains(Slugcat))
-                    {
-                        Objects.Add(TokenCachePatcher.regionObjects[regionLower][i]);
-                    }
-                }
-                for (int j = 0; j < TokenCachePatcher.regionCreatures[regionLower].Count; j++)
-                {
-                    if (TokenCachePatcher.regionCreaturesAccessibility[regionLower][j].Contains(Slugcat))
-                    {
-                        Creatures.Add(TokenCachePatcher.regionCreatures[regionLower][j]);
-                    }
+                    // Find and set status of all newly reached locations
+                    HashSet<Location> newRegionLocs = [.. region.allLocations.Where(r => !r.hasReached && r.CanReach(this))];
+                    foreach (Location loc in newRegionLocs) loc.hasReached = true;
+
+                    if (region.allLocations.All(r => r.hasReached)) region.allLocationsReached = true;
+
+                    newLocs.UnionWith(newRegionLocs);
                 }
             }
 
-            List<Location> newLocs = [.. UnreachedLocations.Where(r => r.CanReach(this))];
+            // Remove any locations that shouldn't be present before adding to available
+            newLocs = [.. UnreachedLocations.Intersect(newLocs)];
+
             UnreachedLocations.ExceptWith(newLocs);
             AvailableLocations.UnionWith(newLocs);
+        }
+
+        /// <summary>
+        /// Recursively find any new regions from current region connections
+        /// </summary>
+        private void UpdateRegions()
+        {
+            List<RandoRegion> newRegions = [];
+            foreach (RandoRegion region in AvailableRegions)
+            {
+                foreach (Connection connection in region.connections)
+                {
+                    // Ignore this connection if both sides are accessible already
+                    if (connection.ConnectedStatus != Connection.ConnectedLevel.OneReached) continue;
+
+                    // Add other region if the directional condition for travel is met
+                    if (connection.CanTravel(this, region))
+                    {
+                        newRegions.Add(connection.OtherSide(region));
+                        region.hasReached = true;
+                        AddRegionCreaturesAndObjects(region);
+                    }
+                }
+            }
+
+            if (newRegions.Count > 0)
+            {
+                UnreachedRegions.ExceptWith(newRegions);
+                AvailableRegions.UnionWith(newRegions);
+                UpdateRegions();
+            }
+        }
+
+        /// <summary>
+        /// Add new creatures and objects made accessible by a region
+        /// </summary>
+        private void AddRegionCreaturesAndObjects(RandoRegion region)
+        {
+            if (region.isSpecial) return;
+            string regionLower = region.ID.ToLowerInvariant();
+            for (int i = 0; i < TokenCachePatcher.regionObjects[regionLower].Count; i++)
+            {
+                if (TokenCachePatcher.regionObjectsAccessibility[regionLower][i].Contains(Slugcat))
+                {
+                    Objects.Add(TokenCachePatcher.regionObjects[regionLower][i]);
+                }
+            }
+            for (int j = 0; j < TokenCachePatcher.regionCreatures[regionLower].Count; j++)
+            {
+                if (TokenCachePatcher.regionCreaturesAccessibility[regionLower][j].Contains(Slugcat))
+                {
+                    Creatures.Add(TokenCachePatcher.regionCreatures[regionLower][j]);
+                }
+            }
         }
 
         /// <summary>
@@ -143,43 +248,43 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         /// <param name="gateName">GATE_XX_YY</param>
         /// <returns>Whether a new region was added from this gate</returns>
-        private bool UpdateGate(string gateName)
-        {
-            string[] gate = Regex.Split(gateName, "_");
-            string regLeft = Plugin.ProperRegionMap[gate[1]];
-            string regRight = Plugin.ProperRegionMap[gate[2]];
-
-            // One way gate logic
-            if (Constants.OneWayGates.ContainsKey(gateName))
-            {
-                // If the gate only travels right, check for left region access
-                if (Regions.Contains(regLeft)
-                    && !Constants.OneWayGates[gateName]
-                    && !Regions.Contains(regRight))
-                {
-                    Regions.Add(regRight);
-                    return true;
-                }
-                // If the gate only travels left, check for right region access
-                if (Regions.Contains(regRight)
-                    && Constants.OneWayGates[gateName]
-                    && !Regions.Contains(regLeft))
-                {
-                    Regions.Add(regLeft);
-                    return true;
-                }
-                return false;
-            }
-
-            if (Regions.Contains(regLeft) ^ Regions.Contains(regRight))
-            {
-                Regions.Add(regLeft);
-                Regions.Add(regRight);
-                return true;
-            }
-
-            return false;
-        }
+        //private bool UpdateGate(string gateName)
+        //{
+        //    string[] gate = Regex.Split(gateName, "_");
+        //    string regLeft = Plugin.ProperRegionMap[gate[1]];
+        //    string regRight = Plugin.ProperRegionMap[gate[2]];
+        //
+        //    // One way gate logic
+        //    if (Constants.OneWayGates.ContainsKey(gateName))
+        //    {
+        //        // If the gate only travels right, check for left region access
+        //        if (Regions.Contains(regLeft)
+        //            && !Constants.OneWayGates[gateName]
+        //            && !Regions.Contains(regRight))
+        //        {
+        //            Regions.Add(regRight);
+        //            return true;
+        //        }
+        //        // If the gate only travels left, check for right region access
+        //        if (Regions.Contains(regRight)
+        //            && Constants.OneWayGates[gateName]
+        //            && !Regions.Contains(regLeft))
+        //        {
+        //            Regions.Add(regLeft);
+        //            return true;
+        //        }
+        //        return false;
+        //    }
+        //
+        //    if (Regions.Contains(regLeft) ^ Regions.Contains(regRight))
+        //    {
+        //        Regions.Add(regLeft);
+        //        Regions.Add(regRight);
+        //        return true;
+        //    }
+        //
+        //    return false;
+        //}
     }
 
     /// <summary>

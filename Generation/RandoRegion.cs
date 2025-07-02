@@ -3,15 +3,16 @@ using System.Collections.Generic;
 
 namespace RainWorldRandomizer.Generation
 {
-    public class RandoRegion(string ID, HashSet<Location> locations, HashSet<Connection> connections)
+    public class RandoRegion(string ID, HashSet<Location> locations)
     {
         public string ID = ID;
+        /// <summary> True if this region isn't a normal in-game region ID </summary>
+        public bool isSpecial = !Region.GetFullRegionOrder().Contains(ID);
         public bool hasReached = false;
         public bool allLocationsReached = false;
 
         public HashSet<Location> allLocations = locations;
-        public HashSet<Connection> connections = connections;
-        
+        public HashSet<Connection> connections = [];
 
         public RandoRegion NewSubregion(string ID, HashSet<Location> locations, HashSet<Connection> connections, AccessRule rule)
         {
@@ -28,8 +29,8 @@ namespace RainWorldRandomizer.Generation
             allLocations.ExceptWith(locations);
             this.connections.ExceptWith(connections);
 
-            RandoRegion output = new(ID, locations, connections);
-            output.connections.Add(new($"SUBREG_{this.ID}_{ID}", [this, output], rules));
+            RandoRegion output = new(ID, locations);
+            output.connections = [.. connections, new($"SUBREG_{this.ID}_{ID}", [this, output], rules)];
 
             return output;
         }
