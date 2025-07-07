@@ -2,12 +2,14 @@ using MonoMod.Utils;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using UnityEngine;
 using Random = System.Random;
 
 namespace RainWorldRandomizer.Generation
@@ -27,7 +29,8 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public static Dictionary<string, AccessRule> globalRuleOverrides = [];
         /// <summary>
-        /// Used to override rules for locations as specific slugcats. Applies on top of <see cref="globalRuleOverrides"/>, taking priority over all if playing as the relevant slugcat
+        /// Used to override rules for locations as specific slugcats. Applies on top of <see cref="globalRuleOverrides"/>, 
+        /// taking priority over all if playing as the relevant slugcat
         /// </summary>
         public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> slugcatRuleOverrides = [];
         /// <summary>
@@ -35,6 +38,15 @@ namespace RainWorldRandomizer.Generation
         /// Rules must be an array of size 2, 0 being the rule for travelling right, and 1 being the rule for travelling left
         /// </summary>
         public static Dictionary<string, AccessRule[]> connectionRuleOverrides = [];
+        /// <summary>
+        /// Used to divide regions into multiple parts. To create ome, define a SubregionBlueprint with the base region, 
+        /// a new subregion ID, and the locations and connections it should affect
+        /// </summary>
+        public static HashSet<SubregionBlueprint> manualSubregions = [];
+        /// <summary>
+        /// Used to create connections where they wouldn't be auto-generated.
+        /// </summary>
+        public static HashSet<ConnectionBlueprint> manualConnections = [];
 
         /// <summary>
         /// Combination of <see cref="globalRuleOverrides"/> and <see cref="slugcatRuleOverrides"/> populated in instance constructor.
@@ -596,30 +608,93 @@ namespace RainWorldRandomizer.Generation
         private void ApplyRuleOverrides()
         {
             generationLog.AppendLine("APPLY SPECIAL RULES");
-            foreach (var rule in RuleOverrides)
+
+            // Individual locations
+            foreach (var rule in ruleOverrides)
             {
                 // Find the location by id and set its rule to the override
-                Location loc = state.AllLocations.FirstOrDefault(l => l.id == rule.Key);
-                if (loc is not null)
+                Location loc = state.AllLocations.FirstOrDefault(l => l.ID == rule.Key);
+                if (loc is null)
                 {
-                    if (rule.Value.IsPossible(state))
-                    {
-                        loc.accessRule = rule.Value;
-                        generationLog.AppendLine($"Applied custom rule to {rule.Key}");
-                    }
-                    else
-                    {
-                        // Impossible locations are removed from state
-                        state.FindAndRemoveLocation(loc);
-                        generationLog.AppendLine($"Removed impossible location: {rule.Key}");
-                    }
+                    generationLog.AppendLine($"Skipping override for non-existing location {rule.Key}");
+                    continue;
                 }
+
+                if (rule.Value.IsPossible(state))
+                {
+                    loc.accessRule = rule.Value;
+                    generationLog.AppendLine($"Applied custom rule to location: {rule.Key}");
+                }
+                else
+                {
+                    // Impossible locations are removed from state
+                    state.FindAndRemoveLocation(loc);
+                    generationLog.AppendLine($"Removed impossible location: {rule.Key}");
+                }
+            }
+
+            // Create Subregions
+            foreach(SubregionBlueprint subBlueprint in manualSubregions)
+            {
+                RandoRegion baseRegion = state.AllRegions.FirstOrDefault(r => r.ID == subBlueprint.baseRegion);
+                if (baseRegion is null)
+                {
+                    generationLog.AppendLine($"Skipping creating subregion in non-existing region {baseRegion}");
+                    continue;
+                }
+
+                // Defined subregion locations / connections with invalid or not present IDs are simply ignored
+                HashSet<Location> locs = [.. state.AllLocations.Where(l => subBlueprint.locations.Contains(l.ID))];
+                HashSet<Connection> connections = [.. state.AllConnections.Where(l => subBlueprint.connections.Contains(l.ID))];
+
+                RandoRegion subRegion = baseRegion.NewSubregion(subBlueprint.ID, locs, connections, subBlueprint.rules);
+                state.AllRegions.Add(subRegion);
+                state.UnreachedRegions.Add(subRegion);
+            }
+
+            // Connection Overrides
+            foreach (var rule in connectionRuleOverrides)
+            {
+                // Find the connection by id and set its rule to the override
+                Connection connection = state.AllConnections.FirstOrDefault(c => c.ID == rule.Key);
+                if (connection is null)
+                {
+                    generationLog.AppendLine($"Skipping override for non-existing connection {rule.Key}");
+                    continue;
+                }
+                if (rule.Value.Length != 2)
+                {
+                    generationLog.AppendLine($"Connection override for {rule.Key} is invalid as rules are not of length 2");
+                    continue;
+                }
+
+                // TODO: Regions that become impossible will have to be removed from state
+                // Will have to iterate each region's connections, and if none are possible, remove it from state.
+                // Regions will have to be checked like this in a while loop until none were removed.
+                connection.requirements = rule.Value;
+                generationLog.AppendLine($"Applied custom rule to connection: {rule.Key}");
+            }
+
+            // Create manual Connections
+            foreach (ConnectionBlueprint connectionBlueprint in manualConnections)
+            {
+                RandoRegion regionA = state.AllRegions.FirstOrDefault(r => r.ID == connectionBlueprint.regions[0]);
+                RandoRegion regionB = state.AllRegions.FirstOrDefault(r => r.ID == connectionBlueprint.regions[1]);
+                if (regionA is null || regionB is null)
+                {
+                    generationLog.AppendLine($"Skipping creation of connection to non-existing region {connectionBlueprint.regions[0]} or {connectionBlueprint.regions[1]}");
+                    continue;
+                }
+
+                Connection connection = new(connectionBlueprint.ID, [regionA, regionB], connectionBlueprint.rules);
+                regionA.connections.Add(connection);
+                regionB.connections.Add(connection);
             }
 
             generationLog.AppendLine("Final location list:");
             foreach (Location loc in state.AllLocations)
             {
-                generationLog.AppendLine($"\t{loc.id}");
+                generationLog.AppendLine($"\t{loc.ID}");
                 generationLog.AppendLine($"\t\t{loc.accessRule}");
             }
             generationLog.AppendLine();
@@ -704,6 +779,7 @@ namespace RainWorldRandomizer.Generation
             // Determine starting region
             if (RandoOptions.RandomizeSpawnLocation)
             {
+                // TODO: Somehow detect if starting den is within a defined Subregion
                 customStartDen = FindRandomStart(slugcat);
                 generationLog.AppendLine($"Using custom start den: {customStartDen}");
                 state.AddRegion(Plugin.ProperRegionMap[Regex.Split(customStartDen, "_")[0]]);
@@ -785,7 +861,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 itemsToPlace.Remove(chosenItem);
-                generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.id}");
+                generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.ID}");
             }
 
             generationLog.AppendLine("PROGRESSION STEP 2");
@@ -807,7 +883,7 @@ namespace RainWorldRandomizer.Generation
                     generationLog.AppendLine("Failed to aquire access to:");
                     foreach (Location loc in state.UnreachedLocations)
                     {
-                        generationLog.AppendLine($"\t{loc.id}; {loc.accessRule}");
+                        generationLog.AppendLine($"\t{loc.ID}; {loc.accessRule}");
                     }
                     CurrentStage = GenerationStep.FailedGen;
                     throw new GenerationFailureException("Ran out of possible locations");
@@ -822,7 +898,7 @@ namespace RainWorldRandomizer.Generation
 
                 progLeftToPlace = placeableProg.Count - 1;
                 itemsToPlace.Remove(chosenItem);
-                generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.id}");
+                generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.ID}");
             }
             while (progLeftToPlace > 0);
 
@@ -832,7 +908,7 @@ namespace RainWorldRandomizer.Generation
                 generationLog.AppendLine("Failed to aquire access to:");
                 foreach (Location loc in state.UnreachedLocations)
                 {
-                    generationLog.AppendLine($"\t{loc.id}; {loc.accessRule}");
+                    generationLog.AppendLine($"\t{loc.ID}; {loc.accessRule}");
                 }
                 CurrentStage = GenerationStep.FailedGen;
                 throw new GenerationFailureException("Failed to reach all locations");
@@ -855,7 +931,7 @@ namespace RainWorldRandomizer.Generation
                 Item chosenItem = itemsToPlace[randomState.Next(itemsToPlace.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
                 itemsToPlace.Remove(chosenItem);
-                generationLog.AppendLine($"Placed filler \"{chosenItem.id}\" at {chosenLocation.id}");
+                generationLog.AppendLine($"Placed filler \"{chosenItem.id}\" at {chosenLocation.ID}");
             }
         }
 
@@ -866,13 +942,13 @@ namespace RainWorldRandomizer.Generation
             Dictionary<string, Unlock> output = [];
             foreach (var placement in RandomizedGame)
             {
-                if (!output.ContainsKey(placement.Key.id))
+                if (!output.ContainsKey(placement.Key.ID))
                 {
-                    output.Add(placement.Key.id, ItemToUnlock(placement.Value));
+                    output.Add(placement.Key.ID, ItemToUnlock(placement.Value));
                 }
                 else
                 {
-                    Plugin.Log.LogWarning($"Tried to place double location: {placement.Key.id}");
+                    Plugin.Log.LogWarning($"Tried to place double location: {placement.Key.ID}");
                 }
             }
             return output;
@@ -936,59 +1012,90 @@ namespace RainWorldRandomizer.Generation
                 slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, []);
             }
 
-            // SB ravine checks only reachable from LF side
-            AccessRule subRavineRule = new CompoundAccessRule(
-            [
-                new GateAccessRule("GATE_LF_SB"),
-                new RegionAccessRule("LF"),
-                new RegionAccessRule("SB")
-            ], CompoundAccessRule.CompoundOperation.All);
-            globalRuleOverrides.Add("Echo-SB", subRavineRule);
-            globalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
+            // Cannot climb SB Ravine
+            manualSubregions.Add(new("SB", "SB_Ravine", 
+                ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0"], 
+                ["GATE_LF_SB"],
+                [new(AccessRule.IMPOSSIBLE_ID), new()]));
 
             // MSC specific rules
             if (ModManager.MSC)
             {
-                // OE isn't filtered out by timeline so it needs a manual rule here
-                globalRuleOverrides.Add("Region-OE", new MultiSlugcatAccessRule(
+                // Subeterranean to Outer Expanse
+                connectionRuleOverrides.Add("GATE_SB_OE", 
                 [
-                    SlugcatStats.Name.White,
-                    SlugcatStats.Name.Yellow,
-                    MoreSlugcatsEnums.SlugcatStatsName.Gourmand
-                ]));
-                // Outer Expanse requires the Mark for Gourmand
-                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Gourmand].Add("Region-OE", new AccessRule("The_Mark"));
-
-                // if Arty, Metro requires drone and mark
-                // else require option
-                globalRuleOverrides.Add("Region-LC", new OptionAccessRule("ForceOpenMetropolis"));
-                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Artificer].Add("Region-LC", new CompoundAccessRule(
-                [
-                    new("The_Mark"),
-                    new("IdDrone")
-                ], CompoundAccessRule.CompoundOperation.All));
-
-                // Submerged Superstructure should only be open if playing Riv or setting allows it
-                globalRuleOverrides.Add("Region-MS", new CompoundAccessRule(
-                [
-                    new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet),
-                    new OptionAccessRule("ForceOpenSubmerged")
-                ], CompoundAccessRule.CompoundOperation.Any));
-
-                // Filtration pearl only reachable from OE
-                globalRuleOverrides.Add("Pearl-SU_filt", new CompoundAccessRule(
-                [
-                    new RegionAccessRule("OE"),
-                    new RegionAccessRule("SU"),
-                    new MultiSlugcatAccessRule(
+                    // Gate AND (Survivor OR Monk OR (Gourmand AND The Mark))
+                    new CompoundAccessRule(
                     [
-                        SlugcatStats.Name.White,
-                        SlugcatStats.Name.Yellow,
-                        MoreSlugcatsEnums.SlugcatStatsName.Gourmand
-                    ])
-                ], CompoundAccessRule.CompoundOperation.All));
-                // Spearmaster can easily reach SU_filt if spawn is not randomized
-                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Spear].Add("Pearl-SU_filt", new OptionAccessRule("RandomizeSpawnLocation", true));
+                        new GateAccessRule("GATE_SB_OE"),
+                        new CompoundAccessRule(
+                        [
+                            new MultiSlugcatAccessRule([SlugcatStats.Name.White, SlugcatStats.Name.Yellow]),
+                            new CompoundAccessRule(
+                            [
+                                new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Gourmand),
+                                new("The_Mark")
+                            ], CompoundAccessRule.CompoundOperation.All)
+                        ], CompoundAccessRule.CompoundOperation.Any)
+                    ], CompoundAccessRule.CompoundOperation.All),
+                    // Gate
+                    new GateAccessRule("GATE_SB_OE")
+                ]);
+
+                // Outer Expanse to Outskirts
+                connectionRuleOverrides.Add("GATE_OE_SU",
+                [
+                    // Free, gate always open
+                    new(),
+                    // Impossible
+                    new(AccessRule.IMPOSSIBLE_ID)
+                ]);
+
+                // Exterior to Metropolis 
+                connectionRuleOverrides.Add("GATE_UW_LC",
+                [
+                    // Gate AND (Metro option OR (Artificer AND The Mark AND Citizen ID Drone))
+                    new CompoundAccessRule(
+                    [
+                        new GateAccessRule("GATE_UW_LC"),
+                        new CompoundAccessRule(
+                        [
+                            new OptionAccessRule("ForceOpenMetropolis"),
+                            new CompoundAccessRule(
+                            [
+                                new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Artificer),
+                                new("The_Mark"),
+                                new("IdDrone")  
+                            ], CompoundAccessRule.CompoundOperation.All)
+                        ], CompoundAccessRule.CompoundOperation.Any)
+                    ], CompoundAccessRule.CompoundOperation.All),
+                    // Gate
+                    new GateAccessRule("GATE_UW_LC")
+                ]);
+
+                // Shoreline to Submerged Superstructure
+                connectionRuleOverrides.Add("GATE_MS_SL",
+                [
+                    // Gate AND (Submerged option OR Rivulet)
+                    new CompoundAccessRule(
+                    [
+                        new GateAccessRule("GATE_MS_SL"),
+                        new CompoundAccessRule(
+                        [
+                            new OptionAccessRule("ForceOpenSubmerged"),
+                            new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
+                        ], CompoundAccessRule.CompoundOperation.Any)
+                    ], CompoundAccessRule.CompoundOperation.All),
+                    // Gate
+                    new GateAccessRule("GATE_MS_SL")
+                ]);
+
+                // Cannot reach filtration from Outskirts
+                // TODO: What if Spearmaster default starts in filtration? It would be incorrectly removed from state in that case.
+                manualSubregions.Add(new SubregionBlueprint("SU", "SU_Filt",
+                    ["Pearl-SU_filt"],
+                    ["GATE_OE_SU"],
+                    [new(AccessRule.IMPOSSIBLE_ID), new()]));
 
                 // Token cache fails to filter this pearl to only Past GW
                 globalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(
@@ -997,17 +1104,9 @@ namespace RainWorldRandomizer.Generation
                     new RegionAccessRule("GW")
                 ], CompoundAccessRule.CompoundOperation.All));
 
-                // This chatlog is also in SB ravine
-                globalRuleOverrides.Add("Broadcast-Chatlog_SB0", subRavineRule);
-
-                // Rubicon isn't blocked by a gate so it never gets marked as accessible
-                // Remove Rubicon from requirements and substitute Karma 10
-                List<AccessRule> travellerRule = [.. SlugcatStats.SlugcatStoryRegions(MoreSlugcatsEnums.SlugcatStatsName.Saint)
-                    .Except(["HR"])
-                    .Select<string, AccessRule>(r => new RegionAccessRule(r))];
-                travellerRule.Add(new KarmaAccessRule(10));
-                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Saint].Add("Passage-Traveller", new CompoundAccessRule(
-                    [.. travellerRule], CompoundAccessRule.CompoundOperation.All));
+                // Create a connection to Rubicon, which has no gate to it
+                manualConnections.Add(new ConnectionBlueprint("FALL_SB_HR", ["SB", "HR"],
+                    [new KarmaAccessRule(10), new(AccessRule.IMPOSSIBLE_ID)]));
             }
 
             // Inbuilt custom region rules
