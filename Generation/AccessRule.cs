@@ -40,6 +40,7 @@ namespace RainWorldRandomizer.Generation
         public virtual bool IsMet(State state)
         {
             if (ReqName.Equals("")) return true;
+            if (ReqName.Equals(IMPOSSIBLE_ID)) return false;
             return state.SpecialProg.Contains(ReqName);
         }
 
@@ -74,7 +75,7 @@ namespace RainWorldRandomizer.Generation
 
         public override bool IsPossible(State state)
         {
-            return Region.GetFullRegionOrder(state.Timeline).Contains(ReqName);
+            return state.AllRegions.Any(r => r.ID == ReqName);
         }
 
         public override string ToString()
@@ -215,7 +216,7 @@ namespace RainWorldRandomizer.Generation
             ReqName = slugcat.value;
         }
 
-        public override bool IsMet(State state) => true;
+        public override bool IsMet(State state) => IsPossible(state);
 
         public override bool IsPossible(State state)
         {
@@ -250,7 +251,7 @@ namespace RainWorldRandomizer.Generation
             ReqName = timeline.value;
         }
 
-        public override bool IsMet(State state) => true;
+        public override bool IsMet(State state) => IsPossible(state);
 
         public override bool IsPossible(State state)
         {
@@ -302,7 +303,7 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
-        public override bool IsMet(State state) => true;
+        public override bool IsMet(State state) => IsPossible(state);
 
         public override bool IsPossible(State state)
         {
@@ -331,7 +332,10 @@ namespace RainWorldRandomizer.Generation
     /// Most notably applies to Passages and Story locations.
     /// These can be chained together to create arbitrarily complex rules for any situation.
     /// </summary>
-    public class CompoundAccessRule : AccessRule
+    /// <param name="rules">Array of rules that this rule will reference</param>
+    /// <param name="operation">The type of operation used to determine if given rules are met</param>
+    /// <param name="valAmount">Optional value utilized by some operations</param>
+    public class CompoundAccessRule(AccessRule[] rules, CompoundAccessRule.CompoundOperation operation, int valAmount = 0) : AccessRule
     {
         public enum CompoundOperation
         {
@@ -349,19 +353,9 @@ namespace RainWorldRandomizer.Generation
             AtLeast
         }
 
-        protected CompoundOperation operation;
-        protected AccessRule[] accessRules;
-        protected int valAmount;
-
-        /// <param name="rules">Array of rules that this rule will reference</param>
-        /// <param name="operation">The type of operation used to determine if given rules are met</param>
-        /// <param name="valAmount">Optional value utilized by some operations</param>
-        public CompoundAccessRule(AccessRule[] rules, CompoundOperation operation, int valAmount = 0)
-        {
-            accessRules = rules;
-            this.operation = operation;
-            this.valAmount = valAmount;
-        }
+        protected CompoundOperation operation = operation;
+        protected AccessRule[] accessRules = rules;
+        protected int valAmount = valAmount;
 
         public override bool IsMet(State state)
         {
