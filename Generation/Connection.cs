@@ -9,11 +9,14 @@ namespace RainWorldRandomizer.Generation
 {
     public class Connection(string ID, RandoRegion[] regions, AccessRule[] rules)
     {
+        /// <summary>
+        /// ID of this connection. All gate connection IDs are the actual gate ID, ex: GATE_SU_DS
+        /// </summary>
         public string ID = ID;
         public RandoRegion[] regions = regions;
         // 0: =>
         // 1: <=
-        private AccessRule[] requirements = rules;
+        public AccessRule[] requirements = rules;
         public ConnectedLevel ConnectedStatus
         {
             get
@@ -57,5 +60,12 @@ namespace RainWorldRandomizer.Generation
             if (region == regions[1]) return regions[0];
             throw new ArgumentException("Given region is not part of this connection", "region");
         }
+    }
+
+    public struct ConnectionBlueprint(string ID, string[] regions, AccessRule[] rules)
+    {
+        public string ID = ID;
+        public string[] regions = regions;
+        public AccessRule[] rules = rules;
     }
 }

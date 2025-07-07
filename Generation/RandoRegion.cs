@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace RainWorldRandomizer.Generation
 {
+    // TODO: Regions will have to store the shelters they contain for starting shelter logic
     public class RandoRegion(string ID, HashSet<Location> locations)
     {
         public string ID = ID;
@@ -34,5 +35,29 @@ namespace RainWorldRandomizer.Generation
 
             return output;
         }
+    }
+
+    public struct SubregionBlueprint(string baseRegion, string ID, string[] locations, string[] connections, AccessRule[] rules)
+    {
+        /// <summary>
+        /// ID of this subregion
+        /// </summary>
+        public string ID = ID;
+        /// <summary>
+        /// The region this subregion is a part of
+        /// </summary>
+        public string baseRegion = baseRegion;
+        /// <summary>
+        /// The location IDs this should contain
+        /// </summary>
+        public string[] locations = locations;
+        /// <summary>
+        /// The connection IDs this should contain
+        /// </summary>
+        public string[] connections = connections;
+        /// <summary>
+        /// The AccessRules of the connection to the main region
+        /// </summary>
+        public AccessRule[] rules = rules;
     }
 }
