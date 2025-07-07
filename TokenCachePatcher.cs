@@ -282,6 +282,20 @@ namespace RainWorldRandomizer
                     regionObjects[region] = [];
                     regionObjectsAccessibility[region] = [];
                 }
+
+                // Hardcode neurons into SL for LttM
+                if (region == "sl")
+                {
+                    regionObjects[region].Add(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer);
+                    regionObjectsAccessibility[region].Add(
+                    [
+                        SlugcatStats.Name.Yellow,
+                        SlugcatStats.Name.White,
+                        MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
+                        MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
+                        MoreSlugcatsEnums.SlugcatStatsName.Saint
+                    ]);
+                }
             });
 
             // Before checking placed object type at 050E
