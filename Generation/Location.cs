@@ -1,7 +1,7 @@
 ﻿
 namespace RainWorldRandomizer.Generation
 {
-    public class Location(string id, Location.Type type, AccessRule accessRule)
+    public class Location(string ID, Location.Type type, AccessRule accessRule)
     {
         public enum Type
         {
@@ -15,14 +15,14 @@ namespace RainWorldRandomizer.Generation
             Shelter
         }
 
-        public string id = id;
+        public string ID = ID;
         public bool hasReached;
         public Type type = type;
         public AccessRule accessRule = accessRule;
 
         public bool CanReach(State state) => accessRule.IsMet(state);
 
-        public override string ToString() => id;
+        public override string ToString() => ID;
     }
 
     //public class PearlLocation : Location

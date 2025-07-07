@@ -8,7 +8,7 @@ namespace RainWorldRandomizer.Generation
     public class State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int startKarma)
     {
         /// <summary>
-        /// Every location in the state. Does not change after initialization.
+        /// Every location in this state. Does not change after initialization.
         /// </summary>
         public HashSet<Location> AllLocations { get; private set; }
         /// <summary>
@@ -20,9 +20,23 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public HashSet<Location> AvailableLocations { get; private set; }
 
+        /// <summary>
+        /// Every region in this state. May be added to during custom rule application.
+        /// </summary>
         public HashSet<RandoRegion> AllRegions { get; private set; }
+        /// <summary>
+        /// All regions not yet accessible. Must be empty at end of generation.
+        /// </summary>
         public HashSet<RandoRegion> UnreachedRegions { get; private set; }
+        /// <summary>
+        /// All regions currently in logic.
+        /// </summary>
         public HashSet<RandoRegion> AvailableRegions { get; private set; }
+
+        /// <summary>
+        /// Every region connection in this state. Does not change after initialization.
+        /// </summary>
+        public HashSet<Connection> AllConnections { get; private set; }
 
         public SlugcatStats.Name Slugcat { get; private set; } = slugcat;
         public SlugcatStats.Timeline Timeline { get; private set; } = timeline;
@@ -40,6 +54,8 @@ namespace RainWorldRandomizer.Generation
 
             foreach (RandoRegion region in AllRegions)
             {
+                AllConnections.UnionWith(region.connections);
+
                 foreach(Location loc in region.allLocations)
                 {
                     // If a location with the same name already exists, combine their AccessRules
@@ -48,7 +64,7 @@ namespace RainWorldRandomizer.Generation
                     // once BOTH conditions are met.
                     if (AllLocations.Contains(loc, new LocationIDComparer()))
                     {
-                        Location oldLoc = AllLocations.First(l => l.id == loc.id);
+                        Location oldLoc = AllLocations.First(l => l.ID == loc.ID);
                         AccessRule mergedRule = new CompoundAccessRule(
                             [oldLoc.accessRule, loc.accessRule],
                             CompoundAccessRule.CompoundOperation.All);
@@ -78,7 +94,7 @@ namespace RainWorldRandomizer.Generation
                 // once either condition is met.
                 if (AllLocations.Contains(loc, new LocationIDComparer()))
                 {
-                    Location mergedLoc = AllLocations.First(l => l.id == loc.id);
+                    Location mergedLoc = AllLocations.First(l => l.ID == loc.ID);
                     mergedLoc.accessRule = new CompoundAccessRule(
                         [ mergedLoc.accessRule, loc.accessRule], 
                         CompoundAccessRule.CompoundOperation.Any);
@@ -294,12 +310,12 @@ namespace RainWorldRandomizer.Generation
     {
         public bool Equals(Location x, Location y)
         {
-            return x.id == y.id;
+            return x.ID == y.ID;
         }
 
         public int GetHashCode(Location obj)
         {
-            return obj.id.GetHashCode();
+            return obj.ID.GetHashCode();
         }
     }
 }
