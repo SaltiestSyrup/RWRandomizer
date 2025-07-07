@@ -516,66 +516,36 @@ namespace RainWorldRandomizer.Generation
                     case "Yellow":
                     case "Gourmand":
                     case "Sofanthiel":
-                        specialLocs.Add(new Location("Meet_LttM", Location.Type.Story,
-                            new CompoundAccessRule(
-                            [
-                                new RegionAccessRule("SL"),
-                                new("The_Mark")
-                            ], CompoundAccessRule.CompoundOperation.All)));
-                        specialLocs.Add(new Location("Meet_FP", Location.Type.Story,
-                            new RegionAccessRule("SS")));
+                        allRegions["SL"].allLocations.Add(new("Meet_LttM", Location.Type.Story, new("The_Mark")));
+                        allRegions["SS"].allLocations.Add(new("Meet_FP", Location.Type.Story, new()));
                         break;
                     // Spear finds LttM in LM
                     case "Spear":
-                        specialLocs.Add(new Location("Meet_LttM_Spear", Location.Type.Story,
-                            new RegionAccessRule("LM")));
-                        specialLocs.Add(new Location("Meet_FP", Location.Type.Story,
-                            new RegionAccessRule("SS")));
+                        allRegions["LM"].allLocations.Add(new("Meet_LttM_Spear", Location.Type.Story, new()));
+                        allRegions["SS"].allLocations.Add(new("Meet_FP", Location.Type.Story, new()));
                         break;
                     // Hunter Saves LttM, which is a seperate check
                     case "Red":
-                        specialLocs.Add(new Location("Save_LttM", Location.Type.Story,
-                            new CompoundAccessRule(
-                            [
-                                new RegionAccessRule("SL"),
-                                new("Object-NSHSwarmer")
-                            ], CompoundAccessRule.CompoundOperation.All)));
-                        specialLocs.Add(new Location("Meet_FP", Location.Type.Story,
-                            new RegionAccessRule("SS")));
+                        allRegions["SL"].allLocations.Add(new("Save_LttM", Location.Type.Story, new("Object-NSHSwarmer")));
+                        allRegions["SL"].allLocations.Add(new("Meet_LttM", Location.Type.Story, new("The_Mark")));
+                        allRegions["SS"].allLocations.Add(new("Meet_FP", Location.Type.Story, new()));
                         break;
                     // Artificer cannot meet LttM
                     case "Artificer":
-                        specialLocs.Add(new Location("Meet_FP", Location.Type.Story,
-                            new RegionAccessRule("SS")));
+                        allRegions["SS"].allLocations.Add(new("Meet_FP", Location.Type.Story, new()));
                         break;
                     // Rivulet does a murder in RM, seperate check
                     case "Rivulet":
-                        specialLocs.Add(new Location("Meet_LttM", Location.Type.Story,
-                            new CompoundAccessRule(
-                            [
-                                new RegionAccessRule("SL"),
-                                new("The_Mark")
-                            ], CompoundAccessRule.CompoundOperation.All)));
+                        allRegions["SL"].allLocations.Add(new("Meet_LttM", Location.Type.Story, new("The_Mark")));
                         if (RandoOptions.UseEnergyCell)
                         {
-                            specialLocs.Add(new Location("Kill_FP", Location.Type.Story,
-                                new RegionAccessRule("RM")));
+                            allRegions["RM"].allLocations.Add(new("Kill_FP", Location.Type.Story, new()));
                         }
                         break;
-                    // Saint has 2 seperate checks here for ascending
+                    // Saint has 2 seperate checks for ascending
                     case "Saint":
-                        specialLocs.Add(new Location("Ascend_LttM", Location.Type.Story,
-                            new CompoundAccessRule(
-                            [
-                                new RegionAccessRule("SL"),
-                                new KarmaAccessRule(10)
-                            ], CompoundAccessRule.CompoundOperation.All)));
-                        specialLocs.Add(new Location("Ascend_FP", Location.Type.Story,
-                            new CompoundAccessRule(
-                            [
-                                new RegionAccessRule("CL"),
-                                new KarmaAccessRule(10)
-                            ], CompoundAccessRule.CompoundOperation.All)));
+                        allRegions["SL"].allLocations.Add(new("Ascend_LttM", Location.Type.Story, new KarmaAccessRule(10)));
+                        allRegions["CL"].allLocations.Add(new("Ascend_FP", Location.Type.Story, new KarmaAccessRule(10)));
                         break;
                 }
 
