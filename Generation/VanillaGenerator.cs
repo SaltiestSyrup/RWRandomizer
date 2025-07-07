@@ -25,17 +25,22 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Used to override rules for locations. To modify the rules of a location, add its location ID to this dict with the new rule it should follow.
         /// </summary>
-        public static Dictionary<string, AccessRule> GlobalRuleOverrides = [];
+        public static Dictionary<string, AccessRule> globalRuleOverrides = [];
         /// <summary>
-        /// Used to override rules for locations as specific slugcats. Applies on top of <see cref="GlobalRuleOverrides"/>, taking priority over all if playing as the relevant slugcat
+        /// Used to override rules for locations as specific slugcats. Applies on top of <see cref="globalRuleOverrides"/>, taking priority over all if playing as the relevant slugcat
         /// </summary>
-        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> SlugcatRuleOverrides = [];
+        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> slugcatRuleOverrides = [];
+        /// <summary>
+        /// Used to override rules for a connection. To modify the rules of a connection, add its connection ID to this dict with the new rules it should follow. 
+        /// Rules must be an array of size 2, 0 being the rule for travelling right, and 1 being the rule for travelling left
+        /// </summary>
+        public static Dictionary<string, AccessRule[]> connectionRuleOverrides = [];
 
         /// <summary>
-        /// Combination of <see cref="GlobalRuleOverrides"/> and <see cref="SlugcatRuleOverrides"/> populated in instance constructor.
+        /// Combination of <see cref="globalRuleOverrides"/> and <see cref="slugcatRuleOverrides"/> populated in instance constructor.
         /// Any additions to rule overrides must be completed by the time the generator instance is created
         /// </summary>
-        private Dictionary<string, AccessRule> RuleOverrides = [];
+        private Dictionary<string, AccessRule> ruleOverrides = [];
 
         private SlugcatStats.Name slugcat;
         private SlugcatStats.Timeline timeline;
@@ -95,17 +100,17 @@ namespace RainWorldRandomizer.Generation
             randomState = new Random(generationSeed);
 
             // Combine custom rules together
-            RuleOverrides = GlobalRuleOverrides;
+            ruleOverrides = globalRuleOverrides;
             // Slugcat specific rules take priority over global ones
-            foreach (var slugcatRule in SlugcatRuleOverrides[slugcat])
+            foreach (var slugcatRule in slugcatRuleOverrides[slugcat])
             {
-                if (RuleOverrides.ContainsKey(slugcatRule.Key))
+                if (ruleOverrides.ContainsKey(slugcatRule.Key))
                 {
-                    RuleOverrides[slugcatRule.Key] = slugcatRule.Value;
+                    ruleOverrides[slugcatRule.Key] = slugcatRule.Value;
                 }
                 else
                 {
-                    RuleOverrides.Add(slugcatRule.Key, slugcatRule.Value);
+                    ruleOverrides.Add(slugcatRule.Key, slugcatRule.Value);
                 }
             }
         }
@@ -586,7 +591,7 @@ namespace RainWorldRandomizer.Generation
 
         // TODO: Pearl-LC is filtered out by token cache (rightfully), but needs to be present if setting enabled
         /// <summary>
-        /// Applies special location rules defined by <see cref="GlobalRuleOverrides"/> and <see cref="SlugcatRuleOverrides"/>
+        /// Applies special location rules defined by <see cref="globalRuleOverrides"/> and <see cref="slugcatRuleOverrides"/>
         /// </summary>
         private void ApplyRuleOverrides()
         {
@@ -917,18 +922,18 @@ namespace RainWorldRandomizer.Generation
 
         public static void GenerateCustomRules()
         {
-            SlugcatRuleOverrides.Add(SlugcatStats.Name.White, []);
-            SlugcatRuleOverrides.Add(SlugcatStats.Name.Yellow, []);
-            SlugcatRuleOverrides.Add(SlugcatStats.Name.Red, []);
+            slugcatRuleOverrides.Add(SlugcatStats.Name.White, []);
+            slugcatRuleOverrides.Add(SlugcatStats.Name.Yellow, []);
+            slugcatRuleOverrides.Add(SlugcatStats.Name.Red, []);
 
             if (ModManager.MSC)
             {
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Gourmand, []);
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Artificer, []);
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, []);
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Spear, []);
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Saint, []);
-                SlugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, []);
+                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Gourmand, []);
+                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Artificer, []);
+                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, []);
+                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Spear, []);
+                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Saint, []);
+                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, []);
             }
 
             // SB ravine checks only reachable from LF side
@@ -938,40 +943,40 @@ namespace RainWorldRandomizer.Generation
                 new RegionAccessRule("LF"),
                 new RegionAccessRule("SB")
             ], CompoundAccessRule.CompoundOperation.All);
-            GlobalRuleOverrides.Add("Echo-SB", subRavineRule);
-            GlobalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
+            globalRuleOverrides.Add("Echo-SB", subRavineRule);
+            globalRuleOverrides.Add("Pearl-SB_ravine", subRavineRule);
 
             // MSC specific rules
             if (ModManager.MSC)
             {
                 // OE isn't filtered out by timeline so it needs a manual rule here
-                GlobalRuleOverrides.Add("Region-OE", new MultiSlugcatAccessRule(
+                globalRuleOverrides.Add("Region-OE", new MultiSlugcatAccessRule(
                 [
                     SlugcatStats.Name.White,
                     SlugcatStats.Name.Yellow,
                     MoreSlugcatsEnums.SlugcatStatsName.Gourmand
                 ]));
                 // Outer Expanse requires the Mark for Gourmand
-                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Gourmand].Add("Region-OE", new AccessRule("The_Mark"));
+                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Gourmand].Add("Region-OE", new AccessRule("The_Mark"));
 
                 // if Arty, Metro requires drone and mark
                 // else require option
-                GlobalRuleOverrides.Add("Region-LC", new OptionAccessRule("ForceOpenMetropolis"));
-                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Artificer].Add("Region-LC", new CompoundAccessRule(
+                globalRuleOverrides.Add("Region-LC", new OptionAccessRule("ForceOpenMetropolis"));
+                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Artificer].Add("Region-LC", new CompoundAccessRule(
                 [
                     new("The_Mark"),
                     new("IdDrone")
                 ], CompoundAccessRule.CompoundOperation.All));
 
                 // Submerged Superstructure should only be open if playing Riv or setting allows it
-                GlobalRuleOverrides.Add("Region-MS", new CompoundAccessRule(
+                globalRuleOverrides.Add("Region-MS", new CompoundAccessRule(
                 [
                     new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet),
                     new OptionAccessRule("ForceOpenSubmerged")
                 ], CompoundAccessRule.CompoundOperation.Any));
 
                 // Filtration pearl only reachable from OE
-                GlobalRuleOverrides.Add("Pearl-SU_filt", new CompoundAccessRule(
+                globalRuleOverrides.Add("Pearl-SU_filt", new CompoundAccessRule(
                 [
                     new RegionAccessRule("OE"),
                     new RegionAccessRule("SU"),
@@ -983,17 +988,17 @@ namespace RainWorldRandomizer.Generation
                     ])
                 ], CompoundAccessRule.CompoundOperation.All));
                 // Spearmaster can easily reach SU_filt if spawn is not randomized
-                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Spear].Add("Pearl-SU_filt", new OptionAccessRule("RandomizeSpawnLocation", true));
+                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Spear].Add("Pearl-SU_filt", new OptionAccessRule("RandomizeSpawnLocation", true));
 
                 // Token cache fails to filter this pearl to only Past GW
-                GlobalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(
+                globalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(
                 [
                     new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore),
                     new RegionAccessRule("GW")
                 ], CompoundAccessRule.CompoundOperation.All));
 
                 // This chatlog is also in SB ravine
-                GlobalRuleOverrides.Add("Broadcast-Chatlog_SB0", subRavineRule);
+                globalRuleOverrides.Add("Broadcast-Chatlog_SB0", subRavineRule);
 
                 // Rubicon isn't blocked by a gate so it never gets marked as accessible
                 // Remove Rubicon from requirements and substitute Karma 10
@@ -1001,13 +1006,13 @@ namespace RainWorldRandomizer.Generation
                     .Except(["HR"])
                     .Select<string, AccessRule>(r => new RegionAccessRule(r))];
                 travellerRule.Add(new KarmaAccessRule(10));
-                SlugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Saint].Add("Passage-Traveller", new CompoundAccessRule(
+                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Saint].Add("Passage-Traveller", new CompoundAccessRule(
                     [.. travellerRule], CompoundAccessRule.CompoundOperation.All));
             }
 
             // Inbuilt custom region rules
-            GlobalRuleOverrides.AddRange(CustomRegionCompatability.GlobalRuleOverrides);
-            SlugcatRuleOverrides.AddRange(CustomRegionCompatability.SlugcatRuleOverrides);
+            globalRuleOverrides.AddRange(CustomRegionCompatability.GlobalRuleOverrides);
+            slugcatRuleOverrides.AddRange(CustomRegionCompatability.SlugcatRuleOverrides);
         }
 
         public string FindRandomStart(SlugcatStats.Name slugcat)
