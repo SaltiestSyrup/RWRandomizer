@@ -51,6 +51,7 @@ namespace RainWorldRandomizer.Generation
         {
             AllRegions = allRegions;
             AllLocations = [];
+            AllConnections = [];
 
             foreach (RandoRegion region in AllRegions)
             {

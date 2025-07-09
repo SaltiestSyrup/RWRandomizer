@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -27,11 +28,25 @@ namespace RainWorldRandomizer.Generation
             if (!locations.IsSubsetOf(allLocations)) throw new ArgumentException("Locations must be a subset of region locations", "locations");
             if (!connections.IsSubsetOf(this.connections)) throw new ArgumentException("Connections must be a subset of region connections", "connections");
 
+            // Remove elements of orig region
             allLocations.ExceptWith(locations);
             this.connections.ExceptWith(connections);
 
-            RandoRegion output = new(ID, locations);
-            output.connections = [.. connections, new($"SUBREG_{this.ID}_{ID}", [this, output], rules)];
+            RandoRegion subregion = new(ID, locations);
+            Connection bridge = new($"SUBREG_{this.ID}_{ID}", [this, subregion], rules);
+
+            // Rebind destination of taken connections
+            foreach (var con in connections)
+            {
+                int index = con.regions.IndexOf(this);
+                con.regions[index] = subregion;
+            }
+
+            this.connections.Add(bridge);
+            subregion.connections = [.. connections, bridge];
+
+            return subregion;
+        }
 
         public override string ToString()
         {
