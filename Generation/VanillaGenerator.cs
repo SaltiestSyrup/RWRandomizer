@@ -691,11 +691,10 @@ namespace RainWorldRandomizer.Generation
                 regionB.connections.Add(connection);
             }
 
-            generationLog.AppendLine("Final location list:");
-            foreach (Location loc in state.AllLocations)
+            generationLog.AppendLine("Final region list:");
+            foreach (RandoRegion region in state.AllRegions)
             {
-                generationLog.AppendLine($"\t{loc.ID}");
-                generationLog.AppendLine($"\t\t{loc.accessRule}");
+                generationLog.AppendLine($"\t{region}");
             }
             generationLog.AppendLine();
         }

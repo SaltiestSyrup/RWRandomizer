@@ -33,7 +33,17 @@ namespace RainWorldRandomizer.Generation
             RandoRegion output = new(ID, locations);
             output.connections = [.. connections, new($"SUBREG_{this.ID}_{ID}", [this, output], rules)];
 
-            return output;
+        public override string ToString()
+        {
+            string[] output = 
+            [
+                ID,
+                "\tLocations:",
+                .. allLocations.Select(l => $"\t\t{l} => {l.accessRule}"),
+                "\tConnections:",
+                .. connections.Select(c => $"\t\t{c} => \n\t\t\t{c.requirements[0]}, \n\t\t\t{c.requirements[1]}")
+            ];
+            return string.Join("\n", output);
         }
     }
 

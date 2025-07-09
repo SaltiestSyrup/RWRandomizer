@@ -43,9 +43,9 @@ namespace RainWorldRandomizer.Generation
         /// <exception cref="ArgumentException">If <paramref name="region"/> is not a part of this connection</exception>
         public bool CanTravel(State state, RandoRegion region)
         {
-            if (region == regions[0]) return requirements[0].IsMet(state);
-            if (region == regions[1]) return requirements[1].IsMet(state);
-            throw new ArgumentException("Given region is not part of this connection", "region");
+            if (region.ID == regions[0].ID) return requirements[0].IsMet(state);
+            if (region.ID == regions[1].ID) return requirements[1].IsMet(state);
+            throw new ArgumentException($"Given region ({region.ID}) is not part of this connection ({ID})", "region");
         }
 
         /// <summary>
@@ -56,9 +56,14 @@ namespace RainWorldRandomizer.Generation
         /// <exception cref="ArgumentException">If <paramref name="region"/> is not a part of this connection</exception>
         public RandoRegion OtherSide(RandoRegion region)
         {
-            if (region == regions[0]) return regions[1];
-            if (region == regions[1]) return regions[0];
-            throw new ArgumentException("Given region is not part of this connection", "region");
+            if (region.ID == regions[0].ID) return regions[1];
+            if (region.ID == regions[1].ID) return regions[0];
+            throw new ArgumentException($"Given region ({region.ID}) is not part of this connection ({ID})", "region");
+        }
+
+        public override string ToString()
+        {
+            return $"{ID} connects {regions[0].ID} and {regions[1].ID}";
         }
     }
 
