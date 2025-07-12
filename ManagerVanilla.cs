@@ -93,6 +93,7 @@ namespace RainWorldRandomizer
 
                 VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
                     RandoOptions.UseSetSeed ? RandoOptions.SetSeed : UnityEngine.Random.Range(0, int.MaxValue));
+
                 Exception generationException = null;
                 bool timedOut = false;
                 try

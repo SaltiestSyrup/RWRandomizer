@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -57,19 +56,19 @@ namespace RainWorldRandomizer.Generation
             {
                 AllConnections.UnionWith(region.connections);
 
-                foreach(Location loc in region.allLocations)
+                foreach (Location loc in region.allLocations)
                 {
                     // If a location with the same name already exists, combine their AccessRules
                     // and consider them the same location. This effectively means when the same
                     // location is collectible in multiple places, it will be deemed accessible
                     // once BOTH conditions are met.
-                    if (AllLocations.Contains(loc, new LocationIDComparer()))
+                    if (AllLocations.Contains(loc))
                     {
                         Location oldLoc = AllLocations.First(l => l.ID == loc.ID);
                         AccessRule mergedRule = new CompoundAccessRule(
                             [oldLoc.accessRule, loc.accessRule],
                             CompoundAccessRule.CompoundOperation.All);
-                        
+
                         loc.accessRule = mergedRule;
                         oldLoc = loc;
                     }
@@ -83,31 +82,31 @@ namespace RainWorldRandomizer.Generation
             AvailableLocations = [];
         }
 
-        public void DefineLocs(HashSet<Location> allLocs)
+        public void DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations, HashSet<Connection> connections, AccessRule[] rules)
         {
-            AllLocations = [];
+            if (!locations.IsSubsetOf(baseRegion.allLocations)) throw new ArgumentException("Locations must be a subset of region locations", "locations");
+            if (!connections.IsSubsetOf(baseRegion.connections)) throw new ArgumentException("Connections must be a subset of region connections", "connections");
 
-            foreach (Location loc in allLocs)
+            // Remove elements of orig region
+            baseRegion.allLocations = [.. baseRegion.allLocations.Except(locations)];
+            baseRegion.connections = [.. baseRegion.connections.Except(connections)];
+
+            RandoRegion subRegion = new(newID, locations);
+            Connection bridge = new($"SUBREG_{baseRegion.ID}_{newID}", [baseRegion, subRegion], rules);
+
+            // Rebind destination of taken connections
+            foreach (var con in connections)
             {
-                // If a location with the same name already exists, combine their AccessRules
-                // and consider them the same location. This effectively means when the same
-                // location is collectible in multiple places, it will be deemed accessible
-                // once either condition is met.
-                if (AllLocations.Contains(loc, new LocationIDComparer()))
-                {
-                    Location mergedLoc = AllLocations.First(l => l.ID == loc.ID);
-                    mergedLoc.accessRule = new CompoundAccessRule(
-                        [ mergedLoc.accessRule, loc.accessRule], 
-                        CompoundAccessRule.CompoundOperation.Any);
-                }
-                else
-                {
-                    AllLocations.Add(loc);
-                }
+                int index = con.regions.IndexOf(baseRegion);
+                con.regions[index] = subRegion;
             }
 
-            UnreachedLocations = [.. AllLocations];
-            AvailableLocations = [];
+            baseRegion.connections.Add(bridge);
+            subRegion.connections = [.. connections, bridge];
+
+            AllRegions.Add(subRegion);
+            UnreachedRegions.Add(subRegion);
+            AllConnections.Add(bridge);
         }
 
         /// <summary>
@@ -302,21 +301,5 @@ namespace RainWorldRandomizer.Generation
         //
         //    return false;
         //}
-    }
-
-    /// <summary>
-    /// Custom <see cref="IEqualityComparer{T}"/> allowing <see cref="Location"/>s to be considered equal if they have the same ID
-    /// </summary>
-    public class LocationIDComparer : IEqualityComparer<Location>
-    {
-        public bool Equals(Location x, Location y)
-        {
-            return x.ID == y.ID;
-        }
-
-        public int GetHashCode(Location obj)
-        {
-            return obj.ID.GetHashCode();
-        }
     }
 }

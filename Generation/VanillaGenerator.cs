@@ -2,14 +2,12 @@ using MonoMod.Utils;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using UnityEngine;
 using Random = System.Random;
 
 namespace RainWorldRandomizer.Generation
@@ -282,7 +280,7 @@ namespace RainWorldRandomizer.Generation
                 Connection connection = new(gate, [allRegions[regionShorts[0]], allRegions[regionShorts[1]]], new GateAccessRule(gate));
                 allRegions[regionShorts[0]].connections.Add(connection);
                 allRegions[regionShorts[1]].connections.Add(connection);
-                
+
                 AllGates.Add(gate);
 
                 // TODO: Un-hardcode check for marking GATE_UW_SL as non-progression
@@ -634,7 +632,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Subregions
-            foreach(SubregionBlueprint subBlueprint in manualSubregions)
+            foreach (SubregionBlueprint subBlueprint in manualSubregions)
             {
                 RandoRegion baseRegion = state.AllRegions.FirstOrDefault(r => r.ID == subBlueprint.baseRegion);
                 if (baseRegion is null)
@@ -647,9 +645,10 @@ namespace RainWorldRandomizer.Generation
                 HashSet<Location> locs = [.. state.AllLocations.Where(l => subBlueprint.locations.Contains(l.ID))];
                 HashSet<Connection> connections = [.. state.AllConnections.Where(l => subBlueprint.connections.Contains(l.ID))];
 
-                RandoRegion subRegion = baseRegion.NewSubregion(subBlueprint.ID, locs, connections, subBlueprint.rules);
-                state.AllRegions.Add(subRegion);
-                state.UnreachedRegions.Add(subRegion);
+                state.DefineSubRegion(baseRegion, subBlueprint.ID, locs, connections, subBlueprint.rules);
+                //RandoRegion subRegion = baseRegion.NewSubregion(subBlueprint.ID, locs, connections, subBlueprint.rules);
+                //state.AllRegions.Add(subRegion);
+                //state.UnreachedRegions.Add(subRegion);
             }
 
             // Connection Overrides
@@ -1012,8 +1011,8 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Cannot climb SB Ravine
-            manualSubregions.Add(new("SB", "SB_Ravine", 
-                ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0"], 
+            manualSubregions.Add(new("SB", "SB_Ravine",
+                ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0"],
                 ["GATE_LF_SB"],
                 [new(AccessRule.IMPOSSIBLE_ID), new()]));
 
@@ -1021,7 +1020,7 @@ namespace RainWorldRandomizer.Generation
             if (ModManager.MSC)
             {
                 // Subeterranean to Outer Expanse
-                connectionRuleOverrides.Add("GATE_SB_OE", 
+                connectionRuleOverrides.Add("GATE_SB_OE",
                 [
                     // Gate AND (Survivor OR Monk OR (Gourmand AND The Mark))
                     new CompoundAccessRule(
@@ -1064,7 +1063,7 @@ namespace RainWorldRandomizer.Generation
                             [
                                 new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Artificer),
                                 new("The_Mark"),
-                                new("IdDrone")  
+                                new("IdDrone")
                             ], CompoundAccessRule.CompoundOperation.All)
                         ], CompoundAccessRule.CompoundOperation.Any)
                     ], CompoundAccessRule.CompoundOperation.All),

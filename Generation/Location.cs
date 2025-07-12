@@ -1,17 +1,19 @@
 ﻿
+using System;
+
 namespace RainWorldRandomizer.Generation
 {
-    public class Location(string ID, Location.Type type, AccessRule accessRule)
+    public class Location(string ID, Location.Type type, AccessRule accessRule) : IEquatable<Location>
     {
         public enum Type
         {
             Unknown,
             Pearl,
-            Token, 
-            Echo, 
-            Story, 
-            Food, 
-            Passage, 
+            Token,
+            Echo,
+            Story,
+            Food,
+            Passage,
             Shelter
         }
 
@@ -23,6 +25,11 @@ namespace RainWorldRandomizer.Generation
         public bool CanReach(State state) => accessRule.IsMet(state);
 
         public override string ToString() => ID;
+
+        public bool Equals(Location other)
+        {
+            return ID.Equals(other.ID);
+        }
     }
 
     //public class PearlLocation : Location

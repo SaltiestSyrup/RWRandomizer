@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RainWorldRandomizer.Generation
 {
-    public class Connection(string ID, RandoRegion[] regions, AccessRule[] rules)
+    public class Connection(string ID, RandoRegion[] regions, AccessRule[] rules) : IEquatable<Connection>
     {
         /// <summary>
         /// ID of this connection. All gate connection IDs are the actual gate ID, ex: GATE_SU_DS
@@ -64,6 +59,11 @@ namespace RainWorldRandomizer.Generation
         public override string ToString()
         {
             return $"{ID} connects {regions[0].ID} and {regions[1].ID}";
+        }
+
+        public bool Equals(Connection other)
+        {
+            return ID.Equals(other.ID);
         }
     }
 
