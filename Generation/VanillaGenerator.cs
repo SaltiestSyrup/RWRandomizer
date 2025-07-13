@@ -169,29 +169,11 @@ namespace RainWorldRandomizer.Generation
             bool regionKitEchoes = RandoOptions.UseEchoChecks && RegionKitCompatibility.Enabled;
             bool doPearlLocations = RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
             bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && RandoOptions.UseSMBroadcasts;
-            List<string> slugcatRegions = [.. SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat))];
+            List<string> slugcatRegions = [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
             foreach (string regionShort in Region.GetFullRegionOrder(timeline))
             {
                 HashSet<Location> regionLocations = [];
 
-                //AccessRule regionAccessRule = new RegionAccessRule(region);
-
-                // Apply any overrides that should modify the rules of the entire region
-                // TODO: Apply region rule override to entrances
-                //if (RuleOverrides.TryGetValue($"Region-{region}", out AccessRule newRules))
-                //{
-                //    if (!newRules.IsPossible(state))
-                //    {
-                //        generationLog.AppendLine($"Skip adding locations for impossible region: {region}");
-                //        continue;
-                //    }
-                //    regionAccessRule = new CompoundAccessRule(
-                //    [
-                //        regionAccessRule,
-                //        newRules
-                //    ], CompoundAccessRule.CompoundOperation.All);
-                //    generationLog.AppendLine($"Applied custom rules for region: {region}");
-                //}
                 // Filter out slugcat inaccessible regions unless there is a special rule defined
                 if (!slugcatRegions.Contains(regionShort)) continue;
 
@@ -277,7 +259,11 @@ namespace RainWorldRandomizer.Generation
                 if (skipThisGate) continue;
 
                 // Create connection
-                Connection connection = new(gate, [allRegions[regionShorts[0]], allRegions[regionShorts[1]]], new GateAccessRule(gate));
+                Connection connection = new(gate,
+                [
+                    allRegions[regionShorts[0]],
+                    allRegions[regionShorts[1]]
+                ], new GateAccessRule(gate));
                 allRegions[regionShorts[0]].connections.Add(connection);
                 allRegions[regionShorts[1]].connections.Add(connection);
 
@@ -632,6 +618,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Subregions
+            
             foreach (SubregionBlueprint subBlueprint in manualSubregions)
             {
                 RandoRegion baseRegion = state.AllRegions.FirstOrDefault(r => r.ID == subBlueprint.baseRegion);
@@ -646,10 +633,8 @@ namespace RainWorldRandomizer.Generation
                 HashSet<Connection> connections = [.. state.AllConnections.Where(l => subBlueprint.connections.Contains(l.ID))];
 
                 state.DefineSubRegion(baseRegion, subBlueprint.ID, locs, connections, subBlueprint.rules);
-                //RandoRegion subRegion = baseRegion.NewSubregion(subBlueprint.ID, locs, connections, subBlueprint.rules);
-                //state.AllRegions.Add(subRegion);
-                //state.UnreachedRegions.Add(subRegion);
             }
+            
 
             // Connection Overrides
             foreach (var rule in connectionRuleOverrides)
@@ -790,9 +775,9 @@ namespace RainWorldRandomizer.Generation
                 generationLog.AppendLine($"First region: {Constants.SlugcatStartingRegion[slugcat]}");
             }
 
-            List<RandoRegion> specialRegions = [.. state.AllRegions.Where(r => r.isSpecial)];
-            specialRegions.ForEach(r => { state.AddRegion(r.ID); });
-
+            state.AddRegion(PASSAGE_REG);
+            state.AddRegion(SPECIAL_REG);
+            
             // Continue until all regions are accessible
             // Note that a region is considered "accessible" by state regardless of
             // if there is some other rule blocking access to checks in that region
@@ -911,6 +896,7 @@ namespace RainWorldRandomizer.Generation
                 CurrentStage = GenerationStep.FailedGen;
                 throw new GenerationFailureException("Failed to reach all locations");
             }
+            
         }
 
         private void PlaceFiller()

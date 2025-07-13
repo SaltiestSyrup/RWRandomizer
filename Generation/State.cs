@@ -120,7 +120,6 @@ namespace RainWorldRandomizer.Generation
             AvailableRegions.Add(region);
             region.hasReached = true;
             AddRegionCreaturesAndObjects(region);
-            //Regions.Add(regionShort);
             RecalculateState();
         }
 
@@ -222,12 +221,12 @@ namespace RainWorldRandomizer.Generation
                     if (connection.CanTravel(this, region))
                     {
                         newRegions.Add(connection.OtherSide(region));
-                        region.hasReached = true;
+                        connection.OtherSide(region).hasReached = true;
                         AddRegionCreaturesAndObjects(region);
                     }
                 }
             }
-
+            
             if (newRegions.Count > 0)
             {
                 UnreachedRegions.ExceptWith(newRegions);
