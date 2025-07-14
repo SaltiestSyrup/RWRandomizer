@@ -675,12 +675,12 @@ namespace RainWorldRandomizer.Generation
                 regionB.connections.Add(connection);
             }
 
-            generationLog.AppendLine("Final region list:");
-            foreach (RandoRegion region in state.AllRegions)
-            {
-                generationLog.AppendLine($"\t{region}");
-            }
-            generationLog.AppendLine();
+            //generationLog.AppendLine("Final region list:");
+            //foreach (RandoRegion region in state.AllRegions)
+            //{
+            //    generationLog.AppendLine($"\t{region}");
+            //}
+            //generationLog.AppendLine();
         }
 
         private void BalanceItems()
@@ -796,7 +796,10 @@ namespace RainWorldRandomizer.Generation
                             string[] gate = Regex.Split(i.id, "_");
                             if (state.Gates.Contains(i.id)) continue;
 
-                            if (state.HasRegion(Plugin.ProperRegionMap[gate[1]]) ^ state.HasRegion(Plugin.ProperRegionMap[gate[2]]))
+                            // If there is a Connection associated with this gate ID
+                            // and exactly one side is currently reachable, then consider this gate placeable.
+                            if (state.AllConnections.Any(c => c.ID == i.id && c.ConnectedStatus == Connection.ConnectedLevel.OneReached))
+                                //(state.HasRegion(Plugin.ProperRegionMap[gate[1]]) ^ state.HasRegion(Plugin.ProperRegionMap[gate[2]]))
                             {
                                 placeableGates.Add(i);
                             }

@@ -16,11 +16,6 @@ namespace RainWorldRandomizer.Generation
         public HashSet<Location> allLocations = locations;
         public HashSet<Connection> connections = [];
 
-        public bool Equals(RandoRegion other)
-        {
-            return ID.Equals(other.ID);
-        }
-
         public override string ToString()
         {
             string[] output =
@@ -32,6 +27,22 @@ namespace RainWorldRandomizer.Generation
                 .. connections.Select(c => $"\t\t{c} => \n\t\t\t{c.requirements[0]}, \n\t\t\t{c.requirements[1]}")
             ];
             return string.Join("\n", output);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is null || obj is not RandoRegion loc) return false;
+            return Equals(loc);
+        }
+
+        public override int GetHashCode()
+        {
+            return ID.GetHashCode();
+        }
+
+        public bool Equals(RandoRegion other)
+        {
+            return ID.Equals(other.ID);
         }
     }
 

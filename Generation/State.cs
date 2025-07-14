@@ -61,7 +61,9 @@ namespace RainWorldRandomizer.Generation
                     // If a location with the same name already exists, combine their AccessRules
                     // and consider them the same location. This effectively means when the same
                     // location is collectible in multiple places, it will be deemed accessible
-                    // once BOTH conditions are met.
+                    // once BOTH conditions are met and one of their regions is reachable.
+                    // This mostly applies to sandbox tokens, which normally have no additional
+                    // requirements so rules stay the same
                     if (AllLocations.Contains(loc))
                     {
                         Location oldLoc = AllLocations.First(l => l.ID == loc.ID);
@@ -220,9 +222,10 @@ namespace RainWorldRandomizer.Generation
                     // Add other region if the directional condition for travel is met
                     if (connection.CanTravel(this, region))
                     {
-                        newRegions.Add(connection.OtherSide(region));
-                        connection.OtherSide(region).hasReached = true;
-                        AddRegionCreaturesAndObjects(region);
+                        RandoRegion otherSide = connection.OtherSide(region);
+                        newRegions.Add(otherSide);
+                        otherSide.hasReached = true;
+                        AddRegionCreaturesAndObjects(otherSide);
                     }
                 }
             }

@@ -61,6 +61,17 @@ namespace RainWorldRandomizer.Generation
             return $"{ID} connects {regions[0].ID} and {regions[1].ID}";
         }
 
+        public override bool Equals(object obj)
+        {
+            if (obj is null || obj is not Connection loc) return false;
+            return Equals(loc);
+        }
+
+        public override int GetHashCode()
+        {
+            return ID.GetHashCode();
+        }
+
         public bool Equals(Connection other)
         {
             return ID.Equals(other.ID);
