@@ -46,6 +46,10 @@ namespace RainWorldRandomizer.Generation
         }
     }
 
+    /// <summary>
+    /// Instructions for creating a subregion during generation.
+    /// See <see cref="State.DefineSubRegion"/> for more details on subregions
+    /// </summary>
     public struct SubregionBlueprint(string baseRegion, string ID, string[] locations, string[] connections, AccessRule[] rules)
     {
         /// <summary>

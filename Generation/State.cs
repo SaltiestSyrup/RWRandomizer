@@ -84,6 +84,18 @@ namespace RainWorldRandomizer.Generation
             AvailableLocations = [];
         }
 
+        /// <summary>
+        /// Creates a subregion of a given region, taking select locations and connections as part of itself
+        /// </summary>
+        /// <param name="baseRegion">The region this subregion is based off of</param>
+        /// <param name="newID">The new ID the subregion will have</param>
+        /// <param name="locations">The locations from the base region to take. Must be a subset of <paramref name="baseRegion"/>'s locations</param>
+        /// <param name="connections">The connections from the base region to take. Must be a subset of <paramref name="baseRegion"/>'s connections</param>
+        /// <param name="rules">The <see cref="AccessRule"/>s of the connection from the base region to the new subregion</param>
+        /// <exception cref="ArgumentException">
+        /// Thrown if either the <paramref name="locations"/> or <paramref name="connections"/> 
+        /// are not a subset of those in <paramref name="baseRegion"/>
+        /// </exception>
         public void DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations, HashSet<Connection> connections, AccessRule[] rules)
         {
             if (!locations.IsSubsetOf(baseRegion.allLocations)) throw new ArgumentException("Locations must be a subset of region locations", "locations");
@@ -112,7 +124,7 @@ namespace RainWorldRandomizer.Generation
         }
 
         /// <summary>
-        /// Directly add a region to this state
+        /// Directly mark a region as accessible to this state
         /// </summary>
         /// <param name="ID"></param>
         public void AddRegion(string ID)
@@ -145,16 +157,27 @@ namespace RainWorldRandomizer.Generation
             RecalculateState();
         }
 
+        /// <summary>
+        /// Check if a given region ID is accessible to state
+        /// </summary>
+        /// <param name="regionShort">The ID of a <see cref="RandoRegion"/> in this state</param>
         public bool HasRegion(string regionShort)
         {
             return AvailableRegions.Any(r => r.ID == regionShort);
         }
 
+        /// <summary>
+        /// Check if every region is accessible to state
+        /// </summary>
         public bool HasAllRegions()
         {
             return AllRegions.SetEquals(AvailableRegions);
         }
 
+        /// <summary>
+        /// Removes a random accessible location from state and returns it
+        /// </summary>
+        /// <param name="random">A Random instance to use for RNG</param>
         public Location PopRandomLocation(ref Random random)
         {
             if (AvailableLocations.Count == 0) return null;
@@ -164,6 +187,10 @@ namespace RainWorldRandomizer.Generation
             return chosen;
         }
 
+        /// <summary>
+        /// Purge a location from state altogether, making it no longer valid
+        /// </summary>
+        /// <param name="loc"></param>
         public void FindAndRemoveLocation(Location loc)
         {
             AllLocations.Remove(loc);
@@ -243,7 +270,13 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         private void AddRegionCreaturesAndObjects(RandoRegion region)
         {
-            if (region.isSpecial) return;
+            if (region.isSpecial) return; // "Special" regions are ones that don't match to an in-game region
+
+            // We ask the TokenCachePatcher to give us all the creatures and objects in the region we just got.
+            // This could become inaccurate with subregions, as when a region is added it cannot consider whether
+            // objects may only exist in a subregion we *don't* have yet.
+            // Could become a problem with specific subregions but can't be solved for unless we extend cache to track
+            // objects in every room and define subregions as the rooms they encompass.
             string regionLower = region.ID.ToLowerInvariant();
             for (int i = 0; i < TokenCachePatcher.regionObjects[regionLower].Count; i++)
             {
@@ -260,48 +293,5 @@ namespace RainWorldRandomizer.Generation
                 }
             }
         }
-
-        /// <summary>
-        /// Checks if a gate opens up more regions, and does so if true.
-        /// </summary>
-        /// <param name="gateName">GATE_XX_YY</param>
-        /// <returns>Whether a new region was added from this gate</returns>
-        //private bool UpdateGate(string gateName)
-        //{
-        //    string[] gate = Regex.Split(gateName, "_");
-        //    string regLeft = Plugin.ProperRegionMap[gate[1]];
-        //    string regRight = Plugin.ProperRegionMap[gate[2]];
-        //
-        //    // One way gate logic
-        //    if (Constants.OneWayGates.ContainsKey(gateName))
-        //    {
-        //        // If the gate only travels right, check for left region access
-        //        if (Regions.Contains(regLeft)
-        //            && !Constants.OneWayGates[gateName]
-        //            && !Regions.Contains(regRight))
-        //        {
-        //            Regions.Add(regRight);
-        //            return true;
-        //        }
-        //        // If the gate only travels left, check for right region access
-        //        if (Regions.Contains(regRight)
-        //            && Constants.OneWayGates[gateName]
-        //            && !Regions.Contains(regLeft))
-        //        {
-        //            Regions.Add(regLeft);
-        //            return true;
-        //        }
-        //        return false;
-        //    }
-        //
-        //    if (Regions.Contains(regLeft) ^ Regions.Contains(regRight))
-        //    {
-        //        Regions.Add(regLeft);
-        //        Regions.Add(regRight);
-        //        return true;
-        //    }
-        //
-        //    return false;
-        //}
     }
 }

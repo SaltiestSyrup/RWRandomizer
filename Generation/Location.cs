@@ -5,6 +5,8 @@ namespace RainWorldRandomizer.Generation
 {
     public class Location(string ID, Location.Type type, AccessRule accessRule) : IEquatable<Location>
     {
+        // TODO: Location.Type isn't currently well utilized.
+        // Either remove it or use it somehow and make it an ExtEnum
         public enum Type
         {
             Unknown,
@@ -42,22 +44,4 @@ namespace RainWorldRandomizer.Generation
             return ID.Equals(other.ID);
         }
     }
-
-    //public class PearlLocation : Location
-    //{
-    //    readonly string pearlID;
-    //    readonly string region;
-
-    //    public PearlLocation(Type type, string pearlID, string region) : base(type)
-    //    {
-    //        this.pearlID = pearlID;
-    //        this.region = region;
-    //        this.accessRule = new AccessRule(AccessRule.AccessRuleType.Region, region);
-    //    }
-
-    //    public override bool CanReach(State state)
-    //    {
-    //        return state.Regions.Contains(region);
-    //    }
-    //}
 }

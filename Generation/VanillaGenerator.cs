@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -147,6 +148,11 @@ namespace RainWorldRandomizer.Generation
             CurrentStage = GenerationStep.Complete;
         }
 
+        /// <summary>
+        /// Initializes all locations and progression items. 
+        /// Most are generated from region data, but others like
+        /// passages and story stuff are hard-coded
+        /// </summary>
         private void InitializeState()
         {
             generationLog.AppendLine("INITIALIZE STATE");
@@ -587,7 +593,8 @@ namespace RainWorldRandomizer.Generation
 
         // TODO: Pearl-LC is filtered out by token cache (rightfully), but needs to be present if setting enabled
         /// <summary>
-        /// Applies special location rules defined by <see cref="globalRuleOverrides"/> and <see cref="slugcatRuleOverrides"/>
+        /// Applies all manually defined logic, including subregion creation 
+        /// and <see cref="AccessRule"/> changes for locations / connections
         /// </summary>
         private void ApplyRuleOverrides()
         {
@@ -683,6 +690,13 @@ namespace RainWorldRandomizer.Generation
             //generationLog.AppendLine();
         }
 
+        /// <summary>
+        /// Balance the number of locations and items to make them equal.
+        /// This either adds random filler items, or removes non-critical items depending on starting counts
+        /// </summary>
+        /// <exception cref="GenerationFailureException">
+        /// Thrown if there are not enough locations to place even bare minimum amount of items
+        /// </exception>
         private void BalanceItems()
         {
             generationLog.AppendLine("BALANCE ITEMS");
@@ -755,6 +769,14 @@ namespace RainWorldRandomizer.Generation
             generationLog.AppendLine($"Item balancing ended with {state.AllLocations.Count} locations and {itemsToPlace.Count} items");
         }
 
+        /// <summary>
+        /// The bulk of generation logic. Progression is placed in accessible locations until every location is reachable
+        /// </summary>
+        /// <exception cref="GenerationFailureException">
+        /// Thrown if generation runs out of locations, 
+        /// there is no more valid progression to place,
+        /// or if function ends and not all locations are reachable
+        /// </exception>
         private void PlaceProgression()
         {
             generationLog.AppendLine("PLACE PROGRESSION");
@@ -814,6 +836,7 @@ namespace RainWorldRandomizer.Generation
                 bool useOtherProgThisCycle;
                 if (placeableOtherProg.Count == 0) useOtherProgThisCycle = false;
                 else if (placeableGates.Count == 0) useOtherProgThisCycle = true;
+                // If we have locations to spare, chance to place less important "misc" progression
                 else useOtherProgThisCycle = state.AvailableLocations.Count > 5 && randomState.NextDouble() < OTHER_PROG_PLACEMENT_CHANCE;
                 List<Item> placeableProg = useOtherProgThisCycle ? placeableOtherProg : placeableGates;
 
@@ -833,18 +856,14 @@ namespace RainWorldRandomizer.Generation
                     throw new GenerationFailureException(errorMessage);
                 }
 
+                // Do the thing
                 Location chosenLocation = state.PopRandomLocation(ref randomState);
                 Item chosenItem = placeableProg[randomState.Next(placeableProg.Count)];
                 RandomizedGame.Add(chosenLocation, chosenItem);
 
-                if (chosenItem.type == Item.Type.Gate)
-                {
-                    state.AddGate(chosenItem.id);
-                }
-                else
-                {
-                    state.AddOtherProgItem(chosenItem.id);
-                }
+                // Update state with the new prog we added
+                if (chosenItem.type == Item.Type.Gate) state.AddGate(chosenItem.id);
+                else state.AddOtherProgItem(chosenItem.id);
 
                 itemsToPlace.Remove(chosenItem);
                 generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.ID}");
@@ -853,14 +872,12 @@ namespace RainWorldRandomizer.Generation
             generationLog.AppendLine("PROGRESSION STEP 2");
 
             // Place the remaining progression items indiscriminately
-            int progLeftToPlace;
+            List<Item> placeableProg2 = [.. itemsToPlace.Where((i) =>
+            {
+                return i.importance == Item.Importance.Progression;
+            })];
             do
             {
-                List<Item> placeableProg = [.. itemsToPlace.Where((i) =>
-                {
-                    return i.importance == Item.Importance.Progression;
-                })];
-
                 // Detect possible failure
                 if (state.AvailableLocations.Count == 0)
                 {
@@ -875,18 +892,22 @@ namespace RainWorldRandomizer.Generation
                     throw new GenerationFailureException("Ran out of possible locations");
                 }
 
+                // Do the thing
+                int chosenItemIndex = randomState.Next(placeableProg2.Count);
                 Location chosenLocation = state.PopRandomLocation(ref randomState);
-                Item chosenItem = placeableProg[randomState.Next(placeableProg.Count)];
+                Item chosenItem = placeableProg2[chosenItemIndex];
                 RandomizedGame.Add(chosenLocation, chosenItem);
+                placeableProg2.RemoveAt(chosenItemIndex);
 
+                // Update state with the new prog we added
+                // Gates won't give any new locations by this point
                 if (chosenItem.type == Item.Type.Gate) state.AddGate(chosenItem.id);
                 else state.AddOtherProgItem(chosenItem.id);
 
-                progLeftToPlace = placeableProg.Count - 1;
                 itemsToPlace.Remove(chosenItem);
                 generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.ID}");
             }
-            while (progLeftToPlace > 0);
+            while (placeableProg2.Count > 0);
 
             if (state.UnreachedLocations.Count > 0)
             {
@@ -902,16 +923,19 @@ namespace RainWorldRandomizer.Generation
             
         }
 
+        /// <summary>
+        /// Last stage of generation, filler items are placed and game becomes complete
+        /// </summary>
         private void PlaceFiller()
         {
-            // It is assumed there is no more progression in the pool
-            // State should have full access by this point
+            // All progression is placed at this point, state has full access
             generationLog.AppendLine("PLACE FILLER");
             CurrentStage = GenerationStep.PlacingFiller;
 
             //generationLog.AppendLine($"Remaining locations to fill: {state.AvailableLocations.Count}");
             //generationLog.AppendLine($"Remaining items to place: {itemsToPlace.Count}");
 
+            // Just place the filler purely at random
             while (state.AvailableLocations.Count > 0)
             {
                 Location chosenLocation = state.PopRandomLocation(ref randomState);

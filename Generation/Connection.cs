@@ -8,10 +8,20 @@ namespace RainWorldRandomizer.Generation
         /// ID of this connection. All gate connection IDs are the actual gate ID, ex: GATE_SU_DS
         /// </summary>
         public string ID = ID;
+        /// <summary>
+        /// Regions this connects together. Assumed to be of length 2
+        /// </summary>
         public RandoRegion[] regions = regions;
-        // 0: =>
-        // 1: <=
+        // 0: Travelling from left to right ( => ) 
+        // 1: Travelling from right to left ( <= )
+        /// <summary>
+        /// Requirements for travelling this connection.
+        /// Index 0 is left to right, and index 1 is right to left
+        /// </summary>
         public AccessRule[] requirements = rules;
+        /// <summary>
+        /// How many of <see cref="regions"/> have been marked accessible
+        /// </summary>
         public ConnectedLevel ConnectedStatus
         {
             get
@@ -27,6 +37,9 @@ namespace RainWorldRandomizer.Generation
             Disconnected, OneReached, BothReached
         }
 
+        /// <summary>
+        /// Shortcut to create a connection with just one rule, repeated for both directions
+        /// </summary>
         public Connection(string ID, RandoRegion[] regions, AccessRule rule) : this(ID, regions, [rule, rule]) { }
 
         /// <summary>
@@ -78,6 +91,10 @@ namespace RainWorldRandomizer.Generation
         }
     }
 
+    /// <summary>
+    /// Instructions for creating a custom connection during generation.
+    /// See <see cref="Connection"/> for more details on connections
+    /// </summary>
     public struct ConnectionBlueprint(string ID, string[] regions, AccessRule[] rules)
     {
         public string ID = ID;
