@@ -43,30 +43,53 @@ namespace RainWorldRandomizer.Generation
         public Connection(string ID, RandoRegion[] regions, AccessRule rule) : this(ID, regions, [rule, rule]) { }
 
         /// <summary>
+        /// Whether this connection can possibly be traversed from a given region
+        /// </summary>
+        /// <param name="state">The current randomizer state</param>
+        /// <param name="fromRegion">The region to start from</param>
+        /// <returns>True if state could eventually access the other connected region</returns>
+        /// <exception cref="ArgumentException">If <paramref name="fromRegion"/> is not a part of this connection</exception>
+        public bool TravelPossible(State state, RandoRegion fromRegion)
+        {
+            if (fromRegion.ID == regions[0].ID) return requirements[0].IsPossible(state);
+            if (fromRegion.ID == regions[1].ID) return requirements[1].IsPossible(state);
+            throw new ArgumentException($"Given region ({fromRegion.ID}) is not part of this connection ({ID})", "region");
+        }
+
+        /// <summary>
         /// Whether this connection is currently traversable from a given region
         /// </summary>
         /// <param name="state">The current randomizer state</param>
-        /// <param name="region">The region to start from</param>
+        /// <param name="fromRegion">The region to start from</param>
         /// <returns>True if state can access the other connected region</returns>
-        /// <exception cref="ArgumentException">If <paramref name="region"/> is not a part of this connection</exception>
-        public bool CanTravel(State state, RandoRegion region)
+        /// <exception cref="ArgumentException">If <paramref name="fromRegion"/> is not a part of this connection</exception>
+        public bool CanTravel(State state, RandoRegion fromRegion)
         {
-            if (region.ID == regions[0].ID) return requirements[0].IsMet(state);
-            if (region.ID == regions[1].ID) return requirements[1].IsMet(state);
-            throw new ArgumentException($"Given region ({region.ID}) is not part of this connection ({ID})", "region");
+            if (fromRegion.ID == regions[0].ID) return requirements[0].IsMet(state);
+            if (fromRegion.ID == regions[1].ID) return requirements[1].IsMet(state);
+            throw new ArgumentException($"Given region ({fromRegion.ID}) is not part of this connection ({ID})", "region");
         }
 
         /// <summary>
         /// Gets the region that the given region connects to
         /// </summary>
-        /// <param name="region">The region to start from</param>
+        /// <param name="curRegion">The region to start from</param>
         /// <returns>The other connected region</returns>
-        /// <exception cref="ArgumentException">If <paramref name="region"/> is not a part of this connection</exception>
-        public RandoRegion OtherSide(RandoRegion region)
+        /// <exception cref="ArgumentException">If <paramref name="curRegion"/> is not a part of this connection</exception>
+        public RandoRegion OtherSide(RandoRegion curRegion)
         {
-            if (region.ID == regions[0].ID) return regions[1];
-            if (region.ID == regions[1].ID) return regions[0];
-            throw new ArgumentException($"Given region ({region.ID}) is not part of this connection ({ID})", "region");
+            if (curRegion.ID == regions[0].ID) return regions[1];
+            if (curRegion.ID == regions[1].ID) return regions[0];
+            throw new ArgumentException($"Given region ({curRegion.ID}) is not part of this connection ({ID})", "region");
+        }
+
+        /// <summary>
+        /// Unbinds connection from its regions, allowing it to be safely removed
+        /// </summary>
+        public void Destroy()
+        {
+            regions[0].connections.Remove(this);
+            regions[1].connections.Remove(this);
         }
 
         public override string ToString()

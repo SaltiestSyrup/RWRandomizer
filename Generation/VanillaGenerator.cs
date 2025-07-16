@@ -263,6 +263,8 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 if (skipThisGate) continue;
+                regionShorts[0] = Plugin.ProperRegionMap[regionShorts[0]];
+                regionShorts[1] = Plugin.ProperRegionMap[regionShorts[1]];
 
                 // Create connection
                 Connection connection = new(gate,
@@ -274,14 +276,6 @@ namespace RainWorldRandomizer.Generation
                 allRegions[regionShorts[1]].connections.Add(connection);
 
                 AllGates.Add(gate);
-
-                // TODO: Un-hardcode check for marking GATE_UW_SL as non-progression
-                if (gate.Equals("GATE_UW_SL")
-                    && SlugcatStats.AtOrAfterTimeline(timeline, SlugcatStats.Timeline.Sofanthiel))
-                {
-                    itemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Filler));
-                    continue;
-                }
 
                 itemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
             }
@@ -468,26 +462,6 @@ namespace RainWorldRandomizer.Generation
                         if (rules.Count > 1) rule = new CompoundAccessRule([.. rules], CompoundAccessRule.CompoundOperation.Any);
                         else rule = rules[0];
 
-                        // TODO: Add effect detection for Batflies and Neurons
-                        // This is temporary until there's a way to detect batflies in a region
-                        //if (data.crits[0] == CreatureTemplate.Type.Fly)
-                        //{
-                        //    rule = new CompoundAccessRule(AccessRuleConstants.Regions,
-                        //        CompoundAccessRule.CompoundOperation.AtLeast, 5);
-                        //}
-                        // TODO: Add support for creatures that are PlacedObjects
-                        //else if (data.crits[0] == CreatureTemplate.Type.Hazer)
-                        //{
-                        //    rule = new CompoundAccessRule(
-                        //    [
-                        //        new RegionAccessRule("LF"),
-                        //        new RegionAccessRule("DS"),
-                        //        new RegionAccessRule("GW"),
-                        //        new RegionAccessRule("HI"),
-                        //        new RegionAccessRule("SL")
-                        //    ], CompoundAccessRule.CompoundOperation.Any);
-                        //}
-
                         allGourmRules.Add(rule);
                         foodQuestLocs.Add(new Location($"FoodQuest-{data.crits[0].value}", Location.Type.Food, rule));
                     }
@@ -619,19 +593,18 @@ namespace RainWorldRandomizer.Generation
                 else
                 {
                     // Impossible locations are removed from state
-                    state.FindAndRemoveLocation(loc);
+                    state.PurgeLocation(loc);
                     generationLog.AppendLine($"Removed impossible location: {rule.Key}");
                 }
             }
 
             // Create Subregions
-            
             foreach (SubregionBlueprint subBlueprint in manualSubregions)
             {
                 RandoRegion baseRegion = state.AllRegions.FirstOrDefault(r => r.ID == subBlueprint.baseRegion);
                 if (baseRegion is null)
                 {
-                    generationLog.AppendLine($"Skipping creating subregion in non-existing region {baseRegion}");
+                    generationLog.AppendLine($"Skipping creating subregion in non-existing region {subBlueprint.baseRegion}");
                     continue;
                 }
 
@@ -641,7 +614,6 @@ namespace RainWorldRandomizer.Generation
 
                 state.DefineSubRegion(baseRegion, subBlueprint.ID, locs, connections, subBlueprint.rules);
             }
-            
 
             // Connection Overrides
             foreach (var rule in connectionRuleOverrides)
@@ -659,9 +631,6 @@ namespace RainWorldRandomizer.Generation
                     continue;
                 }
 
-                // TODO: Regions that become impossible will have to be removed from state
-                // Will have to iterate each region's connections, and if none are possible, remove it from state.
-                // Regions will have to be checked like this in a while loop until none were removed.
                 connection.requirements = rule.Value;
                 generationLog.AppendLine($"Applied custom rule to connection: {rule.Key}");
             }
@@ -682,12 +651,28 @@ namespace RainWorldRandomizer.Generation
                 regionB.connections.Add(connection);
             }
 
-            //generationLog.AppendLine("Final region list:");
-            //foreach (RandoRegion region in state.AllRegions)
-            //{
-            //    generationLog.AppendLine($"\t{region}");
-            //}
-            //generationLog.AppendLine();
+            // Purge any regions that are now impossible to access
+            bool anyPurged = false;
+            do
+            {
+                anyPurged = false;
+                foreach (RandoRegion region in state.AllRegions.ToList())
+                {
+                    if (!region.IsPossibleToReach(state))
+                    {
+                        generationLog.AppendLine($"Purged locations and connections for impossible subregion {region.ID}");
+                        state.PurgeRegion(region);
+                        anyPurged = true;
+                    }
+                }
+            } while (anyPurged);
+
+            generationLog.AppendLine("Final region list:");
+            foreach (RandoRegion region in state.AllRegions)
+            {
+                generationLog.AppendLine($"\t{region}");
+            }
+            generationLog.AppendLine();
         }
 
         /// <summary>
@@ -1024,7 +1009,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Cannot climb SB Ravine
-            manualSubregions.Add(new("SB", "SB_Ravine",
+            manualSubregions.Add(new("SB", "SBRavine",
                 ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0"],
                 ["GATE_LF_SB"],
                 [new(AccessRule.IMPOSSIBLE_ID), new()]));
@@ -1107,6 +1092,12 @@ namespace RainWorldRandomizer.Generation
                     ["Pearl-SU_filt"],
                     ["GATE_OE_SU"],
                     [new(AccessRule.IMPOSSIBLE_ID), new()]));
+
+                // Precipice is disconnected from Shoreline
+                manualSubregions.Add(new("SL", "SLPrecipice",
+                    [],
+                    ["GATE_UW_SL"],
+                    [new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)]));
 
                 // Token cache fails to filter this pearl to only Past GW
                 globalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(

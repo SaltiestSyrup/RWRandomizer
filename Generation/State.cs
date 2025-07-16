@@ -7,7 +7,7 @@ namespace RainWorldRandomizer.Generation
     public class State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int startKarma)
     {
         /// <summary>
-        /// Every location in this state. Does not change after initialization.
+        /// Every possible location.
         /// </summary>
         public HashSet<Location> AllLocations { get; private set; }
         /// <summary>
@@ -92,11 +92,12 @@ namespace RainWorldRandomizer.Generation
         /// <param name="locations">The locations from the base region to take. Must be a subset of <paramref name="baseRegion"/>'s locations</param>
         /// <param name="connections">The connections from the base region to take. Must be a subset of <paramref name="baseRegion"/>'s connections</param>
         /// <param name="rules">The <see cref="AccessRule"/>s of the connection from the base region to the new subregion</param>
+        /// <returns>The newly created subregion</returns>
         /// <exception cref="ArgumentException">
         /// Thrown if either the <paramref name="locations"/> or <paramref name="connections"/> 
         /// are not a subset of those in <paramref name="baseRegion"/>
         /// </exception>
-        public void DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations, HashSet<Connection> connections, AccessRule[] rules)
+        public RandoRegion DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations, HashSet<Connection> connections, AccessRule[] rules)
         {
             if (!locations.IsSubsetOf(baseRegion.allLocations)) throw new ArgumentException("Locations must be a subset of region locations", "locations");
             if (!connections.IsSubsetOf(baseRegion.connections)) throw new ArgumentException("Connections must be a subset of region connections", "connections");
@@ -109,7 +110,7 @@ namespace RainWorldRandomizer.Generation
             Connection bridge = new($"SUBREG_{baseRegion.ID}_{newID}", [baseRegion, subRegion], rules);
 
             // Rebind destination of taken connections
-            foreach (var con in connections)
+            foreach (Connection con in connections)
             {
                 int index = con.regions.IndexOf(baseRegion);
                 con.regions[index] = subRegion;
@@ -121,6 +122,8 @@ namespace RainWorldRandomizer.Generation
             AllRegions.Add(subRegion);
             UnreachedRegions.Add(subRegion);
             AllConnections.Add(bridge);
+
+            return subRegion;
         }
 
         /// <summary>
@@ -191,7 +194,7 @@ namespace RainWorldRandomizer.Generation
         /// Purge a location from state altogether, making it no longer valid
         /// </summary>
         /// <param name="loc"></param>
-        public void FindAndRemoveLocation(Location loc)
+        public void PurgeLocation(Location loc)
         {
             AllLocations.Remove(loc);
             UnreachedLocations.Remove(loc);
@@ -201,6 +204,32 @@ namespace RainWorldRandomizer.Generation
             {
                 region.allLocations.Remove(loc);
             }
+        }
+
+        /// <summary>
+        /// Purge a region from state altogether, making it no longer valid
+        /// </summary>
+        /// <param name="region"></param>
+        public void PurgeRegion(RandoRegion region)
+        {
+            foreach (Connection con in region.connections.ToList())
+            {
+                con.Destroy();
+                AllConnections.Remove(con);
+            }
+            foreach (Location loc in region.allLocations)
+            {
+                // If this location exists in multiple places, don't purge it
+                if (AllRegions.Count(r => r.allLocations.Contains(loc)) > 1) continue;
+
+                AllLocations.Remove(loc);
+                UnreachedLocations.Remove(loc);
+                AvailableLocations.Remove(loc);
+            }
+
+            AllRegions.Remove(region);
+            UnreachedRegions.Remove(region);
+            AvailableRegions.Remove(region);
         }
 
         /// <summary>

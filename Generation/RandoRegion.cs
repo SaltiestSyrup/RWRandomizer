@@ -16,6 +16,21 @@ namespace RainWorldRandomizer.Generation
         public HashSet<Location> allLocations = locations;
         public HashSet<Connection> connections = [];
 
+        /// <summary>
+        /// Returns true if there exists at least one connection that could give access to this region
+        /// </summary>
+        /// <param name="state">The current randomizer state</param>
+        public bool IsPossibleToReach(State state)
+        {
+            foreach (Connection con in connections)
+            {
+                if (con.TravelPossible(state, con.OtherSide(this))) return true;
+            }
+            // TODO: Un-hardcode this when generic starting region is added
+            if (ID == VanillaGenerator.PASSAGE_REG || ID == VanillaGenerator.SPECIAL_REG) return true;
+            return false;
+        }
+
         public override string ToString()
         {
             string[] output =
