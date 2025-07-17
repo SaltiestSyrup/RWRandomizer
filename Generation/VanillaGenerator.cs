@@ -1106,6 +1106,16 @@ namespace RainWorldRandomizer.Generation
                     new RegionAccessRule("GW")
                 ], CompoundAccessRule.CompoundOperation.All));
 
+                // Artificer and Inv can't reach underwater GW token
+                globalRuleOverrides.Add("Token-BrotherLongLegs", new MultiSlugcatAccessRule(
+                [
+                    MoreSlugcatsEnums.SlugcatStatsName.Artificer, 
+                    MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel
+                ], true));
+
+                // Inv can't reach underwater GW token
+                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel].Add("Token-RedLizard", new(AccessRule.IMPOSSIBLE_ID));
+
                 // Create a connection to Rubicon, which has no gate to it
                 manualConnections.Add(new ConnectionBlueprint("FALL_SB_HR", ["SB", "HR"],
                     [new KarmaAccessRule(10), new(AccessRule.IMPOSSIBLE_ID)]));

@@ -209,23 +209,26 @@ namespace RainWorldRandomizer.Generation
     public class SlugcatAccessRule : AccessRule
     {
         private readonly SlugcatStats.Name slugcat;
+        public bool inverted;
 
-        public SlugcatAccessRule(SlugcatStats.Name slugcat)
+        /// <param name="invert">If true will pass if chosen is not this slugcat</param>
+        public SlugcatAccessRule(SlugcatStats.Name slugcat, bool invert = false)
         {
             this.slugcat = slugcat;
             ReqName = slugcat.value;
+            inverted = invert;
         }
 
         public override bool IsMet(State state) => IsPossible(state);
 
         public override bool IsPossible(State state)
         {
-            return state.Slugcat == slugcat;
+            return inverted ? state.Slugcat != slugcat : state.Slugcat == slugcat;
         }
 
         public override string ToString()
         {
-            return $"Playing as {ReqName}";
+            return $"{(inverted ? "Not p" : "P")}laying as {ReqName}";
         }
     }
 
@@ -395,8 +398,10 @@ namespace RainWorldRandomizer.Generation
     /// <summary>
     /// Shorthand for a rule allowing any of the given slugcats to be used
     /// </summary>
-    public class MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats) 
-        : CompoundAccessRule([.. slugcats.Select((scug) => new SlugcatAccessRule(scug))], CompoundOperation.Any)
+    /// <param name="invert">If true, will instead pass if slugcat is none of those listed</param>
+    public class MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats, bool invert = false) 
+        : CompoundAccessRule([.. slugcats.Select((scug) => new SlugcatAccessRule(scug, invert))],
+            invert ? CompoundOperation.All : CompoundOperation.Any)
     { }
 
     public static class AccessRuleConstants
