@@ -32,20 +32,16 @@ namespace RainWorldRandomizer
             foreach (Connector connector in connectors.Values) Container.AddChild(connector);
             subObjects.AddRange(nodes.Values);
 
-            Dictionary<string, bool> gates =
-                Scug is not "Watcher"
-                ? Plugin.RandoManager.GetGatesStatus()
-                : Items.CollectedStaticKeys.Union(watcherUnkeyableWarps).ToDictionary(x => x, x => true);
+            IEnumerable<string> gates =
+                Plugin.RandoManager.GetGatesStatus().Where(x => x.Value).Select(x => x.Key)
+                .Union(Items.CollectedStaticKeys.Union(watcherUnkeyableWarps).Select(x => $"Warp-{x}"));
 
-            foreach (var pair in gates)
+            foreach (string gate in gates)
             {
-                if (connectors.TryGetValue(Scug is "Watcher" ? $"Warp-{pair.Key}" : pair.Key, out Connector connector))
-                {
-                    connector.Color = pair.Value ? COLOR_ACCESSIBLE : COLOR_INACCESSIBLE;
-                }
+                if (connectors.TryGetValue(gate, out Connector connector)) connector.Color = COLOR_ACCESSIBLE;
             }
 
-            foreach (string nodeName in GetAccessibleNodes(gates.Where(x => x.Value).Select(x => x.Key)))
+            foreach (string nodeName in GetAccessibleNodes(gates))
             {
                 if (nodes.TryGetValue(nodeName, out Node node)) node.Accessible = true;
             }
@@ -78,6 +74,11 @@ namespace RainWorldRandomizer
             public readonly string node;
             public readonly bool collected;
 
+            /// <summary>
+            /// Represents a location (check).  The type of location and the region it belongs to are computed from the name.
+            /// </summary>
+            /// <param name="location">The name of the location.</param>
+            /// <param name="collected">Whether the location has been collected.</param>
             public LocationInfo(string location, bool collected)
             {
                 kind = KindOfLocation(location);
@@ -160,13 +161,13 @@ namespace RainWorldRandomizer
         internal static List<string> watcherNodeOrder =
         [
             "WHIR", null, "WDSR", null, "WAUA*", "WARB*", "WARD*",
-        "WSUR", "WORA", "WGWR", "WRSA", "WARA*", "WPTA*", "WSKD*",
-        "WARB", "WARC", "WSSR", "WBLA", "WARC*", "WSKC*", "WBLA*",
-        "WARE", "WTDA", "WSKC", "WARD", "WVWA*", "WARE*", "WTDA*",
-        null, "WTDB", "WARG", "WSKD", "WTDB*", "WRFB*", "WARF*",
-        "WPTA", "WRRA", "WSKB", "WARF", null, null, null,
-        "WVWA", "WRFB", "WRFA", "WSKA", null, null, null,
-    ];
+            "WSUR", "WORA", "WGWR", "WRSA", "WARA*", "WPTA*", "WSKD*",
+            "WARB", "WARC", "WSSR", "WBLA", "WARC*", "WSKC*", "WBLA*",
+            "WARE", "WTDA", "WSKC", "WARD", "WVWA*", "WARE*", "WTDA*",
+            null, "WTDB", "WARG", "WSKD", "WTDB*", "WRFB*", "WARF*",
+            "WPTA", "WRRA", "WSKB", "WARF", null, null, null,
+            "WVWA", "WRFB", "WRFA", "WSKA", null, null, null,
+        ];
 
         internal static List<string> watcherUnkeyableWarps =
         [
@@ -230,10 +231,10 @@ namespace RainWorldRandomizer
                 List<ValueTuple<int, int, int, List<int>>> directives =
                 [
                     new(1, 0, 4, [5, 7, 8, 10, 11, 14, 16, 21, 23, 29, 30, 32, 36, 37, 42, 43, 44]),  // to right
-                new(7, 2, 6, [4, 6, 11, 12, 13, 14, 17, 18, 19, 20, 26, 27, 29, 31, 35, 38]),  // to above
-                new(8, 1, 5, [0, 8, 16, 22, 36]),  // to upper right
-                new(6, 3, 7, [2, 5, 24, 38]),  // to upper left
-            ];
+                    new(7, 2, 6, [4, 6, 11, 12, 13, 14, 17, 18, 19, 20, 26, 27, 29, 31, 35, 38]),  // to above
+                    new(8, 1, 5, [0, 8, 16, 22, 36]),  // to upper right
+                    new(6, 3, 7, [2, 5, 24, 38]),  // to upper left
+                ];
 
                 foreach ((int, int, int, List<int>) directive in directives)
                 {
@@ -319,13 +320,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static string ActualStartRegion
-        {
-            get
-            {
-                return Plugin.RandoManager.customStartDen.Split('_')[0];
-            }
-        }
+        public static string ActualStartRegion => Plugin.RandoManager.customStartDen.Split('_')[0];
 
         /// <summary>
         /// Determine whether a particular gate is usable in either direction.
@@ -357,12 +352,11 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Given a list of currently held gate keys, determinine which region nodes are accessible.
+        /// Given a list of currently held keys, determinine which region nodes are accessible.
         /// </summary>
         public static IEnumerable<string> GetAccessibleNodes(IEnumerable<string> keys)
         {
             List<string> ret = [GetNodeName(ActualStartRegion), "<FQ>", "<P>"];
-            if (Scug is "Watcher") keys = keys.Union(watcherUnkeyableWarps);
             Dictionary<string, bool[]> keyDict = keys.ToDictionary(x => x, CanUseGate);
             bool updated = true;
             while (updated)
@@ -370,26 +364,16 @@ namespace RainWorldRandomizer
                 updated = false;
                 foreach (var pair in keyDict)
                 {
-                    if (Scug is "Watcher")
-                    {
-                        string[] split = pair.Key.Split('-');
-                        string left = GetNodeName(split[0]);
-                        string right = GetNodeName(split[1]);
-                        bool[] usable = pair.Value;
-                        if (usable[0] && ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); ret.Add($"{right}*"); updated = true; }
-                        else if (usable[1] && !ret.Contains(left) && ret.Contains(right)) { ret.Add(left); ret.Add($"{left}*"); updated = true; }
+                    List<string> names = [.. pair.Key.Replace("_", "-").Split('-').Skip(1).Select(GetNodeName)];
+                    bool[] usable = pair.Value;
 
-                        if (usable[0] && ret.Contains($"{left}*") && !ret.Contains($"{right}*")) { ret.Add(right); ret.Add($"{right}*"); updated = true; }
-                        else if (usable[1] && !ret.Contains($"{left}*") && ret.Contains($"{right}*")) { ret.Add(left); ret.Add($"{left}*"); updated = true; }
-                    }
-                    else
+                    for (int i = 0; i < 2; i++)
                     {
-                        string[] split = pair.Key.Split('_');
-                        string left = GetNodeName(split[1]);
-                        string right = GetNodeName(split[2]);
-                        bool[] usable = pair.Value;
-                        if (usable[0] && ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); updated = true; }
-                        else if (usable[1] && !ret.Contains(left) && ret.Contains(right)) { ret.Add(left); updated = true; }
+                        string here = names[i]; string there = names[1 - i];
+                        if (usable[i] && ((ret.Contains(here) && !ret.Contains(there)) || (ret.Contains($"{here}*") && !ret.Contains($"{there}*"))))
+                        {
+                            ret.Add(there); ret.Add($"{there}*"); updated = true;
+                        }
                     }
                 }
             }
