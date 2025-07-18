@@ -665,20 +665,33 @@ namespace RainWorldRandomizer
                 foreach (CheckIcon sprite in _childNodes.OfType<CheckIcon>())
                 {
                     sprite.SetPosition(pos + sprite.Adjustment);
-                    pos += new Vector2(sprite.width + 5f, 0f);
+                    pos += new Vector2(sprite.width + 5f + sprite.Padding, 0f);
                     if (pos.x > (Scug is "Watcher" ? 420f : 300f)) pos = new Vector2(20f, pos.y - 35f);
                 }
             }
 
             public class CheckIcon(string element, LocationKind kind, string name) : FSprite(element)
             {
-                public Vector2 Adjustment
+                public Vector2 Adjustment => kind switch
                 {
-                    get
-                    {
-                        return kind == LocationKind.Pearl ? new Vector2(-6f, 0f) : default;
-                    }
-                }
+                    LocationKind.Pearl => new(-6f, 0f),
+                    LocationKind.FixedWarp => new(10f, 0f),
+                    LocationKind.ThroneWarp => new(8f, 0f),
+                    LocationKind.SpreadRot => new(4f, 0f),
+                    LocationKind.Prince => new(6f, 0f),
+                    _ => default
+                };
+
+                public float Padding => kind switch
+                {
+                    LocationKind.FixedWarp => -15f,
+                    LocationKind.Prince => -10f,
+                    LocationKind.ThroneWarp => -10f,
+                    LocationKind.Echo => -7f,
+                    LocationKind.SpinningTop => -7f,
+                    _ => default
+                };
+
                 public LocationKind kind = kind;
                 public string name = name;
 
@@ -702,7 +715,7 @@ namespace RainWorldRandomizer
                             break;
                         case LocationKind.Echo:
                         case LocationKind.SpinningTop:
-                            element = "smallKarma9-9";
+                            element = "karma9-9";
                             scale = 0.5f;
                             color = RainWorld.SaturatedGold;
                             break;
@@ -765,19 +778,33 @@ namespace RainWorldRandomizer
                             else if (ModManager.MSC) { element = "GuidancePebbles"; }
                             break;
                         case LocationKind.Flower:
-                            element = "Kill_BoxWorm";  // placeholder
+                            element = "FlowerMarker";
+                            color = Color.yellow;
                             break;
                         case LocationKind.FixedWarp:
-                            element = "Kill_Loach";  // placeholder
+                            element = "warpIcon";
+                            color = RainWorld.RippleColor;
+                            scale = 0.6f;
                             break;
                         case LocationKind.ThroneWarp:
-                            element = "Kill_Tardigrade";  // placeholder
+                            element = name.Split('-').LastOrDefault() switch
+                            {
+                                "10" => "ripple2.0",
+                                "05" => "ripple3.0",
+                                "09" => "ripple4.0",
+                                "07" => "ripple5.0",
+                                _ => "warpIcon"
+                            };
+                            color = RainWorld.RippleColor;
+                            scale = 0.6f;
                             break;
                         case LocationKind.Prince:
-                            element = "Kill_Rat";  // placeholder
+                            element = "PrincePetals0";
+                            color = RainWorld.RippleColor;
+                            scale = 0.5f;
                             break;
                         case LocationKind.SpreadRot:
-                            element = "Kill_Daddy";  // placeholder
+                            element = "Kill_Daddy";
                             break;
                         default:
                             element = "EndGameCircle";
