@@ -13,7 +13,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static List<string> collectedDynamicKeys = [];
         internal static List<string> CollectedDynamicKeys => collectedDynamicKeys;  // this could get from where the data actually gets stored later
         internal static List<string> collectedStaticKeys = [];
-        internal static List<string> CollectedStaticKeys => collectedDynamicKeys;
+        internal static List<string> CollectedStaticKeys => collectedStaticKeys;
 
         internal struct StaticKey
         {
