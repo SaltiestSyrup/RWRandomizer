@@ -44,11 +44,11 @@ namespace RainWorldRandomizer.Generation
         /// Used to divide regions into multiple parts. To create ome, define a SubregionBlueprint with the base region, 
         /// a new subregion ID, and the locations and connections it should affect
         /// </summary>
-        public static HashSet<SubregionBlueprint> manualSubregions = [];
+        public static List<SubregionBlueprint> manualSubregions = [];
         /// <summary>
         /// Used to create connections where they wouldn't be auto-generated.
         /// </summary>
-        public static HashSet<ConnectionBlueprint> manualConnections = [];
+        public static List<ConnectionBlueprint> manualConnections = [];
 
         /// <summary>
         /// Combination of <see cref="globalRuleOverrides"/> and <see cref="slugcatRuleOverrides"/> populated in instance constructor.
@@ -1049,17 +1049,24 @@ namespace RainWorldRandomizer.Generation
 
             if (outputType == Unlock.UnlockType.Item)
             {
-                return new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id.Substring(7)));
+                return new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id[7..]));
             }
             if (outputType == Unlock.UnlockType.ItemPearl)
             {
-                return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id.Substring(12), true));
+                return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id[12..], true));
             }
             return new Unlock(outputType, item.id);
         }
 
         public static void GenerateCustomRules()
         {
+            // Clear any rules that may have been populated in a previous OnModsInit()
+            slugcatRuleOverrides.Clear();
+            globalRuleOverrides.Clear();
+            connectionRuleOverrides.Clear();
+            manualConnections.Clear();
+            manualSubregions.Clear();
+
             slugcatRuleOverrides.Add(SlugcatStats.Name.White, []);
             slugcatRuleOverrides.Add(SlugcatStats.Name.Yellow, []);
             slugcatRuleOverrides.Add(SlugcatStats.Name.Red, []);
@@ -1085,7 +1092,7 @@ namespace RainWorldRandomizer.Generation
             if (ModManager.MSC)
             {
                 // Subeterranean to Outer Expanse
-                connectionRuleOverrides.Add("GATE_SB_OE",
+                connectionRuleOverrides["GATE_SB_OE"] =
                 [
                     // Gate AND (Survivor OR Monk OR (Gourmand AND The Mark))
                     new CompoundAccessRule(
@@ -1103,19 +1110,19 @@ namespace RainWorldRandomizer.Generation
                     ], CompoundAccessRule.CompoundOperation.All),
                     // Gate
                     new GateAccessRule("GATE_SB_OE")
-                ]);
+                ];
 
                 // Outer Expanse to Outskirts
-                connectionRuleOverrides.Add("GATE_OE_SU",
+                connectionRuleOverrides["GATE_OE_SU"] =
                 [
                     // Free, gate always open
                     new(),
                     // Impossible
                     new(AccessRule.IMPOSSIBLE_ID)
-                ]);
+                ];
 
                 // Exterior to Metropolis 
-                connectionRuleOverrides.Add("GATE_UW_LC",
+                connectionRuleOverrides["GATE_UW_LC"] =
                 [
                     // Gate AND (Metro option OR (Artificer AND The Mark AND Citizen ID Drone))
                     new CompoundAccessRule(
@@ -1134,11 +1141,13 @@ namespace RainWorldRandomizer.Generation
                     ], CompoundAccessRule.CompoundOperation.All),
                     // Gate
                     new GateAccessRule("GATE_UW_LC")
-                ]);
+                ];
 
                 // Shoreline to Submerged Superstructure
-                connectionRuleOverrides.Add("GATE_MS_SL",
+                connectionRuleOverrides["GATE_MS_SL"] =
                 [
+                    // Gate
+                    new GateAccessRule("GATE_MS_SL"),
                     // Gate AND (Submerged option OR Rivulet)
                     new CompoundAccessRule(
                     [
@@ -1148,17 +1157,39 @@ namespace RainWorldRandomizer.Generation
                             new OptionAccessRule("ForceOpenSubmerged"),
                             new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
                         ], CompoundAccessRule.CompoundOperation.Any)
-                    ], CompoundAccessRule.CompoundOperation.All),
-                    // Gate
-                    new GateAccessRule("GATE_MS_SL")
-                ]);
+                    ], CompoundAccessRule.CompoundOperation.All)
+                ];
 
-                // Cannot reach filtration from Outskirts
+                // Submerged Superstructure (Bitter Aerie) to Shoreline
+                connectionRuleOverrides["GATE_SL_MS"] =
+                [
+                    // Impossible to enter from above LttM
+                    new AccessRule(AccessRule.IMPOSSIBLE_ID),
+                    // Free, if the gate is reachable. The Bitter Aerie subregion will handle that logic
+                    new AccessRule()
+                ];
+
+                AccessRule sumpTunnelRule = new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Artificer, true);
+                // Shoreline to Pipeyard (Sump Tunnel)
+                connectionRuleOverrides["GATE_SL_VS"] = 
+                [
+                    // Cannot traverse Sump Tunnel as Artificer
+                    sumpTunnelRule, sumpTunnelRule
+                ];
+
+                // The Exterior is split in half at UW_C02, as Rivulet has a hard time crossing it
+                manualSubregions.Add(new("UW", "UWWall",
+                    ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard", "Broadcast-Chatlog_Broadcast0"],
+                    ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
+                    ["SU_S03", "SU_S04"],
+                    [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, true), new()]));
+
+                // Cannot reach filtration from Outskirts, except as Saint
                 manualSubregions.Add(new SubregionBlueprint("SU", "SU_Filt",
                     ["Pearl-SU_filt"],
                     ["GATE_OE_SU"],
                     ["SU_S05"],
-                    [new(AccessRule.IMPOSSIBLE_ID), new()]));
+                    [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new()]));
 
                 // Precipice is disconnected from Shoreline
                 manualSubregions.Add(new("SL", "SLPrecipice",
@@ -1166,6 +1197,40 @@ namespace RainWorldRandomizer.Generation
                     ["GATE_UW_SL"],
                     ["SL_S13"],
                     [new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)]));
+
+                // Saint OR (Rivulet AND EnergyCell)
+                AccessRule bitterAerieAccess = new CompoundAccessRule(
+                [
+                    new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint),
+                    new CompoundAccessRule(
+                    [
+                        new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet),
+                        new AccessRule("Object-EnergyCell")
+                    ], CompoundAccessRule.CompoundOperation.All)
+                ], CompoundAccessRule.CompoundOperation.Any);
+                // Bitter Aerie is only for Saint or after Rivulet completion
+                manualSubregions.Add(new("MS", "MSBitterAerie",
+                    ["Token-S-MS", "Token-MirosVulture", "Echo-MS"],
+                    ["GATE_SL_MS"],
+                    ["MS_S07", "MS_S10"],
+                    [bitterAerieAccess, new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint)]
+                    ));
+
+                // Only Saint can climb up to above LttM
+                manualSubregions.Add(new("SL", "SLAboveLttM",
+                    ["Echo-SL"],
+                    ["GATE_SL_MS"],
+                    ["SL_STOP"],
+                    [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new()]
+                    ));
+
+                // Artificer cannot traverse Sump Tunnel
+                manualSubregions.Add(new("VS", "VSSumpTunnel",
+                    [],
+                    ["GATE_SL_VS"],
+                    ["VS_S02"],
+                    [sumpTunnelRule, sumpTunnelRule]
+                    ));
 
                 // Token cache fails to filter this pearl to only Past GW
                 globalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(
@@ -1181,12 +1246,26 @@ namespace RainWorldRandomizer.Generation
                     MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel
                 ], true));
 
+                // Waterfront Safari token is in a very silly location for Spearmaster
+                globalRuleOverrides.Add("Token-S-LM", new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Spear, true));
+
                 // Inv can't reach underwater GW token
                 slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel].Add("Token-RedLizard", new(AccessRule.IMPOSSIBLE_ID));
 
                 // Create a connection to Rubicon, which has no gate to it
                 manualConnections.Add(new ConnectionBlueprint("FALL_SB_HR", ["SB", "HR"],
                     [new KarmaAccessRule(10), new(AccessRule.IMPOSSIBLE_ID)]));
+            }
+            // *NOT* MSC specific rules
+            else
+            {
+                // The Exterior is split in half at UW_D06 pre-MSC, as there are no grapple worms for crossing
+                // You *could* bring a grapple worm from Chimney but that's too out of the way to be in logic
+                manualSubregions.Add(new("UW", "UWWall",
+                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard"],
+                    ["GATE_SS_UW", "GATE_CC_UW"],
+                    ["SU_S03", "SU_S04"],
+                    [new(), new SlugcatAccessRule(SlugcatStats.Name.Red)]));
             }
 
             // Inbuilt custom region rules

@@ -338,6 +338,8 @@ namespace RainWorldRandomizer
                 {
                     case "Hazer":
                     case "DeadHazer":
+                        // All hazers in SL are out of reach
+                        if (region is "sl" or "lm") break;
                         CacheCreature(self, region, room, list3, CreatureTemplate.Type.Hazer);
                         break;
                 }

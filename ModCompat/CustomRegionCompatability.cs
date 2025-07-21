@@ -16,7 +16,7 @@ namespace RainWorldRandomizer
             Constants.OneWayGates.Add("GATE_PA_FR", false);
 
             // Old Hanging Gardens tries really hard to pretend it exists when it doesn't
-            GlobalRuleOverrides.Add("Region-HG", new AccessRule(AccessRule.IMPOSSIBLE_ID));
+            //GlobalRuleOverrides.Add("Region-HG", new AccessRule(AccessRule.IMPOSSIBLE_ID));
 
             hasInit = true;
         }
