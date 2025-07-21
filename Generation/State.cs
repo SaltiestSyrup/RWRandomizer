@@ -125,8 +125,9 @@ namespace RainWorldRandomizer.Generation
                 con.regions[index] = subRegion;
             }
 
-            baseRegion.connections.Add(bridge);
-            subRegion.connections = [.. connections, bridge];
+            subRegion.connections = [.. connections];
+            bridge.Create();
+
             subRegion.shelters = shelters;
 
             AllRegions.Add(subRegion);
@@ -139,10 +140,15 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Directly mark a region as accessible to this state
         /// </summary>
-        /// <param name="ID"></param>
-        public void AddRegion(string ID)
+        /// <param name="ID">A region ID to search for</param>
+        public void AddRegion(string ID) => AddRegion(AllRegions.First(r => r.ID == ID));
+
+        /// <summary>
+        /// Directly mark a region as accessible to this state
+        /// </summary>
+        /// <param name="ID">A region within this state</param>
+        public void AddRegion(RandoRegion region)
         {
-            RandoRegion region = AllRegions.First(r => r.ID == ID);
             UnreachedRegions.Remove(region);
             AvailableRegions.Add(region);
             region.hasReached = true;
@@ -171,21 +177,29 @@ namespace RainWorldRandomizer.Generation
         }
 
         /// <summary>
+        /// Finds a region within state by ID
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <returns>The found region, or null if not found</returns>
+        public RandoRegion RegionFromID(string ID) => AllRegions.FirstOrDefault(r => r.ID == ID);
+
+        /// <summary>
+        /// Finds the region that contains the given shelter
+        /// </summary>
+        /// <param name="shelter"></param>
+        /// <returns>The region in this state containing the shelter, null if not found</returns>
+        public RandoRegion RegionOfShelter(string shelter) => AllRegions.FirstOrDefault(r => r.shelters.Contains(shelter));
+
+        /// <summary>
         /// Check if a given region ID is accessible to state
         /// </summary>
         /// <param name="regionShort">The ID of a <see cref="RandoRegion"/> in this state</param>
-        public bool HasRegion(string regionShort)
-        {
-            return AvailableRegions.Any(r => r.ID == regionShort);
-        }
+        public bool HasRegion(string regionShort) => AvailableRegions.Any(r => r.ID == regionShort);
 
         /// <summary>
         /// Check if every region is accessible to state
         /// </summary>
-        public bool HasAllRegions()
-        {
-            return AllRegions.SetEquals(AvailableRegions);
-        }
+        public bool HasAllRegions() => AllRegions.SetEquals(AvailableRegions);
 
         /// <summary>
         /// Removes a random accessible location from state and returns it
@@ -295,7 +309,7 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
             }
-            
+
             if (newRegions.Count > 0)
             {
                 UnreachedRegions.ExceptWith(newRegions);

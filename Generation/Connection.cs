@@ -84,6 +84,15 @@ namespace RainWorldRandomizer.Generation
         }
 
         /// <summary>
+        /// Binds this connection to its regions, allowing them to reference it
+        /// </summary>
+        public void Create()
+        {
+            regions[0].connections.Add(this);
+            regions[1].connections.Add(this);
+        }
+
+        /// <summary>
         /// Unbinds connection from its regions, allowing it to be safely removed
         /// </summary>
         public void Destroy()

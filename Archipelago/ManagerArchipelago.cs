@@ -262,36 +262,6 @@ namespace RainWorldRandomizer
             return true;
         }
 
-        /// <summary>
-        /// Finds a random den in the given region
-        /// </summary>
-        public static string FindRandomStart(string selectedRegion)
-        {
-            Dictionary<string, List<string>> contenders = [];
-            if (File.Exists(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt")))
-            {
-                string[] file = File.ReadAllLines(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt"));
-                foreach (string line in file)
-                {
-                    if (!line.StartsWith("//") && line.Length > 0)
-                    {
-                        string region = Regex.Split(line, "_")[0];
-                        if (Region.GetFullRegionOrder().Contains(region))
-                        {
-                            if (!contenders.ContainsKey(region))
-                            {
-                                contenders.Add(region, []);
-                            }
-                            contenders[region].Add(line);
-                        }
-                    }
-                }
-                return contenders[selectedRegion][UnityEngine.Random.Range(0, contenders[selectedRegion].Count)];
-            }
-
-            return "SU_S01";
-        }
-
         public override List<string> GetLocations()
         {
             return [.. locationsStatus.Keys];

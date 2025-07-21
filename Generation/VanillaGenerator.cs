@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -22,6 +21,10 @@ namespace RainWorldRandomizer.Generation
         public const string FOODQUEST_REG = "FoodQuest";
         /// <summary> Constant storing the ID for the Special region </summary>
         public const string SPECIAL_REG = "Special";
+        /// <summary>
+        /// Constant storing the ID for the dummy start region used with non-random starts
+        /// </summary>
+        public const string START_REG = "StartDummy";
 
         /// <summary>
         /// Used to override rules for locations. To modify the rules of a location, add its location ID to this dict with the new rule it should follow.
@@ -140,6 +143,8 @@ namespace RainWorldRandomizer.Generation
 
             InitializeState();
             ApplyRuleOverrides();
+            DefineStartConditions();
+            FinalizeState();
             BalanceItems();
             PlaceProgression();
             PlaceFiller();
@@ -251,7 +256,6 @@ namespace RainWorldRandomizer.Generation
                 // Skip if gate already accounted for
                 if (AllGates.Contains(gate)) continue;
                 // Gates that have to always be open to avoid softlocks
-                if (Constants.ForceOpenGates.Contains(gate)) continue;
 
                 bool skipThisGate = false;
                 foreach (string regionShort in regionShorts)
@@ -280,13 +284,14 @@ namespace RainWorldRandomizer.Generation
                 regionShorts[1] = Plugin.ProperRegionMap[regionShorts[1]];
 
                 // Create connection
+                // Gates defined as always open are given free passage,
+                // though there is likely a custom one-way definition
                 Connection connection = new(gate,
                 [
                     allRegions[regionShorts[0]],
                     allRegions[regionShorts[1]]
-                ], new GateAccessRule(gate));
-                allRegions[regionShorts[0]].connections.Add(connection);
-                allRegions[regionShorts[1]].connections.Add(connection);
+                ], Constants.ForceOpenGates.Contains(gate) ? new AccessRule() : new GateAccessRule(gate));
+                connection.Create();
 
                 AllGates.Add(gate);
 
@@ -627,6 +632,7 @@ namespace RainWorldRandomizer.Generation
                 HashSet<string> shelters = [.. state.AllShelters.Where(s => subBlueprint.shelters.Contains(s))];
 
                 state.DefineSubRegion(baseRegion, subBlueprint.ID, locs, connections, shelters, subBlueprint.rules);
+                generationLog.AppendLine($"Created new subregion: {subBlueprint.ID}");
             }
 
             // Connection Overrides
@@ -661,12 +667,66 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 Connection connection = new(connectionBlueprint.ID, [regionA, regionB], connectionBlueprint.rules);
-                regionA.connections.Add(connection);
-                regionB.connections.Add(connection);
+                connection.Create();
+                generationLog.AppendLine($"Created new connection between {regionA.ID} and {regionB.ID}");
+            }
+        }
+
+        /// <summary>
+        /// Create the starting region and its connections
+        /// </summary>
+        /// <exception cref="GenerationFailureException">Thrown if non-randomized starting den is invalid</exception>
+        private void DefineStartConditions()
+        {
+            RandoRegion startRegion = new(START_REG, []);
+            List<Connection> connectionsToAdd = [];
+
+            if (state.RegionFromID(PASSAGE_REG) is not null)
+            {
+                connectionsToAdd.Add(new("TO_PASSAGES", [startRegion, state.RegionFromID(PASSAGE_REG)], new AccessRule()));
+            }
+            if (state.RegionFromID(SPECIAL_REG) is not null)
+            {
+                connectionsToAdd.Add(new("TO_SPECIAL", [startRegion, state.RegionFromID(SPECIAL_REG)], new AccessRule()));
+            }
+            if (state.RegionFromID(FOODQUEST_REG) is not null)
+            {
+                connectionsToAdd.Add(new("TO_FOOD_QUEST", [startRegion, state.RegionFromID(FOODQUEST_REG)], new AccessRule()));
             }
 
+            if (RandoOptions.RandomizeSpawnLocation)
+            {
+                // From state, find a random region that has at least one location and one shelter
+                List<RandoRegion> contenderRegions = [.. state.AllRegions.Where(r => r.allLocations.Count > 0 && r.shelters.Count > 0)];
+                RandoRegion chosenRegion = contenderRegions[randomState.Next(0, contenderRegions.Count)];
+                // Choose a random shelter within the chosen region
+                customStartDen = chosenRegion.shelters.ElementAt(randomState.Next(0, chosenRegion.shelters.Count));
+                connectionsToAdd.Add(new("START_PATH", [startRegion, chosenRegion], new AccessRule()));
+            }
+            else
+            {
+                // Find the default starting den within state's regions
+                RandoRegion destination = state.RegionOfShelter(Constants.SlugcatDefaultStartingDen[slugcat])
+                    ?? throw new GenerationFailureException($"Failed to define starting region for {slugcat}, no region has shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
+                customStartDen = Constants.SlugcatDefaultStartingDen[slugcat];
+                connectionsToAdd.Add(new("START_PATH", [startRegion, destination], new AccessRule()));
+            }
+
+            // Finalize connections
+            connectionsToAdd.ForEach(c => c.Create());
+
+            state.AllRegions.Add(startRegion);
+            state.UnreachedRegions.Add(startRegion);
+            state.AllConnections.UnionWith(connectionsToAdd);
+        }
+
+        /// <summary>
+        /// Purge leftover impossible regions. No new additions to logic should be made after this point
+        /// </summary>
+        private void FinalizeState()
+        {
             // Purge any regions that are now impossible to access
-            bool anyPurged = false;
+            bool anyPurged;
             do
             {
                 anyPurged = false;
@@ -681,6 +741,7 @@ namespace RainWorldRandomizer.Generation
                 }
             } while (anyPurged);
 
+            // Log all logic
             generationLog.AppendLine("Final region list:");
             foreach (RandoRegion region in state.AllRegions)
             {
@@ -780,25 +841,10 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("PLACE PROGRESSION");
             CurrentStage = GenerationStep.PlacingProg;
-            // Determine starting region
-            if (RandoOptions.RandomizeSpawnLocation)
-            {
-                // TODO: Somehow detect if starting den is within a defined Subregion
-                customStartDen = FindRandomStart(slugcat);
-                generationLog.AppendLine($"Using custom start den: {customStartDen}");
-                state.AddRegion(Plugin.ProperRegionMap[Regex.Split(customStartDen, "_")[0]]);
-                generationLog.AppendLine($"First region: {Plugin.ProperRegionMap[Regex.Split(customStartDen, "_")[0]]}");
-            }
-            else
-            {
-                customStartDen = Constants.SlugcatDefaultStartingDen[slugcat];
-                state.AddRegion(Constants.SlugcatStartingRegion[slugcat]);
-                generationLog.AppendLine($"First region: {Constants.SlugcatStartingRegion[slugcat]}");
-            }
 
-            state.AddRegion(PASSAGE_REG);
-            state.AddRegion(SPECIAL_REG);
-            
+            // Add the starting region and its connections into logic
+            state.AddRegion(START_REG);
+
             // Continue until all regions are accessible
             // Note that a region is considered "accessible" by state regardless of
             // if there is some other rule blocking access to checks in that region
@@ -820,7 +866,7 @@ namespace RainWorldRandomizer.Generation
                             // If there is a Connection associated with this gate ID
                             // and exactly one side is currently reachable, then consider this gate placeable.
                             if (state.AllConnections.Any(c => c.ID == i.id && c.ConnectedStatus == Connection.ConnectedLevel.OneReached))
-                                //(state.HasRegion(Plugin.ProperRegionMap[gate[1]]) ^ state.HasRegion(Plugin.ProperRegionMap[gate[2]]))
+                            //(state.HasRegion(Plugin.ProperRegionMap[gate[1]]) ^ state.HasRegion(Plugin.ProperRegionMap[gate[2]]))
                             {
                                 placeableGates.Add(i);
                             }
@@ -919,7 +965,7 @@ namespace RainWorldRandomizer.Generation
                 CurrentStage = GenerationStep.FailedGen;
                 throw new GenerationFailureException("Failed to reach all locations");
             }
-            
+
         }
 
         /// <summary>
@@ -1102,7 +1148,6 @@ namespace RainWorldRandomizer.Generation
                 ]);
 
                 // Cannot reach filtration from Outskirts
-                // TODO: What if Spearmaster default starts in filtration? It would be incorrectly removed from state in that case.
                 manualSubregions.Add(new SubregionBlueprint("SU", "SU_Filt",
                     ["Pearl-SU_filt"],
                     ["GATE_OE_SU"],
@@ -1126,7 +1171,7 @@ namespace RainWorldRandomizer.Generation
                 // Artificer and Inv can't reach underwater GW token
                 globalRuleOverrides.Add("Token-BrotherLongLegs", new MultiSlugcatAccessRule(
                 [
-                    MoreSlugcatsEnums.SlugcatStatsName.Artificer, 
+                    MoreSlugcatsEnums.SlugcatStatsName.Artificer,
                     MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel
                 ], true));
 
@@ -1141,35 +1186,6 @@ namespace RainWorldRandomizer.Generation
             // Inbuilt custom region rules
             globalRuleOverrides.AddRange(CustomRegionCompatability.GlobalRuleOverrides);
             slugcatRuleOverrides.AddRange(CustomRegionCompatability.SlugcatRuleOverrides);
-        }
-
-        public string FindRandomStart(SlugcatStats.Name slugcat)
-        {
-            Dictionary<string, List<string>> contenders = [];
-            if (File.Exists(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt")))
-            {
-                string[] file = File.ReadAllLines(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt"));
-                foreach (string line in file)
-                {
-                    if (!line.StartsWith("//") && line.Length > 0)
-                    {
-                        string region = Regex.Split(line, "_")[0];
-                        if (SlugcatStats.SlugcatStoryRegions(slugcat).Contains(region))
-                        {
-                            if (!contenders.ContainsKey(region))
-                            {
-                                contenders.Add(region, []);
-                            }
-                            contenders[region].Add(line);
-                        }
-                    }
-                }
-
-                string selectedRegion = contenders.Keys.ToArray()[randomState.Next(0, contenders.Count)];
-                return contenders[selectedRegion][randomState.Next(contenders[selectedRegion].Count)];
-            }
-
-            return "NONE";
         }
 
         public class GenerationFailureException : Exception

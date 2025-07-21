@@ -4,7 +4,6 @@ using System.Linq;
 
 namespace RainWorldRandomizer.Generation
 {
-    // TODO: Regions will have to store the shelters they contain for starting shelter logic
     public class RandoRegion(string ID, HashSet<Location> locations) : IEquatable<RandoRegion>
     {
         public string ID = ID;
@@ -27,8 +26,6 @@ namespace RainWorldRandomizer.Generation
             {
                 if (con.TravelPossible(state, con.OtherSide(this))) return true;
             }
-            // TODO: Un-hardcode this when generic starting region is added
-            if (ID == VanillaGenerator.PASSAGE_REG || ID == VanillaGenerator.SPECIAL_REG) return true;
             return false;
         }
 
