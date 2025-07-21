@@ -176,7 +176,7 @@ namespace RainWorldRandomizer.Generation
             bool doPearlLocations = RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
             bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && RandoOptions.UseSMBroadcasts;
             List<string> slugcatRegions = [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
-            foreach (string regionShort in Region.GetFullRegionOrder(timeline))
+            foreach (string regionShort in Region.GetFullRegionOrder())
             {
                 HashSet<Location> regionLocations = [];
 
