@@ -384,11 +384,18 @@ namespace RainWorldRandomizer.Generation
 
         public override string ToString()
         {
-            string joinedRules = string.Join(", ", accessRules.Select(r => r.ToString()));
+            string seperator = operation switch
+            {
+                CompoundOperation.All => $" AND ",
+                CompoundOperation.Any => $" OR ",
+                CompoundOperation.AtLeast => $", ",
+                _ => $", ",
+            };
+            string joinedRules = string.Join(seperator, accessRules.Select(r => r.ToString()));
             return operation switch
             {
-                CompoundOperation.All => $"ALL of: ({joinedRules})",
-                CompoundOperation.Any => $"ANY of: ({joinedRules})",
+                CompoundOperation.All => $"({joinedRules})",
+                CompoundOperation.Any => $"({joinedRules})",
                 CompoundOperation.AtLeast => $"At least {valAmount} of: ({joinedRules})",
                 _ => $"Invalid compound operation containing: ({joinedRules})",
             };

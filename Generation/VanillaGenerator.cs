@@ -178,6 +178,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Regions loop
+            // TODO: Implement full support for optional region settings
             bool regionKitEchoes = RandoOptions.UseEchoChecks && RegionKitCompatibility.Enabled;
             bool doPearlLocations = RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
             bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && RandoOptions.UseSMBroadcasts;
