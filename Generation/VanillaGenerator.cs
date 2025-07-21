@@ -1201,14 +1201,27 @@ namespace RainWorldRandomizer.Generation
                     ["SL_S13"],
                     [new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)]));
 
-                // Saint OR (Rivulet AND EnergyCell)
+                // Saint OR (Rivulet AND ((OptionUseEnergyCell AND EnergyCell) OR (Not OptionUseEnergyCell AND RegionRM)))
+                // I hate this one
                 AccessRule bitterAerieAccess = new CompoundAccessRule(
                 [
                     new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint),
                     new CompoundAccessRule(
                     [
                         new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet),
-                        new AccessRule("Object-EnergyCell")
+                        new CompoundAccessRule(
+                        [
+                            new CompoundAccessRule(
+                            [
+                                new OptionAccessRule("UseEnergyCell"),
+                                new AccessRule("Object-EnergyCell")
+                            ], CompoundAccessRule.CompoundOperation.All),
+                            new CompoundAccessRule(
+                            [
+                                new OptionAccessRule("UseEnergyCell", true),
+                                new RegionAccessRule("RM")
+                            ], CompoundAccessRule.CompoundOperation.All),
+                        ], CompoundAccessRule.CompoundOperation.Any),
                     ], CompoundAccessRule.CompoundOperation.All)
                 ], CompoundAccessRule.CompoundOperation.Any);
                 // Bitter Aerie is only for Saint or after Rivulet completion
