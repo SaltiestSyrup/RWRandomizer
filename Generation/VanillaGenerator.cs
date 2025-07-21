@@ -192,7 +192,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 // Create Pearl locations
-                if (doPearlLocations && Plugin.Singleton.rainWorld.regionDataPearls.ContainsKey(regionShort.ToLowerInvariant()))
+                if (doPearlLocations && Plugin.Singleton.rainWorld.regionDataPearls.ContainsKey(regionLower))
                 {
                     for (int i = 0; i < Plugin.Singleton.rainWorld.regionDataPearls[regionLower].Count; i++)
                     {
@@ -223,8 +223,21 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
 
+                // Find shelters
+                HashSet<string> shelters = [];
+                for (int i = 0; i < TokenCachePatcher.regionShelters[regionLower].Count; i++)
+                {
+                    if (TokenCachePatcher.regionSheltersAccessibility[regionLower][i].Contains(timeline))
+                    {
+                        shelters.Add(TokenCachePatcher.regionShelters[regionLower][i]);
+                    }
+                }
+
                 // Create region
-                allRegions.Add(regionShort, new(regionShort, regionLocations));
+                allRegions[regionShort] = new(regionShort, regionLocations)
+                {
+                    shelters = shelters
+                };
             }
 
             // Create Gate items
@@ -611,8 +624,9 @@ namespace RainWorldRandomizer.Generation
                 // Defined subregion locations / connections with invalid or not present IDs are simply ignored
                 HashSet<Location> locs = [.. state.AllLocations.Where(l => subBlueprint.locations.Contains(l.ID))];
                 HashSet<Connection> connections = [.. state.AllConnections.Where(l => subBlueprint.connections.Contains(l.ID))];
+                HashSet<string> shelters = [.. state.AllShelters.Where(s => subBlueprint.shelters.Contains(s))];
 
-                state.DefineSubRegion(baseRegion, subBlueprint.ID, locs, connections, subBlueprint.rules);
+                state.DefineSubRegion(baseRegion, subBlueprint.ID, locs, connections, shelters, subBlueprint.rules);
             }
 
             // Connection Overrides
@@ -1012,6 +1026,7 @@ namespace RainWorldRandomizer.Generation
             manualSubregions.Add(new("SB", "SBRavine",
                 ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0"],
                 ["GATE_LF_SB"],
+                ["SB_S09"],
                 [new(AccessRule.IMPOSSIBLE_ID), new()]));
 
             // MSC specific rules
@@ -1091,12 +1106,14 @@ namespace RainWorldRandomizer.Generation
                 manualSubregions.Add(new SubregionBlueprint("SU", "SU_Filt",
                     ["Pearl-SU_filt"],
                     ["GATE_OE_SU"],
+                    ["SU_S05"],
                     [new(AccessRule.IMPOSSIBLE_ID), new()]));
 
                 // Precipice is disconnected from Shoreline
                 manualSubregions.Add(new("SL", "SLPrecipice",
                     [],
                     ["GATE_UW_SL"],
+                    ["SL_S13"],
                     [new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)]));
 
                 // Token cache fails to filter this pearl to only Past GW

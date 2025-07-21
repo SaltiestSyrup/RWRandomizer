@@ -15,6 +15,7 @@ namespace RainWorldRandomizer.Generation
 
         public HashSet<Location> allLocations = locations;
         public HashSet<Connection> connections = [];
+        public HashSet<string> shelters = [];
 
         /// <summary>
         /// Returns true if there exists at least one connection that could give access to this region
@@ -39,7 +40,9 @@ namespace RainWorldRandomizer.Generation
                 "\tLocations:",
                 .. allLocations.Select(l => $"\t\t{l} => {l.accessRule}"),
                 "\tConnections:",
-                .. connections.Select(c => $"\t\t{c} => \n\t\t\t{c.requirements[0]}, \n\t\t\t{c.requirements[1]}")
+                .. connections.Select(c => $"\t\t{c} => \n\t\t\t{c.requirements[0]}, \n\t\t\t{c.requirements[1]}"),
+                "\tShelters:",
+                $"\t\t{string.Join(", ", shelters)}"
             ];
             return string.Join("\n", output);
         }
@@ -65,7 +68,7 @@ namespace RainWorldRandomizer.Generation
     /// Instructions for creating a subregion during generation.
     /// See <see cref="State.DefineSubRegion"/> for more details on subregions
     /// </summary>
-    public struct SubregionBlueprint(string baseRegion, string ID, string[] locations, string[] connections, AccessRule[] rules)
+    public struct SubregionBlueprint(string baseRegion, string ID, string[] locations, string[] connections, string[] shelters, AccessRule[] rules)
     {
         /// <summary>
         /// ID of this subregion
@@ -83,6 +86,10 @@ namespace RainWorldRandomizer.Generation
         /// The connection IDs this should contain
         /// </summary>
         public string[] connections = connections;
+        /// <summary>
+        /// The room names of the shelters this should contain
+        /// </summary>
+        public string[] shelters = shelters;
         /// <summary>
         /// The AccessRules of the connection to the main region
         /// </summary>

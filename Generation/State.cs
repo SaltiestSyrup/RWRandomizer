@@ -37,6 +37,11 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public HashSet<Connection> AllConnections { get; private set; }
 
+        /// <summary>
+        /// Every shelter that exist in the world of this state.
+        /// </summary>
+        public HashSet<string> AllShelters { get; private set; }
+
         public SlugcatStats.Name Slugcat { get; private set; } = slugcat;
         public SlugcatStats.Timeline Timeline { get; private set; } = timeline;
         public int MaxKarma { get; private set; } = startKarma;
@@ -51,10 +56,12 @@ namespace RainWorldRandomizer.Generation
             AllRegions = allRegions;
             AllLocations = [];
             AllConnections = [];
+            AllShelters = [];
 
             foreach (RandoRegion region in AllRegions)
             {
                 AllConnections.UnionWith(region.connections);
+                AllShelters.UnionWith(region.shelters);
 
                 foreach (Location loc in region.allLocations)
                 {
@@ -97,14 +104,16 @@ namespace RainWorldRandomizer.Generation
         /// Thrown if either the <paramref name="locations"/> or <paramref name="connections"/> 
         /// are not a subset of those in <paramref name="baseRegion"/>
         /// </exception>
-        public RandoRegion DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations, HashSet<Connection> connections, AccessRule[] rules)
+        public RandoRegion DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations,
+            HashSet<Connection> connections, HashSet<string> shelters, AccessRule[] rules)
         {
             if (!locations.IsSubsetOf(baseRegion.allLocations)) throw new ArgumentException("Locations must be a subset of region locations", "locations");
             if (!connections.IsSubsetOf(baseRegion.connections)) throw new ArgumentException("Connections must be a subset of region connections", "connections");
 
             // Remove elements of orig region
-            baseRegion.allLocations = [.. baseRegion.allLocations.Except(locations)];
-            baseRegion.connections = [.. baseRegion.connections.Except(connections)];
+            baseRegion.allLocations.ExceptWith(locations);
+            baseRegion.connections.ExceptWith(connections);
+            baseRegion.shelters.ExceptWith(shelters);
 
             RandoRegion subRegion = new(newID, locations);
             Connection bridge = new($"SUBREG_{baseRegion.ID}_{newID}", [baseRegion, subRegion], rules);
@@ -118,6 +127,7 @@ namespace RainWorldRandomizer.Generation
 
             baseRegion.connections.Add(bridge);
             subRegion.connections = [.. connections, bridge];
+            subRegion.shelters = shelters;
 
             AllRegions.Add(subRegion);
             UnreachedRegions.Add(subRegion);
