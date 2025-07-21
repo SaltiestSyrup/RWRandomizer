@@ -139,6 +139,7 @@ namespace RainWorldRandomizer.Generation
         private void Generate()
         {
             generationLog.AppendLine("Begin Generation");
+            generationLog.AppendLine($"Playing as {slugcat}");
             Stopwatch sw = Stopwatch.StartNew();
 
             InitializeState();
@@ -702,6 +703,8 @@ namespace RainWorldRandomizer.Generation
                 // Choose a random shelter within the chosen region
                 customStartDen = chosenRegion.shelters.ElementAt(randomState.Next(0, chosenRegion.shelters.Count));
                 connectionsToAdd.Add(new("START_PATH", [startRegion, chosenRegion], new AccessRule()));
+
+                generationLog.AppendLine($"Chosen {chosenRegion.ID} as random starting region, in shelter {customStartDen}");
             }
             else
             {
@@ -710,6 +713,8 @@ namespace RainWorldRandomizer.Generation
                     ?? throw new GenerationFailureException($"Failed to define starting region for {slugcat}, no region has shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
                 customStartDen = Constants.SlugcatDefaultStartingDen[slugcat];
                 connectionsToAdd.Add(new("START_PATH", [startRegion, destination], new AccessRule()));
+
+                generationLog.AppendLine($"Starting in default region {Constants.SlugcatStartingRegion[slugcat]}, in shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
             }
 
             // Finalize connections
