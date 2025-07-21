@@ -22,7 +22,6 @@ namespace RainWorldRandomizer
 
         internal static ManualLogSource Log;
 
-        public bool hasInitialized = false;
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new();
         public static ManagerBase RandoManager = null;
@@ -182,7 +181,7 @@ namespace RainWorldRandomizer
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
-            if (hasInitialized) return;
+            Log.LogInfo("Init Randomizer Mod");
 
             rainWorld = self;
 
@@ -205,8 +204,6 @@ namespace RainWorldRandomizer
             CustomRegionCompatability.Init();
             AccessRuleConstants.InitConstants();
             VanillaGenerator.GenerateCustomRules();
-
-            hasInitialized = true;
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
@@ -370,7 +367,6 @@ namespace RainWorldRandomizer
 
             if (gateName.Equals("GATE_OE_SU")) hasKeyForGate = true;
             if (gateName.Equals("GATE_SL_MS")
-                && ModManager.MSC
                 && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
             {
                 hasKeyForGate = true;
@@ -380,7 +376,6 @@ namespace RainWorldRandomizer
             if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
             {
                 newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
-                newRequirements[1] = RegionGate.GateRequirement.FiveKarma;
             }
 
             // Decide gate behavior
@@ -430,6 +425,12 @@ namespace RainWorldRandomizer
                 case GateBehavior.OnlyKarma:
                     // Nothing to be done here, use vanilla mechanics
                     break;
+            }
+
+            // Ensure proper Metro gate behavior for Arty
+            if (gateName.Equals("GATE_UW_LC") && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+            {
+                newRequirements[0] = MoreSlugcatsEnums.GateRequirement.RoboLock;
             }
 
             return newRequirements;

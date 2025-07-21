@@ -178,11 +178,15 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Regions loop
-            // TODO: Implement full support for optional region settings
             bool regionKitEchoes = RandoOptions.UseEchoChecks && RegionKitCompatibility.Enabled;
             bool doPearlLocations = RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
             bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && RandoOptions.UseSMBroadcasts;
             List<string> slugcatRegions = [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
+            // Add Metropolis to region list if option set
+            if (ModManager.MSC && RandoOptions.ForceOpenMetropolis) slugcatRegions.Add("LC");
+            // Remove Submerged Superstructure from list if not desired
+            if (ModManager.MSC && !RandoOptions.ForceOpenSubmerged && slugcat != MoreSlugcatsEnums.SlugcatStatsName.Rivulet) slugcatRegions.Remove("MS"); 
+
             foreach (string regionShort in Region.GetFullRegionOrder())
             {
                 HashSet<Location> regionLocations = [];
@@ -585,7 +589,6 @@ namespace RainWorldRandomizer.Generation
             state.DefineLocs([.. allRegions.Values]);
         }
 
-        // TODO: Pearl-LC is filtered out by token cache (rightfully), but needs to be present if setting enabled
         /// <summary>
         /// Applies all manually defined logic, including subregion creation 
         /// and <see cref="AccessRule"/> changes for locations / connections
