@@ -82,8 +82,13 @@ namespace RainWorldRandomizer
 
             RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
                 new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
-                "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
+                    "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
                     ["Start with low karma"]));
+
+            RandoOptions.extraKarmaIncreases = config.Bind<int>("extraKarmaIncreases", 2,
+                new ConfigurableInfo("How many extra karma items above the minimum required will be placed in the world",
+                    new ConfigAcceptableRange<int>(0, 10), "",
+                    ["Extra karma increases"]));
 
             RandoOptions.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
                 new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
@@ -228,6 +233,8 @@ namespace RainWorldRandomizer
             miscGroup.AddCheckBox(RandoOptions.randomizeSpawnLocation, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             miscGroup.AddCheckBox(RandoOptions.startMinKarma, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            miscGroup.AddUpDown(RandoOptions.extraKarmaIncreases, true, new(LEFT_OPTION_X, runningY), 50f);
             runningY -= NEWLINE_DECREMENT * 1.5f;
             miscGroup.AddToTab(tabIndex);
             optionGroups.Add(miscGroup);

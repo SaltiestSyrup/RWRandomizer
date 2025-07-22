@@ -163,7 +163,7 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("INITIALIZE STATE");
             CurrentStage = GenerationStep.InitializingState;
-            state = new State(slugcat, timeline, RandoOptions.StartMinimumKarma ? 1 : 5);
+            state = new State(slugcat, timeline, RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
 
             // Load Tokens
             if (RandoOptions.UseSandboxTokenChecks)
@@ -460,8 +460,9 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Karma items
-            // TODO: Add a setting to change the amount of Karma increases in pool
-            for (int i = 0; i < 10; i++)
+            int karmaInPool = 8 - (RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
+            karmaInPool += RandoOptions.ExtraKarmaIncreases;
+            for (int i = 0; i < karmaInPool; i++)
             {
                 itemsToPlace.Add(new Item("Karma", Item.Type.Karma, Item.Importance.Progression));
             }

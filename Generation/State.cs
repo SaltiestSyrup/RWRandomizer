@@ -42,9 +42,21 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public HashSet<string> AllShelters { get; private set; }
 
-        public SlugcatStats.Name Slugcat { get; private set; } = slugcat;
-        public SlugcatStats.Timeline Timeline { get; private set; } = timeline;
-        public int MaxKarma { get; private set; } = startKarma;
+        public SlugcatStats.Name Slugcat => slugcat;
+        public SlugcatStats.Timeline Timeline => timeline;
+        private int karmaItems = startKarma;
+        /// <summary>
+        /// Translation between amount of karma items aquired and the max karma it would display as
+        /// </summary>
+        public int MaxKarma
+        {
+            get
+            {
+                if (karmaItems <= 4) return karmaItems + 1;
+                if (karmaItems <= 8) return karmaItems + 2;
+                return 10;
+            }
+        }
         public HashSet<string> SpecialProg { get; private set; } = [];
         //public HashSet<string> Regions { get; private set; } = [];
         public HashSet<string> Gates { get; private set; } = [];
@@ -171,7 +183,7 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public void AddOtherProgItem(string itemName)
         {
-            if (itemName.Equals("Karma")) MaxKarma++;
+            if (itemName.Equals("Karma")) karmaItems++;
             else SpecialProg.Add(itemName);
             RecalculateState();
         }

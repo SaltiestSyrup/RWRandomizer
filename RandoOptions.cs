@@ -21,6 +21,7 @@ namespace RainWorldRandomizer
 
         internal static Configurable<bool> randomizeSpawnLocation;
         internal static Configurable<bool> startMinKarma;
+        internal static Configurable<int> extraKarmaIncreases;
 
         internal static Configurable<bool> disableNotificationQueue;
         internal static Configurable<bool> disableTokenText;
@@ -164,6 +165,7 @@ namespace RainWorldRandomizer
                     || Plugin.RandoManager is ManagerArchipelago;
             }
         }
+        public static int ExtraKarmaIncreases => extraKarmaIncreases.Value;
         public static bool DisableNotificationQueue
         {
             get
