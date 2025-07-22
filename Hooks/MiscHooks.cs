@@ -649,6 +649,11 @@ namespace RainWorldRandomizer
             return orig(itemType, intdata);
         }
 
+        /// <summary>
+        /// Restrict scavengers from taking certain objects from the ground on their own
+        /// to avoid needed items for checks disappearing. 
+        /// This only stops them from taking things they found, will not prevent player gifting them
+        /// </summary>
         private static void CheckForScavengeItemsIL(ILContext il)
         {
             ILCursor c = new(il);
