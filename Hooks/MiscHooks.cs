@@ -683,9 +683,19 @@ namespace RainWorldRandomizer
             {
                 PhysicalObject obj = self.itemTracker.GetRep(j).representedItem.realizedObject;
                 // Do not take unpicked flowers
-                if (obj is KarmaFlower flower && flower.growPos is not null) return true;
+                if (RandoOptions.UseKarmaFlowerChecks
+                    && obj is KarmaFlower flower
+                    && flower.growPos is not null)
+                {
+                    return true;
+                }
                 // Do not take unique data pearls
-                if (obj is DataPearl pearl && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType)) return true;
+                if (RandoOptions.UsePearlChecks
+                    && obj is DataPearl pearl
+                    && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType))
+                {
+                    return true;
+                }
                 return false;
             }
         }
