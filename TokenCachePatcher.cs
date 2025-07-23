@@ -501,8 +501,8 @@ namespace RainWorldRandomizer
             {
                 string regionLower = region.ToLowerInvariant();
 
-                string path = AssetManager.ResolveFilePath(string.Concat(new string[]
-                {
+                string path = AssetManager.ResolveFilePath(string.Concat(
+                [
                     "World",
                     Path.DirectorySeparatorChar.ToString(),
                     "indexmaps",
@@ -510,7 +510,7 @@ namespace RainWorldRandomizer
                     "randomizercache",
                     regionLower,
                     ".txt"
-                }));
+                ]));
 
                 if (!File.Exists(path)) return;
 
@@ -571,6 +571,21 @@ namespace RainWorldRandomizer
                 catch (Exception e)
                 {
                     Plugin.Log.LogError($"Failed to load randomizer cache data for region {region}. File is malformed? \n{e}");
+                    string recomputePath = string.Concat(
+                    [
+                        Custom.RootFolderDirectory(),
+                        Path.DirectorySeparatorChar.ToString(),
+                        "mergedmods",
+                        Path.DirectorySeparatorChar.ToString(),
+                        "World",
+                        Path.DirectorySeparatorChar.ToString(),
+                        "IndexMaps",
+                        Path.DirectorySeparatorChar.ToString(),
+                        "recomputetokencache.txt"
+                    ]).ToLowerInvariant();
+
+                    try { File.WriteAllText(recomputePath, ""); }
+                    catch (DirectoryNotFoundException) { Plugin.Log.LogError("Failed to write recomputetokencache.txt"); }
                     ClearRoomAccessibilities();
                 }
             }
