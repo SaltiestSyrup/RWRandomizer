@@ -19,6 +19,8 @@ namespace RainWorldRandomizer
         public static Dictionary<string, List<List<SlugcatStats.Name>>> regionCreaturesAccessibility = [];
         public static Dictionary<string, List<AbstractPhysicalObject.AbstractObjectType>> regionObjects = [];
         public static Dictionary<string, List<List<SlugcatStats.Name>>> regionObjectsAccessibility = [];
+        public static Dictionary<string, List<string>> regionShelters = [];
+        public static Dictionary<string, List<List<SlugcatStats.Timeline>>> regionSheltersAccessibility = [];
 
         public static bool hasLoadedCache = false;
 
@@ -282,6 +284,20 @@ namespace RainWorldRandomizer
                     regionObjects[region] = [];
                     regionObjectsAccessibility[region] = [];
                 }
+
+                // Hardcode neurons into SL for LttM
+                if (region == "sl")
+                {
+                    regionObjects[region].Add(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer);
+                    regionObjectsAccessibility[region].Add(
+                    [
+                        SlugcatStats.Name.Yellow,
+                        SlugcatStats.Name.White,
+                        MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
+                        MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
+                        MoreSlugcatsEnums.SlugcatStatsName.Saint
+                    ]);
+                }
             });
 
             // Before checking placed object type at 050E
@@ -322,6 +338,8 @@ namespace RainWorldRandomizer
                 {
                     case "Hazer":
                     case "DeadHazer":
+                        // All hazers in SL are out of reach
+                        if (region is "sl" or "lm") break;
                         CacheCreature(self, region, room, list3, CreatureTemplate.Type.Hazer);
                         break;
                 }
@@ -354,10 +372,7 @@ namespace RainWorldRandomizer
                     string filter = string.Join("|", regionObjectsAccessibility[region][i]);
                     if (filter.Equals("")) continue;
                     text.Append($"{regionObjects[region][i]}~{filter}");
-                    if (i != regionObjects[region].Count - 1)
-                    {
-                        text.Append(",");
-                    }
+                    if (i != regionObjects[region].Count - 1) text.Append(",");
                 }
                 text.AppendLine();
 
@@ -367,10 +382,17 @@ namespace RainWorldRandomizer
                     string filter = string.Join("|", regionCreaturesAccessibility[region][j]);
                     if (filter.Equals("")) continue;
                     text.Append($"{regionCreatures[region][j]}~{filter}");
-                    if (j != regionCreatures[region].Count - 1)
-                    {
-                        text.Append(",");
-                    }
+                    if (j != regionCreatures[region].Count - 1) text.Append(",");
+                }
+                text.AppendLine();
+
+                // Shelters
+                for (int k = 0; k < regionShelters[region].Count; k++)
+                {
+                    string filter = string.Join("|", regionSheltersAccessibility[region][k]);
+                    if (filter.Equals("")) continue;
+                    text.Append($"{regionShelters[region][k]}~{filter}");
+                    if (k != regionShelters[region].Count - 1) text.Append(",");
                 }
                 text.AppendLine();
 
@@ -382,6 +404,7 @@ namespace RainWorldRandomizer
                     text.Append($"{room.Key}~{filter},");
                 }
                 text.Remove(text.Length - 1, 1); // Remove trailing comma
+
                 File.WriteAllText($"{path}randomizercache{region}.txt", text.ToString());
                 hasLoadedCache = true;
             }
@@ -498,6 +521,8 @@ namespace RainWorldRandomizer
                 regionObjectsAccessibility[regionLower] = [];
                 regionCreatures[regionLower] = [];
                 regionCreaturesAccessibility[regionLower] = [];
+                regionShelters[regionLower] = [];
+                regionSheltersAccessibility[regionLower] = [];
                 try
                 {
                     // Objects
@@ -522,8 +547,19 @@ namespace RainWorldRandomizer
                         //Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
                     }
 
+                    // Shelters
+                    string[] shelterEntries = parts[2].Split(',');
+                    foreach (string entry in shelterEntries)
+                    {
+                        if (entry.Equals("")) continue;
+                        string[] split = Regex.Split(entry, "~");
+                        regionShelters[regionLower].Add(split[0]);
+                        regionSheltersAccessibility[regionLower].Add([.. split[1].Split('|').Select(s => new SlugcatStats.Timeline(s))]);
+                        //Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
+                    }
+
                     // Rooms
-                    string[] roomEntries = parts[2].Split(',');
+                    string[] roomEntries = parts[3].Split(',');
                     foreach (string entry in roomEntries)
                     {
                         if (entry.Equals("")) continue;
@@ -570,7 +606,7 @@ namespace RainWorldRandomizer
 
         /// <summary>
         /// Adapted code from WorldLoader to just find which rooms are accessible to each slugcat.
-        /// Also loads which creatures are accessible
+        /// Also loads which creatures and shelters are accessible
         /// </summary>
         private static Dictionary<string, List<SlugcatStats.Name>> LoadRoomAccessibility(string regionName)
         {
@@ -578,6 +614,8 @@ namespace RainWorldRandomizer
             {
                 regionCreatures[regionName] = [];
                 regionCreaturesAccessibility[regionName] = [];
+                regionShelters[regionName] = [];
+                regionSheltersAccessibility[regionName] = [];
             }
 
             string worldFilePath = AssetManager.ResolveFilePath(string.Concat(
@@ -592,11 +630,7 @@ namespace RainWorldRandomizer
             ]));
 
             // Making this list should not be this hard
-            SlugcatStats.Name[] allSlugcats = new SlugcatStats.Name[ExtEnum<SlugcatStats.Name>.values.Count];
-            for (int i = 0; i < allSlugcats.Length; i++)
-            {
-                allSlugcats[i] = new SlugcatStats.Name(ExtEnum<SlugcatStats.Name>.values.entries[i]);
-            }
+            SlugcatStats.Name[] allSlugcats = [.. ExtEnum<SlugcatStats.Name>.values.entries.Select(e => new SlugcatStats.Name(e))];
 
             Dictionary<string, List<SlugcatStats.Name>> accessibility = [];
 
@@ -797,6 +831,11 @@ namespace RainWorldRandomizer
                         }
                     }
 
+                    if (split.Contains("SHELTER"))
+                    {
+                        AddShelterToCache(regionName, room, accessibility[room.ToLowerInvariant()]);
+                    }
+
                     // Cache presence of batflies in room
                     if (split.Contains("SWARMROOM"))
                     {
@@ -900,6 +939,8 @@ namespace RainWorldRandomizer
                 }
             }
 
+            LoadRegionProperties(regionName);
+
             /*
             Plugin.Log.LogDebug($"Creatures in {regionUpper}");
             for (int i = 0; i < regionCreatures[regionUpper].Count; i++)
@@ -920,6 +961,86 @@ namespace RainWorldRandomizer
             return accessibility;
         }
 
+        private static void LoadRegionProperties(string regionName)
+        {
+            // Fetch main properties file path
+            string mainFilePath = AssetManager.ResolveFilePath(string.Concat(
+            [
+                "World",
+                Path.DirectorySeparatorChar.ToString(),
+                regionName,
+                Path.DirectorySeparatorChar.ToString(),
+                "Properties.txt"
+            ]));
+            // Return if it doesn't exist
+            if (!File.Exists(mainFilePath)) return;
+
+            SlugcatStats.Timeline[] allTimelines = [.. ExtEnum<SlugcatStats.Timeline>.values.entries.Select(e => new SlugcatStats.Timeline(e))];
+            Dictionary<SlugcatStats.Timeline, string[]> brokenShelters = [];
+
+            // --- Parse main properties file
+            string[] propertyLines = File.ReadAllLines(mainFilePath);
+
+            // Broken shelter lines follow pattern "Broken Shelters: [TIMELINE]: [ROOM_NAME]"
+            string[] brokenShelterLines = [.. propertyLines.Where(l => l.StartsWith("Broken Shelters"))];
+            foreach (string line in brokenShelterLines)
+            {
+                string[] split = Regex.Split(Custom.ValidateSpacedDelimiter(line, ":"), ": ");
+                brokenShelters[new(split[1].Trim())] = Regex.Split(Custom.ValidateSpacedDelimiter(split[2], ","), ", ");
+            }
+
+            // --- Parse timeline specific properties files
+            Dictionary<SlugcatStats.Timeline, string> timelineSpecificFilePaths = [];
+            foreach (SlugcatStats.Timeline timeline in allTimelines)
+            {
+                string potentialFilePath = AssetManager.ResolveFilePath(string.Concat(
+                [
+                    "World",
+                    Path.DirectorySeparatorChar.ToString(),
+                    regionName,
+                    Path.DirectorySeparatorChar.ToString(),
+                    "Properties-",
+                    timeline.value,
+                    ".txt"
+                ]));
+                // Use the timeline specific properties if present
+                if (!File.Exists(potentialFilePath)) continue;
+
+                string[] timelinePropertyLines = File.ReadAllLines(potentialFilePath);
+
+                // Broken shelters
+                string[] timelineBrokenShelterLines = [.. timelinePropertyLines.Where(l => l.StartsWith("Broken Shelters"))];
+                foreach (string line in timelineBrokenShelterLines)
+                {
+                    string[] split = Regex.Split(Custom.ValidateSpacedDelimiter(line, ":"), ": ");
+                    // Ignore if line is for not this timeline
+                    if (timeline.value != split[1].Trim()) continue;
+                    // Overwrite whatever it got set to in the main properties
+                    brokenShelters[timeline] = Regex.Split(Custom.ValidateSpacedDelimiter(split[2], ","), ", ");
+                }
+            }
+
+            // --- Post-parsing logic
+            // Remove broken shelters from accessibility
+            // This is essentially just inverting the dictionary
+            foreach (KeyValuePair<SlugcatStats.Timeline, string[]> entry in brokenShelters)
+            {
+                foreach (string shelter in entry.Value)
+                {
+                    // If this shelter doesn't even exist, skip it
+                    if (!regionShelters[regionName].Contains(shelter)) continue;
+                    int shelterIndex = regionShelters[regionName].IndexOf(shelter);
+                    regionSheltersAccessibility[regionName][shelterIndex].Remove(entry.Key);
+                }
+            }
+
+            // Log all shelter access
+            //for (int i = 0; i < regionShelters[regionName].Count; i++)
+            //{
+            //    Plugin.Log.LogDebug($"{regionShelters[regionName][i]} => {string.Join(", ", regionSheltersAccessibility[regionName][i])}");
+            //}
+        }
+
         private static void AddCreatureToCache(string region, CreatureTemplate.Type creature, List<SlugcatStats.Name> slugcats)
         {
             if (!regionCreatures[region].Contains(creature))
@@ -931,6 +1052,22 @@ namespace RainWorldRandomizer
             {
                 int index = regionCreatures[region].IndexOf(creature);
                 regionCreaturesAccessibility[region][index] = [.. regionCreaturesAccessibility[region][index].Union(slugcats)];
+            }
+        }
+
+        private static void AddShelterToCache(string region, string shelter, List<SlugcatStats.Name> slugcats)
+        {
+            // Use Hashset to filter duplicates
+            HashSet<SlugcatStats.Timeline> timelines = [.. slugcats.Select(SlugcatStats.SlugcatToTimeline)];
+            if (!regionShelters[region].Contains(shelter))
+            {
+                regionShelters[region].Add(shelter);
+                regionSheltersAccessibility[region].Add([.. timelines]);
+            }
+            else
+            {
+                int index = regionShelters[region].IndexOf(shelter);
+                regionSheltersAccessibility[region][index] = [.. regionSheltersAccessibility[region][index].Union(timelines)];
             }
         }
     }
