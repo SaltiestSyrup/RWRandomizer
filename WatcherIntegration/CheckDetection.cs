@@ -105,7 +105,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             /// <summary>Detect, at cycle end, what new fixed warp points have been discovered and what regions have been infected.</summary>
             internal static void DetectFixedWarpPointAndRotSpread(SaveState saveState)
             {
-                foreach (var point in saveState.deathPersistentSaveData.newlyDiscoveredWarpPoints)
+                foreach (var point in saveState.miscWorldSaveData.discoveredWarpPoints)
                     EntryPoint.TryGiveLocation($"Warp-{point.Key.Split(':')[0].ToUpperInvariant()}");
 
                 foreach (string region in saveState.miscWorldSaveData.regionsInfectedBySentientRot)
