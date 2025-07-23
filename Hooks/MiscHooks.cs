@@ -203,11 +203,11 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void OnGateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
         {
+            orig(self);
             if (Plugin.RandoManager.isRandomizerActive)
             {
                 self.karmaRequirements = Plugin.GetGateRequirement(self.room.abstractRoom.name);
             }
-            orig(self);
         }
 
         /// <summary>
