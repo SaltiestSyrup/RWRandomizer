@@ -6,7 +6,7 @@ namespace RainWorldRandomizer.WatcherIntegration
     {
         /// <summary>Determine if this <see cref="WarpPoint"/> needs a key which is not yet collected.</summary>
         internal static bool MissingKey(this WarpPoint self) => 
-            self.Data.nonDynamicWarpPoint && Items.StaticKey.IsMissing(self.room.world.region.name, self.Data.destRegion);
+            self.Data.nonDynamicWarpPoint && Items.StaticKey.IsMissing(self.room.world.region.name, self.Data.RegionString is null ? "WRSA" : self.Data.RegionString);
 
         internal static class Hooks
         {

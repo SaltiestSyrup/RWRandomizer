@@ -125,8 +125,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                 static bool Delegate(bool orig, Room self, int index)
                 {
                     if (!orig || !Settings.spinningTopKeys) return orig;
-                    string dest = (self.roomSettings.placedObjects[index].data as SpinningTopData).destRegion;
-                    return !Items.StaticKey.IsMissing(self.world.name, dest);
+                    string dest = (self.roomSettings.placedObjects[index].data as SpinningTopData).RegionString;
+                    return !Items.StaticKey.IsMissing(self.world.name, dest is null ? "WAUA" : dest);
                 }
                 c.EmitDelegate(Delegate);
             }
