@@ -81,6 +81,9 @@ namespace RainWorldRandomizer
             {
                 // Turn off randomizer when quitting to menu
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
+                // Clear delivery queues so they don't carry over into a next run
+                Plugin.Singleton.itemDeliveryQueue.Clear();
+                Plugin.Singleton.lastItemDeliveryQueue.Clear();
             }
 
             if (ID == ProcessManager.ProcessID.SleepScreen)
