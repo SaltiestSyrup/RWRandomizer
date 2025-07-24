@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MoreSlugcats;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -413,39 +414,74 @@ namespace RainWorldRandomizer.Generation
 
     public static class AccessRuleConstants
     {
-        public static AccessRule[] Lizards;
-        public static AccessRule[] Regions;
-        public static CompoundAccessRule NeuronAccess;
+        public static List<SlugcatStats.Name> strictCarnivores = [];
 
+        public static AccessRule[] Lizards;
+        public static AccessRule[] OutlawCrits;
+        public static AccessRule[] HunterFoods;
+        public static AccessRule[] MonkFoods;
+        public static AccessRule[] Regions;
+
+        /// <summary>
+        /// Initialize constant helpers for creating AccessRules. 
+        /// Called after <see cref="StaticWorld.InitStaticWorld"/> (Post mod loading)
+        /// </summary>
         public static void InitConstants()
         {
-            NeuronAccess = new CompoundAccessRule(
+            List<AccessRule> lizards = [];
+            List<AccessRule> outlaw = [];
+            List<AccessRule> hunter =
             [
-                new RegionAccessRule("SS"),
-                new RegionAccessRule("SL"),
-                new RegionAccessRule("DM"),
-                new RegionAccessRule("CL"),
-                new RegionAccessRule("RM"),
-            ], CompoundAccessRule.CompoundOperation.Any);
-
-            List<AccessRule> lizards =
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.JellyFish),
+                new CreatureAccessRule(CreatureTemplate.Type.Centipede),
+                new CreatureAccessRule(CreatureTemplate.Type.Fly),
+                new CreatureAccessRule(CreatureTemplate.Type.VultureGrub),
+                new CreatureAccessRule(CreatureTemplate.Type.Hazer),
+            ];
+            List<AccessRule> monk = 
             [
-                new CreatureAccessRule(CreatureTemplate.Type.BlueLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.PinkLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.GreenLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.YellowLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.BlackLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.WhiteLizard)
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.DangleFruit),
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.WaterNut),
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SeedCob),
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SlimeMold),
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer),
             ];
 
+            foreach (string name in ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)))
+            {
+                CreatureTemplate.Type type = new(name);
+                CreatureTemplate template = StaticWorld.GetCreatureTemplate(type);
+                if (template is null) continue;
+
+                if (template.IsLizard) lizards.Add(new CreatureAccessRule(type));
+                // bodySize check filters out large creatures that are unreasonable to kill for Outlaw
+                if (template.countsAsAKill > 1 && template.bodySize < 5f) outlaw.Add(new CreatureAccessRule(type));
+            }
+
+            strictCarnivores.Add(SlugcatStats.Name.Red);
+            if (ModManager.MSC)
+            {
+                strictCarnivores.AddRange(
+                [
+                    MoreSlugcatsEnums.SlugcatStatsName.Artificer,
+                    MoreSlugcatsEnums.SlugcatStatsName.Spear
+                ]);
+            }
             if (ModManager.DLCShared)
             {
-                lizards.Add(new CreatureAccessRule(CreatureTemplate.Type.RedLizard));
-                lizards.Add(new CreatureAccessRule(CreatureTemplate.Type.CyanLizard));
-                lizards.Add(new CreatureAccessRule(DLCSharedEnums.CreatureTemplateType.ZoopLizard));
-                lizards.Add(new CreatureAccessRule(DLCSharedEnums.CreatureTemplateType.SpitLizard));
+                monk.AddRange(
+                [
+                    new ObjectAccessRule(DLCSharedEnums.AbstractObjectType.LillyPuck),
+                    new ObjectAccessRule(DLCSharedEnums.AbstractObjectType.GlowWeed),
+                    new ObjectAccessRule(DLCSharedEnums.AbstractObjectType.DandelionPeach),
+                    new ObjectAccessRule(DLCSharedEnums.AbstractObjectType.GooieDuck),
+                ]);
             }
+
             Lizards = [.. lizards];
+            OutlawCrits = [.. outlaw];
+            HunterFoods = [.. hunter];
+            MonkFoods = [.. monk];
 
             List<string> regionStrings = Region.GetFullRegionOrder();
             Regions = new AccessRule[regionStrings.Count];
