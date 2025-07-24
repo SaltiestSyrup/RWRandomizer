@@ -375,29 +375,8 @@ namespace RainWorldRandomizer
         public static void ILCycleCompleted(ILContext il)
         {
             ILCursor c = new(il);
-            c.GotoNext(
-                x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField("karmaCap")),
-                x => x.MatchLdcI4(4)
-                );
-
-            // Remove the check for if the player has at least 5 karma
-            // for the Survivor passage increase
-            c.Index += 1;
-            c.EmitDelegate<Func<int, int>>((orig) =>
-            {
-                // Remain as normal in AP
-                if (Plugin.RandoManager is ManagerArchipelago)
-                {
-                    return orig;
-                }
-                else
-                {
-                    return 4;
-                }
-            });
 
             // Fake the "Passage Progress without Survivor" option if needed
-            ILCursor c1 = new(il);
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdsfld(typeof(MMF).GetField(nameof(MMF.cfgSurvivorPassageNotRequired))),

@@ -123,6 +123,7 @@ namespace RainWorldRandomizer
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
                 On.ExtEnumInitializer.InitTypes += OnInitExtEnumTypes;
+                On.StaticWorld.InitStaticWorld += OnInitStaticWorld;
                 //On.RainWorld.LoadModResources += LoadResources;
                 //On.RainWorld.UnloadResources += UnloadResources;
 
@@ -169,6 +170,7 @@ namespace RainWorldRandomizer
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
                 On.ExtEnumInitializer.InitTypes -= OnInitExtEnumTypes;
+                On.StaticWorld.InitStaticWorld -= OnInitStaticWorld;
                 //On.RainWorld.LoadModResources -= LoadResources;
                 //On.RainWorld.UnloadResources -= UnloadResources;
             }
@@ -202,8 +204,6 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
-            AccessRuleConstants.InitConstants();
-            VanillaGenerator.GenerateCustomRules();
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
@@ -217,10 +217,23 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Initialize custom <see cref="ExtEnumType"/>s
+        /// </summary>
         public void OnInitExtEnumTypes(On.ExtEnumInitializer.orig_InitTypes orig)
         {
             orig();
             RandomizerEnums.InitExtEnumTypes();
+        }
+
+        /// <summary>
+        /// Hook for inits that need to run after <see cref="StaticWorld"/> is initialized
+        /// </summary>
+        private static void OnInitStaticWorld(On.StaticWorld.orig_InitStaticWorld orig)
+        {
+            orig();
+            AccessRuleConstants.InitConstants();
+            VanillaGenerator.GenerateCustomRules();
         }
 
         // --- Not currently needed but may still be useful in the future ---

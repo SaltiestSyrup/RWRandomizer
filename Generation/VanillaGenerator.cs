@@ -3,7 +3,6 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -185,7 +184,7 @@ namespace RainWorldRandomizer.Generation
             // Add Metropolis to region list if option set
             if (ModManager.MSC && RandoOptions.ForceOpenMetropolis) slugcatRegions.Add("LC");
             // Remove Submerged Superstructure from list if not desired
-            if (ModManager.MSC && !RandoOptions.ForceOpenSubmerged && slugcat != MoreSlugcatsEnums.SlugcatStatsName.Rivulet) slugcatRegions.Remove("MS"); 
+            if (ModManager.MSC && !RandoOptions.ForceOpenSubmerged && slugcat != MoreSlugcatsEnums.SlugcatStatsName.Rivulet) slugcatRegions.Remove("MS");
 
             foreach (string regionShort in Region.GetFullRegionOrder())
             {
@@ -304,142 +303,15 @@ namespace RainWorldRandomizer.Generation
                 itemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
             }
 
-            // Create Passage locations and items
-            HashSet<Location> passageLocations = [];
-            foreach (string passage in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
+            Dictionary<string, AccessRule> passageRules = CreatePassageRules();
+            if (RandoOptions.GivePassageItems)
             {
-                bool motherUnlocked = ModManager.MSC && (Plugin.Singleton.rainWorld.progression.miscProgressionData.beaten_Gourmand_Full || MoreSlugcats.MoreSlugcats.chtUnlockSlugpups.Value);
-                bool canFindSlugpups = slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Red || (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
-
-                // Filter out impossible passages
-                if (ModManager.MSC)
-                {
-                    switch (passage)
-                    {
-                        // Gourmand is handled later
-                        case "Gourmand":
-                            continue;
-                        case "Mother":
-                            if (!motherUnlocked || !canFindSlugpups) continue;
-                            break;
-                        case "Chieftain":
-                            if (slugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer) continue;
-                            break;
-                        case "Monk":
-                        case "Saint":
-                            if (slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear) continue;
-                            break;
-                        case "Hunter":
-                        case "Outlaw":
-                        case "DragonSlayer":
-                        case "Scholar":
-                            if (slugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint
-                                || slugcat == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel) continue;
-                            break;
-                    }
-                }
-
-                // Passage locations
-                if (RandoOptions.UsePassageChecks)
-                {
-                    // TODO: Mother, Hunter, Monk, Outlaw, and Saint currently have placeholder rules as in-depth requirements are a difficult problem to solve
-                    AccessRule accessRule = new();
-                    switch (passage)
-                    {
-                        case "Martyr":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
-                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
-                            break;
-                        case "Mother":
-                            // Surely there's a pup spawnable region within a group of 5
-                            // The correct way to do this is by reading region properties files
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
-                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
-                            break;
-                        case "Pilgrim":
-                            List<string> echoRegions = [];
-                            foreach (string region in SlugcatStats.SlugcatStoryRegions(slugcat))
-                            {
-                                if (World.CheckForRegionGhost(slugcat, region)) echoRegions.Add(region);
-                            }
-                            accessRule = new CompoundAccessRule(
-                                [.. echoRegions.Select(r => new RegionAccessRule(r))],
-                                CompoundAccessRule.CompoundOperation.All);
-                            break;
-                        case "Survivor":
-                            accessRule = new KarmaAccessRule(5);
-                            break;
-                        case "DragonSlayer":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards,
-                                CompoundAccessRule.CompoundOperation.AtLeast, 6);
-                            break;
-                        case "Friend":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards,
-                                CompoundAccessRule.CompoundOperation.Any);
-                            break;
-                        case "Traveller":
-                            List<AccessRule> regions = [];
-                            foreach (string reg in SlugcatStats.SlugcatStoryRegions(slugcat))
-                            {
-                                regions.Add(new RegionAccessRule(reg));
-                            }
-                            accessRule = new CompoundAccessRule([.. regions],
-                                CompoundAccessRule.CompoundOperation.All);
-                            break;
-                        case "Chieftain":
-                            accessRule = new CreatureAccessRule(CreatureTemplate.Type.Scavenger);
-                            break;
-                        case "Hunter":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
-                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
-                            break;
-                        case "Monk":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
-                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
-                            break;
-                        case "Nomad":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
-                                CompoundAccessRule.CompoundOperation.AtLeast, 4);
-                            break;
-                        case "Outlaw":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
-                                CompoundAccessRule.CompoundOperation.AtLeast, 3);
-                            break;
-                        case "Saint":
-                            accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
-                                CompoundAccessRule.CompoundOperation.AtLeast, 5);
-                            break;
-                        case "Scholar":
-                            List<AccessRule> rules =
-                            [
-                                new AccessRule("The_Mark"),
-                                new CompoundAccessRule(AccessRuleConstants.Regions,
-                                    CompoundAccessRule.CompoundOperation.AtLeast, 3)
-                            ];
-                            if (slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Yellow
-                                || (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
-                            {
-                                rules.Add(new RegionAccessRule("SL"));
-                            }
-                            accessRule = new CompoundAccessRule([.. rules],
-                                CompoundAccessRule.CompoundOperation.All);
-                            break;
-                    }
-
-                    passageLocations.Add(new Location($"Passage-{passage}", Location.Type.Passage, accessRule));
-                }
-
-                // Passage items
-                if (RandoOptions.GivePassageItems && passage != "Gourmand")
-                {
-                    AllPassages.Add(passage);
-                    itemsToPlace.Add(new Item(passage, Item.Type.Passage, Item.Importance.Filler));
-                }
+                itemsToPlace.AddRange([.. passageRules.Select(kv => new Item(kv.Key, Item.Type.Passage, Item.Importance.Filler))]);
             }
-            // Add passage locations
             if (RandoOptions.UsePassageChecks)
             {
-                allRegions.Add(PASSAGE_REG, new(PASSAGE_REG, passageLocations));
+                HashSet<Location> locs = [.. passageRules.Select(kv => new Location($"Passage-{kv.Key}", Location.Type.Passage, kv.Value))];
+                allRegions[PASSAGE_REG] = new RandoRegion(PASSAGE_REG, locs);
             }
 
             // Create Echo locations
@@ -1175,7 +1047,7 @@ namespace RainWorldRandomizer.Generation
 
                 AccessRule sumpTunnelRule = new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Artificer, true);
                 // Shoreline to Pipeyard (Sump Tunnel)
-                connectionRuleOverrides["GATE_SL_VS"] = 
+                connectionRuleOverrides["GATE_SL_VS"] =
                 [
                     // Cannot traverse Sump Tunnel as Artificer
                     sumpTunnelRule, sumpTunnelRule
@@ -1288,6 +1160,145 @@ namespace RainWorldRandomizer.Generation
             // Inbuilt custom region rules
             globalRuleOverrides.AddRange(CustomRegionCompatability.GlobalRuleOverrides);
             slugcatRuleOverrides.AddRange(CustomRegionCompatability.SlugcatRuleOverrides);
+        }
+
+        public Dictionary<string, AccessRule> CreatePassageRules()
+        {
+            Dictionary<string, AccessRule> passageRules = [];
+
+            bool motherUnlocked = ModManager.MSC && (Plugin.Singleton.rainWorld.progression.miscProgressionData.beaten_Gourmand_Full || MoreSlugcats.MoreSlugcats.chtUnlockSlugpups.Value);
+            bool canFindSlugpups = slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Red || (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
+
+            foreach (string passage in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
+            {
+                // Skip over impossible passages
+                switch (passage)
+                {
+                    // Gourmand is handled later
+                    case "Gourmand":
+                        continue;
+                    case "Mother":
+                        if (!motherUnlocked || !canFindSlugpups) continue;
+                        break;
+                    case "Chieftain":
+                        if (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer) continue;
+                        break;
+                    case "Monk":
+                    case "Saint":
+                        // Much simpler to exclude from logic than to figure out what's reasonable
+                        if (slugcat == SlugcatStats.Name.Red) continue;
+                        if (ModManager.MSC
+                            && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear
+                            || slugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer) continue;
+                        break;
+                    case "Hunter":
+                    case "Outlaw":
+                    case "DragonSlayer":
+                        if (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint) continue;
+                        break;
+                    case "Scholar":
+                        if (ModManager.MSC)
+                        {
+                            if (slugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint
+                                || slugcat == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel) continue;
+                        }
+                        else
+                        {
+                            if (slugcat == SlugcatStats.Name.Yellow) continue;
+                        }
+                        break;
+                }
+
+                AccessRule accessRule = new();
+                switch (passage)
+                {
+                    case "Martyr":
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                            CompoundAccessRule.CompoundOperation.AtLeast, 5);
+                        break;
+                    case "Mother":
+                        // TODO: Add better check for pup regions if we find another use for property file parsing to justify it
+                        // Surely there's a pup spawnable region within a group of 5.
+                        // The correct way to do this is by reading pup spawn chances from region properties files,
+                        // but it does not feel worth parsing those every OnModsInit just for this one rule
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                            CompoundAccessRule.CompoundOperation.AtLeast, 5);
+                        break;
+                    case "Pilgrim":
+                        accessRule = new CompoundAccessRule(
+                            [.. SlugcatStats.SlugcatStoryRegions(slugcat)
+                                .Where(r => World.CheckForRegionGhost(slugcat, r))
+                                .Select(r => new RegionAccessRule(r))],
+                            CompoundAccessRule.CompoundOperation.All);
+                        break;
+                    case "Survivor":
+                        accessRule = new KarmaAccessRule(5);
+                        break;
+                    case "DragonSlayer":
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards,
+                            CompoundAccessRule.CompoundOperation.AtLeast, 6);
+                        break;
+                    case "Friend":
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards,
+                            CompoundAccessRule.CompoundOperation.Any);
+                        break;
+                    case "Traveller":
+                        accessRule = new CompoundAccessRule(
+                            [.. SlugcatStats.SlugcatStoryRegions(slugcat)
+                                .Select(r => new RegionAccessRule(r))],
+                            CompoundAccessRule.CompoundOperation.All);
+                        break;
+                    case "Chieftain":
+                        accessRule = new CreatureAccessRule(CreatureTemplate.Type.Scavenger);
+                        break;
+                    case "Hunter":
+                        // Hunter passage for carnivores is easy pretty much anywhere,
+                        // check for a single food object to ensure we aren't in SS or some similar region
+                        int foodCount = AccessRuleConstants.strictCarnivores.Contains(slugcat) ? 1 : 3;
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.HunterFoods,
+                            CompoundAccessRule.CompoundOperation.AtLeast, foodCount);
+                        break;
+                    case "Monk":
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.MonkFoods,
+                            CompoundAccessRule.CompoundOperation.AtLeast, 3);
+                        break;
+                    case "Nomad":
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
+                            CompoundAccessRule.CompoundOperation.AtLeast, 4);
+                        break;
+                    case "Outlaw":
+                        // Outlaw creatures aren't filtered exceptionally well,
+                        // so the requirements are higher to compensate
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.OutlawCrits,
+                            CompoundAccessRule.CompoundOperation.AtLeast, 8);
+                        break;
+                    case "Saint":
+                        // Use same rule as Monk because they're fairly similar.
+                        // Realistically the passage is easier than this
+                        accessRule = new CompoundAccessRule(AccessRuleConstants.MonkFoods,
+                            CompoundAccessRule.CompoundOperation.AtLeast, 3);
+                        break;
+                    case "Scholar":
+                        List<AccessRule> rules =
+                        [
+                            new AccessRule("The_Mark"),
+                            new CompoundAccessRule(AccessRuleConstants.Regions,
+                                CompoundAccessRule.CompoundOperation.AtLeast, 4)
+                        ];
+                        if (slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Yellow
+                            || (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
+                        {
+                            rules.Add(new RegionAccessRule("SL"));
+                        }
+                        accessRule = new CompoundAccessRule([.. rules],
+                            CompoundAccessRule.CompoundOperation.All);
+                        break;
+                }
+
+                passageRules[passage] = accessRule;
+            }
+
+            return passageRules;
         }
 
         public class GenerationFailureException : Exception
