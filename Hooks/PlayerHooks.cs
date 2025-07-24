@@ -265,6 +265,10 @@ namespace RainWorldRandomizer
             if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripMoon)
             {
                 Plugin.RandoManager.GiveLocation("Ascend_LttM");
+
+                // These would become impossible for Saint after LttM is gone, so send them now
+                Plugin.RandoManager.GiveLocation("Eat_Neuron");
+                Plugin.RandoManager.GiveLocation("FoodQuest-SSOracleSwarmer");
             }
         }
     }
