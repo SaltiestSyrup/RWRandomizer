@@ -1001,6 +1001,7 @@ namespace RainWorldRandomizer
             foreach (string line in brokenShelterLines)
             {
                 string[] split = Regex.Split(Custom.ValidateSpacedDelimiter(line, ":"), ": ");
+                if (split.Length < 3) continue; // Skip if not a valid line
                 brokenShelters[new(split[1].Trim())] = Regex.Split(Custom.ValidateSpacedDelimiter(split[2], ","), ", ");
             }
 
