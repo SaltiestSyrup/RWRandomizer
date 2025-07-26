@@ -125,6 +125,8 @@ namespace RainWorldRandomizer
                 return $"Failed to create session.\nError log:\n{e}";
             }
 
+            CurrentlyConnecting = true;
+
             // Create a new manager instance if there isn't one
             if (Plugin.RandoManager is null or not ManagerArchipelago)
             {
@@ -172,6 +174,7 @@ namespace RainWorldRandomizer
                 Plugin.RandoManager = null;
                 playerName = "";
                 Authenticated = false;
+                CurrentlyConnecting = false;
                 return errorMessage;
             }
 
@@ -212,6 +215,7 @@ namespace RainWorldRandomizer
                 // Log an error if no slot data packet was present
                 string errLog = "Did not receive any slot data. Please try again.";
                 Plugin.Log.LogError(errLog);
+                Disconnect();
                 return errLog;
             }
 
@@ -219,6 +223,7 @@ namespace RainWorldRandomizer
             InitializePlayer();
 
             Authenticated = true;
+            CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
         }
@@ -238,6 +243,7 @@ namespace RainWorldRandomizer
             Session.Socket.DisconnectAsync();
             Session = null;
             Authenticated = false;
+            CurrentlyConnecting = false;
             ReceivedSlotData = false;
 
             if (resetManager) (Plugin.RandoManager as ManagerArchipelago).Reset();
@@ -258,7 +264,7 @@ namespace RainWorldRandomizer
 
                 if (packet is ReceivedItemsPacket itemPacket)
                 {
-                    HandleItemsPacket(itemPacket);
+                    _ = HandleItemsPacket(itemPacket);
                     return;
                 }
                 /*
@@ -285,7 +291,8 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogInfo($"Received items packet. Index: {packet.Index} | Last index: {lastItemIndex} | Item count: {packet.Items.Length}");
 
                 // Wait until session fully connected before receiving any items
-                while (!Authenticated) { await Task.Delay(50); }
+                while (CurrentlyConnecting) { await Task.Delay(50); }
+                if (!Authenticated) return;
 
                 // This is a fresh inventory, initialize it
                 if (packet.Index == 0)
