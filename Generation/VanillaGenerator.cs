@@ -269,21 +269,12 @@ namespace RainWorldRandomizer.Generation
                 {
                     // If this region does not exist in the timeline
                     // and is not an alias of an existing region, skip the gate
-                    if (!allRegions.ContainsKey(regionShort)
-                        && (!Plugin.ProperRegionMap.TryGetValue(regionShort, out string alias)
-                        || regionShort == alias))
-                    {
-                        skipThisGate = true;
-                    }
+                    string properRegionShort = Plugin.ProperRegionMap.TryGetValue(regionShort, out string alias) ? alias : regionShort;
+                    skipThisGate |= !allRegions.ContainsKey(properRegionShort);
 
                     // If this gate is impossible to reach for the current slugcat, skip it
-                    if (TokenCachePatcher
-                        .GetRoomAccessibility(regionShort)
-                        .TryGetValue(gate.ToLowerInvariant(), out List<SlugcatStats.Name> accessibleTo)
-                        && !accessibleTo.Contains(slugcat))
-                    {
-                        skipThisGate = true;
-                    }
+                    skipThisGate |= TokenCachePatcher.GetRoomAccessibility(regionShort).TryGetValue(gate.ToLowerInvariant(), out List<SlugcatStats.Name> accessibleTo)
+                        && !accessibleTo.Contains(slugcat);
                 }
 
                 if (skipThisGate) continue;
