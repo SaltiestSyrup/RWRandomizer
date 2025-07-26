@@ -98,7 +98,7 @@ namespace RainWorldRandomizer
                 bool timedOut = false;
                 try
                 {
-                    timedOut = !generator.BeginGeneration().Wait(10000);
+                    timedOut = !generator.BeginGeneration(true).Wait(10000);
                 }
                 catch (Exception e)
                 {

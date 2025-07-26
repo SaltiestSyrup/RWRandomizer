@@ -93,6 +93,7 @@ namespace RainWorldRandomizer.Generation
         public StringBuilder generationLog = new();
         public string customStartDen = "";
         public int generationSeed;
+        public bool logVerbose;
 
 
         public VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int generationSeed = 0)
@@ -128,8 +129,9 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
-        public Task BeginGeneration()
+        public Task BeginGeneration(bool logVerbose = false)
         {
+            this.logVerbose = logVerbose;
             generationThread = new Task(Generate);
             generationThread.Start();
             return generationThread;
@@ -624,12 +626,15 @@ namespace RainWorldRandomizer.Generation
             } while (anyPurged);
 
             // Log all logic
-            generationLog.AppendLine("Final region list:");
+            if (logVerbose)
+            {
+                generationLog.AppendLine("Full logic:");
             foreach (RandoRegion region in state.AllRegions)
             {
                 generationLog.AppendLine($"\t{region}");
             }
             generationLog.AppendLine();
+        }
         }
 
         /// <summary>
