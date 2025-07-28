@@ -58,6 +58,18 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Include checks for story objectives", null, "",
                     ["Use Special checks"]));
 
+            RandoOptions.useShelterChecks = config.Bind<bool>("useShelterChecks", false,
+                new ConfigurableInfo("Include checks for entering shelters", null, "",
+                    ["Use Shelters as checks"]));
+
+            RandoOptions.useDevTokenChecks = config.Bind<bool>("useDevTokenChecks", false,
+                new ConfigurableInfo("Include checks for collecting developer commentary tokens", null, "",
+                    ["Use Dev Tokens as checks"]));
+
+            RandoOptions.useKarmaFlowerChecks = config.Bind<bool>("useKarmaFlowerChecks", false,
+                new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations", null, "",
+                    ["Use Karma Flowers as checks"]));
+
             RandoOptions.giveItemUnlocks = config.Bind<bool>("giveItemUnlocks", true,
                 new ConfigurableInfo("Whether random objects will be used as filler items. If not, extra gate keys will be added instead", null, "",
                     ["Use random objects as filler"]));
@@ -250,6 +262,10 @@ namespace RainWorldRandomizer
             checksGroup.AddCheckBox(RandoOptions.usePassageChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useSpecialChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useShelterChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useKarmaFlowerChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT * 1.5f;
             checksGroup.AddToTab(tabIndex);
             optionGroups.Add(checksGroup);
@@ -309,6 +325,8 @@ namespace RainWorldRandomizer
             // Check types
             OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
             checksGroup.AddCheckBox(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useDevTokenChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useEnergyCell, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
