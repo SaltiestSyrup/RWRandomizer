@@ -9,7 +9,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// <summary>The number of Ripple items collected.</summary>
         internal static int RippleIncrements;
         /// <summary>What the minimum and maximum Ripple should be, based on <see cref="RippleIncrements"/>.</summary>
-        internal static Vector2 Ripple => new(Mathf.Clamp(-3f + RippleIncrements / 2f, 1f, 5f), Mathf.Clamp(1f + RippleIncrements / 2f, 1f, 5f));
+        internal static Vector2 Ripple => new(Mathf.Clamp(-1f + RippleIncrements / 2f, 1f, 5f), Mathf.Clamp(1f + RippleIncrements / 2f, 1f, 5f));
         internal static List<string> collectedDynamicKeys = [];
         internal static List<string> CollectedDynamicKeys => collectedDynamicKeys;  // this could get from where the data actually gets stored later
         internal static List<string> collectedStaticKeys = [];
