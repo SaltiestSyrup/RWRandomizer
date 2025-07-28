@@ -121,6 +121,7 @@ namespace RainWorldRandomizer.Generation
         {
             if (!locations.IsSubsetOf(baseRegion.allLocations)) throw new ArgumentException("Locations must be a subset of region locations", "locations");
             if (!connections.IsSubsetOf(baseRegion.connections)) throw new ArgumentException("Connections must be a subset of region connections", "connections");
+            if (!shelters.IsSubsetOf(baseRegion.shelters)) throw new ArgumentException("Shelters must be a subset of region shelters", "shelters");
 
             // Remove elements of orig region
             baseRegion.allLocations.ExceptWith(locations);
