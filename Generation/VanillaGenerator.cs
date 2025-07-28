@@ -235,6 +235,18 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
 
+                // Create Dev token locations
+                if (ModManager.MSC && RandoOptions.UseDevTokenChecks && TokenCachePatcher.regionDevTokens.ContainsKey(regionLower))
+                {
+                    for (int i = 0; i < TokenCachePatcher.regionDevTokens[regionLower].Count; i++)
+                    {
+                        if (TokenCachePatcher.regionDevTokensAccessibility[regionLower][i].Contains(slugcat))
+                        {
+                            regionLocations.Add(new Location($"DevToken-{TokenCachePatcher.regionDevTokens[regionLower][i]}", Location.Type.Token, new()));
+                        }
+                    }
+                }
+
                 // Find shelters
                 HashSet<string> shelters = [];
                 for (int i = 0; i < TokenCachePatcher.regionShelters[regionLower].Count; i++)
@@ -1057,21 +1069,22 @@ namespace RainWorldRandomizer.Generation
                 // The Exterior is split in half at UW_C02, as Rivulet has a hard time crossing it
                 manualSubregions.Add(new("UW", "UWWall",
                     ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard", 
-                        "Broadcast-Chatlog_Broadcast0", "Shelter-UW_S01", "Shelter-UW_S03", "Shelter-UW_S04"],
+                        "Broadcast-Chatlog_Broadcast0", "Shelter-UW_S01", "Shelter-UW_S03", "Shelter-UW_S04",
+                        "DevToken-UW_H01", "DevToken_UW_F01"],
                     ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
                     ["UW_S01", "UW_S03", "UW_S04"],
                     [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, true), new()]));
 
                 // Cannot reach filtration from Outskirts, except as Saint
                 manualSubregions.Add(new SubregionBlueprint("SU", "SU_Filt",
-                    ["Pearl-SU_filt", "Shelter-SU_S05"],
+                    ["Pearl-SU_filt", "Shelter-SU_S05", "DevToken-SU_CAVE01", "DevToken-SU_PMPSTATION01"],
                     ["GATE_OE_SU"],
                     ["SU_S05"],
                     [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new()]));
 
                 // Precipice is disconnected from Shoreline
                 manualSubregions.Add(new("SL", "SLPrecipice",
-                    ["Shelter-SL_S13"],
+                    ["Shelter-SL_S13", "DevToken-SL_BRIDGE01"],
                     ["GATE_UW_SL"],
                     ["SL_S13"],
                     [new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)]));
@@ -1101,7 +1114,8 @@ namespace RainWorldRandomizer.Generation
                 ], CompoundAccessRule.CompoundOperation.Any);
                 // Bitter Aerie is only for Saint or after Rivulet completion
                 manualSubregions.Add(new("MS", "MSBitterAerie",
-                    ["Token-S-MS", "Token-MirosVulture", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10"],
+                    ["Token-S-MS", "Token-MirosVulture", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10",
+                        "DevToken-MS_SEWERBRIDGE", "DevToken-MS_X02", "DevToken-MS_BITTEREDGE"],
                     ["GATE_SL_MS"],
                     ["MS_S07", "MS_S10"],
                     [bitterAerieAccess, new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint)]
@@ -1109,7 +1123,7 @@ namespace RainWorldRandomizer.Generation
 
                 // Only Saint can climb up to above LttM
                 manualSubregions.Add(new("SL", "SLAboveLttM",
-                    ["Echo-SL", "Shelter-SL_STOP"],
+                    ["Echo-SL", "Shelter-SL_STOP", "DevToken-SL_ROOF04", "DevToken-SL_TEMPLE", "DevToken-SL_ROOF03"],
                     ["GATE_SL_MS"],
                     ["SL_STOP"],
                     [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new()]
@@ -1153,7 +1167,8 @@ namespace RainWorldRandomizer.Generation
                 // The Exterior is split in half at UW_D06 pre-MSC, as there are no grapple worms for crossing
                 // You *could* bring a grapple worm from Chimney but that's too out of the way to be in logic
                 manualSubregions.Add(new("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard", "Shelter-UW_S01", "Shelter-UW_S03", "Shelter-UW_S04"],
+                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard", "Shelter-UW_S01", 
+                        "Shelter-UW_S03", "Shelter-UW_S04"],
                     ["GATE_SS_UW", "GATE_CC_UW"],
                     ["UW_S01", "UW_S03", "UW_S04"],
                     [new(), new SlugcatAccessRule(SlugcatStats.Name.Red)]));
