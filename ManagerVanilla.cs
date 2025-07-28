@@ -87,7 +87,7 @@ namespace RainWorldRandomizer
 
                 if (!TokenCachePatcher.hasLoadedCache)
                 {
-                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Failed to start randomizer, missing token cache data. Try reloading mods to update cache", Color.red));
+                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Failed to start randomizer, token cache data missing or corrupt. Try reloading mods to update cache", Color.red));
                     return;
                 }
 

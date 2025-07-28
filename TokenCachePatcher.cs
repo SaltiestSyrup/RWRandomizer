@@ -21,6 +21,8 @@ namespace RainWorldRandomizer
         public static Dictionary<string, List<List<SlugcatStats.Name>>> regionObjectsAccessibility = [];
         public static Dictionary<string, List<string>> regionShelters = [];
         public static Dictionary<string, List<List<SlugcatStats.Timeline>>> regionSheltersAccessibility = [];
+        public static Dictionary<string, List<string>> regionDevTokens = [];
+        public static Dictionary<string, List<List<SlugcatStats.Name>>> regionDevTokensAccessibility = [];
 
         public static bool hasLoadedCache = false;
 
@@ -105,7 +107,7 @@ namespace RainWorldRandomizer
             List<SlugcatStats.Name> IntersectClearance(List<SlugcatStats.Name> tokenClearance, string region, string room)
             {
                 room = Path.GetFileNameWithoutExtension(room);
-                room = room.Substring(0, room.IndexOf("_setting")).ToLower();
+                room = room[..room.IndexOf("_setting")].ToLower();
                 if (GetRoomAccessibility(region).ContainsKey(room))
                 {
                     return [.. tokenClearance.Intersect(GetRoomAccessibility(region)[room])];
@@ -283,6 +285,8 @@ namespace RainWorldRandomizer
                     if (roomAccessibilities.ContainsKey(region)) roomAccessibilities = [];
                     regionObjects[region] = [];
                     regionObjectsAccessibility[region] = [];
+                    regionDevTokens[region] = [];
+                    regionDevTokensAccessibility[region] = [];
                 }
 
                 // Hardcode neurons into SL for LttM
@@ -343,6 +347,11 @@ namespace RainWorldRandomizer
                         CacheCreature(self, region, room, list3, CreatureTemplate.Type.Hazer);
                         break;
                 }
+
+                if (ModManager.MSC && placedObject.type == MoreSlugcatsEnums.PlacedObjectType.DevToken)
+                {
+                    CacheDevToken(self, region, room, list3, placedObject);
+                }
             }
 
             // After file write at 13D1
@@ -393,6 +402,16 @@ namespace RainWorldRandomizer
                     if (filter.Equals("")) continue;
                     text.Append($"{regionShelters[region][k]}~{filter}");
                     if (k != regionShelters[region].Count - 1) text.Append(",");
+                }
+                text.AppendLine();
+
+                // Dev Tokens
+                for (int l = 0; l < regionDevTokens[region].Count; l++)
+                {
+                    string filter = string.Join("|", regionDevTokensAccessibility[region][l]);
+                    if (filter.Equals("")) continue;
+                    text.Append($"{regionDevTokens[region][l]}~{filter}");
+                    if (l != regionDevTokens[region].Count - 1) text.Append(",");
                 }
                 text.AppendLine();
 
@@ -470,6 +489,29 @@ namespace RainWorldRandomizer
                 }
             }
 
+            // Add a dev token to cache with filters
+            void CacheDevToken(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, PlacedObject obj)
+            {
+                string roomName = Path.GetFileNameWithoutExtension(room);
+                roomName = roomName[..roomName.IndexOf("_setting")].ToUpperInvariant();
+                if (!regionDevTokens[region].Contains(roomName))
+                {
+                    regionDevTokens[region].Add(roomName);
+                    regionDevTokensAccessibility[region].Add(self.FilterTokenClearance(
+                        (obj.data as CollectToken.CollectTokenData).availableToPlayers, 
+                        [], 
+                        IntersectClearance(list3, region, room)));
+                }
+                else
+                {
+                    int index = regionDevTokens[region].IndexOf(roomName);
+                    regionDevTokensAccessibility[region][index] = self.FilterTokenClearance(
+                        (obj.data as CollectToken.CollectTokenData).availableToPlayers, 
+                        regionDevTokensAccessibility[region][index], 
+                        IntersectClearance(list3, region, room));
+                }
+            }
+
             // Add a creature to cache with filters
             void CacheCreature(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, CreatureTemplate.Type crit)
             {
@@ -495,6 +537,8 @@ namespace RainWorldRandomizer
             regionObjects.Clear();
             regionCreatures.Clear();
             ClearRoomAccessibilities();
+
+            hasLoadedCache = true;
 
             string[] regions = File.ReadAllLines(AssetManager.ResolveFilePath("World" + Path.DirectorySeparatorChar.ToString() + "regions.txt"));
             foreach (string region in regions)
@@ -523,6 +567,8 @@ namespace RainWorldRandomizer
                 regionCreaturesAccessibility[regionLower] = [];
                 regionShelters[regionLower] = [];
                 regionSheltersAccessibility[regionLower] = [];
+                regionDevTokens[regionLower] = [];
+                regionDevTokensAccessibility[regionLower] = [];
                 try
                 {
                     // Objects
@@ -558,8 +604,19 @@ namespace RainWorldRandomizer
                         //Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
                     }
 
+                    // Dev Tokens
+                    string[] devTokenEntries = parts[3].Split(',');
+                    foreach (string entry in devTokenEntries)
+                    {
+                        if (entry.Equals("")) continue;
+                        string[] split = Regex.Split(entry, "~");
+                        regionDevTokens[regionLower].Add(split[0]);
+                        regionDevTokensAccessibility[regionLower].Add([.. split[1].Split('|').Select(s => new SlugcatStats.Name(s))]);
+                        //Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
+                    }
+
                     // Rooms
-                    string[] roomEntries = parts[3].Split(',');
+                    string[] roomEntries = parts[4].Split(',');
                     foreach (string entry in roomEntries)
                     {
                         if (entry.Equals("")) continue;
@@ -587,10 +644,9 @@ namespace RainWorldRandomizer
                     try { File.WriteAllText(recomputePath, ""); }
                     catch (DirectoryNotFoundException) { Plugin.Log.LogError("Failed to write recomputetokencache.txt"); }
                     ClearRoomAccessibilities();
+                    hasLoadedCache = false;
                 }
             }
-
-            hasLoadedCache = true;
         }
 
         /// <summary>
