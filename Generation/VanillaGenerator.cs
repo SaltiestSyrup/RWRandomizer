@@ -1053,7 +1053,7 @@ namespace RainWorldRandomizer.Generation
                 manualSubregions.Add(new("UW", "UWWall",
                     ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard", "Broadcast-Chatlog_Broadcast0"],
                     ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
-                    ["SU_S03", "SU_S04"],
+                    ["UW_S01", "UW_S03", "UW_S04"],
                     [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, true), new()]));
 
                 // Cannot reach filtration from Outskirts, except as Saint
@@ -1149,7 +1149,7 @@ namespace RainWorldRandomizer.Generation
                 manualSubregions.Add(new("UW", "UWWall",
                     ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard"],
                     ["GATE_SS_UW", "GATE_CC_UW"],
-                    ["SU_S03", "SU_S04"],
+                    ["UW_S01", "UW_S03", "UW_S04"],
                     [new(), new SlugcatAccessRule(SlugcatStats.Name.Red)]));
             }
 
