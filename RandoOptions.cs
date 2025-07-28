@@ -13,6 +13,9 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> useEchoChecks;
         internal static Configurable<bool> usePassageChecks;
         internal static Configurable<bool> useSpecialChecks;
+        internal static Configurable<bool> useShelterChecks;
+        internal static Configurable<bool> useDevTokenChecks;
+        internal static Configurable<bool> useKarmaFlowerChecks;
 
         internal static Configurable<bool> giveItemUnlocks;
         internal static Configurable<bool> itemShelterDelivery;
@@ -49,156 +52,63 @@ namespace RainWorldRandomizer
         public static Configurable<int> trapMaximumCooldown;
 
         // Base
-        public static bool UseSetSeed
-        {
-            get
-            {
-                return useSeed.Value;
-            }
-        }
-        public static int SetSeed
-        {
-            get
-            {
-                return UseSetSeed ? seed.Value : 0;
-            }
-        }
-        public static bool UseSandboxTokenChecks
-        {
-            get
-            {
-                return useSandboxTokenChecks.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
-        public static bool UseDevTokenChecks
-        {
-            get
-            {
-                return Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.devTokenChecks;
-            }
-        }
-        public static bool UsePearlChecks
-        {
-            get
-            {
-                return usePearlChecks.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
-        public static bool UseEchoChecks
-        {
-            get
-            {
-                return useEchoChecks.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
-        public static bool UsePassageChecks
-        {
-            get
-            {
-                return usePassageChecks.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
-        public static bool UseSpecialChecks
-        {
-            get
-            {
-                return useSpecialChecks.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
-        public static bool UseShelterChecks => Plugin.RandoManager is not ManagerArchipelago
-                    || ArchipelagoConnection.sheltersanity;
-        public static bool UseKarmaFlowerChecks
-        {
-            get
-            {
-                return Plugin.RandoManager is ManagerArchipelago
-                    && ArchipelagoConnection.flowersanity;
-            }
-        }
-        public static bool GiveObjectItems
-        {
-            get
-            {
-                return giveItemUnlocks.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
-        public static bool ItemShelterDelivery
-        {
-            get
-            {
-                return itemShelterDelivery.Value
-                    || (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear);
-            }
-        }
-        public static bool GivePassageItems
-        {
-            get
-            {
-                return givePassageUnlocks.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
-        public static float HunterCycleIncreaseDensity
-        {
-            get
-            {
-                return hunterCyclesDensity.Value;
-            }
-        }
-        public static bool RandomizeSpawnLocation
-        {
-            get
-            {
-                return Plugin.RandoManager is ManagerArchipelago
-                    ? ArchipelagoConnection.useRandomStart : randomizeSpawnLocation.Value;
-            }
-        }
-        public static bool StartMinimumKarma
-        {
-            get
-            {
-                return startMinKarma.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
+        public static bool UseSetSeed => useSeed.Value;
+        public static int SetSeed => UseSetSeed ? seed.Value : 0;
+
+        public static bool UseSandboxTokenChecks => useSandboxTokenChecks.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
+        public static bool UsePearlChecks => usePearlChecks.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
+        public static bool UseEchoChecks => useEchoChecks.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
+        public static bool UsePassageChecks => usePassageChecks.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
+        public static bool UseSpecialChecks => useSpecialChecks.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
+        public static bool UseShelterChecks => useShelterChecks.Value
+            || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.sheltersanity);
+
+        public static bool UseDevTokenChecks => useDevTokenChecks.Value
+            || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.devTokenChecks);
+
+        public static bool UseKarmaFlowerChecks => useKarmaFlowerChecks.Value
+            || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.flowersanity);
+
+        public static bool GiveObjectItems => giveItemUnlocks.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
+        public static bool ItemShelterDelivery => itemShelterDelivery.Value
+            || (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear);
+
+        public static bool GivePassageItems => givePassageUnlocks.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
+        public static float HunterCycleIncreaseDensity => hunterCyclesDensity.Value;
+
+        public static bool RandomizeSpawnLocation => randomizeSpawnLocation.Value
+            || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.useRandomStart);
+
+        public static bool StartMinimumKarma => startMinKarma.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
         public static int ExtraKarmaIncreases => extraKarmaIncreases.Value;
-        public static bool DisableNotificationQueue
-        {
-            get
-            {
-                return disableNotificationQueue.Value;
-            }
-        }
-        public static bool DisableTokenPopUps
-        {
-            get
-            {
-                return disableTokenText.Value;
-            }
-        }
+
+        public static bool DisableNotificationQueue => disableNotificationQueue.Value;
+
+        public static bool DisableTokenPopUps => disableTokenText.Value;
+
         // MSC
-        public static bool ForceOpenMetropolis
-        {
-            get
-            {
-                return allowMetroForOthers.Value
-                    && Plugin.RandoManager is not ManagerArchipelago;
-            }
-        }
-        public static bool ForceOpenSubmerged
-        {
-            get
-            {
-                return allowSubmergedForOthers.Value
-                    && Plugin.RandoManager is not ManagerArchipelago;
-            }
-        }
+        public static bool ForceOpenMetropolis => allowMetroForOthers.Value
+            && Plugin.RandoManager is not ManagerArchipelago;
+
+        public static bool ForceOpenSubmerged => allowSubmergedForOthers.Value
+            && Plugin.RandoManager is not ManagerArchipelago;
+
         public static bool UseFoodQuest
         {
             get
@@ -214,21 +124,11 @@ namespace RainWorldRandomizer
                 }
             }
         }
-        public static bool UseEnergyCell
-        {
-            get
-            {
-                return useEnergyCell.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
-        public static bool UseSMBroadcasts
-        {
-            get
-            {
-                return useSMTokens.Value
-                    || Plugin.RandoManager is ManagerArchipelago;
-            }
-        }
+
+        public static bool UseEnergyCell => useEnergyCell.Value
+            || Plugin.RandoManager is ManagerArchipelago;
+
+        public static bool UseSMBroadcasts => useSMTokens.Value
+            || Plugin.RandoManager is ManagerArchipelago;
     }
 }
