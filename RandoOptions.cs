@@ -110,7 +110,8 @@ namespace RainWorldRandomizer
                     || Plugin.RandoManager is ManagerArchipelago;
             }
         }
-        public static bool UseShelterChecks => true;
+        public static bool UseShelterChecks => Plugin.RandoManager is not ManagerArchipelago
+                    || ArchipelagoConnection.sheltersanity;
         public static bool UseKarmaFlowerChecks
         {
             get

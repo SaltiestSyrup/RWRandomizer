@@ -297,8 +297,7 @@ namespace RainWorldRandomizer
             Room currentRoom = self.FirstRealizedPlayer?.room;
             if (currentRoom?.abstractRoom.shelter ?? false)
             {
-                if (Plugin.RandoManager is ManagerArchipelago
-                    && ArchipelagoConnection.sheltersanity
+                if (RandoOptions.UseShelterChecks
                     && $"Shelter-{currentRoom.abstractRoom.name.ToUpper()}" is string checkName
                     && Plugin.RandoManager.LocationExists(checkName))
                 {
