@@ -242,6 +242,11 @@ namespace RainWorldRandomizer.Generation
                     if (TokenCachePatcher.regionSheltersAccessibility[regionLower][i].Contains(timeline))
                     {
                         shelters.Add(TokenCachePatcher.regionShelters[regionLower][i]);
+                        // Create Shelter locations
+                        if (RandoOptions.UseShelterChecks)
+                        {
+                            regionLocations.Add(new Location($"Shelter-{TokenCachePatcher.regionShelters[regionLower][i]}", Location.Type.Shelter, new()));
+                        }
                     }
                 }
 
@@ -955,7 +960,7 @@ namespace RainWorldRandomizer.Generation
 
             // Cannot climb SB Ravine
             manualSubregions.Add(new("SB", "SBRavine",
-                ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0"],
+                ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0", "Shelter-SB_S09"],
                 ["GATE_LF_SB"],
                 ["SB_S09"],
                 [new(AccessRule.IMPOSSIBLE_ID), new()]));
@@ -1051,21 +1056,22 @@ namespace RainWorldRandomizer.Generation
 
                 // The Exterior is split in half at UW_C02, as Rivulet has a hard time crossing it
                 manualSubregions.Add(new("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard", "Broadcast-Chatlog_Broadcast0"],
+                    ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard", 
+                        "Broadcast-Chatlog_Broadcast0", "Shelter-UW_S01", "Shelter-UW_S03", "Shelter-UW_S04"],
                     ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
                     ["UW_S01", "UW_S03", "UW_S04"],
                     [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, true), new()]));
 
                 // Cannot reach filtration from Outskirts, except as Saint
                 manualSubregions.Add(new SubregionBlueprint("SU", "SU_Filt",
-                    ["Pearl-SU_filt"],
+                    ["Pearl-SU_filt", "Shelter-SU_S05"],
                     ["GATE_OE_SU"],
                     ["SU_S05"],
                     [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new()]));
 
                 // Precipice is disconnected from Shoreline
                 manualSubregions.Add(new("SL", "SLPrecipice",
-                    [],
+                    ["Shelter-SL_S13"],
                     ["GATE_UW_SL"],
                     ["SL_S13"],
                     [new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)]));
@@ -1095,7 +1101,7 @@ namespace RainWorldRandomizer.Generation
                 ], CompoundAccessRule.CompoundOperation.Any);
                 // Bitter Aerie is only for Saint or after Rivulet completion
                 manualSubregions.Add(new("MS", "MSBitterAerie",
-                    ["Token-S-MS", "Token-MirosVulture", "Echo-MS"],
+                    ["Token-S-MS", "Token-MirosVulture", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10"],
                     ["GATE_SL_MS"],
                     ["MS_S07", "MS_S10"],
                     [bitterAerieAccess, new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint)]
@@ -1103,7 +1109,7 @@ namespace RainWorldRandomizer.Generation
 
                 // Only Saint can climb up to above LttM
                 manualSubregions.Add(new("SL", "SLAboveLttM",
-                    ["Echo-SL"],
+                    ["Echo-SL", "Shelter-SL_STOP"],
                     ["GATE_SL_MS"],
                     ["SL_STOP"],
                     [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new()]
@@ -1111,7 +1117,7 @@ namespace RainWorldRandomizer.Generation
 
                 // Artificer cannot traverse Sump Tunnel
                 manualSubregions.Add(new("VS", "VSSumpTunnel",
-                    [],
+                    ["Shelter-VS_S02"],
                     ["GATE_SL_VS"],
                     ["VS_S02"],
                     [sumpTunnelRule, sumpTunnelRule]
@@ -1147,7 +1153,7 @@ namespace RainWorldRandomizer.Generation
                 // The Exterior is split in half at UW_D06 pre-MSC, as there are no grapple worms for crossing
                 // You *could* bring a grapple worm from Chimney but that's too out of the way to be in logic
                 manualSubregions.Add(new("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard"],
+                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard", "Shelter-UW_S01", "Shelter-UW_S03", "Shelter-UW_S04"],
                     ["GATE_SS_UW", "GATE_CC_UW"],
                     ["UW_S01", "UW_S03", "UW_S04"],
                     [new(), new SlugcatAccessRule(SlugcatStats.Name.Red)]));
