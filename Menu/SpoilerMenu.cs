@@ -716,6 +716,11 @@ namespace RainWorldRandomizer
                         spriteScale = 2f;
                         spriteColor = CollectToken.WhiteColor.rgb;
                         break;
+                    case "DevToken":
+                        spriteName = "ctOn";
+                        spriteScale = 2f;
+                        spriteColor = new Color(0.85f, 0.75f, 0.64f);
+                        break;
                     case "FoodQuest":
                         if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(name))
                         {
@@ -729,6 +734,13 @@ namespace RainWorldRandomizer
                             spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
                             spriteColor = CreatureSymbol.ColorOfCreature(iconData);
                         }
+                        break;
+                    case "Shelter":
+                        spriteName = "ShelterMarker";
+                        break;
+                    case "Flower":
+                        spriteName = "FlowerMarker";
+                        spriteColor = RainWorld.GoldRGB;
                         break;
                     default:
                         spriteName = "EndGameCircle";
