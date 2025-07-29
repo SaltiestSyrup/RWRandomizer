@@ -1,0 +1,20 @@
+{"frames": {
+
+"Symbol_KarmaFlower.png":
+{
+	"frame": {"x":0,"y":0,"w":17,"h":30},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":17,"h":30},
+	"sourceSize": {"w":17,"h":30}
+}},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "randomizer.png",
+	"format": "RGBA8888",
+	"size": {"w":17,"h":30},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:bb43848365bd812099cd21bb04d74165:1504c977c6f3806b6ba657154b27aff3:b5b9a77a33a16f520eacc0c60efcf69d$"
+}
+}

@@ -245,33 +245,25 @@ namespace RainWorldRandomizer
 
             IconSymbol.IconSymbolData iconData;
 
-            if (item.id == "KarmaFlower")
+            if (item.id is "FireSpear" or "ExplosiveSpear")
             {
-                spriteName = "FlowerMarker";
-                spriteColor = RainWorld.GoldRGB;
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
+            }
+            else if (item.id is "ElectricSpear")
+            {
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
+            }
+            else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))
+            {
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
             }
             else
             {
-                if (item.id is "FireSpear" or "ExplosiveSpear")
-                {
-                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
-                }
-                else if (item.id is "ElectricSpear")
-                {
-                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
-                }
-                else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))
-                {
-                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
-                }
-                else
-                {
-                    iconData = new IconSymbol.IconSymbolData();
-                }
-
-                spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
-                spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
+                iconData = new IconSymbol.IconSymbolData();
             }
+
+            spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
+            spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
 
             try
             {

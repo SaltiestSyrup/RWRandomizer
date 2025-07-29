@@ -20,7 +20,7 @@ namespace RainWorldRandomizer
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
-            //On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
+            On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
 
             try
@@ -79,7 +79,7 @@ namespace RainWorldRandomizer
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
-            //On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
+            On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
 
             IL.Menu.MainMenu.ctor -= MainMenuCtorIL;
@@ -596,13 +596,15 @@ namespace RainWorldRandomizer
         internal static WinState.GourmandTrackerData[] expanded;
 
         /// <summary>
-        /// Add a sprite for SeedCobs to use in ItemSymbols.
+        /// Add sprite name definitions for custom icon symbols
         /// </summary>
-        [Obsolete("Currently not needed since Watcher added their own version of sprites we had added")]
         private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intData)
         {
-            //if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
-            return orig(itemType, intData);
+            return itemType.value switch
+            {
+                "KarmaFlower" => "Symbol_KarmaFlower",
+                _ => orig(itemType, intData)
+            };
         }
 
         /// <summary>
@@ -610,8 +612,12 @@ namespace RainWorldRandomizer
         /// </summary>
         private static Color ItemSymbol_ColorForItem(On.ItemSymbol.orig_ColorForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intdata)
         {
-            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return new Color(0.4117f, 0.1608f, 0.2275f);
-            return orig(itemType, intdata);
+            return itemType.value switch
+            {
+                "SeedCob" => new Color(0.4117f, 0.1608f, 0.2275f),
+                "KarmaFlower" => new Color(0.9059f, 0.8745f, 0.5647f),
+                _ => orig(itemType, intdata)
+            };
         }
 
         /// <summary>

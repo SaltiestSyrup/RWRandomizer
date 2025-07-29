@@ -124,8 +124,8 @@ namespace RainWorldRandomizer
                 On.RainWorld.PostModsInit += PostModsInit;
                 On.ExtEnumInitializer.InitTypes += OnInitExtEnumTypes;
                 On.StaticWorld.InitStaticWorld += OnInitStaticWorld;
-                //On.RainWorld.LoadModResources += LoadResources;
-                //On.RainWorld.UnloadResources += UnloadResources;
+                On.RainWorld.LoadModResources += LoadResources;
+                On.RainWorld.UnloadResources += UnloadResources;
 
                 if (ExtCollectibleTrackerComptability.Enabled)
                 {
@@ -171,8 +171,8 @@ namespace RainWorldRandomizer
                 On.RainWorld.PostModsInit -= PostModsInit;
                 On.ExtEnumInitializer.InitTypes -= OnInitExtEnumTypes;
                 On.StaticWorld.InitStaticWorld -= OnInitStaticWorld;
-                //On.RainWorld.LoadModResources -= LoadResources;
-                //On.RainWorld.UnloadResources -= UnloadResources;
+                On.RainWorld.LoadModResources -= LoadResources;
+                On.RainWorld.UnloadResources -= UnloadResources;
             }
             catch (Exception e)
             {
@@ -186,12 +186,6 @@ namespace RainWorldRandomizer
             Log.LogInfo("Init Randomizer Mod");
 
             rainWorld = self;
-
-            //try
-            //{
-            //    Futile.atlasManager.LoadImage("atlases/rwrandomizer/ColoredSymbolSeedCob");
-            //}
-            //catch (Exception e) { Logger.LogError(e); }
 
             try
             {
@@ -236,8 +230,6 @@ namespace RainWorldRandomizer
             VanillaGenerator.GenerateCustomRules();
         }
 
-        // --- Not currently needed but may still be useful in the future ---
-        /*
         public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
         {
             orig(self);
@@ -249,7 +241,6 @@ namespace RainWorldRandomizer
             orig(self);
             Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
         }
-        */
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom, int data = 0)
         {

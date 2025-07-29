@@ -534,7 +534,6 @@ namespace RainWorldRandomizer
             {
                 string roomName = Path.GetFileNameWithoutExtension(room);
                 roomName = roomName[..roomName.IndexOf("_setting")].ToUpperInvariant();
-                Plugin.Log.LogDebug(roomName);
                 if (!regionKarmaFlowers[region].Contains(roomName))
                 {
                     regionKarmaFlowers[region].Add(roomName);
