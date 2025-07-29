@@ -247,6 +247,18 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
 
+                // Create Karma flower locations
+                if (slugcat != SlugcatStats.Name.Red && RandoOptions.UseKarmaFlowerChecks && TokenCachePatcher.regionKarmaFlowers.ContainsKey(regionLower))
+                {
+                    for (int i = 0; i < TokenCachePatcher.regionKarmaFlowers[regionLower].Count; i++)
+                    {
+                        if (TokenCachePatcher.regionKarmaFlowersAccessibility[regionLower][i].Contains(slugcat))
+                        {
+                            regionLocations.Add(new Location($"Flower-{TokenCachePatcher.regionKarmaFlowers[regionLower][i]}", Location.Type.Flower, new()));
+                        }
+                    }
+                }
+
                 // Find shelters
                 HashSet<string> shelters = [];
                 for (int i = 0; i < TokenCachePatcher.regionShelters[regionLower].Count; i++)
