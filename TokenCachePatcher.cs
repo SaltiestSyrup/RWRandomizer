@@ -23,6 +23,8 @@ namespace RainWorldRandomizer
         public static Dictionary<string, List<List<SlugcatStats.Timeline>>> regionSheltersAccessibility = [];
         public static Dictionary<string, List<string>> regionDevTokens = [];
         public static Dictionary<string, List<List<SlugcatStats.Name>>> regionDevTokensAccessibility = [];
+        public static Dictionary<string, List<string>> regionKarmaFlowers = [];
+        public static Dictionary<string, List<List<SlugcatStats.Name>>> regionKarmaFlowersAccessibility = [];
 
         public static bool hasLoadedCache = false;
 
@@ -287,6 +289,8 @@ namespace RainWorldRandomizer
                     regionObjectsAccessibility[region] = [];
                     regionDevTokens[region] = [];
                     regionDevTokensAccessibility[region] = [];
+                    regionKarmaFlowers[region] = [];
+                    regionKarmaFlowersAccessibility[region] = [];
                 }
 
                 // Hardcode neurons into SL for LttM
@@ -334,7 +338,6 @@ namespace RainWorldRandomizer
                 if (ExtEnumBase.TryParse(typeof(AbstractPhysicalObject.AbstractObjectType), placedObject.type.value, true, out ExtEnumBase t))
                 {
                     CacheObject(self, region, room, list3, (AbstractPhysicalObject.AbstractObjectType)t);
-                    return;
                 }
 
                 // Hardcode checks for placed creatures
@@ -351,6 +354,11 @@ namespace RainWorldRandomizer
                 if (ModManager.MSC && placedObject.type == MoreSlugcatsEnums.PlacedObjectType.DevToken)
                 {
                     CacheDevToken(self, region, room, list3, placedObject);
+                }
+
+                if (placedObject.type == PlacedObject.Type.KarmaFlower)
+                {
+                    CacheKarmaFlower(self, region, room, list3);
                 }
             }
 
@@ -412,6 +420,16 @@ namespace RainWorldRandomizer
                     if (filter.Equals("")) continue;
                     text.Append($"{regionDevTokens[region][l]}~{filter}");
                     if (l != regionDevTokens[region].Count - 1) text.Append(",");
+                }
+                text.AppendLine();
+
+                // Karma Flowers
+                for (int m = 0; m < regionKarmaFlowers[region].Count; m++)
+                {
+                    string filter = string.Join("|", regionKarmaFlowersAccessibility[region][m]);
+                    if (filter.Equals("")) continue;
+                    text.Append($"{regionKarmaFlowers[region][m]}~{filter}");
+                    if (m != regionKarmaFlowers[region].Count - 1) text.Append(",");
                 }
                 text.AppendLine();
 
@@ -512,6 +530,23 @@ namespace RainWorldRandomizer
                 }
             }
 
+            void CacheKarmaFlower(RainWorld self, string region, string room, List<SlugcatStats.Name> list3)
+            {
+                string roomName = Path.GetFileNameWithoutExtension(room);
+                roomName = roomName[..roomName.IndexOf("_setting")].ToUpperInvariant();
+                Plugin.Log.LogDebug(roomName);
+                if (!regionKarmaFlowers[region].Contains(roomName))
+                {
+                    regionKarmaFlowers[region].Add(roomName);
+                    regionKarmaFlowersAccessibility[region].Add(self.FilterTokenClearance(list3, [], IntersectClearance(list3, region, room)));
+                }
+                else
+                {
+                    int index = regionKarmaFlowers[region].IndexOf(roomName);
+                    regionKarmaFlowersAccessibility[region][index] = self.FilterTokenClearance(list3, regionKarmaFlowersAccessibility[region][index], IntersectClearance(list3, region, room));
+                }
+            }
+
             // Add a creature to cache with filters
             void CacheCreature(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, CreatureTemplate.Type crit)
             {
@@ -569,6 +604,8 @@ namespace RainWorldRandomizer
                 regionSheltersAccessibility[regionLower] = [];
                 regionDevTokens[regionLower] = [];
                 regionDevTokensAccessibility[regionLower] = [];
+                regionKarmaFlowers[regionLower] = [];
+                regionKarmaFlowersAccessibility[regionLower] = [];
                 try
                 {
                     // Objects
@@ -615,8 +652,19 @@ namespace RainWorldRandomizer
                         //Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
                     }
 
+                    // Karma Flowers
+                    string[] karmaFlowerEntries = parts[4].Split(',');
+                    foreach (string entry in karmaFlowerEntries)
+                    {
+                        if (entry.Equals("")) continue;
+                        string[] split = Regex.Split(entry, "~");
+                        regionKarmaFlowers[regionLower].Add(split[0]);
+                        regionKarmaFlowersAccessibility[regionLower].Add([.. split[1].Split('|').Select(s => new SlugcatStats.Name(s))]);
+                        Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
+                    }
+
                     // Rooms
-                    string[] roomEntries = parts[4].Split(',');
+                    string[] roomEntries = parts[5].Split(',');
                     foreach (string entry in roomEntries)
                     {
                         if (entry.Equals("")) continue;
