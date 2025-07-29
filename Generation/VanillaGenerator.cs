@@ -322,6 +322,8 @@ namespace RainWorldRandomizer.Generation
 
                 AllGates.Add(gate);
 
+                // Don't create items for gates that are always open
+                if (Constants.ForceOpenGates.Contains(gate)) continue;
                 itemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
             }
 

@@ -660,7 +660,7 @@ namespace RainWorldRandomizer
                         string[] split = Regex.Split(entry, "~");
                         regionKarmaFlowers[regionLower].Add(split[0]);
                         regionKarmaFlowersAccessibility[regionLower].Add([.. split[1].Split('|').Select(s => new SlugcatStats.Name(s))]);
-                        Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
+                        //Plugin.Log.LogDebug($"{region}\t{split[0]}\t{split[1]}");
                     }
 
                     // Rooms

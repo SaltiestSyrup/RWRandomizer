@@ -378,12 +378,7 @@ namespace RainWorldRandomizer
                 ? (RegionGate.GateRequirement[])v.Clone()
                 : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
 
-            if (gateName.Equals("GATE_OE_SU")) hasKeyForGate = true;
-            if (gateName.Equals("GATE_SL_MS")
-                && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
-            {
-                hasKeyForGate = true;
-            }
+            if (Constants.ForceOpenGates.Contains(gateName)) hasKeyForGate = true;
 
             // Change default Metropolis gate karma
             if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
