@@ -16,7 +16,8 @@ namespace RainWorldRandomizer.Generation
             Story,
             Food,
             Passage,
-            Shelter
+            Shelter,
+            Flower
         }
 
         public string ID = ID;
