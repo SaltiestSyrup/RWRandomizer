@@ -594,8 +594,12 @@ namespace RainWorldRandomizer.Generation
 
             if (RandoOptions.RandomizeSpawnLocation)
             {
-                // From state, find a random region that has at least one location, one shelter, and one connection
-                List<RandoRegion> contenderRegions = [.. state.AllRegions.Where(r => r.allLocations.Count > 0 && r.shelters.Count > 0 && r.connections.Count > 0)];
+                // From state, find a random region that has at least one location, one shelter, and one connection that the player could leave with
+                List<RandoRegion> contenderRegions = [.. state.AllRegions.Where(r => 
+                    r.allLocations.Count > 0 
+                    && r.shelters.Count > 0 
+                    && r.connections.Count > 0 
+                    && r.connections.All(c => c.TravelPossible(state, r)))];
                 RandoRegion chosenRegion = contenderRegions[randomState.Next(0, contenderRegions.Count)];
                 // Choose a random shelter within the chosen region
                 customStartDen = chosenRegion.shelters.ElementAt(randomState.Next(0, chosenRegion.shelters.Count));

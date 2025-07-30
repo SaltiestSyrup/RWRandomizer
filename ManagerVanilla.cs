@@ -189,7 +189,7 @@ namespace RainWorldRandomizer
                     //Plugin.Log.LogDebug(generators[j].generationLog);
                 }
             }
-            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tTime: {sw.ElapsedMilliseconds} ms");
+            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tAvg time: {sw.ElapsedMilliseconds / howMany} ms");
         }
 
         public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)

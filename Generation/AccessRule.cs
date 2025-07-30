@@ -159,7 +159,6 @@ namespace RainWorldRandomizer.Generation
         public override bool IsPossible(State state)
         {
             // Costly calculation, hopefully fine since this shouldn't be checked after init
-            Plugin.Log.LogDebug(ReqName);
             return state.AllRegions
                 .Any(r =>
                 {
