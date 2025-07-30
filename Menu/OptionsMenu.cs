@@ -79,10 +79,15 @@ namespace RainWorldRandomizer
                     ["Use Passage tokens as filler"]));
 
             RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
-                new ConfigurableInfo("The percentage amount of filler items that will be cycle increases when playing as Hunter (1 is 100%)." +
+                new ConfigurableInfo("The percentage amount of filler items that will increase the remaining cycles when playing as Hunter." +
                     "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
                     new ConfigAcceptableRange<float>(0, 1), "",
                     ["Hunter cycle increases"]));
+
+            RandoOptions.trapsDensity = config.Bind<float>("trapsDensity", 0.2f,
+                new ConfigurableInfo("The percentage amount of filler items that will be trap effects. Set to 0 to disable traps entirely",
+                    new ConfigAcceptableRange<float>(0, 1), "",
+                    ["Traps percentage"]));
 
             RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
@@ -275,6 +280,8 @@ namespace RainWorldRandomizer
             fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            fillerGroup.AddUpDown(RandoOptions.trapsDensity, false, new(LEFT_OPTION_X, runningY), 60f);
             fillerGroup.AddToTab(tabIndex);
             optionGroups.Add(fillerGroup);
 
