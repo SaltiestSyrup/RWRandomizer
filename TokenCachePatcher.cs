@@ -349,6 +349,10 @@ namespace RainWorldRandomizer
                         if (region is "sl" or "lm") break;
                         CacheCreature(self, region, room, list3, CreatureTemplate.Type.Hazer);
                         break;
+                    case "VultureGrub":
+                    case "DeadVultureGrub":
+                        CacheCreature(self, region, room, list3, CreatureTemplate.Type.VultureGrub);
+                        break;
                 }
 
                 if (ModManager.MSC && placedObject.type == MoreSlugcatsEnums.PlacedObjectType.DevToken)
