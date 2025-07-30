@@ -156,6 +156,21 @@ namespace RainWorldRandomizer.Generation
             return state.Creatures.Contains(creature);
         }
 
+        public override bool IsPossible(State state)
+        {
+            // Costly calculation, hopefully fine since this shouldn't be checked after init
+            Plugin.Log.LogDebug(ReqName);
+            return state.AllRegions
+                .Any(r =>
+                {
+                    string regLower = r.ID.ToLowerInvariant();
+                    if (!TokenCachePatcher.regionCreatures.TryGetValue(regLower, out List<CreatureTemplate.Type> critList)) return false;
+                    int index = critList.IndexOf(creature);
+                    if (index < 0) return false;
+                    return TokenCachePatcher.regionCreaturesAccessibility[regLower][index].Contains(state.Slugcat);
+                });
+        }
+
         public override string ToString()
         {
             return $"Can find {ReqName}";
@@ -179,6 +194,20 @@ namespace RainWorldRandomizer.Generation
         public override bool IsMet(State state)
         {
             return state.Objects.Contains(item);
+        }
+
+        public override bool IsPossible(State state)
+        {
+            // Costly calculation, hopefully fine since this shouldn't be checked after init
+            return state.AllRegions
+                .Any(r =>
+                {
+                    string regLower = r.ID.ToLowerInvariant();
+                    if (!TokenCachePatcher.regionObjects.TryGetValue(regLower, out List<AbstractPhysicalObject.AbstractObjectType> objList)) return false;
+                    int index = objList.IndexOf(item);
+                    if (index < 0) return false;
+                    return TokenCachePatcher.regionObjectsAccessibility[regLower][index].Contains(state.Slugcat);
+                });
         }
 
         public override string ToString()

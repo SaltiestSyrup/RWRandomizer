@@ -363,7 +363,6 @@ namespace RainWorldRandomizer.Generation
                 itemsToPlace.Add(new Item("Karma", Item.Type.Karma, Item.Importance.Progression));
             }
 
-            // TODO: Add support for expanded food quest
             // Create Food Quest locations
             if (ModManager.MSC && RandoOptions.UseFoodQuest)
             {
@@ -511,17 +510,8 @@ namespace RainWorldRandomizer.Generation
                     continue;
                 }
 
-                if (rule.Value.IsPossible(state))
-                {
-                    loc.accessRule = rule.Value;
-                    generationLog.AppendLine($"Applied custom rule to location: {rule.Key}");
-                }
-                else
-                {
-                    // Impossible locations are removed from state
-                    state.PurgeLocation(loc);
-                    generationLog.AppendLine($"Removed impossible location: {rule.Key}");
-                }
+                loc.accessRule = rule.Value;
+                generationLog.AppendLine($"Applied custom rule to location: {rule.Key}");
             }
 
             // Create Subregions
@@ -652,6 +642,17 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
             } while (anyPurged);
+
+            // Purge any impossible individual locations
+            foreach (Location loc in state.AllLocations.ToList())
+            {
+                if (!loc.accessRule.IsPossible(state))
+                {
+                    state.PurgeLocation(loc);
+                    generationLog.AppendLine($"Removed impossible location: {loc.ID}");
+                }
+            }
+
 
             // Log all logic
             if (logVerbose)
@@ -1088,7 +1089,7 @@ namespace RainWorldRandomizer.Generation
 
                 // The Exterior is split in half at UW_C02, as Rivulet has a hard time crossing it
                 manualSubregions.Add(new("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard", 
+                    ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard",
                         "Broadcast-Chatlog_Broadcast0", "Shelter-UW_S01", "Shelter-UW_S03", "Shelter-UW_S04",
                         "DevToken-UW_H01", "DevToken_UW_F01"],
                     ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
@@ -1187,7 +1188,7 @@ namespace RainWorldRandomizer.Generation
                 // The Exterior is split in half at UW_D06 pre-MSC, as there are no grapple worms for crossing
                 // You *could* bring a grapple worm from Chimney but that's too out of the way to be in logic
                 manualSubregions.Add(new("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard", "Shelter-UW_S01", 
+                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard", "Shelter-UW_S01",
                         "Shelter-UW_S03", "Shelter-UW_S04"],
                     ["GATE_SS_UW", "GATE_CC_UW"],
                     ["UW_S01", "UW_S03", "UW_S04"],

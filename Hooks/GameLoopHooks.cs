@@ -63,6 +63,9 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
+                    // Assign contents of Gourmand's tracker data
+                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest ? MiscHooks.expanded : MiscHooks.unexpanded;
+
                     try
                     {
                         Plugin.RandoManager.StartNewGameSession(self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat,

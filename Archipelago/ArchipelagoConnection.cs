@@ -425,7 +425,6 @@ namespace RainWorldRandomizer
                     : FoodQuestBehavior.Enabled) 
                 : FoodQuestBehavior.Disabled;
             ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
-            WinState.GourmandPassageTracker = foodQuest == FoodQuestBehavior.Expanded ? MiscHooks.expanded : MiscHooks.unexpanded;
 
             //Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
 
