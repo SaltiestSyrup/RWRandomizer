@@ -714,6 +714,7 @@ namespace RainWorldRandomizer.Generation
 
             List<Item> itemsToAdd = [];
             int hunterCyclesAdded = 0;
+            int trapsAdded = 0;
             while (state.AllLocations.Count > itemsToPlace.Count + itemsToAdd.Count)
             {
                 if (slugcat == SlugcatStats.Name.Red
@@ -722,6 +723,12 @@ namespace RainWorldRandomizer.Generation
                     // Add cycle increases for Hunter
                     itemsToAdd.Add(new Item("HunterCycles", Item.Type.Other, Item.Importance.Filler));
                     hunterCyclesAdded++;
+                }
+                else if (trapsAdded < state.AllLocations.Count * 0.3f)
+                {
+                    // Add trap items
+                    itemsToAdd.Add(Item.RandomTrapItem(ref randomState));
+                    trapsAdded++;
                 }
                 else if (RandoOptions.GiveObjectItems)
                 {
@@ -947,6 +954,9 @@ namespace RainWorldRandomizer.Generation
                 case Item.Type.Object:
                     if (item.id.StartsWith("PearlObject-")) outputType = Unlock.UnlockType.ItemPearl;
                     else outputType = Unlock.UnlockType.Item;
+                    break;
+                case Item.Type.Trap:
+                    outputType = Unlock.UnlockType.Trap;
                     break;
                 case Item.Type.Other:
                     if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), item.id, false, out ExtEnumBase type))

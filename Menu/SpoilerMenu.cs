@@ -444,8 +444,8 @@ namespace RainWorldRandomizer
                 ,
                 EntrySortType.ItemName => (x, y) =>
                 {
-                    string xStr = x.ShowItem ? x.item.ID : null;
-                    string yStr = y.ShowItem ? y.item.ID : null;
+                    string xStr = x.ShowItem ? x.item.ToString() : null;
+                    string yStr = y.ShowItem ? y.item.ToString() : null;
                     return string.Compare(xStr, yStr);
                 }
                 ,
@@ -808,6 +808,11 @@ namespace RainWorldRandomizer
                         iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.DataPearl, 0);
                         spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                         spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
+                        break;
+                    case "Trap":
+                        spriteName = "smallKarmaNoRing0";
+                        spriteColor = Color.red;
+                        spriteScale = 0.75f;
                         break;
                     case "HunterCycles":
                         iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
