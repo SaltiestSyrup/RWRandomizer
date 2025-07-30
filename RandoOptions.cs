@@ -35,7 +35,7 @@ namespace RainWorldRandomizer
         // MSC
         internal static Configurable<bool> allowMetroForOthers;
         internal static Configurable<bool> allowSubmergedForOthers;
-        internal static Configurable<bool> useFoodQuestChecks;
+        internal static Configurable<string> useFoodQuestChecks;
         internal static Configurable<bool> useEnergyCell;
         internal static Configurable<bool> useSMTokens;
 
@@ -119,8 +119,12 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
-                    return Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand
-                        && useFoodQuestChecks.Value;
+                    return useFoodQuestChecks.Value switch
+                    {
+                        "Gourmand Only" => Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
+                        "Enabled" => true,
+                        _ => false
+                    };
                 }
             }
         }

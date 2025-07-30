@@ -369,8 +369,13 @@ namespace RainWorldRandomizer.Generation
             {
                 List<AccessRule> allGourmRules = [];
                 HashSet<Location> foodQuestLocs = [];
-                foreach (WinState.GourmandTrackerData data in WinState.GourmandPassageTracker)
+                for (int i = 0; i < WinState.GourmandPassageTracker.Length; i++)
                 {
+                    // Skip if slugcat cannot consume this
+                    if (!Constants.SlugcatFoodQuestAccessibility[slugcat][i]) continue;
+
+                    WinState.GourmandTrackerData data = WinState.GourmandPassageTracker[i];
+                    // Creature food
                     if (data.type == AbstractPhysicalObject.AbstractObjectType.Creature)
                     {
                         List<CreatureAccessRule> rules = [];
@@ -386,6 +391,7 @@ namespace RainWorldRandomizer.Generation
                         allGourmRules.Add(rule);
                         foodQuestLocs.Add(new Location($"FoodQuest-{data.crits[0].value}", Location.Type.Food, rule));
                     }
+                    // Item food
                     else
                     {
                         AccessRule rule = new ObjectAccessRule(data.type);
@@ -396,7 +402,7 @@ namespace RainWorldRandomizer.Generation
 
                 allRegions.Add(FOODQUEST_REG, new(FOODQUEST_REG, foodQuestLocs));
 
-                if (RandoOptions.UsePassageChecks)
+                if (RandoOptions.UsePassageChecks && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)
                 {
                     Location gourmPassage = new("Passage-Gourmand", Location.Type.Passage,
                         new CompoundAccessRule([.. allGourmRules], CompoundAccessRule.CompoundOperation.All));
