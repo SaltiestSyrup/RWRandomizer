@@ -20,6 +20,7 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> itemShelterDelivery;
         internal static Configurable<bool> givePassageUnlocks;
         internal static Configurable<float> hunterCyclesDensity;
+        internal static Configurable<float> trapsDensity;
 
         internal static Configurable<bool> randomizeSpawnLocation;
         internal static Configurable<bool> startMinKarma;
@@ -86,6 +87,8 @@ namespace RainWorldRandomizer
             || Plugin.RandoManager is ManagerArchipelago;
 
         public static float HunterCycleIncreaseDensity => hunterCyclesDensity.Value;
+
+        public static float TrapsDensity => trapsDensity.Value;
 
         public static bool RandomizeSpawnLocation => Plugin.RandoManager is ManagerArchipelago
             ? ArchipelagoConnection.useRandomStart : randomizeSpawnLocation.Value;
