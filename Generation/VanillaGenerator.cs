@@ -724,7 +724,7 @@ namespace RainWorldRandomizer.Generation
                     itemsToAdd.Add(new Item("HunterCycles", Item.Type.Other, Item.Importance.Filler));
                     hunterCyclesAdded++;
                 }
-                else if (trapsAdded < state.AllLocations.Count * 0.3f)
+                else if (trapsAdded < state.AllLocations.Count * RandoOptions.TrapsDensity)
                 {
                     // Add trap items
                     itemsToAdd.Add(Item.RandomTrapItem(ref randomState));
