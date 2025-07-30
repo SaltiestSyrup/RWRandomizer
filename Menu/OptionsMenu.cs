@@ -70,10 +70,6 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations", null, "",
                     ["Use Karma Flowers as checks"]));
 
-            RandoOptions.giveItemUnlocks = config.Bind<bool>("giveItemUnlocks", true,
-                new ConfigurableInfo("Whether random objects will be used as filler items. If not, extra gate keys will be added instead", null, "",
-                    ["Use random objects as filler"]));
-
             RandoOptions.itemShelterDelivery = config.Bind<bool>("itemShelterDelivery", false,
                 new ConfigurableInfo("Whether objects should be delivered in the next shelter instead of placed inside slugcat's stomach", null, "",
                     ["Deliver items in shelters"]));
@@ -276,8 +272,6 @@ namespace RainWorldRandomizer
 
             // Filler Items
             OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            fillerGroup.AddCheckBox(RandoOptions.giveItemUnlocks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
