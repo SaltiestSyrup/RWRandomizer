@@ -730,21 +730,10 @@ namespace RainWorldRandomizer.Generation
                     itemsToAdd.Add(Item.RandomTrapItem(ref randomState));
                     trapsAdded++;
                 }
-                else if (RandoOptions.GiveObjectItems)
+                else
                 {
                     // Add junk items
                     itemsToAdd.Add(Item.RandomJunkItem(ref randomState));
-                }
-                else
-                {
-                    // Duplicate a random gate item
-                    IEnumerable<Item> gateItems = itemsToPlace.Where(i => i.type == Item.Type.Gate);
-                    Item gate = new(gateItems.ElementAt(randomState.Next(gateItems.Count())))
-                    {
-                        importance = Item.Importance.Filler
-                    };
-                    itemsToAdd.Add(gate);
-                    generationLog.AppendLine($"Added duplicate gate item: {gate}");
                 }
             }
 
