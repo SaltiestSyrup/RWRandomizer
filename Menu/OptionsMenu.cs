@@ -305,8 +305,33 @@ namespace RainWorldRandomizer
             globalGroup.AddCheckBox(RandoOptions.legacyNotifications, new(RIGHT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             globalGroup.AddCheckBox(RandoOptions.useGateMap, new(RIGHT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT * 1.65f;
             globalGroup.AddToTab(tabIndex);
             optionGroups.Add(globalGroup);
+
+            OptionGroup trapGroup = new(this, "Traps", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            OpUpdown trapMinUpDown = trapGroup.AddUpDown(RandoOptions.trapMinimumCooldown, true, new(RIGHT_OPTION_X, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            OpUpdown trapMaxUpDown = trapGroup.AddUpDown(RandoOptions.trapMaximumCooldown, true, new(RIGHT_OPTION_X, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            trapGroup.AddToTab(tabIndex);
+            optionGroups.Add(trapGroup);
+
+            // Add logic to prevent minimum > maximum and vice versa
+            trapMinUpDown.OnChange += () =>
+            {
+                if (trapMinUpDown.GetValueInt() > trapMaxUpDown.GetValueInt())
+                {
+                    trapMaxUpDown.SetValueInt(trapMinUpDown.GetValueInt());
+                }
+            };
+            trapMaxUpDown.OnChange += () =>
+            {
+                if (trapMaxUpDown.GetValueInt() < trapMinUpDown.GetValueInt())
+                {
+                    trapMinUpDown.SetValueInt(trapMaxUpDown.GetValueInt());
+                }
+            };
         }
 
         public void PopulateDownpourTab()
@@ -332,7 +357,8 @@ namespace RainWorldRandomizer
 
             OpListBox listBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
                 ["Disabled", "Enabled", "Gourmand Only"], 3, false);
-            OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string));
+            OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string))
+            { bumpBehav = listBox.bumpBehav };
             checksGroup.AddElements(listBox, foodQuestLabel);
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useExpandedFoodQuestChecks, new(LEFT_OPTION_X, runningY));
@@ -409,14 +435,6 @@ namespace RainWorldRandomizer
             deathLinkGroup.AddToTab(tabIndex);
             optionGroups.Add(deathLinkGroup);
 
-            OptionGroup trapGroup = new(this, "AP_Traps", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
-            OpUpdown trapMinUpDown = trapGroup.AddUpDown(RandoOptions.trapMinimumCooldown, true, new(RIGHT_OPTION_X + 30f, runningY), 60f);
-            runningY -= NEWLINE_DECREMENT;
-            OpUpdown trapMaxUpDown = trapGroup.AddUpDown(RandoOptions.trapMaximumCooldown, true, new(RIGHT_OPTION_X + 30f, runningY), 60f);
-            runningY -= NEWLINE_DECREMENT;
-            trapGroup.AddToTab(tabIndex);
-            optionGroups.Add(trapGroup);
-
             // Slot data information
             runningY = Mathf.Min(runningY, 322.5f);
             OptionGroup slotDataGroup = new(this, "AP_Slot_Data", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
@@ -447,7 +465,6 @@ namespace RainWorldRandomizer
                 }
                 connectionGroup.Disabled = APDisabled;
                 deathLinkGroup.Disabled = APDisabled;
-                trapGroup.Disabled = APDisabled;
                 foreach (OptionGroup group in standaloneExclusiveGroups)
                 {
                     group.Disabled = !APDisabled;
@@ -519,22 +536,6 @@ namespace RainWorldRandomizer
             {
                 // TODO: DeathLink probably shouldn't send a toggle to server every time the box is clicked, change to happen on apply settings
                 DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
-            };
-
-            // Add logic to prevent minimum > maximum and vice versa
-            trapMinUpDown.OnChange += () =>
-            {
-                if (trapMinUpDown.GetValueInt() > trapMaxUpDown.GetValueInt())
-                {
-                    trapMaxUpDown.SetValueInt(trapMinUpDown.GetValueInt());
-                }
-            };
-            trapMaxUpDown.OnChange += () =>
-            {
-                if (trapMaxUpDown.GetValueInt() < trapMinUpDown.GetValueInt())
-                {
-                    trapMinUpDown.SetValueInt(trapMaxUpDown.GetValueInt());
-                }
             };
 
             clearSavesButton.OnClick += AskToClearSaveFiles;
