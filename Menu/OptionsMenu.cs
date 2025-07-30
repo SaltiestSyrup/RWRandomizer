@@ -127,8 +127,8 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
                     ["Open Submerged Superstructure"]));
 
-            RandoOptions.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", true,
-                new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check", null, "",
+            RandoOptions.useFoodQuestChecks = config.Bind<string>("useFoodQuestChecks", "Off",
+                new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check. Other slugcats will only consider the foods they can eat", null, "",
                     ["Use Food quest checks"]));
 
             RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
@@ -320,11 +320,16 @@ namespace RainWorldRandomizer
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowMetroForOthers, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 1.5f;
+            runningY -= NEWLINE_DECREMENT * 3.5f;
 
             // Check types
-            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            checksGroup.AddCheckBox(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY));
+            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 200f));
+
+            OpListBox listBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
+                ["Disabled", "Enabled", "Gourmand Only"], 3, false);
+            OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string));
+            checksGroup.AddElements(listBox, foodQuestLabel);
+
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useDevTokenChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
