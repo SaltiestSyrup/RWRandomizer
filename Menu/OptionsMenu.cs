@@ -127,9 +127,13 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
                     ["Open Submerged Superstructure"]));
 
-            RandoOptions.useFoodQuestChecks = config.Bind<string>("useFoodQuestChecks", "Off",
+            RandoOptions.useFoodQuestChecks = config.Bind<string>("useFoodQuestChecks", "Disabled",
                 new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check. Other slugcats will only consider the foods they can eat", null, "",
                     ["Use Food quest checks"]));
+
+            RandoOptions.useExpandedFoodQuestChecks = config.Bind<bool>("useExpandedFoodQuestChecks", false,
+                new ConfigurableInfo("Extends food quest checks to include almost all creatures (Some of these can be very difficult)", null, "",
+                    ["Use Expanded Food Quest"]));
 
             RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
                 new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized", null, "",
@@ -137,7 +141,7 @@ namespace RainWorldRandomizer
 
             RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
                 new ConfigurableInfo("Include Spearmaster's broadcast tokens as checks", null, "",
-                    ["Use Broadcasts"]));
+                    ["Use Broadcast Checks"]));
 
             // ----- Archipelago -----
             RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
@@ -323,13 +327,14 @@ namespace RainWorldRandomizer
             runningY -= NEWLINE_DECREMENT * 3.5f;
 
             // Check types
-            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 200f));
+            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 235f));
 
             OpListBox listBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
                 ["Disabled", "Enabled", "Gourmand Only"], 3, false);
             OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string));
             checksGroup.AddElements(listBox, foodQuestLabel);
-
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useExpandedFoodQuestChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useDevTokenChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;

@@ -36,6 +36,7 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> allowMetroForOthers;
         internal static Configurable<bool> allowSubmergedForOthers;
         internal static Configurable<string> useFoodQuestChecks;
+        internal static Configurable<bool> useExpandedFoodQuestChecks;
         internal static Configurable<bool> useEnergyCell;
         internal static Configurable<bool> useSMTokens;
 
@@ -70,14 +71,14 @@ namespace RainWorldRandomizer
         public static bool UseSpecialChecks => useSpecialChecks.Value
             || Plugin.RandoManager is ManagerArchipelago;
 
-        public static bool UseShelterChecks => useShelterChecks.Value
-            || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.sheltersanity);
+        public static bool UseShelterChecks => Plugin.RandoManager is ManagerArchipelago
+            ? ArchipelagoConnection.sheltersanity : useShelterChecks.Value;
 
-        public static bool UseDevTokenChecks => useDevTokenChecks.Value
-            || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.devTokenChecks);
+        public static bool UseDevTokenChecks => Plugin.RandoManager is ManagerArchipelago
+            ? ArchipelagoConnection.devTokenChecks : useDevTokenChecks.Value;
 
-        public static bool UseKarmaFlowerChecks => useKarmaFlowerChecks.Value
-            || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.flowersanity);
+        public static bool UseKarmaFlowerChecks => Plugin.RandoManager is ManagerArchipelago
+            ? ArchipelagoConnection.flowersanity : useKarmaFlowerChecks.Value;
 
         public static bool GiveObjectItems => giveItemUnlocks.Value
             || Plugin.RandoManager is ManagerArchipelago;
@@ -90,8 +91,8 @@ namespace RainWorldRandomizer
 
         public static float HunterCycleIncreaseDensity => hunterCyclesDensity.Value;
 
-        public static bool RandomizeSpawnLocation => randomizeSpawnLocation.Value
-            || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.useRandomStart);
+        public static bool RandomizeSpawnLocation => Plugin.RandoManager is ManagerArchipelago
+            ? ArchipelagoConnection.useRandomStart : randomizeSpawnLocation.Value;
 
         public static bool StartMinimumKarma => startMinKarma.Value
             || Plugin.RandoManager is ManagerArchipelago;
@@ -128,6 +129,9 @@ namespace RainWorldRandomizer
                 }
             }
         }
+
+        public static bool UseExpandedFoodQuest => Plugin.RandoManager is ManagerArchipelago
+            ? ArchipelagoConnection.foodQuest == ArchipelagoConnection.FoodQuestBehavior.Expanded : useExpandedFoodQuestChecks.Value;
 
         public static bool UseEnergyCell => useEnergyCell.Value
             || Plugin.RandoManager is ManagerArchipelago;
