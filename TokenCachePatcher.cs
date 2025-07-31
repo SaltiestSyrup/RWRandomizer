@@ -1180,6 +1180,7 @@ namespace RainWorldRandomizer
 
         private static void AddShelterToCache(string region, string shelter, List<SlugcatStats.Name> slugcats)
         {
+            shelter = shelter.ToUpperInvariant();
             // Use Hashset to filter duplicates
             HashSet<SlugcatStats.Timeline> timelines = [.. slugcats.Select(SlugcatStats.SlugcatToTimeline)];
             if (!regionShelters[region].Contains(shelter))

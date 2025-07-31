@@ -1139,9 +1139,9 @@ namespace RainWorldRandomizer.Generation
                 // Bitter Aerie is only for Saint or after Rivulet completion
                 manualSubregions.Add(new("MS", "MSBitterAerie",
                     ["Token-S-MS", "Token-MirosVulture", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10",
-                        "DevToken-MS_SEWERBRIDGE", "DevToken-MS_X02", "DevToken-MS_BITTEREDGE"],
+                        "Shelter-MS_BITTERSHELTER", "DevToken-MS_SEWERBRIDGE", "DevToken-MS_X02", "DevToken-MS_BITTEREDGE"],
                     ["GATE_SL_MS"],
-                    ["MS_S07", "MS_S10"],
+                    ["MS_S07", "MS_S10", "MS_BITTERSHELTER"],
                     [bitterAerieAccess, new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint)]
                     ));
 
