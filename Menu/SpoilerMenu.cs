@@ -765,7 +765,7 @@ namespace RainWorldRandomizer
 
             public static FSprite UnlockToFSprite(Unlock unlock)
             {
-                string spriteName;
+                string spriteName = "Futile_White";
                 float spriteScale = 1f;
                 Color spriteColor = Futile.white;
 
@@ -796,10 +796,7 @@ namespace RainWorldRandomizer
                         {
                             iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
                         }
-                        else
-                        {
-                            iconData = new IconSymbol.IconSymbolData();
-                        }
+                        else break;
 
                         spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                         spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
