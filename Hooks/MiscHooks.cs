@@ -22,6 +22,7 @@ namespace RainWorldRandomizer
             On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
             On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
+            On.ScavengerAI.CollectScore_PhysicalObject_bool += OnScavengerAICollectScore;
 
             try
             {
@@ -64,7 +65,6 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
                 IL.World.SpawnGhost += ILSpawnGhost;
-                IL.ScavengerAI.CheckForScavangeItems += CheckForScavengeItemsIL;
             }
             catch (Exception e)
             {
@@ -81,6 +81,7 @@ namespace RainWorldRandomizer
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
             On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
+            On.ScavengerAI.CollectScore_PhysicalObject_bool -= OnScavengerAICollectScore;
 
             IL.Menu.MainMenu.ctor -= MainMenuCtorIL;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
@@ -95,7 +96,6 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
             IL.World.SpawnGhost -= ILSpawnGhost;
-            IL.ScavengerAI.CheckForScavangeItems -= CheckForScavengeItemsIL;
         }
 
         /// <summary>
@@ -622,58 +622,27 @@ namespace RainWorldRandomizer
 
         /// <summary>
         /// Restrict scavengers from taking certain objects from the ground on their own
-        /// to avoid needed items for checks disappearing. 
-        /// This only stops them from taking things they found, will not prevent player gifting them
+        /// to avoid needed items for checks disappearing.
         /// </summary>
-        private static void CheckForScavengeItemsIL(ILContext il)
+        private static int OnScavengerAICollectScore(On.ScavengerAI.orig_CollectScore_PhysicalObject_bool orig, ScavengerAI self, PhysicalObject obj, bool weaponFiltered)
         {
-            ILCursor c = new(il);
-            ILLabel continueJump;
-            int localForIterationVar = -1;
+            int origValue = orig(self, obj, weaponFiltered);
 
-            // Find for loop iteration at 0102
-            c.GotoNext(
-                x => x.MatchCallOrCallvirt(typeof(ItemTracker).GetProperty(nameof(ItemTracker.ItemCount)).GetGetMethod()),
-                x => x.MatchBlt(out _)
-                );
-            c.GotoPrev(MoveType.Before,
-                x => x.MatchLdcI4(1),
-                x => x.MatchAdd(),
-                x => x.MatchStloc(out localForIterationVar)
-                );
-            continueJump = c.MarkLabel();
+            // Items are allowed to be a part of social events
+            if (self.scavenger.room?.socialEventRecognizer.ItemOwnership(obj) is not null) return origValue;
 
-            // After assigning PickUpItemScore to a local at 0072
-            c.GotoPrev(MoveType.After,
-                x => x.MatchCallOrCallvirt(typeof(ScavengerAI).GetMethod(nameof(ScavengerAI.PickUpItemScore), BindingFlags.Instance | BindingFlags.NonPublic)),
-                x => x.MatchStloc(out _)
-                );
+            bool setNoValue = false;
+            // Do not take unpicked flowers
+            setNoValue |= RandoOptions.UseKarmaFlowerChecks
+                && obj is KarmaFlower flower
+                && flower.growPos is not null;
+            // Do not take unique data pearls
+            setNoValue |= RandoOptions.UsePearlChecks
+                && obj is DataPearl pearl
+                && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType)
+                && pearl.grabbedBy.Count == 0; // Allowed to value already carried pearls
 
-            // Emit a conditional jump to the next loop iteration if the current item should not be scavenged
-            c.Emit(OpCodes.Ldarg_0);
-            c.Emit(OpCodes.Ldloc, localForIterationVar);
-            c.EmitDelegate(ShouldNotScavengeItem);
-            c.Emit(OpCodes.Brtrue, continueJump);
-
-            static bool ShouldNotScavengeItem(ScavengerAI self, int j)
-            {
-                PhysicalObject obj = self.itemTracker.GetRep(j).representedItem.realizedObject;
-                // Do not take unpicked flowers
-                if (RandoOptions.UseKarmaFlowerChecks
-                    && obj is KarmaFlower flower
-                    && flower.growPos is not null)
-                {
-                    return true;
-                }
-                // Do not take unique data pearls
-                if (RandoOptions.UsePearlChecks
-                    && obj is DataPearl pearl
-                    && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType))
-                {
-                    return true;
-                }
-                return false;
-            }
+            return setNoValue ? 0 : origValue;
         }
     }
 }
