@@ -46,9 +46,6 @@ namespace RainWorldRandomizer
 
         // Queue of pending notifications to be sent to the player in-game
         public Queue<ChatLog.MessageText> notifQueue = new();
-        // Queue of items that the player has recieved and not claimed
-        public Queue<Unlock.Item> lastItemDeliveryQueue = new();
-        public Queue<Unlock.Item> itemDeliveryQueue = new();
 
         // A map of every region to it's display name
         public static Dictionary<string, string> RegionNamesMap = [];
