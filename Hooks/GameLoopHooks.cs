@@ -2,7 +2,6 @@
 using MonoMod.Cil;
 using MoreSlugcats;
 using System;
-using System.Collections.Generic;
 
 namespace RainWorldRandomizer
 {
@@ -12,7 +11,9 @@ namespace RainWorldRandomizer
         {
             On.ProcessManager.PostSwitchMainProcess += OnPostSwitchMainProcess;
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
+            On.RainWorldGame.ExitGame += OnExitGame;
             On.PlayerProgression.SaveToDisk += OnSaveGame;
+            On.SaveState.GhostEncounter += OnGhostEncounter;
             On.SaveState.SessionEnded += OnSessionEnded;
             On.RainWorldGame.ctor += OnRainWorldGameCtor;
             On.HardmodeStart.Update += OnHardmodeStart;
@@ -84,9 +85,6 @@ namespace RainWorldRandomizer
             {
                 // Turn off randomizer when quitting to menu
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
-                // Clear delivery queues so they don't carry over into a next run
-                Plugin.Singleton.itemDeliveryQueue.Clear();
-                Plugin.Singleton.lastItemDeliveryQueue.Clear();
             }
 
             if (ID == ProcessManager.ProcessID.SleepScreen)
@@ -196,9 +194,9 @@ namespace RainWorldRandomizer
                 // Spawn pending items in spawn room
                 if (!RandoOptions.ItemShelterDelivery) return;
                 
-                while (Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                while (Plugin.RandoManager.itemDeliveryQueue.Count > 0)
                 {
-                    AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
+                    AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
                     try
                     {
                         self.world.GetAbstractRoom(roomIndex).AddEntity(obj);
@@ -346,31 +344,56 @@ namespace RainWorldRandomizer
         /// </summary>
         public static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
-            if (Plugin.RandoManager.isRandomizerActive)
+            bool origSuccess = orig(self, saveCurrentState, saveMaps, saveMiscProg);
+
+            if (Plugin.RandoManager?.isRandomizerActive is true)
             {
                 Plugin.RandoManager.SaveGame(saveCurrentState);
             }
 
-            return orig(self, saveCurrentState, saveMaps, saveMiscProg);
+            return origSuccess;
         }
 
         /// <summary>
         /// Update item delivery queue on session end
         /// </summary>
-        public static void OnSessionEnded(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished)
+        private static void OnSessionEnded(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished)
         {
             orig(self, game, survived, newMalnourished);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            SaveDiskUpdateItemQueue(survived, self.malnourished);
+        }
 
+        /// <summary>
+        /// Update item delivery queue on quit to menu
+        /// </summary>
+        private static void OnExitGame(On.RainWorldGame.orig_ExitGame orig, RainWorldGame self, bool asDeath, bool asQuit)
+        {
+            orig(self, asDeath, asQuit);
+            SaveDiskUpdateItemQueue(false, false);
+        }
+
+        /// <summary>
+        /// Update item delivery queue on Echo encounter
+        /// </summary>
+        private static void OnGhostEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
+        {
+            orig(self, ghost, rainWorld);
+            SaveDiskUpdateItemQueue(false, false);
+        }
+
+        private static void SaveDiskUpdateItemQueue(bool completeCycle, bool malnourished)
+        {
             // If we survived this cycle, paste current queue to saved backup
             // If we died, restore current queue from saved backup
-            if (survived)
+            if (!completeCycle)
             {
-                Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
+                Plugin.RandoManager.itemDeliveryQueue = new(Plugin.RandoManager.lastItemDeliveryQueue);
+                return;
             }
-            else
+
+            if (!malnourished)
             {
-                Plugin.Singleton.itemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.lastItemDeliveryQueue);
+                Plugin.RandoManager.lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
             }
         }
 

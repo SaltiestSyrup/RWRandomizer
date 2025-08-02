@@ -43,7 +43,7 @@ namespace RainWorldRandomizer
         {
             if (!Plugin.RandoManager.isRandomizerActive
                 || RandoOptions.ItemShelterDelivery
-                || Plugin.Singleton.itemDeliveryQueue.Count == 0)
+                || Plugin.RandoManager.itemDeliveryQueue.Count == 0)
             {
                 orig(self);
                 return;
@@ -59,7 +59,7 @@ namespace RainWorldRandomizer
             // Swap in queued object
 
             //Logger.LogDebug($"Stored item: {itemDeliveryQueue.Peek().id}, {itemDeliveryQueue.Peek().type.value}");
-            self.objectInStomach = Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Dequeue(), self.room);
+            self.objectInStomach = Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.room);
             //Logger.LogDebug($"Converted object: {self.objectInStomach?.type}");
 
             orig(self);
@@ -109,9 +109,9 @@ namespace RainWorldRandomizer
                 {
                     return objectInstomach;
                 }
-                if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                if (!RandoOptions.ItemShelterDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
                 {
-                    return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), player.room);
+                    return Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Peek(), player.room);
                 }
 
                 return null;
@@ -151,7 +151,7 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate<Func<int, int>>((origTime) =>
             {
-                if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                if (!RandoOptions.ItemShelterDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
                 {
                     // This time needs to be longer than the 90 ticks swallowing an item takes
                     return 95;
@@ -184,9 +184,9 @@ namespace RainWorldRandomizer
                 {
                     return objectInstomach;
                 }
-                if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+                if (!RandoOptions.ItemShelterDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
                 {
-                    return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), playerGraphics.player.room);
+                    return Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Peek(), playerGraphics.player.room);
                 }
 
                 return null;

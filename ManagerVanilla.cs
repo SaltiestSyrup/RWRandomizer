@@ -235,11 +235,10 @@ namespace RainWorldRandomizer
                         if (item.IsGiven) _givenSpearPearlRewrite = true;
                         break;
                 }
-
             }
 
-            Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, saveSlot);
-            Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
+            Plugin.RandoManager.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, saveSlot);
+            Plugin.RandoManager.lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
         }
 
         public override List<string> GetLocations()
@@ -284,13 +283,10 @@ namespace RainWorldRandomizer
                         currentSlugcat,
                         Plugin.Singleton.rainWorld.options.saveSlot);
 
-            if (saveCurrentState)
-            {
-                SaveManager.WriteItemQueueToFile(
-                    Plugin.Singleton.itemDeliveryQueue,
-                    currentSlugcat,
-                    Plugin.Singleton.rainWorld.options.saveSlot);
-            }
+            SaveManager.WriteItemQueueToFile(
+                saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
+                currentSlugcat,
+                Plugin.Singleton.rainWorld.options.saveSlot);
         }
     }
 }

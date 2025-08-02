@@ -77,8 +77,8 @@ namespace RainWorldRandomizer
             // Reset unlock lists
             gatesStatus.Clear();
             passageTokensStatus.Clear();
-            Plugin.Singleton.itemDeliveryQueue.Clear();
-            Plugin.Singleton.lastItemDeliveryQueue.Clear();
+            itemDeliveryQueue.Clear();
+            lastItemDeliveryQueue.Clear();
 
             // Clear notifications
             Plugin.Singleton.notifQueue.Clear();
@@ -118,8 +118,8 @@ namespace RainWorldRandomizer
             }
 
             // Load the item delivery queue from file as normal
-            Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
-            Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
+            itemDeliveryQueue = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
+            lastItemDeliveryQueue = new(itemDeliveryQueue);
 
             Plugin.Log.LogInfo($"Loaded save game {saveId}");
             locationsLoaded = true;
@@ -323,13 +323,10 @@ namespace RainWorldRandomizer
 
         public override void SaveGame(bool saveCurrentState)
         {
-            if (saveCurrentState)
-            {
                 SaveManager.WriteItemQueueToFile(
-                    Plugin.Singleton.itemDeliveryQueue,
+                saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
                     currentSlugcat,
                     Plugin.Singleton.rainWorld.options.saveSlot);
-            }
 
             // Don't save if locations are not loaded
             if (!locationsLoaded) return;

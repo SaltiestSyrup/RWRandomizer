@@ -122,13 +122,13 @@ namespace RainWorldRandomizer
                 case "Item":
                     if (item != null)
                     {
-                        Plugin.Singleton.itemDeliveryQueue.Enqueue((Item)item);
-                        Plugin.Singleton.lastItemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue((Item)item);
                     }
                     else
                     {
-                        Plugin.Singleton.itemDeliveryQueue.Enqueue(IDToItem(ID));
-                        Plugin.Singleton.lastItemDeliveryQueue.Enqueue(IDToItem(ID));
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue(IDToItem(ID));
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID));
                         item = IDToItem(ID);
                     }
                     ShowItemTutorial();
@@ -136,13 +136,13 @@ namespace RainWorldRandomizer
                 case "ItemPearl":
                     if (item != null)
                     {
-                        Plugin.Singleton.itemDeliveryQueue.Enqueue((Item)item);
-                        Plugin.Singleton.lastItemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue((Item)item);
                     }
                     else
                     {
-                        Plugin.Singleton.itemDeliveryQueue.Enqueue(IDToItem(ID, true));
-                        Plugin.Singleton.lastItemDeliveryQueue.Enqueue(IDToItem(ID, true));
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue(IDToItem(ID, true));
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID, true));
                         item = IDToItem(ID, true);
                     }
                     ShowItemTutorial();

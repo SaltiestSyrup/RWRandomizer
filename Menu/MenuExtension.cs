@@ -77,7 +77,7 @@ namespace RainWorldRandomizer
 
             self.pages[0].subObjects.Add(gateDisplay);
 
-            if (Plugin.Singleton.itemDeliveryQueue.Count > 0)
+            if (Plugin.RandoManager.itemDeliveryQueue.Count > 0)
             {
                 PendingItemsDisplay pendingItemsDisplay = new(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));
@@ -199,7 +199,7 @@ namespace RainWorldRandomizer
 
         public PendingItemsDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
         {
-            Unlock.Item[] pendingItems = [.. Plugin.Singleton.itemDeliveryQueue];
+            Unlock.Item[] pendingItems = [.. Plugin.RandoManager.itemDeliveryQueue];
             sprites = new FSprite[pendingItems.Length];
             size = new Vector2(250f, ((pendingItems.Length - 1) / 8 * 30f) + 57f);
 
