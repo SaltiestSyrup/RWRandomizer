@@ -219,6 +219,8 @@ namespace RainWorldRandomizer
         {
             int origResult = orig(extracycles);
 
+            if (Plugin.RandoManager is null) return int.MaxValue;
+
             // Remove cycle limit completely for Archipelago
             if (Plugin.RandoManager is ManagerArchipelago)
             {
@@ -236,16 +238,16 @@ namespace RainWorldRandomizer
             int baseCycles = extracycles ? origResult - bonusCycles : origResult;
 
             // If the save hasn't been initialized, read the file to count cycles
-            if (!Plugin.RandoManager.isRandomizerActive)
-            {
-                int countedCycles = SaveManager.CountRedsCycles(Plugin.Singleton.rainWorld.options.saveSlot);
-                if (countedCycles == -1)
-                {
-                    return origResult;
-                }
+            //if (!Plugin.RandoManager.isRandomizerActive)
+            //{
+            //    int countedCycles = SaveManager.CountRedsCycles(Plugin.Singleton.rainWorld.options.saveSlot);
+            //    if (countedCycles == -1)
+            //    {
+            //        return origResult;
+            //    }
 
-                return baseCycles + (countedCycles * bonusCycles);
-            }
+            //    return baseCycles + (countedCycles * bonusCycles);
+            //}
 
             return baseCycles + (Plugin.RandoManager.HunterBonusCyclesGiven * bonusCycles);
         }
