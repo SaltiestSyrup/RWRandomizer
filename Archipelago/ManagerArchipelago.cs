@@ -63,7 +63,7 @@ namespace RainWorldRandomizer
         public void Reset()
         {
             // Reset all tracking variables
-            _currentMaxKarma = 4;
+            _currentMaxKarma = 0;
             _hunterBonusCyclesGiven = 0;
             _givenNeuronGlow = false;
             _givenMark = false;
@@ -141,9 +141,11 @@ namespace RainWorldRandomizer
                 locationsStatus.Add(GetLocStringIDFromID(loc), false);
             }
             Plugin.Log.LogInfo($"Found no saved game, creating new save");
-            SaveManager.WriteAPSaveToFile(saveId, ArchipelagoConnection.lastItemIndex, locationsStatus);
+            //SaveManager.WriteAPSaveToFile(saveId, ArchipelagoConnection.lastItemIndex, locationsStatus);
 
             locationsLoaded = true;
+
+            SaveGame(false);
         }
 
         public void InitNewInventory(List<string> newItems)
@@ -323,10 +325,10 @@ namespace RainWorldRandomizer
 
         public override void SaveGame(bool saveCurrentState)
         {
-                SaveManager.WriteItemQueueToFile(
+            SaveManager.WriteItemQueueToFile(
                 saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
-                    currentSlugcat,
-                    Plugin.Singleton.rainWorld.options.saveSlot);
+                currentSlugcat,
+                Plugin.Singleton.rainWorld.options.saveSlot);
 
             // Don't save if locations are not loaded
             if (!locationsLoaded) return;
