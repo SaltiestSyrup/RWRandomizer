@@ -83,7 +83,8 @@ namespace RainWorldRandomizer
 
             if (ID == ProcessManager.ProcessID.MainMenu)
             {
-                // Turn off randomizer when quitting to menu
+                // Vanilla manager does not exist outside of the scope of gameplay. TODO: Eventually, neither will any other manager
+                if (Plugin.RandoManager is ManagerVanilla) Plugin.RandoManager = null;
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
             }
 
@@ -193,7 +194,7 @@ namespace RainWorldRandomizer
             {
                 // Spawn pending items in spawn room
                 if (!RandoOptions.ItemShelterDelivery) return;
-                
+
                 while (Plugin.RandoManager.itemDeliveryQueue.Count > 0)
                 {
                     AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));

@@ -3,7 +3,6 @@ using Archipelago.MultiClient.Net.Colors;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 using Archipelago.MultiClient.Net.Packets;
-using MoreSlugcats;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -246,7 +245,7 @@ namespace RainWorldRandomizer
             CurrentlyConnecting = false;
             ReceivedSlotData = false;
 
-            if (resetManager) (Plugin.RandoManager as ManagerArchipelago).Reset();
+            if (resetManager) Plugin.RandoManager = null; //(Plugin.RandoManager as ManagerArchipelago).Reset();
 
             return true;
         }
@@ -418,11 +417,11 @@ namespace RainWorldRandomizer
 
             DeathLinkHandler.Active = deathLink > 0;
 
-            foodQuest = IsMSC && 
-                (Slugcat.value == "Gourmand" || foodQuestAccess == 2) 
-                ? (foodQuestAccessibility > 0 
-                    ? FoodQuestBehavior.Expanded 
-                    : FoodQuestBehavior.Enabled) 
+            foodQuest = IsMSC &&
+                (Slugcat.value == "Gourmand" || foodQuestAccess == 2)
+                ? (foodQuestAccessibility > 0
+                    ? FoodQuestBehavior.Expanded
+                    : FoodQuestBehavior.Enabled)
                 : FoodQuestBehavior.Disabled;
             ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
 

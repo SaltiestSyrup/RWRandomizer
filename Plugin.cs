@@ -90,7 +90,6 @@ namespace RainWorldRandomizer
             }
 
             // Assign as vanilla until decided otherwise
-            RandoManager = new ManagerVanilla();
             collectTokenHandler = new CollectTokenHandler();
             Log = Logger;
 
