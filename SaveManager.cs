@@ -82,12 +82,12 @@ namespace RainWorldRandomizer
             return game;
         }
 
-        public static void WriteItemQueueToFile(Queue<Unlock.Item> itemQueue, SlugcatStats.Name slugcat, int saveSlot)
+        public static void WriteItemQueueToFile(IEnumerable<Unlock.Item> items, IEnumerable<TrapsHandler.Trap> traps, SlugcatStats.Name slugcat, int saveSlot)
         {
             string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt");
 
             // If there is nothing to store, delete any stored data
-            if (itemQueue.Count == 0)
+            if (items.Count() + traps.Count() == 0)
             {
                 if (File.Exists(path))
                 {
@@ -98,7 +98,11 @@ namespace RainWorldRandomizer
 
             StreamWriter file = File.CreateText(path);
 
-            foreach (Unlock.Item item in itemQueue)
+            foreach (TrapsHandler.Trap trap in traps)
+            {
+                file.WriteLine($"Trap,{trap.id}");
+            }
+            foreach (Unlock.Item item in items)
             {
                 file.WriteLine($"{item.type.enumType.Name},{item.id}");
             }
@@ -106,12 +110,13 @@ namespace RainWorldRandomizer
             file.Close();
         }
 
-        public static Queue<Unlock.Item> LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
+        public static (Queue<Unlock.Item>, Queue<TrapsHandler.Trap>) LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
         {
             Queue<Unlock.Item> itemQueue = [];
+            Queue<TrapsHandler.Trap> trapQueue = [];
 
             if (!File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt")))
-                return itemQueue;
+                return (itemQueue, trapQueue);
 
             string[] text = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt"));
 
@@ -119,6 +124,12 @@ namespace RainWorldRandomizer
             {
                 string[] itemString = Regex.Split(line, ",");
                 Unlock.Item item;
+
+                if (itemString[0] == "Trap")
+                {
+                    trapQueue.Enqueue(new TrapsHandler.Trap(itemString[1]));
+                    continue;
+                }
 
                 if (itemString[0] == nameof(DataPearl.AbstractDataPearl.DataPearlType))
                 {
@@ -137,7 +148,7 @@ namespace RainWorldRandomizer
                 itemQueue.Enqueue(item);
             }
 
-            return itemQueue;
+            return (itemQueue, trapQueue);
         }
 
         [Obsolete("Unsafe when RandoManager is null, which is the only case where it is useful")]

@@ -20,6 +20,7 @@ namespace RainWorldRandomizer
         // Queue of items that the player has recieved and not claimed
         public Queue<Unlock.Item> itemDeliveryQueue = new();
         public Queue<Unlock.Item> lastItemDeliveryQueue = new();
+        public Queue<TrapsHandler.Trap> pendingTrapQueue = new();
 
         // These are all properties so the get / set can be modified if needed
         public virtual int CurrentMaxKarma

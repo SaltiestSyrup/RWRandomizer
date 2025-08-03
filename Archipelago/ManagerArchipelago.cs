@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace RainWorldRandomizer
 {
@@ -79,6 +78,7 @@ namespace RainWorldRandomizer
             passageTokensStatus.Clear();
             itemDeliveryQueue.Clear();
             lastItemDeliveryQueue.Clear();
+            pendingTrapQueue.Clear();
 
             // Clear notifications
             Plugin.Singleton.notifQueue.Clear();
@@ -118,7 +118,7 @@ namespace RainWorldRandomizer
             }
 
             // Load the item delivery queue from file as normal
-            itemDeliveryQueue = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
+            (itemDeliveryQueue, pendingTrapQueue) = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
             lastItemDeliveryQueue = new(itemDeliveryQueue);
 
             Plugin.Log.LogInfo($"Loaded save game {saveId}");
@@ -327,6 +327,7 @@ namespace RainWorldRandomizer
         {
             SaveManager.WriteItemQueueToFile(
                 saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
+                pendingTrapQueue,
                 currentSlugcat,
                 Plugin.Singleton.rainWorld.options.saveSlot);
 
