@@ -9,7 +9,7 @@ namespace RainWorldRandomizer
 {
     public static class TrapsHandler
     {
-        private class Trap
+        public class Trap
         {
             public string id;
             public TrapDefinition definition;
@@ -107,11 +107,6 @@ namespace RainWorldRandomizer
         };
 
         private static int currentCooldown = 0;
-        // TODO: Save pending traps like we do items
-        /// <summary>
-        /// Traps waiting to be activated
-        /// </summary>
-        private static Queue<Trap> pendingTrapQueue = new();
         /// <summary>
         /// Traps with a duration that are currently active
         /// </summary>
@@ -150,7 +145,7 @@ namespace RainWorldRandomizer
 
         public static void EnqueueTrap(string itemId)
         {
-            pendingTrapQueue.Enqueue(new Trap(itemId.Substring(5)));
+            Plugin.RandoManager?.pendingTrapQueue.Enqueue(new Trap(itemId[5..]));
         }
 
         private static void ResetCooldown()
@@ -172,7 +167,7 @@ namespace RainWorldRandomizer
 
             TrapUpdate(self);
 
-            if (pendingTrapQueue.Count == 0) return;
+            if ((Plugin.RandoManager?.pendingTrapQueue.Count ?? 0) == 0) return;
 
             if (currentCooldown == 0)
             {
@@ -186,7 +181,7 @@ namespace RainWorldRandomizer
                 }
 
                 // Process the next trap in queue
-                pendingTrapQueue.Dequeue().Activate(self);
+                Plugin.RandoManager.pendingTrapQueue.Dequeue().Activate(self);
 
                 ResetCooldown();
             }

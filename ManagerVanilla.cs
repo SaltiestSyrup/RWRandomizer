@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -237,8 +236,8 @@ namespace RainWorldRandomizer
                 }
             }
 
-            Plugin.RandoManager.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, saveSlot);
-            Plugin.RandoManager.lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
+            (itemDeliveryQueue, pendingTrapQueue) = SaveManager.LoadItemQueue(slugcat, saveSlot);
+            lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
         }
 
         public override List<string> GetLocations()
@@ -279,12 +278,13 @@ namespace RainWorldRandomizer
         public override void SaveGame(bool saveCurrentState)
         {
             SaveManager.WriteSavedGameToFile(
-                        randomizerKey,
-                        currentSlugcat,
-                        Plugin.Singleton.rainWorld.options.saveSlot);
+                randomizerKey,
+                currentSlugcat,
+                Plugin.Singleton.rainWorld.options.saveSlot);
 
             SaveManager.WriteItemQueueToFile(
                 saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
+                pendingTrapQueue,
                 currentSlugcat,
                 Plugin.Singleton.rainWorld.options.saveSlot);
         }

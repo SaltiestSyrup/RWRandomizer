@@ -384,14 +384,14 @@ namespace RainWorldRandomizer
 
         private static void SaveDiskUpdateItemQueue(bool completeCycle, bool malnourished)
         {
-            // If we survived this cycle, paste current queue to saved backup
-            // If we died, restore current queue from saved backup
+            // If we did not finish the cycle (death, quit out, etc.), restore current queue from saved backup
             if (!completeCycle)
             {
                 Plugin.RandoManager.itemDeliveryQueue = new(Plugin.RandoManager.lastItemDeliveryQueue);
                 return;
             }
 
+            // If we survived without starving this cycle, paste current queue to saved backup
             if (!malnourished)
             {
                 Plugin.RandoManager.lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
