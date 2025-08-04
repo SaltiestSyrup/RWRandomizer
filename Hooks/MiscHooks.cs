@@ -112,7 +112,7 @@ namespace RainWorldRandomizer
                 );
 
             c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldstr, Plugin.RandoManager is null ? "STORY" : "RANDOMIZER");
+            c.Emit(OpCodes.Ldstr, "RANDOMIZER");
         }
 
         /// <summary>
