@@ -195,12 +195,14 @@ namespace RainWorldRandomizer
     {
         public RoundedRect roundedRect;
         public MenuLabel label;
-        public FSprite[] sprites;
+        public BorderlessSymbolButton[] buttons;
+
+        public List<int> selectedIndices = [];
 
         public PendingItemsDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
         {
             Unlock.Item[] pendingItems = [.. Plugin.RandoManager.itemDeliveryQueue];
-            sprites = new FSprite[pendingItems.Length];
+            buttons = new BorderlessSymbolButton[pendingItems.Length];
             size = new Vector2(250f, ((pendingItems.Length - 1) / 8 * 30f) + 57f);
 
             myContainer = new FContainer();
@@ -219,25 +221,25 @@ namespace RainWorldRandomizer
 
             for (int i = 0; i < pendingItems.Length; i++)
             {
-                sprites[i] = ItemToFSprite(pendingItems[i]);
-                Container.AddChild(sprites[i]);
+                buttons[i] = new(menu, this, ItemToFSprite(pendingItems[i]), $"OBJ_{i}",
+                    new((30f * (i % 8)) + 5f, -(30f * Mathf.FloorToInt(i / 8)) - 50f));
+                subObjects.Add(buttons[i]);
             }
         }
 
-        public override void GrafUpdate(float timeStacker)
+        public override void Singal(MenuObject sender, string message)
         {
-            base.GrafUpdate(timeStacker);
-
-            for (int i = 0; i < sprites.Length; i++)
+            base.Singal(sender, message);
+            if (message.StartsWith("OBJ_"))
             {
-                sprites[i].isVisible = true;
-                sprites[i].x = DrawX(timeStacker) + (30f * (i % 8)) + 20f;
-                sprites[i].y = DrawY(timeStacker) - (30f * Mathf.FloorToInt(i / 8)) - 35f;
-                sprites[i].alpha = 1f;
+                if (!int.TryParse(message[4..], out int index)) return;
+
+                selectedIndices.Add(index);
+                buttons[index].buttonBehav.greyedOut = true;
             }
         }
 
-        public FSprite ItemToFSprite(Unlock.Item item)
+        public static FSprite ItemToFSprite(Unlock.Item item)
         {
             string spriteName;
             float spriteScale = 1f;
@@ -279,5 +281,62 @@ namespace RainWorldRandomizer
                 return new FSprite("Futile_White", true);
             }
         }
+    }
+
+    public class BorderlessSymbolButton : ButtonTemplate
+    {
+        public string signalText;
+        public FSprite symbolSprite;
+        private Color baseColor;
+        private Color greyColor;
+        private float baseScale;
+
+        public BorderlessSymbolButton(Menu.Menu menu, MenuObject owner, string symbolName, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
+        {
+            this.signalText = signalText;
+            
+            symbolSprite = new FSprite(symbolName, true);
+            baseColor = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
+            greyColor = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.VeryDarkGrey);
+            baseScale = 1f;
+            Container.AddChild(symbolSprite);
+        }
+
+        public BorderlessSymbolButton(Menu.Menu menu, MenuObject owner, FSprite sprite, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
+        {
+            this.signalText = signalText;
+
+            symbolSprite = sprite;
+            baseColor = sprite.color;
+            greyColor = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.VeryDarkGrey);
+            baseScale = sprite.scale;
+            Container.AddChild(symbolSprite);
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            symbolSprite.scale = baseScale * (1 + buttonBehav.sizeBump * 0.2f);
+        }
+
+        public override void GrafUpdate(float timeStacker)
+        {
+            base.GrafUpdate(timeStacker);
+
+            float cycle = 0.5f - 0.5f * Mathf.Sin(Mathf.Lerp(buttonBehav.lastSin, buttonBehav.sin, timeStacker) / 30f * Mathf.PI * 2f);
+            cycle *= buttonBehav.sizeBump;
+
+            symbolSprite.color = buttonBehav.greyedOut ? greyColor : Color.Lerp(baseColor, greyColor, cycle);
+            symbolSprite.x = DrawX(timeStacker) + DrawSize(timeStacker).x / 2;
+            symbolSprite.y = DrawY(timeStacker) + DrawSize(timeStacker).y / 2;
+        }
+
+        public override void RemoveSprites()
+        {
+            symbolSprite.RemoveFromContainer();
+            base.RemoveSprites();
+        }
+
+        public override void Clicked() => Singal(this, signalText);
     }
 }
