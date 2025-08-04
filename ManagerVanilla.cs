@@ -51,6 +51,12 @@ namespace RainWorldRandomizer
             {
                 Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(storyGameCharacter), region));
             }
+            // Init passage list
+            foreach (string passage in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
+            {
+                if (passage == "Gourmand") continue;
+                passageTokensStatus.Add(new(passage), false);
+            }
 
             if (Input.GetKey("o"))
             {
