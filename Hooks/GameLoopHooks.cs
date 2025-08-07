@@ -9,6 +9,8 @@ namespace RainWorldRandomizer
 {
     public static class GameLoopHooks
     {
+        private const int SHELTER_ITEMS_PER_CYCLE = 5;
+
         public static void ApplyHooks()
         {
             On.ProcessManager.PostSwitchMainProcess += OnPostSwitchMainProcess;
@@ -199,8 +201,10 @@ namespace RainWorldRandomizer
                 // Spawn pending items in spawn room
                 if (!RandoOptions.ItemShelterDelivery) return;
 
-                while (Plugin.RandoManager.itemDeliveryQueue.Count > 0)
+                for (int i = 0; i < SHELTER_ITEMS_PER_CYCLE; i++)
                 {
+                    if (Plugin.RandoManager.itemDeliveryQueue.Count == 0) break;
+
                     AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
                     try
                     {
