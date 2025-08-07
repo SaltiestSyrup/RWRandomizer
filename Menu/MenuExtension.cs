@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using RWCustom;
 
 namespace RainWorldRandomizer
 {
@@ -96,27 +95,13 @@ namespace RainWorldRandomizer
                 PendingItemsDisplay = new(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));
                 self.pages[0].subObjects.Add(PendingItemsDisplay);
-            } else { PendingItemsDisplay = null; }
+            }
+            else { PendingItemsDisplay = null; }
         }
 
         public static void OnMenuShutdownProcess(On.Menu.PauseMenu.orig_ShutDownProcess orig, PauseMenu self)
         {
             displaySpoilerMenu = false;
-
-            // Remove and spawn items selected while paused
-            if ((PendingItemsDisplay?.selectedIndices.Count ?? 0) > 0)
-            {
-                List<Unlock.Item> items = [.. Plugin.RandoManager.itemDeliveryQueue];
-                PendingItemsDisplay.selectedIndices.Sort();
-                PendingItemsDisplay.selectedIndices.Reverse();
-                foreach (int index in PendingItemsDisplay.selectedIndices)
-                {
-                    // Try to spawn the item, and remove from queue if successful
-                    if (self.game.GivePlayerItem(items[index])) items.RemoveAt(index);
-                }
-                Plugin.RandoManager.itemDeliveryQueue = new(items);
-            }
-
             orig(self);
         }
 
@@ -177,51 +162,6 @@ namespace RainWorldRandomizer
                 }
                 SpoilerMenu = null;
             }
-        }
-
-        public static bool GivePlayerItem(this RainWorldGame game, Unlock.Item item)
-        {
-            Plugin.Log.LogDebug($"Create item: {item.id}");
-            // Find first living player to give to
-            if (game.FirstAlivePlayer.realizedCreature is not Player player)
-            {
-                Plugin.Log.LogError("Failed to spawn item for player, no valid player found");
-                return false;
-            }
-
-            // Try to create the object
-            AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(item, game.world, player.room.abstractRoom);
-            try 
-            { 
-                player.room.abstractRoom.AddEntity(obj);
-                obj.RealizeInRoom();
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed to spawn item for player, invalid item?");
-                Plugin.Log.LogError(e);
-                return false;
-            }
-
-            // Replicate regurgitate logic to determine spawn position
-            BodyChunk head = player.bodyChunks[0];
-            BodyChunk body = player.bodyChunks[1];
-            Vector2 spawnPos = head.pos;
-            Vector2 direction = Custom.DirVec(body.pos, head.pos);
-            if (Mathf.Abs(head.pos.y - body.pos.y) > Mathf.Abs(head.pos.x - body.pos.x) 
-                && head.pos.y > body.pos.y)
-            {
-                spawnPos += Custom.DirVec(body.pos, head.pos) * 5f;
-                direction *= -1f;
-                direction.x += 0.4f * player.flipDirection;
-                direction.Normalize();
-            }
-            // Make the player hold it if they have an empty hand, otherwise drop at position
-            obj.realizedObject.firstChunk.HardSetPosition(spawnPos);
-            obj.realizedObject.firstChunk.vel = Vector2.ClampMagnitude((direction * 2f + Custom.RNV() * UnityEngine.Random.value) / obj.realizedObject.firstChunk.mass, 4f);
-            player.SlugcatGrab(obj.realizedObject, player.FreeHand());
-
-            return true;
         }
     }
 
@@ -368,7 +308,7 @@ namespace RainWorldRandomizer
         public BorderlessSymbolButton(Menu.Menu menu, MenuObject owner, string symbolName, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
         {
             this.signalText = signalText;
-            
+
             symbolSprite = new FSprite(symbolName, true);
             baseColor = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
             greyColor = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.VeryDarkGrey);
