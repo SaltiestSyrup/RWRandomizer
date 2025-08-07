@@ -49,26 +49,8 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            AbstractPhysicalObject tempObject = null;
-
-            // If there's already something swallowed, store it as a temp variable
-            if (self.objectInStomach != null)
-            {
-                tempObject = self.objectInStomach;
-            }
-            // Swap in queued object
-
-            //Logger.LogDebug($"Stored item: {itemDeliveryQueue.Peek().id}, {itemDeliveryQueue.Peek().type.value}");
-            self.objectInStomach = Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.room);
-            //Logger.LogDebug($"Converted object: {self.objectInStomach?.type}");
-
+            self.objectInStomach ??= Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.room);
             orig(self);
-
-            // If we stored an already swallowed object, put it back now
-            if (tempObject != null)
-            {
-                self.objectInStomach = tempObject;
-            }
         }
 
         /// <summary>

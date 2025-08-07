@@ -2,16 +2,21 @@
 using MonoMod.Cil;
 using MoreSlugcats;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RainWorldRandomizer
 {
     public static class GameLoopHooks
     {
+        private const int SHELTER_ITEMS_PER_CYCLE = 5;
+
         public static void ApplyHooks()
         {
             On.ProcessManager.PostSwitchMainProcess += OnPostSwitchMainProcess;
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
             On.RainWorldGame.ExitGame += OnExitGame;
+            On.RainWorldGame.ContinuePaused += OnContinuePaused;
             On.PlayerProgression.SaveToDisk += OnSaveGame;
             On.SaveState.GhostEncounter += OnGhostEncounter;
             On.SaveState.SessionEnded += OnSessionEnded;
@@ -36,6 +41,7 @@ namespace RainWorldRandomizer
         {
             On.ProcessManager.PostSwitchMainProcess -= OnPostSwitchMainProcess;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
+            On.RainWorldGame.ContinuePaused -= OnContinuePaused;
             On.PlayerProgression.SaveToDisk -= OnSaveGame;
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
@@ -195,8 +201,10 @@ namespace RainWorldRandomizer
                 // Spawn pending items in spawn room
                 if (!RandoOptions.ItemShelterDelivery) return;
 
-                while (Plugin.RandoManager.itemDeliveryQueue.Count > 0)
+                for (int i = 0; i < SHELTER_ITEMS_PER_CYCLE; i++)
                 {
+                    if (Plugin.RandoManager.itemDeliveryQueue.Count == 0) break;
+
                     AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
                     try
                     {
@@ -337,6 +345,25 @@ namespace RainWorldRandomizer
                         Plugin.RandoManager.GiveLocation(locName);
                     }
                 }
+            }
+        }
+
+        private static void OnContinuePaused(On.RainWorldGame.orig_ContinuePaused orig, RainWorldGame self)
+        {
+            orig(self);
+
+            // Remove and spawn items selected while paused
+            if ((MenuExtension.PendingItemsDisplay?.selectedIndices.Count ?? 0) > 0)
+            {
+                List<Unlock.Item> items = [.. Plugin.RandoManager.itemDeliveryQueue];
+                MenuExtension.PendingItemsDisplay.selectedIndices.Sort();
+                MenuExtension.PendingItemsDisplay.selectedIndices.Reverse();
+                foreach (int index in MenuExtension.PendingItemsDisplay.selectedIndices)
+                {
+                    // Try to spawn the item, and remove from queue if successful
+                    if (self.TryGivePlayerItem(items[index])) items.RemoveAt(index);
+                }
+                Plugin.RandoManager.itemDeliveryQueue = new(items);
             }
         }
 
@@ -483,6 +510,47 @@ namespace RainWorldRandomizer
             {
                 managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
             }
+        }
+
+        public static bool TryGivePlayerItem(this RainWorldGame game, Unlock.Item item)
+        {
+            Plugin.Log.LogDebug($"Create item: {item.id}");
+            // Find first living player to give to
+            if (game.FirstAlivePlayer.realizedCreature is not Player player)
+            {
+                Plugin.Log.LogError("Failed to spawn item for player, no valid player found");
+                return false;
+            }
+
+            // Try to create the object
+            AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(item, game.world, player.room.abstractRoom);
+            try
+            {
+                player.room.abstractRoom.AddEntity(obj);
+                obj.pos = player.abstractCreature.pos;
+                obj.RealizeInRoom();
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed to spawn item for player, invalid item?");
+                Plugin.Log.LogError(e);
+                return false;
+            }
+
+            player.room.PlaySound(SoundID.Slugcat_Regurgitate_Item, player.mainBodyChunk);
+
+            // Set position and try to grab
+            Plugin.Log.LogDebug(player.grasps.Any(g => g is not null));
+            obj.realizedObject.firstChunk.HardSetPosition(player.bodyChunks[0].pos);
+            if (!player.CanIPickThisUp(obj.realizedObject)
+                || (player.Grabability(obj.realizedObject) >= Player.ObjectGrabability.TwoHands
+                    && player.grasps.Any(g => g is not null)))
+            {
+                return true;
+            }
+
+            player.SlugcatGrab(obj.realizedObject, player.FreeHand());
+            return true;
         }
     }
 }
