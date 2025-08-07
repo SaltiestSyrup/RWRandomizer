@@ -90,9 +90,6 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Unity.Mathematics">
-      <HintPath>bin\References\Unity.Mathematics.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>bin\References\UnityEngine.dll</HintPath>
     </Reference>
