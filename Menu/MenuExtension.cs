@@ -301,9 +301,9 @@ namespace RainWorldRandomizer
     {
         public string signalText;
         public FSprite symbolSprite;
-        private Color baseColor;
-        private Color greyColor;
-        private float baseScale;
+        private readonly Color baseColor;
+        private readonly Color greyColor;
+        private readonly float baseScale;
 
         public BorderlessSymbolButton(Menu.Menu menu, MenuObject owner, string symbolName, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
         {
