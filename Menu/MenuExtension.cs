@@ -185,7 +185,7 @@ namespace RainWorldRandomizer
             };
             subObjects.Add(roundedRect);
 
-            menuLabels[0] = new MenuLabel(menu, this, "Currently Unlocked Gates:", new Vector2(10f, -13f), default, false, null);
+            menuLabels[0] = new MenuLabel(menu, this, "Currently Unlocked Gates:", new Vector2(10.01f, -13.01f), default, false, null);
             menuLabels[0].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
             menuLabels[0].label.alignment = FLabelAlignment.Left;
             subObjects.Add(menuLabels[0]);
@@ -194,7 +194,7 @@ namespace RainWorldRandomizer
             {
                 menuLabels[i] = new MenuLabel(menu, this,
                     Plugin.GateToString(openedGates[i - 1], Plugin.RandoManager.currentSlugcat),
-                    new Vector2(10f, -15f - (15f * i)), default, false, null);
+                    new Vector2(10.01f, -15.01f - (15f * i)), default, false, null);
                 menuLabels[i].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
                 menuLabels[i].label.alignment = FLabelAlignment.Left;
                 subObjects.Add(menuLabels[i]);
@@ -228,7 +228,7 @@ namespace RainWorldRandomizer
             };
             subObjects.Add(roundedRect);
 
-            label = new MenuLabel(menu, this, "Pending items:", new Vector2(10f, -13f), default, false, null);
+            label = new MenuLabel(menu, this, "Pending items (Click to retrieve)", new Vector2(10.01f, -13.01f), default, false, null);
             label.label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
             label.label.alignment = FLabelAlignment.Left;
             subObjects.Add(label);
