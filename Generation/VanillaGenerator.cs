@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using UnityEngine;
 using Random = System.Random;
 
 namespace RainWorldRandomizer.Generation
@@ -24,36 +25,6 @@ namespace RainWorldRandomizer.Generation
         /// Constant storing the ID for the dummy start region used with non-random starts
         /// </summary>
         public const string START_REG = "StartDummy";
-
-        /// <summary>
-        /// Used to override rules for locations. To modify the rules of a location, add its location ID to this dict with the new rule it should follow.
-        /// </summary>
-        public static Dictionary<string, AccessRule> globalRuleOverrides = [];
-        /// <summary>
-        /// Used to override rules for locations as specific slugcats. Applies on top of <see cref="globalRuleOverrides"/>, 
-        /// taking priority over all if playing as the relevant slugcat
-        /// </summary>
-        public static Dictionary<SlugcatStats.Name, Dictionary<string, AccessRule>> slugcatRuleOverrides = [];
-        /// <summary>
-        /// Used to override rules for a connection. To modify the rules of a connection, add its connection ID to this dict with the new rules it should follow. 
-        /// Rules must be an array of size 2, 0 being the rule for travelling right, and 1 being the rule for travelling left
-        /// </summary>
-        public static Dictionary<string, (AccessRule, AccessRule)> connectionRuleOverrides = [];
-        /// <summary>
-        /// Used to divide regions into multiple parts. To create ome, define a SubregionBlueprint with the base region, 
-        /// a new subregion ID, and the locations and connections it should affect
-        /// </summary>
-        public static List<SubregionBlueprint> manualSubregions = [];
-        /// <summary>
-        /// Used to create connections where they wouldn't be auto-generated.
-        /// </summary>
-        public static List<ConnectionBlueprint> manualConnections = [];
-
-        /// <summary>
-        /// Combination of <see cref="globalRuleOverrides"/> and <see cref="slugcatRuleOverrides"/> populated in instance constructor.
-        /// Any additions to rule overrides must be completed by the time the generator instance is created
-        /// </summary>
-        private Dictionary<string, AccessRule> ruleOverrides = [];
 
         private SlugcatStats.Name slugcat;
         private SlugcatStats.Timeline timeline;
@@ -84,7 +55,6 @@ namespace RainWorldRandomizer.Generation
         private State state;
         private List<Item> itemsToPlace = [];
         private Dictionary<string, RandoRegion> allRegions = [];
-        //private HashSet<string> AllRegions = [];
         public HashSet<string> AllGates { get; private set; }
         public HashSet<string> UnplacedGates { get; private set; }
         public HashSet<string> AllPassages { get; private set; }
@@ -112,21 +82,6 @@ namespace RainWorldRandomizer.Generation
             // UnityEngine.Random doesn't play well with threads
             this.generationSeed = generationSeed;
             randomState = new Random(generationSeed);
-
-            // Combine custom rules together
-            ruleOverrides = globalRuleOverrides;
-            // Slugcat specific rules take priority over global ones
-            foreach (var slugcatRule in slugcatRuleOverrides[slugcat])
-            {
-                if (ruleOverrides.ContainsKey(slugcatRule.Key))
-                {
-                    ruleOverrides[slugcatRule.Key] = slugcatRule.Value;
-                }
-                else
-                {
-                    ruleOverrides.Add(slugcatRule.Key, slugcatRule.Value);
-                }
-            }
         }
 
         public Task BeginGeneration(bool logVerbose = false)
@@ -497,10 +452,17 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         private void ApplyRuleOverrides()
         {
+            CustomLogicBuilder.LogicPackage customLogic = CustomLogicBuilder.GetLogicForSlugcat(slugcat);
+            if (customLogic is null)
+            {
+                generationLog.AppendLine("Found no custom rule definitions, skipping custom rule step");
+                return;
+            }
+
             generationLog.AppendLine("APPLY SPECIAL RULES");
 
             // Individual locations
-            foreach (var rule in ruleOverrides)
+            foreach (var rule in customLogic.locationRules)
             {
                 // Find the location by id and set its rule to the override
                 Location loc = state.AllLocations.FirstOrDefault(l => l.ID == rule.Key);
@@ -510,12 +472,12 @@ namespace RainWorldRandomizer.Generation
                     continue;
                 }
 
-                loc.accessRule = rule.Value;
-                generationLog.AppendLine($"Applied custom rule to location: {rule.Key}");
+                loc.accessRule = CustomLogicBuilder.CombineRules(loc.accessRule, rule.Value);
+                generationLog.AppendLine($"Applied custom rule to location \"{rule.Key}\" with overlap method \"{rule.Value.overlapMethod}\"");
             }
 
             // Create Subregions
-            foreach (SubregionBlueprint subBlueprint in manualSubregions)
+            foreach (SubregionBlueprint subBlueprint in customLogic.newSubregions)
             {
                 RandoRegion baseRegion = state.AllRegions.FirstOrDefault(r => r.ID == subBlueprint.baseRegion);
                 if (baseRegion is null)
@@ -533,23 +495,8 @@ namespace RainWorldRandomizer.Generation
                 generationLog.AppendLine($"Created new subregion: {subBlueprint.ID}");
             }
 
-            // Connection Overrides
-            foreach (var rule in connectionRuleOverrides)
-            {
-                // Find the connection by id and set its rule to the override
-                Connection connection = state.AllConnections.FirstOrDefault(c => c.ID == rule.Key);
-                if (connection is null)
-                {
-                    generationLog.AppendLine($"Skipping override for non-existing connection {rule.Key}");
-                    continue;
-                }
-
-                connection.requirements = rule.Value;
-                generationLog.AppendLine($"Applied custom rule to connection: {rule.Key}");
-            }
-
             // Create manual Connections
-            foreach (ConnectionBlueprint connectionBlueprint in manualConnections)
+            foreach (ConnectionBlueprint connectionBlueprint in customLogic.newConnections)
             {
                 RandoRegion regionA = state.AllRegions.FirstOrDefault(r => r.ID == connectionBlueprint.regions[0]);
                 RandoRegion regionB = state.AllRegions.FirstOrDefault(r => r.ID == connectionBlueprint.regions[1]);
@@ -562,6 +509,22 @@ namespace RainWorldRandomizer.Generation
                 Connection connection = new(connectionBlueprint.ID, [regionA, regionB], connectionBlueprint.rules);
                 connection.Create();
                 generationLog.AppendLine($"Created new connection between {regionA.ID} and {regionB.ID}");
+            }
+
+            // Connection Overrides
+            foreach (var rule in customLogic.connectionRules)
+            {
+                // Find the connection by id and set its rule to the override
+                Connection connection = state.AllConnections.FirstOrDefault(c => c.ID == rule.Key);
+                if (connection is null)
+                {
+                    generationLog.AppendLine($"Skipping override for non-existing connection {rule.Key}");
+                    continue;
+                }
+
+                connection.requirements = (CustomLogicBuilder.CombineRules(connection.requirements.Item1, rule.Value.Item1),
+                    CustomLogicBuilder.CombineRules(connection.requirements.Item2, rule.Value.Item2));
+                generationLog.AppendLine($"Applied custom rule to connection \"{rule.Key}\" with overlap methods \"{rule.Value.Item1.overlapMethod}\" and \"{rule.Value.Item2.overlapMethod}\"");
             }
         }
 
@@ -964,238 +927,6 @@ namespace RainWorldRandomizer.Generation
                 return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id[12..], true));
             }
             return new Unlock(outputType, item.id);
-        }
-
-        public static void GenerateCustomRules()
-        {
-            // Clear any rules that may have been populated in a previous OnModsInit()
-            slugcatRuleOverrides.Clear();
-            globalRuleOverrides.Clear();
-            connectionRuleOverrides.Clear();
-            manualConnections.Clear();
-            manualSubregions.Clear();
-
-            slugcatRuleOverrides.Add(SlugcatStats.Name.White, []);
-            slugcatRuleOverrides.Add(SlugcatStats.Name.Yellow, []);
-            slugcatRuleOverrides.Add(SlugcatStats.Name.Red, []);
-
-            if (ModManager.MSC)
-            {
-                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Gourmand, []);
-                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Artificer, []);
-                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, []);
-                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Spear, []);
-                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Saint, []);
-                slugcatRuleOverrides.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, []);
-            }
-
-            // Cannot climb SB Ravine
-            manualSubregions.Add(new("SB", "SBRavine",
-                ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0", "Shelter-SB_S09"],
-                ["GATE_LF_SB"],
-                ["SB_S09"],
-                (new(AccessRule.IMPOSSIBLE_ID), new())));
-
-            // MSC specific rules
-            if (ModManager.MSC)
-            {
-                // Subeterranean to Outer Expanse
-                connectionRuleOverrides["GATE_SB_OE"] =
-                (
-                    // Gate AND (Survivor OR Monk OR (Gourmand AND The Mark))
-                    new CompoundAccessRule(
-                    [
-                        new GateAccessRule("GATE_SB_OE"),
-                        new CompoundAccessRule(
-                        [
-                            new MultiSlugcatAccessRule([SlugcatStats.Name.White, SlugcatStats.Name.Yellow]),
-                            new CompoundAccessRule(
-                            [
-                                new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Gourmand),
-                                new("The_Mark")
-                            ], CompoundAccessRule.CompoundOperation.All)
-                        ], CompoundAccessRule.CompoundOperation.Any)
-                    ], CompoundAccessRule.CompoundOperation.All),
-                    // Gate
-                    new GateAccessRule("GATE_SB_OE")
-                );
-
-                // Outer Expanse to Outskirts
-                connectionRuleOverrides["GATE_OE_SU"] =
-                (
-                    // Free, gate always open
-                    new(),
-                    // Impossible
-                    new(AccessRule.IMPOSSIBLE_ID)
-                );
-
-                // Exterior to Metropolis 
-                connectionRuleOverrides["GATE_UW_LC"] =
-                (
-                    // Gate AND (Metro option OR (Artificer AND The Mark AND Citizen ID Drone))
-                    new CompoundAccessRule(
-                    [
-                        new GateAccessRule("GATE_UW_LC"),
-                        new CompoundAccessRule(
-                        [
-                            new OptionAccessRule("ForceOpenMetropolis"),
-                            new CompoundAccessRule(
-                            [
-                                new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Artificer),
-                                new("The_Mark"),
-                                new("IdDrone")
-                            ], CompoundAccessRule.CompoundOperation.All)
-                        ], CompoundAccessRule.CompoundOperation.Any)
-                    ], CompoundAccessRule.CompoundOperation.All),
-                    // Gate
-                    new GateAccessRule("GATE_UW_LC")
-                );
-
-                // Shoreline to Submerged Superstructure
-                connectionRuleOverrides["GATE_MS_SL"] =
-                (
-                    // Gate
-                    new GateAccessRule("GATE_MS_SL"),
-                    // Gate AND (Submerged option OR Rivulet)
-                    new CompoundAccessRule(
-                    [
-                        new GateAccessRule("GATE_MS_SL"),
-                        new CompoundAccessRule(
-                        [
-                            new OptionAccessRule("ForceOpenSubmerged"),
-                            new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
-                        ], CompoundAccessRule.CompoundOperation.Any)
-                    ], CompoundAccessRule.CompoundOperation.All)
-                );
-
-                // Submerged Superstructure (Bitter Aerie) to Shoreline
-                connectionRuleOverrides["GATE_SL_MS"] =
-                (
-                    // Impossible to enter from above LttM
-                    new AccessRule(AccessRule.IMPOSSIBLE_ID),
-                    // Free, if the gate is reachable. The Bitter Aerie subregion will handle that logic
-                    new AccessRule()
-                );
-
-                AccessRule sumpTunnelRule = new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Artificer, true);
-                // Shoreline to Pipeyard (Sump Tunnel)
-                connectionRuleOverrides["GATE_SL_VS"] =
-                (
-                    // Cannot traverse Sump Tunnel as Artificer
-                    sumpTunnelRule, sumpTunnelRule
-                );
-
-                // The Exterior is split in half at UW_C02, as Rivulet has a hard time crossing it
-                manualSubregions.Add(new("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard",
-                        "Broadcast-Chatlog_Broadcast0", "Shelter-UW_S01", "Shelter-UW_S03", "Shelter-UW_S04",
-                        "DevToken-UW_H01", "DevToken_UW_F01"],
-                    ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
-                    ["UW_S01", "UW_S03", "UW_S04"],
-                    (new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, true), new())));
-
-                // Cannot reach filtration from Outskirts, except as Saint
-                manualSubregions.Add(new SubregionBlueprint("SU", "SU_Filt",
-                    ["Pearl-SU_filt", "Shelter-SU_S05", "DevToken-SU_CAVE01", "DevToken-SU_PMPSTATION01"],
-                    ["GATE_OE_SU"],
-                    ["SU_S05"],
-                    (new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new())));
-
-                // Precipice is disconnected from Shoreline
-                manualSubregions.Add(new("SL", "SLPrecipice",
-                    ["Shelter-SL_S13", "DevToken-SL_BRIDGE01"],
-                    ["GATE_UW_SL"],
-                    ["SL_S13"],
-                    (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID))));
-
-                // Saint OR (Rivulet AND ((OptionUseEnergyCell AND EnergyCell) OR (Not OptionUseEnergyCell AND RegionRM)))
-                // I hate this one
-                AccessRule bitterAerieAccess = new CompoundAccessRule(
-                [
-                    new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint),
-                    new CompoundAccessRule(
-                    [
-                        new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet),
-                        new CompoundAccessRule(
-                        [
-                            new CompoundAccessRule(
-                            [
-                                new OptionAccessRule("UseEnergyCell"),
-                                new AccessRule("Object-EnergyCell")
-                            ], CompoundAccessRule.CompoundOperation.All),
-                            new CompoundAccessRule(
-                            [
-                                new OptionAccessRule("UseEnergyCell", true),
-                                new RegionAccessRule("RM")
-                            ], CompoundAccessRule.CompoundOperation.All),
-                        ], CompoundAccessRule.CompoundOperation.Any),
-                    ], CompoundAccessRule.CompoundOperation.All)
-                ], CompoundAccessRule.CompoundOperation.Any);
-                // Bitter Aerie is only for Saint or after Rivulet completion
-                manualSubregions.Add(new("MS", "MSBitterAerie",
-                    ["Token-S-MS", "Token-MirosVulture", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10",
-                        "Shelter-MS_BITTERSHELTER", "DevToken-MS_SEWERBRIDGE", "DevToken-MS_X02", "DevToken-MS_BITTEREDGE"],
-                    ["GATE_SL_MS"],
-                    ["MS_S07", "MS_S10", "MS_BITTERSHELTER"],
-                    (bitterAerieAccess, new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint))
-                    ));
-
-                // Only Saint can climb up to above LttM
-                manualSubregions.Add(new("SL", "SLAboveLttM",
-                    ["Echo-SL", "Shelter-SL_STOP", "DevToken-SL_ROOF04", "DevToken-SL_TEMPLE", "DevToken-SL_ROOF03"],
-                    ["GATE_SL_MS"],
-                    ["SL_STOP"],
-                    (new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new())
-                    ));
-
-                // Artificer cannot traverse Sump Tunnel
-                manualSubregions.Add(new("VS", "VSSumpTunnel",
-                    ["Shelter-VS_S02"],
-                    ["GATE_SL_VS"],
-                    ["VS_S02"],
-                    (sumpTunnelRule, sumpTunnelRule)
-                    ));
-
-                // Token cache fails to filter this pearl to only Past GW
-                globalRuleOverrides.Add("Pearl-MS", new CompoundAccessRule(
-                [
-                    new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore),
-                    new RegionAccessRule("GW")
-                ], CompoundAccessRule.CompoundOperation.All));
-
-                // Artificer and Inv can't reach underwater GW token
-                globalRuleOverrides.Add("Token-BrotherLongLegs", new MultiSlugcatAccessRule(
-                [
-                    MoreSlugcatsEnums.SlugcatStatsName.Artificer,
-                    MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel
-                ], true));
-
-                // Waterfront Safari token is in a very silly location for Spearmaster
-                globalRuleOverrides.Add("Token-S-LM", new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Spear, true));
-
-                // Inv can't reach underwater GW token
-                slugcatRuleOverrides[MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel].Add("Token-RedLizard", new(AccessRule.IMPOSSIBLE_ID));
-
-                // Create a connection to Rubicon, which has no gate to it
-                manualConnections.Add(new ConnectionBlueprint("FALL_SB_HR", ["SB", "HR"],
-                    (new KarmaAccessRule(10), new(AccessRule.IMPOSSIBLE_ID))));
-            }
-            // *NOT* MSC specific rules
-            else
-            {
-                // The Exterior is split in half at UW_D06 pre-MSC, as there are no grapple worms for crossing
-                // You *could* bring a grapple worm from Chimney but that's too out of the way to be in logic
-                manualSubregions.Add(new("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard", "Shelter-UW_S01",
-                        "Shelter-UW_S03", "Shelter-UW_S04"],
-                    ["GATE_SS_UW", "GATE_CC_UW"],
-                    ["UW_S01", "UW_S03", "UW_S04"],
-                    (new(), new SlugcatAccessRule(SlugcatStats.Name.Red))));
-            }
-
-            // Inbuilt custom region rules
-            globalRuleOverrides.AddRange(CustomRegionCompatability.GlobalRuleOverrides);
-            slugcatRuleOverrides.AddRange(CustomRegionCompatability.SlugcatRuleOverrides);
         }
 
         public Dictionary<string, AccessRule> CreatePassageRules()

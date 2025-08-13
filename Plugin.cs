@@ -223,7 +223,12 @@ namespace RainWorldRandomizer
         {
             orig();
             AccessRuleConstants.InitConstants();
-            VanillaGenerator.GenerateCustomRules();
+
+            CustomLogicBuilder.ClearDefinedLogic();
+            CustomLogicBuilder.InitNewSlugcats([.. Constants.CompatibleSlugcats]);
+
+            if (ModManager.MSC) CustomLogicBuilder.DefineLogicMSC();
+            else CustomLogicBuilder.DefineLogicNoDLC();
         }
 
         public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
