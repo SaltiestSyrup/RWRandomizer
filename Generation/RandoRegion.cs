@@ -37,7 +37,7 @@ namespace RainWorldRandomizer.Generation
                 "\tLocations:",
                 .. allLocations.Select(l => $"\t\t{l} => {l.accessRule}"),
                 "\tConnections:",
-                .. connections.Select(c => $"\t\t{c} => \n\t\t\t{c.requirements[0]}, \n\t\t\t{c.requirements[1]}"),
+                .. connections.Select(c => $"\t\t{c} => \n\t\t\t{c.requirements.Item1}, \n\t\t\t{c.requirements.Item2}"),
                 "\tShelters:",
                 $"\t\t{string.Join(", ", shelters)}"
             ];
@@ -65,7 +65,7 @@ namespace RainWorldRandomizer.Generation
     /// Instructions for creating a subregion during generation.
     /// See <see cref="State.DefineSubRegion"/> for more details on subregions
     /// </summary>
-    public struct SubregionBlueprint(string baseRegion, string ID, string[] locations, string[] connections, string[] shelters, AccessRule[] rules)
+    public struct SubregionBlueprint(string baseRegion, string ID, string[] locations, string[] connections, string[] shelters, (AccessRule, AccessRule) rules)
     {
         /// <summary>
         /// ID of this subregion
@@ -90,6 +90,6 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// The AccessRules of the connection to the main region
         /// </summary>
-        public AccessRule[] rules = rules;
+        public (AccessRule, AccessRule) rules = rules;
     }
 }

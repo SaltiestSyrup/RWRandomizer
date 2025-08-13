@@ -38,7 +38,7 @@ namespace RainWorldRandomizer.Generation
         /// Used to override rules for a connection. To modify the rules of a connection, add its connection ID to this dict with the new rules it should follow. 
         /// Rules must be an array of size 2, 0 being the rule for travelling right, and 1 being the rule for travelling left
         /// </summary>
-        public static Dictionary<string, AccessRule[]> connectionRuleOverrides = [];
+        public static Dictionary<string, (AccessRule, AccessRule)> connectionRuleOverrides = [];
         /// <summary>
         /// Used to divide regions into multiple parts. To create ome, define a SubregionBlueprint with the base region, 
         /// a new subregion ID, and the locations and connections it should affect
@@ -543,11 +543,6 @@ namespace RainWorldRandomizer.Generation
                     generationLog.AppendLine($"Skipping override for non-existing connection {rule.Key}");
                     continue;
                 }
-                if (rule.Value.Length != 2)
-                {
-                    generationLog.AppendLine($"Connection override for {rule.Key} is invalid as rules are not of length 2");
-                    continue;
-                }
 
                 connection.requirements = rule.Value;
                 generationLog.AppendLine($"Applied custom rule to connection: {rule.Key}");
@@ -999,14 +994,14 @@ namespace RainWorldRandomizer.Generation
                 ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0", "Shelter-SB_S09"],
                 ["GATE_LF_SB"],
                 ["SB_S09"],
-                [new(AccessRule.IMPOSSIBLE_ID), new()]));
+                (new(AccessRule.IMPOSSIBLE_ID), new())));
 
             // MSC specific rules
             if (ModManager.MSC)
             {
                 // Subeterranean to Outer Expanse
                 connectionRuleOverrides["GATE_SB_OE"] =
-                [
+                (
                     // Gate AND (Survivor OR Monk OR (Gourmand AND The Mark))
                     new CompoundAccessRule(
                     [
@@ -1023,20 +1018,20 @@ namespace RainWorldRandomizer.Generation
                     ], CompoundAccessRule.CompoundOperation.All),
                     // Gate
                     new GateAccessRule("GATE_SB_OE")
-                ];
+                );
 
                 // Outer Expanse to Outskirts
                 connectionRuleOverrides["GATE_OE_SU"] =
-                [
+                (
                     // Free, gate always open
                     new(),
                     // Impossible
                     new(AccessRule.IMPOSSIBLE_ID)
-                ];
+                );
 
                 // Exterior to Metropolis 
                 connectionRuleOverrides["GATE_UW_LC"] =
-                [
+                (
                     // Gate AND (Metro option OR (Artificer AND The Mark AND Citizen ID Drone))
                     new CompoundAccessRule(
                     [
@@ -1054,11 +1049,11 @@ namespace RainWorldRandomizer.Generation
                     ], CompoundAccessRule.CompoundOperation.All),
                     // Gate
                     new GateAccessRule("GATE_UW_LC")
-                ];
+                );
 
                 // Shoreline to Submerged Superstructure
                 connectionRuleOverrides["GATE_MS_SL"] =
-                [
+                (
                     // Gate
                     new GateAccessRule("GATE_MS_SL"),
                     // Gate AND (Submerged option OR Rivulet)
@@ -1071,24 +1066,24 @@ namespace RainWorldRandomizer.Generation
                             new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
                         ], CompoundAccessRule.CompoundOperation.Any)
                     ], CompoundAccessRule.CompoundOperation.All)
-                ];
+                );
 
                 // Submerged Superstructure (Bitter Aerie) to Shoreline
                 connectionRuleOverrides["GATE_SL_MS"] =
-                [
+                (
                     // Impossible to enter from above LttM
                     new AccessRule(AccessRule.IMPOSSIBLE_ID),
                     // Free, if the gate is reachable. The Bitter Aerie subregion will handle that logic
                     new AccessRule()
-                ];
+                );
 
                 AccessRule sumpTunnelRule = new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Artificer, true);
                 // Shoreline to Pipeyard (Sump Tunnel)
                 connectionRuleOverrides["GATE_SL_VS"] =
-                [
+                (
                     // Cannot traverse Sump Tunnel as Artificer
                     sumpTunnelRule, sumpTunnelRule
-                ];
+                );
 
                 // The Exterior is split in half at UW_C02, as Rivulet has a hard time crossing it
                 manualSubregions.Add(new("UW", "UWWall",
@@ -1097,21 +1092,21 @@ namespace RainWorldRandomizer.Generation
                         "DevToken-UW_H01", "DevToken_UW_F01"],
                     ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
                     ["UW_S01", "UW_S03", "UW_S04"],
-                    [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, true), new()]));
+                    (new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Rivulet, true), new())));
 
                 // Cannot reach filtration from Outskirts, except as Saint
                 manualSubregions.Add(new SubregionBlueprint("SU", "SU_Filt",
                     ["Pearl-SU_filt", "Shelter-SU_S05", "DevToken-SU_CAVE01", "DevToken-SU_PMPSTATION01"],
                     ["GATE_OE_SU"],
                     ["SU_S05"],
-                    [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new()]));
+                    (new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new())));
 
                 // Precipice is disconnected from Shoreline
                 manualSubregions.Add(new("SL", "SLPrecipice",
                     ["Shelter-SL_S13", "DevToken-SL_BRIDGE01"],
                     ["GATE_UW_SL"],
                     ["SL_S13"],
-                    [new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)]));
+                    (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID))));
 
                 // Saint OR (Rivulet AND ((OptionUseEnergyCell AND EnergyCell) OR (Not OptionUseEnergyCell AND RegionRM)))
                 // I hate this one
@@ -1142,7 +1137,7 @@ namespace RainWorldRandomizer.Generation
                         "Shelter-MS_BITTERSHELTER", "DevToken-MS_SEWERBRIDGE", "DevToken-MS_X02", "DevToken-MS_BITTEREDGE"],
                     ["GATE_SL_MS"],
                     ["MS_S07", "MS_S10", "MS_BITTERSHELTER"],
-                    [bitterAerieAccess, new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint)]
+                    (bitterAerieAccess, new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint))
                     ));
 
                 // Only Saint can climb up to above LttM
@@ -1150,7 +1145,7 @@ namespace RainWorldRandomizer.Generation
                     ["Echo-SL", "Shelter-SL_STOP", "DevToken-SL_ROOF04", "DevToken-SL_TEMPLE", "DevToken-SL_ROOF03"],
                     ["GATE_SL_MS"],
                     ["SL_STOP"],
-                    [new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new()]
+                    (new SlugcatAccessRule(MoreSlugcatsEnums.SlugcatStatsName.Saint), new())
                     ));
 
                 // Artificer cannot traverse Sump Tunnel
@@ -1158,7 +1153,7 @@ namespace RainWorldRandomizer.Generation
                     ["Shelter-VS_S02"],
                     ["GATE_SL_VS"],
                     ["VS_S02"],
-                    [sumpTunnelRule, sumpTunnelRule]
+                    (sumpTunnelRule, sumpTunnelRule)
                     ));
 
                 // Token cache fails to filter this pearl to only Past GW
@@ -1183,7 +1178,7 @@ namespace RainWorldRandomizer.Generation
 
                 // Create a connection to Rubicon, which has no gate to it
                 manualConnections.Add(new ConnectionBlueprint("FALL_SB_HR", ["SB", "HR"],
-                    [new KarmaAccessRule(10), new(AccessRule.IMPOSSIBLE_ID)]));
+                    (new KarmaAccessRule(10), new(AccessRule.IMPOSSIBLE_ID))));
             }
             // *NOT* MSC specific rules
             else
@@ -1195,7 +1190,7 @@ namespace RainWorldRandomizer.Generation
                         "Shelter-UW_S03", "Shelter-UW_S04"],
                     ["GATE_SS_UW", "GATE_CC_UW"],
                     ["UW_S01", "UW_S03", "UW_S04"],
-                    [new(), new SlugcatAccessRule(SlugcatStats.Name.Red)]));
+                    (new(), new SlugcatAccessRule(SlugcatStats.Name.Red))));
             }
 
             // Inbuilt custom region rules

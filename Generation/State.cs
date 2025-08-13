@@ -117,7 +117,7 @@ namespace RainWorldRandomizer.Generation
         /// are not a subset of those in <paramref name="baseRegion"/>
         /// </exception>
         public RandoRegion DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations,
-            HashSet<Connection> connections, HashSet<string> shelters, AccessRule[] rules)
+            HashSet<Connection> connections, HashSet<string> shelters, (AccessRule, AccessRule) rules)
         {
             if (!locations.IsSubsetOf(baseRegion.allLocations)) throw new ArgumentException("Locations must be a subset of region locations", "locations");
             if (!connections.IsSubsetOf(baseRegion.connections)) throw new ArgumentException("Connections must be a subset of region connections", "connections");

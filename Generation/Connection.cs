@@ -2,7 +2,7 @@
 
 namespace RainWorldRandomizer.Generation
 {
-    public class Connection(string ID, RandoRegion[] regions, AccessRule[] rules) : IEquatable<Connection>
+    public class Connection(string ID, RandoRegion[] regions, (AccessRule, AccessRule) rules) : IEquatable<Connection>
     {
         /// <summary>
         /// ID of this connection. All gate connection IDs are the actual gate ID, ex: GATE_SU_DS
@@ -18,7 +18,7 @@ namespace RainWorldRandomizer.Generation
         /// Requirements for travelling this connection.
         /// Index 0 is left to right, and index 1 is right to left
         /// </summary>
-        public AccessRule[] requirements = rules;
+        public (AccessRule, AccessRule) requirements = rules;
         /// <summary>
         /// How many of <see cref="regions"/> have been marked accessible
         /// </summary>
@@ -40,7 +40,7 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Shortcut to create a connection with just one rule, repeated for both directions
         /// </summary>
-        public Connection(string ID, RandoRegion[] regions, AccessRule rule) : this(ID, regions, [rule, rule]) { }
+        public Connection(string ID, RandoRegion[] regions, AccessRule rule) : this(ID, regions, (rule, rule)) { }
 
         /// <summary>
         /// Whether this connection can possibly be traversed from a given region
@@ -51,8 +51,8 @@ namespace RainWorldRandomizer.Generation
         /// <exception cref="ArgumentException">If <paramref name="fromRegion"/> is not a part of this connection</exception>
         public bool TravelPossible(State state, RandoRegion fromRegion)
         {
-            if (fromRegion.ID == regions[0].ID) return requirements[0].IsPossible(state);
-            if (fromRegion.ID == regions[1].ID) return requirements[1].IsPossible(state);
+            if (fromRegion.ID == regions[0].ID) return requirements.Item1.IsPossible(state);
+            if (fromRegion.ID == regions[1].ID) return requirements.Item2.IsPossible(state);
             throw new ArgumentException($"Given region ({fromRegion.ID}) is not part of this connection ({ID})", "region");
         }
 
@@ -65,8 +65,8 @@ namespace RainWorldRandomizer.Generation
         /// <exception cref="ArgumentException">If <paramref name="fromRegion"/> is not a part of this connection</exception>
         public bool CanTravel(State state, RandoRegion fromRegion)
         {
-            if (fromRegion.ID == regions[0].ID) return requirements[0].IsMet(state);
-            if (fromRegion.ID == regions[1].ID) return requirements[1].IsMet(state);
+            if (fromRegion.ID == regions[0].ID) return requirements.Item1.IsMet(state);
+            if (fromRegion.ID == regions[1].ID) return requirements.Item2.IsMet(state);
             throw new ArgumentException($"Given region ({fromRegion.ID}) is not part of this connection ({ID})", "region");
         }
 
@@ -127,10 +127,10 @@ namespace RainWorldRandomizer.Generation
     /// Instructions for creating a custom connection during generation.
     /// See <see cref="Connection"/> for more details on connections
     /// </summary>
-    public struct ConnectionBlueprint(string ID, string[] regions, AccessRule[] rules)
+    public struct ConnectionBlueprint(string ID, string[] regions, (AccessRule, AccessRule) rules)
     {
         public string ID = ID;
         public string[] regions = regions;
-        public AccessRule[] rules = rules;
+        public (AccessRule, AccessRule) rules = rules;
     }
 }
