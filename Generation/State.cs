@@ -113,7 +113,7 @@ namespace RainWorldRandomizer.Generation
         /// <param name="rules">The <see cref="AccessRule"/>s of the connection from the base region to the new subregion</param>
         /// <returns>The newly created subregion</returns>
         /// <exception cref="ArgumentException">
-        /// Thrown if either the <paramref name="locations"/> or <paramref name="connections"/> 
+        /// Thrown if the <paramref name="locations"/>, <paramref name="connections"/>, or <paramref name="shelters"/>
         /// are not a subset of those in <paramref name="baseRegion"/>
         /// </exception>
         public RandoRegion DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations,
@@ -175,7 +175,6 @@ namespace RainWorldRandomizer.Generation
         public void AddGate(string gateName)
         {
             Gates.Add(gateName);
-            //UpdateGate(gateName);
             RecalculateState();
         }
 

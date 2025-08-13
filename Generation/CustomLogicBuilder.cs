@@ -185,14 +185,22 @@ namespace RainWorldRandomizer.Generation
             public List<ConnectionBlueprint> newConnections = [];
         }
 
+        /// <summary>
+        /// Defines a custom rule to be applied on top of an existing rule. In the case of multiple custom rules for the same location or connection,
+        /// The rule that was added later will be applied to the previous rule patch instead. See the + operator for more details.
+        /// </summary>
+        /// <param name="rule">The rule that will be applied on top of an existing rule. Leave as null to make this patch do nothing</param>
+        /// <param name="overlapMethod">How the rule will be added to the original</param>
         public struct RulePatch(AccessRule rule, OverlapMethod overlapMethod = OverlapMethod.Overwrite)
         {
             public AccessRule rule = rule;
             public OverlapMethod overlapMethod = overlapMethod;
 
             /// <summary>
-            /// When adding RulePatches, the left argument's rule is modified by the right argument patch.
-            /// The new RulePatch has the overlap method of the right argument.
+            /// When adding RulePatches, the left argument's rule is modified by the right argument patch, 
+            /// and the new RulePatch has the overlap method of the right argument. 
+            /// This new patch is what is later applied to the generated rule.
+            /// This can cause some strange behaviors, so it is best to avoid having multiple chaining patches present if possible.
             /// </summary>
             public static RulePatch operator +(RulePatch left, RulePatch right)
             {
