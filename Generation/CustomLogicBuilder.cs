@@ -376,13 +376,6 @@ namespace RainWorldRandomizer.Generation
 
             // --- Connections ---
 
-            // Most slugcats cannot enter OE
-            AddConnectionRule("GATE_SB_OE",
-                new RulePatch(null),
-                new RulePatch(new(AccessRule.IMPOSSIBLE_ID)),
-                SelectionMethod.Blacklist,
-                SlugcatStats.Name.White, SlugcatStats.Name.Yellow, MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
-
             // Gourmand needs the mark to enter OE
             AddConnectionRule("GATE_SB_OE",
                 new RulePatch(null),
