@@ -177,12 +177,39 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
+        /// <summary>
+        /// Blacklist a region from being a starting region
+        /// </summary>
+        /// <param name="regionID">ID of the affected region. Can be the region acronym for generated regions, 
+        /// or the given ID of custom subregions</param>
+        /// <param name="selectionMethod">Whether defined slugcats should be treated as a whitelist or a blacklist</param>
+        /// <param name="slugcats">Slugcats this will apply to. If <paramref name="selectionMethod"/> is Blacklist, will apply to every slugcat except those listed.
+        /// If none are listed, will apply to all slugcats</param>
+        public static void AddBlacklistedStart(string regionID, SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
+        {
+            foreach (var package in slugcatLogicPackages)
+            {
+                switch (selectionMethod)
+                {
+                    case SelectionMethod.Whitelist:
+                        if (!slugcats.Contains(package.Key)) continue;
+                        break;
+                    case SelectionMethod.Blacklist:
+                        if (slugcats.Contains(package.Key)) continue;
+                        break;
+                }
+
+                package.Value.blacklistedStarts.Add(regionID);
+            }
+        }
+
         public class LogicPackage
         {
             public Dictionary<string, RulePatch> locationRules = [];
             public Dictionary<string, (RulePatch, RulePatch)> connectionRules = [];
             public List<SubregionBlueprint> newSubregions = [];
             public List<ConnectionBlueprint> newConnections = [];
+            public List<string> blacklistedStarts = [];
         }
 
         /// <summary>
@@ -414,6 +441,14 @@ namespace RainWorldRandomizer.Generation
                     (new KarmaAccessRule(10), new(AccessRule.IMPOSSIBLE_ID))),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Saint);
+
+            // --- Blacklisted Starts ---
+
+            // Arty shouldn't start inside Metropolis
+            AddBlacklistedStart("LC", SelectionMethod.Whitelist, MoreSlugcatsEnums.SlugcatStatsName.Artificer);
+
+            // Any start in OE is instant ending access
+            AddBlacklistedStart("OE");
         }
     }
 }
