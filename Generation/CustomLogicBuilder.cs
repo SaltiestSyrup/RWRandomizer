@@ -237,7 +237,13 @@ namespace RainWorldRandomizer.Generation
 
         // ---- Define logic functions
 
-        public static void DefineLogicNoDLC()
+        public static void DefineLogic()
+        {
+            if (ModManager.MSC) DefineLogicMSC();
+            else DefineLogicNoDLC();
+        }
+
+        private static void DefineLogicNoDLC()
         {
             // Cannot climb SB Ravine
             AddSubregion(new SubregionBlueprint("SB", "SBRavine",
@@ -258,7 +264,7 @@ namespace RainWorldRandomizer.Generation
                 SlugcatStats.Name.White, SlugcatStats.Name.Yellow);
         }
 
-        public static void DefineLogicMSC()
+        private static void DefineLogicMSC()
         {
             // --- Locations ---
 
@@ -266,17 +272,11 @@ namespace RainWorldRandomizer.Generation
             AddLocationRule("Pearl-MS",
                 new RulePatch(new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore)));
 
-            // Artificer and Inv can't reach underwater GW token
+            // Artificer can't reach underwater GW token
             AddLocationRule("Token-BrotherLongLegs",
                 new RulePatch(new(AccessRule.IMPOSSIBLE_ID)),
                 SelectionMethod.Whitelist,
-                MoreSlugcatsEnums.SlugcatStatsName.Artificer, MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
-
-            // Inv can't reach underwater GW token
-            AddLocationRule("Token-RedLizard",
-                new RulePatch(new(AccessRule.IMPOSSIBLE_ID)),
-                SelectionMethod.Whitelist,
-                MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
+                MoreSlugcatsEnums.SlugcatStatsName.Artificer);
 
             // Waterfront Safari token is in a very silly location for Spearmaster
             AddLocationRule("Token-S-LM",
@@ -442,6 +442,8 @@ namespace RainWorldRandomizer.Generation
 
             // Any start in OE is instant ending access
             AddBlacklistedStart("OE");
+
+            InvCompat.DefineLogic();
         }
     }
 }

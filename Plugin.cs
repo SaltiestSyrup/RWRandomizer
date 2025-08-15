@@ -194,6 +194,7 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
+            InvCompat.Init();
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
@@ -223,12 +224,11 @@ namespace RainWorldRandomizer
         {
             orig();
             AccessRuleConstants.InitConstants();
-
             CustomLogicBuilder.ClearDefinedLogic();
+
             CustomLogicBuilder.InitNewSlugcats([.. Constants.CompatibleSlugcats]);
 
-            if (ModManager.MSC) CustomLogicBuilder.DefineLogicMSC();
-            else CustomLogicBuilder.DefineLogicNoDLC();
+            CustomLogicBuilder.DefineLogic();
         }
 
         public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)

@@ -13,6 +13,8 @@ namespace RainWorldRandomizer
         /// Describes which food quest items can be eaten by each slugcat. Matches order of <see cref="WinState.GourmandPassageTracker"/>
         /// </summary>
         public static readonly Dictionary<SlugcatStats.Name, bool[]> SlugcatFoodQuestAccessibility = [];
+
+        // -- Cheat sheet for food quest access definitions --
         // SlimeMold, DangleFruit, BatFly, Mushroom, BlackLizard, WaterNut, JellyFish, JetFish, GlowWeed, Salamander, Snail,
         // Hazer, EggBug, LillyPuck, YellowLizard, GrappleWorm, Neuron, Centiwing, DandelionPeach, CyanLizard, GooieDuck, RedCenti
 
@@ -175,17 +177,6 @@ namespace RainWorldRandomizer
                         false, false, false,
                         false, false, false, false, false, false, false,
                         false, false, false, false,
-                    ]},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel,
-                    [
-                        true, true, true, true, true, true, true, true, true, true, true,
-                        true, true, true, true, true, true, true, true, true, true, true,
-                        true, true, true, true,
-                        true, true, true, true, true, true, true, true,
-                        true, true, true,
-                        true, true, true,
-                        true, true, true, true, true, true, true,
-                        false, false, false, false,
                     ]}
                 });
 
@@ -195,8 +186,7 @@ namespace RainWorldRandomizer
                     { MoreSlugcatsEnums.SlugcatStatsName.Artificer, "GW_S09" },
                     { MoreSlugcatsEnums.SlugcatStatsName.Rivulet, "DS_S02l" },
                     { MoreSlugcatsEnums.SlugcatStatsName.Spear, "SU_S05" },
-                    { MoreSlugcatsEnums.SlugcatStatsName.Saint, "SI_S04" },
-                    { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, "SH_S09" },
+                    { MoreSlugcatsEnums.SlugcatStatsName.Saint, "SI_S04" }
                 });
             }
 
