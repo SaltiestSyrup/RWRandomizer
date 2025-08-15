@@ -399,14 +399,19 @@ namespace RainWorldRandomizer
         {
             ILCursor c = new(il);
 
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Red))),
-                x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Inequality"))
-                );
+            ILLabel yesEndgamesJump = c.DefineLabel();
 
-            c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldc_I4, 1);
+            // Before check if slugcat is Hunter at 0581
+            c.GotoNext(x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Red))));
+            c.GotoPrev(MoveType.AfterLabel, x => x.MatchLdarg(1));
+
+            // Unconditional jump to spawn tokens code
+            c.Emit(OpCodes.Br, yesEndgamesJump);
+
+            // Define jump position to 059C
+            c.GotoNext(x => x.MatchBrtrue(out _));
+            c.GotoNext(MoveType.After, x => x.MatchBrtrue(out _));
+            c.MarkLabel(yesEndgamesJump);
         }
 
         /// <summary>
