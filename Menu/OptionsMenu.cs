@@ -397,6 +397,11 @@ namespace RainWorldRandomizer
             OpTextBox passwordTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f);
             runningY -= NEWLINE_DECREMENT;
 
+            // Force infinite length on important information fields
+            hostNameTextBox.maxLength = int.MaxValue;
+            slotNameTextBox.maxLength = int.MaxValue;
+            passwordTextBox.maxLength = int.MaxValue;
+
             OpSimpleButton connectButton = new(new Vector2(LEFT_OPTION_X, runningY), new Vector2(60f, 20f), "Connect")
             {
                 description = "Attempt to connect to the Archipelago server"
