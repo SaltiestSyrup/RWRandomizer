@@ -248,6 +248,8 @@ namespace RainWorldRandomizer.Generation
         /// <param name="region"></param>
         public void PurgeRegion(RandoRegion region)
         {
+            if (region is null) return;
+
             foreach (Connection con in region.connections.ToList())
             {
                 con.Destroy();

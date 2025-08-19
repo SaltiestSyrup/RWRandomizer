@@ -203,6 +203,41 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
+        /// <summary>
+        /// Competely remove a region from logic
+        /// </summary>
+        /// <param name="regionID">ID of the affected region. Can be the region acronym for generated regions, 
+        /// or the given ID of custom subregions</param>
+        /// <param name="rule">Define a rule that will, if true, will remove the region. 
+        /// Rule is checked very early in generation setup, only <see cref="OptionAccessRule"/>s will work as expected</param>
+        /// <param name="selectionMethod">Whether defined slugcats should be treated as a whitelist or a blacklist</param>
+        /// <param name="slugcats">Slugcats this will apply to. If <paramref name="selectionMethod"/> is Blacklist, will apply to every slugcat except those listed.
+        /// If none are listed, will apply to all slugcats</param>
+        public static void AddBlacklistedRegion(string regionID, RulePatch rule, SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
+        {
+            foreach (var package in slugcatLogicPackages)
+            {
+                switch (selectionMethod)
+                {
+                    case SelectionMethod.Whitelist:
+                        if (!slugcats.Contains(package.Key)) continue;
+                        break;
+                    case SelectionMethod.Blacklist:
+                        if (slugcats.Contains(package.Key)) continue;
+                        break;
+                }
+
+                if (package.Value.blacklistedRegions.ContainsKey(regionID))
+                {
+                    package.Value.blacklistedRegions[regionID] += rule;
+                }
+                else
+                {
+                    package.Value.blacklistedRegions[regionID] = rule;
+                }
+            }
+        }
+
         public class LogicPackage
         {
             public Dictionary<string, RulePatch> locationRules = [];
@@ -210,6 +245,7 @@ namespace RainWorldRandomizer.Generation
             public List<SubregionBlueprint> newSubregions = [];
             public List<ConnectionBlueprint> newConnections = [];
             public List<string> blacklistedStarts = [];
+            public Dictionary<string, RulePatch> blacklistedRegions = [];
         }
 
         /// <summary>
@@ -338,7 +374,7 @@ namespace RainWorldRandomizer.Generation
 
             // For Rivulet, it's a bit more complicated.
             // If randomized energy cell, require the randomized item. Else, require access to The Rot
-            bitterAerie.rules = (new(AccessRule.IMPOSSIBLE_ID),
+            bitterAerie.rules = (
                 new CompoundAccessRule(
                 [
                     new CompoundAccessRule(
@@ -351,7 +387,8 @@ namespace RainWorldRandomizer.Generation
                         new OptionAccessRule("UseEnergyCell", true),
                         new RegionAccessRule("RM")
                     ], CompoundAccessRule.CompoundOperation.All),
-                ], CompoundAccessRule.CompoundOperation.Any));
+                ], CompoundAccessRule.CompoundOperation.Any),
+                new(AccessRule.IMPOSSIBLE_ID));
             AddSubregion(bitterAerie,
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
@@ -442,6 +479,14 @@ namespace RainWorldRandomizer.Generation
 
             // Any start in OE is instant ending access
             AddBlacklistedStart("OE");
+
+            // --- Blacklisted Regions ---
+
+            // Remove Submerged unless option is enabled
+            AddBlacklistedRegion("MS",
+                new RulePatch(new OptionAccessRule("ForceOpenSubmerged", true)),
+                SelectionMethod.Blacklist,
+                MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
 
             InvCompat.DefineLogic();
         }
