@@ -35,6 +35,7 @@ namespace RainWorldRandomizer
         // MSC
         internal static Configurable<bool> allowMetroForOthers;
         internal static Configurable<bool> allowSubmergedForOthers;
+        internal static Configurable<bool> allowExteriorForInv;
         internal static Configurable<string> useFoodQuestChecks;
         internal static Configurable<bool> useExpandedFoodQuestChecks;
         internal static Configurable<bool> useEnergyCell;
@@ -108,6 +109,8 @@ namespace RainWorldRandomizer
 
         public static bool ForceOpenSubmerged => allowSubmergedForOthers.Value
             && Plugin.RandoManager is not ManagerArchipelago;
+
+        public static bool AllowExteriorForInv => allowExteriorForInv.Value;
 
         public static bool UseFoodQuest
         {
