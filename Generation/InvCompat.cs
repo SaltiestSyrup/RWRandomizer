@@ -63,6 +63,12 @@ namespace RainWorldRandomizer.Generation
                     (new(AccessRule.IMPOSSIBLE_ID), new())),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
+
+            // Blacklist The Exterior altogether if allow setting not checked
+            AddBlacklistedRegion("UW",
+                new RulePatch(new OptionAccessRule("AllowExteriorForInv", true)),
+                SelectionMethod.Whitelist,
+                MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
         }
     }
 }

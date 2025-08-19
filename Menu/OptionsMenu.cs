@@ -128,6 +128,10 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
                     ["Open Submerged Superstructure"]));
 
+            RandoOptions.allowExteriorForInv = config.Bind<bool>("allowExteriorForInv", false, 
+                new ConfigurableInfo("By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty", null, "",
+                    ["Open Exterior for Inv"]));
+
             RandoOptions.useFoodQuestChecks = config.Bind<string>("useFoodQuestChecks", "Disabled",
                 new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check. Other slugcats will only consider the foods they can eat", null, "",
                     ["Use Food quest checks"]));
@@ -350,6 +354,8 @@ namespace RainWorldRandomizer
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowMetroForOthers, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            unlockRegionsGroup.AddCheckBox(RandoOptions.allowExteriorForInv, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT * 3.5f;
 
             // Check types

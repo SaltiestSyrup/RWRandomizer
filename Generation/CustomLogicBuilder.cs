@@ -204,7 +204,7 @@ namespace RainWorldRandomizer.Generation
         }
 
         /// <summary>
-        /// Competely remove a region from logic
+        /// Competely remove a region from logic. Happens before any subregions are created.
         /// </summary>
         /// <param name="regionID">ID of the affected region. Can be the region acronym for generated regions, 
         /// or the given ID of custom subregions</param>
