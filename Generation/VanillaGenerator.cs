@@ -140,8 +140,13 @@ namespace RainWorldRandomizer.Generation
             List<string> slugcatRegions = [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
             // Add Metropolis to region list if option set
             if (ModManager.MSC && RandoOptions.ForceOpenMetropolis) slugcatRegions.Add("LC");
-            // Remove Submerged Superstructure from list if not desired
-            if (ModManager.MSC && !RandoOptions.ForceOpenSubmerged && slugcat != MoreSlugcatsEnums.SlugcatStatsName.Rivulet) slugcatRegions.Remove("MS");
+            // Remove regions from logic
+            foreach (var region in CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedRegions)
+            {
+                if (region.Value.rule?.IsPossible(state) is false or null) continue;
+                slugcatRegions.Remove(region.Key);
+                generationLog.AppendLine($"Removed region {region.Key}");
+            }
 
             foreach (string regionShort in Region.GetFullRegionOrder())
             {
@@ -616,7 +621,6 @@ namespace RainWorldRandomizer.Generation
                     generationLog.AppendLine($"Removed impossible location: {loc.ID}");
                 }
             }
-
 
             // Log all logic
             if (logVerbose)
