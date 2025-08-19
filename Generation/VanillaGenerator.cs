@@ -1,4 +1,3 @@
-using MonoMod.Utils;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
@@ -7,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using UnityEngine;
 using Random = System.Random;
 
 namespace RainWorldRandomizer.Generation
@@ -143,7 +141,7 @@ namespace RainWorldRandomizer.Generation
             // Remove regions from logic
             foreach (var region in CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedRegions)
             {
-                if (region.Value.rule?.IsPossible(state) is false or null) continue;
+                if (region.Value.Collapse()?.IsPossible(state) is false or null) continue;
                 slugcatRegions.Remove(region.Key);
                 generationLog.AppendLine($"Removed region {region.Key}");
             }
@@ -477,8 +475,8 @@ namespace RainWorldRandomizer.Generation
                     continue;
                 }
 
-                loc.accessRule = CustomLogicBuilder.CombineRules(loc.accessRule, rule.Value);
-                generationLog.AppendLine($"Applied custom rule to location \"{rule.Key}\" with overlap method \"{rule.Value.overlapMethod}\"");
+                rule.Value.Apply(ref loc.accessRule);
+                generationLog.AppendLine($"Applied custom rule to location \"{rule.Key}\"");
             }
 
             // Create Subregions
@@ -527,9 +525,9 @@ namespace RainWorldRandomizer.Generation
                     continue;
                 }
 
-                connection.requirements = (CustomLogicBuilder.CombineRules(connection.requirements.Item1, rule.Value.Item1),
-                    CustomLogicBuilder.CombineRules(connection.requirements.Item2, rule.Value.Item2));
-                generationLog.AppendLine($"Applied custom rule to connection \"{rule.Key}\" with overlap methods \"{rule.Value.Item1.overlapMethod}\" and \"{rule.Value.Item2.overlapMethod}\"");
+                rule.Value.Item1.Apply(ref connection.requirements.Item1);
+                rule.Value.Item2.Apply(ref connection.requirements.Item2);
+                generationLog.AppendLine($"Applied custom rule to connection \"{rule.Key}\"");
             }
         }
 
@@ -559,10 +557,10 @@ namespace RainWorldRandomizer.Generation
             {
                 // From state, find a random region that has at least one location, one shelter, and one connection that the player could leave with.
                 // Additionally filter out regions manually set to not be start regions
-                List<RandoRegion> contenderRegions = [.. state.AllRegions.Where(r => 
-                    r.allLocations.Count > 0 
-                    && r.shelters.Count > 0 
-                    && r.connections.Count > 0 
+                List<RandoRegion> contenderRegions = [.. state.AllRegions.Where(r =>
+                    r.allLocations.Count > 0
+                    && r.shelters.Count > 0
+                    && r.connections.Count > 0
                     && r.connections.All(c => c.TravelPossible(state, r))
                     && !CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedStarts.Contains(r.ID))];
                 RandoRegion chosenRegion = contenderRegions[randomState.Next(0, contenderRegions.Count)];

@@ -1,6 +1,7 @@
 ﻿using MoreSlugcats;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Permissions;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -22,24 +23,6 @@ namespace RainWorldRandomizer.Generation
             AndPrevious,
             /// <summary>Combine old rule and this one with an OR condition</summary>
             OrPrevious
-        }
-
-        /// <summary>
-        /// Add a <see cref="RulePatch"/> on top of an existing rule
-        /// </summary>
-        /// <param name="origRule">The originally defined rule</param>
-        /// <param name="newRule">The new rule to apply on top</param>
-        /// <returns>The result of the rule combination</returns>
-        public static AccessRule CombineRules(AccessRule origRule, RulePatch newRule)
-        {
-            // Null rules tell combine to not change anything
-            if (newRule.rule is null) return origRule;
-            return newRule.overlapMethod switch
-            {
-                OverlapMethod.AndPrevious => new CompoundAccessRule([origRule, newRule.rule], CompoundAccessRule.CompoundOperation.All),
-                OverlapMethod.OrPrevious => new CompoundAccessRule([origRule, newRule.rule], CompoundAccessRule.CompoundOperation.Any),
-                _ => newRule.rule,
-            };
         }
 
         /// <summary>
@@ -250,24 +233,79 @@ namespace RainWorldRandomizer.Generation
 
         /// <summary>
         /// Defines a custom rule to be applied on top of an existing rule. In the case of multiple custom rules for the same location or connection,
-        /// The rule that was added later will be applied to the previous rule patch instead. See the + operator for more details.
+        /// The rules will be applied in sequence.
         /// </summary>
-        /// <param name="rule">The rule that will be applied on top of an existing rule. Leave as null to make this patch do nothing</param>
-        /// <param name="overlapMethod">How the rule will be added to the original</param>
-        public struct RulePatch(AccessRule rule, OverlapMethod overlapMethod = OverlapMethod.Overwrite)
+        public class RulePatch
         {
-            public AccessRule rule = rule;
-            public OverlapMethod overlapMethod = overlapMethod;
+            private List<AccessRule> rules;
+            private List<OverlapMethod> overlapMethods;
 
             /// <summary>
-            /// When adding RulePatches, the left argument's rule is modified by the right argument patch, 
-            /// and the new RulePatch has the overlap method of the right argument. 
-            /// This new patch is what is later applied to the generated rule.
-            /// This can cause some strange behaviors, so it is best to avoid having multiple chaining patches present if possible.
+            /// Create a single rule to apply over the original
+            /// </summary>
+            /// <param name="rule">The rule that will be applied on top of an existing rule. Leave as null to make this patch do nothing</param>
+            /// <param name="overlapMethod">How the rule will be added to the original</param>
+            public RulePatch(AccessRule rule, OverlapMethod overlapMethod = OverlapMethod.Overwrite) : this([rule], [overlapMethod]) { }
+
+            /// <summary>
+            /// Create with multiple patches defined
+            /// </summary>
+            public RulePatch(List<AccessRule> rules, List<OverlapMethod> overlapMethods)
+            {
+                this.rules = rules;
+                this.overlapMethods = overlapMethods;
+            }
+
+            /// <summary>
+            /// Modify an <see cref="AccessRule"/> with this patch. If there are multiple rules in this patch, 
+            /// they will be applied sequentially in the order they were added.
+            /// </summary>
+            /// <param name="baseRule">The rule to be patched</param>
+            public void Apply(ref AccessRule baseRule)
+            {
+                for (int i = 0; i < rules.Count; i++)
+                {
+                    if (rules[i] is null) continue;
+
+                    baseRule = overlapMethods[i] switch
+                    {
+                        OverlapMethod.AndPrevious => new CompoundAccessRule([baseRule, rules[i]], CompoundAccessRule.CompoundOperation.All),
+                        OverlapMethod.OrPrevious => new CompoundAccessRule([baseRule, rules[i]], CompoundAccessRule.CompoundOperation.Any),
+                        _ => rules[i]
+                    };
+                }
+            }
+
+            /// <summary>
+            /// Applies any extra rules to the first rule and returns it. 
+            /// If there is only one rule present, it is returned unchanged.
+            /// </summary>
+            public AccessRule Collapse()
+            {
+                if (rules.Count == 0) return null;
+                if (rules.Count == 1) return rules[0];
+
+                for (int i = 1; i < rules.Count; i++)
+                {
+                    if (rules[i] is null) continue;
+
+                    rules[0] = overlapMethods[i] switch
+                    {
+                        OverlapMethod.AndPrevious => new CompoundAccessRule([rules[0], rules[i]], CompoundAccessRule.CompoundOperation.All),
+                        OverlapMethod.OrPrevious => new CompoundAccessRule([rules[0], rules[i]], CompoundAccessRule.CompoundOperation.Any),
+                        _ => rules[i]
+                    };
+                }
+                return rules[0];
+            }
+
+            /// <summary>
+            /// When adding RulePatches together, they are stored as a list of patches that are
+            /// applied sequentially. The left argument will apply first, then the right argument.
             /// </summary>
             public static RulePatch operator +(RulePatch left, RulePatch right)
             {
-                return new(CombineRules(left.rule, right), right.overlapMethod);
+                return new([.. left.rules, .. right.rules], [.. left.overlapMethods, .. right.overlapMethods]);
             }
         }
 
