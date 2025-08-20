@@ -25,6 +25,8 @@ namespace RainWorldRandomizer
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new();
         public static ManagerBase RandoManager = null;
+        private static List<LogicAddon> logicAddons = [];
+
         public CollectTokenHandler collectTokenHandler;
 
         private OptionsMenu options;
@@ -194,7 +196,6 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
-            InvCompat.Init();
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
@@ -206,6 +207,9 @@ namespace RainWorldRandomizer
             {
                 RegionNamesMap.Add(regionShort, Region.GetRegionFullName(regionShort, null));
             }
+
+            // Don't even need to save this, it's stored in the addon list
+            new InvCompat();
         }
 
         /// <summary>
@@ -228,7 +232,9 @@ namespace RainWorldRandomizer
 
             CustomLogicBuilder.InitNewSlugcats([.. Constants.CompatibleSlugcats]);
 
+            // Make the logic time
             CustomLogicBuilder.DefineLogic();
+            foreach (LogicAddon addon in logicAddons) addon.DefineLogic();
         }
 
         public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
@@ -242,6 +248,8 @@ namespace RainWorldRandomizer
             orig(self);
             Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
         }
+
+        public static void AddLogicAddon(LogicAddon addon) => logicAddons.Add(addon);
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom, int data = 0)
         {

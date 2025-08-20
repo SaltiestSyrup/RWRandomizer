@@ -107,6 +107,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Generation\Connection.cs" />
     <Compile Include="Generation\CustomLogicBuilder.cs" />
+    <Compile Include="Generation\LogicAddon.cs" />
     <Compile Include="Generation\InvCompat.cs" />
     <Compile Include="Generation\RandoRegion.cs" />
     <Compile Include="Hooks\FlowerCheckHandler.cs" />

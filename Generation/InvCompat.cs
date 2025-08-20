@@ -6,13 +6,9 @@ namespace RainWorldRandomizer.Generation
     /// <summary>
     /// Test and demonstration for adding randomizer logic through another class or mod
     /// </summary>
-    public static class InvCompat
+    public class InvCompat : LogicAddon
     {
-        /// <summary>
-        /// Call this after <see cref="Constants.InitializeConstants"/> and before <see cref="StaticWorld.InitStaticWorld"/>.
-        /// Easiest is just to do this in <see cref="RainWorld.PostModsInit"/>
-        /// </summary>
-        public static void Init()
+        public InvCompat()
         {
             // Most importantly, mark the slugcat as playable
             Constants.CompatibleSlugcats.Add(MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
@@ -30,15 +26,15 @@ namespace RainWorldRandomizer.Generation
                 false, false, false, false,
             ];
 
-            // Define the default starting room and region, for when start is not randomized
+            // Define a default starting shelter and region, for when start is not randomized
             Constants.SlugcatDefaultStartingDen[MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel] = "SH_S09";
             Constants.SlugcatStartingRegion[MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel] = "SH";
         }
 
-        /// <summary>
-        /// Call this in a hook to <see cref="CustomLogicBuilder.DefineLogic"/>
-        /// </summary>
-        public static void DefineLogic()
+        // Logic is written after the base randomizer and other mods behind in load order write their logic.
+        // If rules are written that have been defined previously, the rule defined here will apply to the resulting
+        // rule from applying previous logic definitions
+        public override void DefineLogic()
         {
             // Inv can't reach under-cheese GW tokens
             AddLocationRule("Token-BrotherLongLegs",

@@ -525,8 +525,6 @@ namespace RainWorldRandomizer.Generation
                 new RulePatch(new OptionAccessRule("ForceOpenSubmerged", true)),
                 SelectionMethod.Blacklist,
                 MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
-
-            InvCompat.DefineLogic();
         }
     }
 }
