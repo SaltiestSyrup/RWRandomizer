@@ -7,7 +7,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net.WebSockets;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -36,16 +35,15 @@ namespace RainWorldRandomizer
 
         public static bool Authenticated = false;
         public static bool CurrentlyConnecting = false;
-        //public static bool IsConnected = false;
         public static bool ReceivedSlotData = false;
         public static bool DataPackageReady = false;
+        public static bool SocketConnected => Session?.Socket.Connected is true;
 
         // Ported settings from slot data
         public static bool IsMSC;
         public static bool IsWatcher;
         public static SlugcatStats.Name Slugcat;
         public static bool useRandomStart;
-        //public static string desiredStartRegion;
         public static string desiredStartDen = "";
         public static CompletionCondition completionCondition;
         public static Plugin.GateBehavior gateBehavior;
@@ -60,6 +58,7 @@ namespace RainWorldRandomizer
         public static bool devTokenChecks;
 
         public static ArchipelagoSession Session;
+        public static Queue<ReceivedItemsPacket> waitingItemPackets = [];
 
         public static long lastItemIndex = 0;
         public static string playerName;
@@ -125,16 +124,9 @@ namespace RainWorldRandomizer
             }
 
             CurrentlyConnecting = true;
-
-            // Create a new manager instance if there isn't one
-            if (Plugin.RandoManager is null or not ManagerArchipelago)
-            {
-                Plugin.RandoManager = new ManagerArchipelago();
-                (Plugin.RandoManager as ManagerArchipelago).Init();
-            }
             playerName = slotName;
 
-            Session.Socket.PacketReceived += PacketListener;
+            Session.Socket.PacketReceived += PacketReceived;
             Session.MessageLog.OnMessageReceived += MessageReceived;
             Session.Socket.ErrorReceived += ErrorReceived;
             DeathLinkHandler.Init(Session);
@@ -170,7 +162,6 @@ namespace RainWorldRandomizer
                 }
 
                 Plugin.Log.LogError(errorMessage);
-                Plugin.RandoManager = null;
                 playerName = "";
                 Authenticated = false;
                 CurrentlyConnecting = false;
@@ -219,8 +210,6 @@ namespace RainWorldRandomizer
             }
 
             generationSeed = Session.RoomState.Seed;
-            InitializePlayer();
-
             Authenticated = true;
             CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
@@ -236,7 +225,7 @@ namespace RainWorldRandomizer
             if (Session is null) return false;
 
             Plugin.Log.LogInfo("Disconnecting from server...");
-            Session.Socket.PacketReceived -= PacketListener;
+            Session.Socket.PacketReceived -= PacketReceived;
             Session.MessageLog.OnMessageReceived -= MessageReceived;
             Session.Socket.ErrorReceived -= ErrorReceived;
             Session.Socket.DisconnectAsync();
@@ -245,13 +234,13 @@ namespace RainWorldRandomizer
             CurrentlyConnecting = false;
             ReceivedSlotData = false;
 
-            if (resetManager) Plugin.RandoManager = null; //(Plugin.RandoManager as ManagerArchipelago).Reset();
+            if (resetManager) Plugin.RandoManager = null;
 
             return true;
         }
 
         // Catch-all packet listener
-        public static void PacketListener(ArchipelagoPacketBase packet)
+        public static void PacketReceived(ArchipelagoPacketBase packet)
         {
             try
             {
@@ -263,7 +252,8 @@ namespace RainWorldRandomizer
 
                 if (packet is ReceivedItemsPacket itemPacket)
                 {
-                    _ = HandleItemsPacket(itemPacket);
+                    // Queue up item packets to be processed during the game loop
+                    waitingItemPackets.Enqueue(itemPacket);
                     return;
                 }
                 /*
@@ -278,45 +268,6 @@ namespace RainWorldRandomizer
             {
                 // Log exceptions manually, will not be done for us in events from AP
                 Plugin.Log.LogError("Encountered Exception in a packet handler");
-                Plugin.Log.LogError(e);
-                Debug.LogException(e);
-            }
-        }
-
-        private static async Task HandleItemsPacket(ReceivedItemsPacket packet)
-        {
-            try
-            {
-                Plugin.Log.LogInfo($"Received items packet. Index: {packet.Index} | Last index: {lastItemIndex} | Item count: {packet.Items.Length}");
-
-                // Wait until session fully connected before receiving any items
-                while (CurrentlyConnecting) { await Task.Delay(50); }
-                if (!Authenticated) return;
-
-                // This is a fresh inventory, initialize it
-                if (packet.Index == 0)
-                {
-                    ConstructNewInventory(packet, lastItemIndex);
-                }
-                // Items are out of sync, start a resync
-                else if (packet.Index != lastItemIndex)
-                {
-                    // Sync
-                    Plugin.Log.LogDebug("Item index out of sync");
-                }
-                else
-                {
-                    for (long i = 0; i < packet.Items.Length; i++)
-                    {
-                        (Plugin.RandoManager as ManagerArchipelago).AquireItem(Session.Items.GetItemName(packet.Items[i].Item));
-                    }
-                }
-
-                lastItemIndex = packet.Index + packet.Items.Length;
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Encountered Exception handling a ReceivedItemsPacket");
                 Plugin.Log.LogError(e);
                 Debug.LogException(e);
             }
@@ -430,48 +381,9 @@ namespace RainWorldRandomizer
             return SlotDataResult.Success;
         }
 
-        private static void InitializePlayer()
-        {
-            string saveId = $"{generationSeed}_{playerName}";
-
-            try
-            {
-                if (SaveManager.IsThereAnAPSave(saveId))
-                {
-                    (Plugin.RandoManager as ManagerArchipelago).LoadSave(saveId);
-                    return;
-                }
-
-                (Plugin.RandoManager as ManagerArchipelago).CreateNewSave(saveId);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
-        }
-
-        private static void ConstructNewInventory(ReceivedItemsPacket newInventory, long currentIndex)
-        {
-            List<string> oldItems = [];
-
-            for (int i = 0; i < currentIndex && i < newInventory.Items.Length; i++)
-            {
-                oldItems.Add(Session.Items.GetItemName(newInventory.Items[i].Item));
-            }
-
-            // Add all the items before index as an old inventory
-            (Plugin.RandoManager as ManagerArchipelago).InitNewInventory(oldItems);
-
-            // Add the rest as new items
-            for (long i = currentIndex; i < newInventory.Items.Length; i++)
-            {
-                (Plugin.RandoManager as ManagerArchipelago).AquireItem(Session.Items.GetItemName(newInventory.Items[i].Item));
-            }
-        }
-
         public static void TrySendCurrentRoomPacket(string info)
         {
-            if (Session?.Socket.Connected is null or false) return;
+            if (!SocketConnected) return;
             string dataKey = $"RW_{playerName}_room";
 
             // Send a bounce packet

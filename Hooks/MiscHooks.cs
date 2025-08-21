@@ -4,7 +4,6 @@ using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -182,7 +181,7 @@ namespace RainWorldRandomizer
             ILCursor c1 = new(il);
 
             // Check slugcat unlocked at 0362
-            c1.GotoNext(MoveType.After, 
+            c1.GotoNext(MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.SlugcatUnlocked)))
                 );
             c1.Emit(OpCodes.Ldarg_0);
@@ -192,9 +191,8 @@ namespace RainWorldRandomizer
             {
                 if (!RandoOptions.archipelago.Value) return orig;
 
-                return Plugin.RandoManager is ManagerArchipelago manager
-                    && manager.locationsLoaded
-                    && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex);
+                return ArchipelagoConnection.SocketConnected
+                    && ArchipelagoConnection.Slugcat == self.colorFromIndex(self.slugcatPageIndex);
             }
         }
 
