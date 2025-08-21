@@ -61,7 +61,10 @@ namespace RainWorldRandomizer
             if (ID == ProcessManager.ProcessID.Game
                 && (Plugin.RandoManager is null || !Plugin.RandoManager.isRandomizerActive))
             {
-                // If we don't have a manager yet, create one
+                // If AP is connected, use AP manager
+                if (ArchipelagoConnection.SocketConnected) Plugin.RandoManager = new ManagerArchipelago();
+
+                // Default to vanilla manager
                 Plugin.RandoManager ??= new ManagerVanilla();
 
                 if (self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat is null)
@@ -291,6 +294,9 @@ namespace RainWorldRandomizer
 
             // Active only
             if (!Plugin.RandoManager.isRandomizerActive) return;
+
+            // Read and apply a single queued item packet every frame
+            if (Plugin.RandoManager is ManagerArchipelago APManager) APManager.TryAquireNextItemPacket();
 
             // Applying glow effect if unlock has been given
             for (int i = 0; i < self.Players.Count; i++)
