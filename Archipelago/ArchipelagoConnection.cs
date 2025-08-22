@@ -234,7 +234,11 @@ namespace RainWorldRandomizer
             CurrentlyConnecting = false;
             ReceivedSlotData = false;
 
-            if (resetManager) Plugin.RandoManager = null;
+            if (resetManager) 
+            { 
+                Plugin.RandoManager = null;
+                waitingItemPackets.Clear();
+            }
 
             return true;
         }

@@ -176,7 +176,6 @@ namespace RainWorldRandomizer
             }
             else if (itemPacket.Index > ArchipelagoConnection.lastItemIndex)
             {
-                // Much more common, this will hit if item packets are lost in transit
                 Plugin.Log.LogWarning($"New item index is greater than last index. Missed an item?");
                 return;
             }
@@ -201,8 +200,6 @@ namespace RainWorldRandomizer
         /// <param name="isNew">If false, if the item is a consumable it will be ignored</param>
         public void AquireItem(string item, bool isNew)
         {
-            Plugin.Log.LogDebug($"Get item {item}. isNew is {isNew}");
-
             if (item.StartsWith("GATE_"))
             {
                 if (!gatesStatus.ContainsKey(item))
