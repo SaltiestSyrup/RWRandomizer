@@ -468,7 +468,7 @@ namespace RainWorldRandomizer
             {
                 bool APDisabled = !APCheckBox.GetValueBool();
                 // Disconnect connection when AP is turned off
-                if (APDisabled && ArchipelagoConnection.Authenticated)
+                if (APDisabled && ArchipelagoConnection.HasConnected)
                 {
                     ArchipelagoConnection.Disconnect();
                     slotDataLabelLeft.text = "";
@@ -495,7 +495,7 @@ namespace RainWorldRandomizer
                     slotNameTextBox.value,
                     passwordTextBox.value == "" ? null : passwordTextBox.value);
 
-                if (!ArchipelagoConnection.Authenticated) return;
+                if (!ArchipelagoConnection.HasConnected) return;
 
                 deathLinkOverrideCheckbox.SetValueBool(DeathLinkHandler.Active);
 

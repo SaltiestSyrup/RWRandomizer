@@ -33,10 +33,9 @@ namespace RainWorldRandomizer
             "checks_foodquest_accessibility",
         ];
 
-        public static bool Authenticated = false;
+        public static bool HasConnected = false;
         public static bool CurrentlyConnecting = false;
         public static bool ReceivedSlotData = false;
-        public static bool DataPackageReady = false;
         public static bool SocketConnected => Session?.Socket.Connected is true;
 
         // Ported settings from slot data
@@ -111,7 +110,7 @@ namespace RainWorldRandomizer
 
         public static string Connect(string hostName, int port, string slotName, string password = null)
         {
-            if (Authenticated) return "Already connected to server";
+            if (HasConnected) return "Already connected to server";
 
             try
             {
@@ -163,7 +162,7 @@ namespace RainWorldRandomizer
 
                 Plugin.Log.LogError(errorMessage);
                 playerName = "";
-                Authenticated = false;
+                HasConnected = false;
                 CurrentlyConnecting = false;
                 return errorMessage;
             }
@@ -210,7 +209,7 @@ namespace RainWorldRandomizer
             }
 
             generationSeed = Session.RoomState.Seed;
-            Authenticated = true;
+            HasConnected = true;
             CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
@@ -230,7 +229,7 @@ namespace RainWorldRandomizer
             Session.Socket.ErrorReceived -= ErrorReceived;
             Session.Socket.DisconnectAsync();
             Session = null;
-            Authenticated = false;
+            HasConnected = false;
             CurrentlyConnecting = false;
             ReceivedSlotData = false;
 

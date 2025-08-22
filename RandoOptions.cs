@@ -58,44 +58,44 @@ namespace RainWorldRandomizer
         public static int SetSeed => UseSetSeed ? seed.Value : 0;
 
         public static bool UseSandboxTokenChecks => useSandboxTokenChecks.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
 
         public static bool UsePearlChecks => usePearlChecks.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
 
         public static bool UseEchoChecks => useEchoChecks.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
 
         public static bool UsePassageChecks => usePassageChecks.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
 
         public static bool UseSpecialChecks => useSpecialChecks.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
 
-        public static bool UseShelterChecks => Plugin.RandoManager is ManagerArchipelago
+        public static bool UseShelterChecks => archipelago.Value
             ? ArchipelagoConnection.sheltersanity : useShelterChecks.Value;
 
-        public static bool UseDevTokenChecks => Plugin.RandoManager is ManagerArchipelago
+        public static bool UseDevTokenChecks => archipelago.Value
             ? ArchipelagoConnection.devTokenChecks : useDevTokenChecks.Value;
 
-        public static bool UseKarmaFlowerChecks => Plugin.RandoManager is ManagerArchipelago
+        public static bool UseKarmaFlowerChecks => archipelago.Value
             ? ArchipelagoConnection.flowersanity : useKarmaFlowerChecks.Value;
 
         public static bool ItemShelterDelivery => itemShelterDelivery.Value
             || (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear);
 
         public static bool GivePassageItems => givePassageUnlocks.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
 
         public static float HunterCycleIncreaseDensity => hunterCyclesDensity.Value;
 
         public static float TrapsDensity => trapsDensity.Value;
 
-        public static bool RandomizeSpawnLocation => Plugin.RandoManager is ManagerArchipelago
+        public static bool RandomizeSpawnLocation => archipelago.Value
             ? ArchipelagoConnection.useRandomStart : randomizeSpawnLocation.Value;
 
         public static bool StartMinimumKarma => startMinKarma.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
 
         public static int ExtraKarmaIncreases => extraKarmaIncreases.Value;
 
@@ -116,7 +116,7 @@ namespace RainWorldRandomizer
         {
             get
             {
-                if (Plugin.RandoManager is ManagerArchipelago)
+                if (archipelago.Value)
                 {
                     return ArchipelagoConnection.foodQuest != ArchipelagoConnection.FoodQuestBehavior.Disabled;
                 }
@@ -132,13 +132,13 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static bool UseExpandedFoodQuest => Plugin.RandoManager is ManagerArchipelago
+        public static bool UseExpandedFoodQuest => archipelago.Value
             ? ArchipelagoConnection.foodQuest == ArchipelagoConnection.FoodQuestBehavior.Expanded : useExpandedFoodQuestChecks.Value;
 
         public static bool UseEnergyCell => useEnergyCell.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
 
         public static bool UseSMBroadcasts => useSMTokens.Value
-            || Plugin.RandoManager is ManagerArchipelago;
+            || archipelago.Value;
     }
 }
