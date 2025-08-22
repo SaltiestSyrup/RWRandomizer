@@ -14,6 +14,7 @@ namespace RainWorldRandomizer
     {
         public static void ApplyHooks()
         {
+            On.Menu.MainMenu.ExitButtonPressed += OnMainMenuExitButtonPressed;
             On.RegionGate.customKarmaGateRequirements += OnGateRequirements;
             On.PlayerProgression.ReloadLocksList += OnReloadLocksList;
             On.SaveState.setDenPosition += OnSetDenPosition;
@@ -73,6 +74,7 @@ namespace RainWorldRandomizer
 
         public static void RemoveHooks()
         {
+            On.Menu.MainMenu.ExitButtonPressed -= OnMainMenuExitButtonPressed;
             On.RegionGate.customKarmaGateRequirements -= OnGateRequirements;
             On.PlayerProgression.ReloadLocksList -= OnReloadLocksList;
             On.SaveState.setDenPosition -= OnSetDenPosition;
@@ -112,6 +114,26 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldstr, "RANDOMIZER");
+        }
+
+        /// <summary>
+        /// Cleanly disconnect any active AP connection before quitting application
+        /// </summary>
+        private static void OnMainMenuExitButtonPressed(On.Menu.MainMenu.orig_ExitButtonPressed orig, MainMenu self)
+        {
+            if (!ArchipelagoConnection.SocketConnected)
+            {
+                orig(self);
+                return;
+            }
+
+            ArchipelagoConnection.Session.Socket.SocketClosed += QuitAfterDisconnect;
+            ArchipelagoConnection.Disconnect();
+
+            void QuitAfterDisconnect(string reason)
+            {
+                orig(self);
+            }
         }
 
         /// <summary>
