@@ -318,17 +318,22 @@ namespace RainWorldRandomizer
 
             locationsStatus[location] = true;
 
-            // We still gave the location, but we're offline so it can't be sent yet
-            if (!ArchipelagoConnection.SocketConnected)
-            {
-                Plugin.Log.LogInfo($"Found location while offline: {location}");
-                return true;
-            }
-
             if (!LocationToID.TryGetValue(location, out long locID))
             {
                 Plugin.Log.LogError($"Failed to find ID for location: {location}");
             }
+
+            // We still gave the location, but we're offline so it can't be sent yet
+            if (!ArchipelagoConnection.SocketConnected)
+            {
+                Plugin.Log.LogInfo($"Found location while offline: {location}");
+                string logName = ArchipelagoConnection.Session?.Locations.GetLocationNameFromId(locID) ?? location;
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                    $"{logName} was found but not sent, as client is disconnected. Reconnect to send found locations.",
+                    UnityEngine.Color.yellow));
+                return true;
+            }
+
             ArchipelagoConnection.Session.Locations.CompleteLocationChecks(locID);
             Plugin.Log.LogInfo($"Found location: {location}!");
 
