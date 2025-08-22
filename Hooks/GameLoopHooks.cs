@@ -80,6 +80,9 @@ namespace RainWorldRandomizer
                     {
                         Plugin.RandoManager.StartNewGameSession(self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat,
                             self.menuSetup.startGameCondition != ProcessManager.MenuSetup.StoryGameInitCondition.New);
+
+                        // Have AP manager grab the first item packet (the one with the full inventory) right away
+                        if (Plugin.RandoManager is ManagerArchipelago managerAP) managerAP.TryAquireNextItemPacket();
                     }
                     catch (Exception e)
                     {
