@@ -209,7 +209,7 @@ namespace RainWorldRandomizer
             }
 
             // Don't even need to save this, it's stored in the addon list
-            new InvCompat();
+            if (ModManager.MSC) new InvCompat();
         }
 
         /// <summary>
