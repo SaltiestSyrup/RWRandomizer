@@ -401,6 +401,14 @@ namespace RainWorldRandomizer
             //Plugin.Log.LogDebug($"Sent packet for room {info}");
         }
 
+        public static void SendSyncPacket()
+        {
+            if (!SocketConnected) return;
+
+            Plugin.Log.LogInfo("Sending sync packet...");
+            Session.Socket.SendPacketAsync(new SyncPacket());
+        }
+
         private static void MessageReceived(LogMessage message)
         {
             Plugin.Log.LogInfo($"[Server Message] {message}");

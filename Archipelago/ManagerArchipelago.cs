@@ -8,7 +8,6 @@ namespace RainWorldRandomizer
 {
     public class ManagerArchipelago : ManagerBase
     {
-        public bool isNewGame = true;
         public bool locationsLoaded = false;
         public bool gameCompleted = false;
 
@@ -54,6 +53,12 @@ namespace RainWorldRandomizer
                 else CreateNewSave(saveId);
             }
             catch (Exception e) { Plugin.Log.LogError(e); }
+
+            // Ask for fresh items list if there isn't one waiting
+            if (!ArchipelagoConnection.waitingItemPackets.Any(p => p.Index == 0))
+            {
+                ArchipelagoConnection.SendSyncPacket();
+            }
 
             // Attempt initialization
             if (!InitializeSession(storyGameCharacter))
@@ -119,7 +124,7 @@ namespace RainWorldRandomizer
             }
             if (offlineLocs.Count > 0)
             {
-                ArchipelagoConnection.Session.Locations.CompleteLocationChecks(offlineLocs.ToArray());
+                ArchipelagoConnection.Session.Locations.CompleteLocationChecks([.. offlineLocs]);
                 Plugin.Log.LogInfo($"Sent offline locations: {string.Join(", ", offlineLocs)}");
             }
 
