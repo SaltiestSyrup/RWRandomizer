@@ -76,7 +76,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Soft reset, clears all items in preperation for a new inventory
         /// </summary>
-        public void RemoveAllItems()
+        public void ResetStateForSync()
         {
             _currentMaxKarma = 0;
             _hunterBonusCyclesGiven = 0;
@@ -88,9 +88,6 @@ namespace RainWorldRandomizer
 
             gatesStatus.Clear();
             passageTokensStatus.Clear();
-            itemDeliveryQueue.Clear();
-            lastItemDeliveryQueue.Clear();
-            pendingTrapQueue.Clear();
         }
 
         public void LoadSave(string saveId)
@@ -167,7 +164,7 @@ namespace RainWorldRandomizer
             bool isNewInventory = false;
             if (itemPacket.Index == 0)
             {
-                RemoveAllItems();
+                ResetStateForSync();
                 isNewInventory = true;
             }
             // Multiclient sends Sync packet for us, the new inventory should arrive soon
