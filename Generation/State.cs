@@ -200,7 +200,7 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         /// <param name="shelter"></param>
         /// <returns>The region in this state containing the shelter, null if not found</returns>
-        public RandoRegion RegionOfShelter(string shelter) => AllRegions.FirstOrDefault(r => r.shelters.Contains(shelter));
+        public RandoRegion RegionOfShelter(string shelter) => AllRegions.FirstOrDefault(r => r.shelters.Contains(shelter.ToUpperInvariant()));
 
         /// <summary>
         /// Check if a given region ID is accessible to state
