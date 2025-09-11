@@ -97,6 +97,13 @@ namespace RainWorldRandomizer
                 self.pages[0].subObjects.Add(PendingItemsDisplay);
             }
             else { PendingItemsDisplay = null; }
+
+            if (Plugin.RandoManager is ManagerArchipelago)
+            {
+                ConnectionStatusDisplay connectStatusDisplay = new(self, self.pages[0], 
+                    new Vector2(manager.rainWorld.screenSize.x / 2f, manager.rainWorld.screenSize.y - 20f));
+                self.pages[0].subObjects.Add(connectStatusDisplay);
+            }
         }
 
         public static void OnMenuShutdownProcess(On.Menu.PauseMenu.orig_ShutDownProcess orig, PauseMenu self)
@@ -293,6 +300,65 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError($"Failed to load sprite '{spriteName}'");
                 return new FSprite("Futile_White", true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Indication of Archipelago connection status
+    /// </summary>
+    public class ConnectionStatusDisplay : PositionedMenuObject
+    {
+        public FSprite logoSprite;
+        public MenuLabel statusLabel;
+        public SimpleButton reconnectButton;
+
+        private readonly Color connectedColor = Color.green;
+        private readonly Color disconnectedColor = Color.red;
+
+        private bool lastConnected;
+        private bool IsConnected => ArchipelagoConnection.SocketConnected;
+
+        public ConnectionStatusDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
+        {
+            lastConnected = IsConnected;
+
+            myContainer = new FContainer();
+            owner.Container.AddChild(myContainer);
+
+            statusLabel = new MenuLabel(menu, this, IsConnected ? "Connected" : "Disconnected", new Vector2(0.01f, 0.01f), default, false);
+            statusLabel.label.alignment = FLabelAlignment.Center;
+            statusLabel.label.color = IsConnected ? connectedColor : disconnectedColor;
+            subObjects.Add(statusLabel);
+
+            reconnectButton = new SimpleButton(menu, this, "Reconnect", "RECONNECT", new Vector2(-40f, -40f), new Vector2(80f, 30f));
+            reconnectButton.buttonBehav.greyedOut = IsConnected;
+            reconnectButton.fadeAlpha = IsConnected ? 0f : 1f;
+            subObjects.Add(reconnectButton);
+            Plugin.Log.LogDebug("Create display");
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            if (IsConnected != lastConnected)
+            {
+                statusLabel.label.text = IsConnected ? "Connected" : "Disconnected";
+                statusLabel.label.color = IsConnected ? connectedColor : disconnectedColor;
+                reconnectButton.buttonBehav.greyedOut = IsConnected;
+                reconnectButton.fadeAlpha = IsConnected ? 1f : 1f;
+            }
+            reconnectButton.buttonBehav.greyedOut = IsConnected || ArchipelagoConnection.CurrentlyConnecting;
+            lastConnected = IsConnected;
+        }
+
+        public override void Singal(MenuObject sender, string message)
+        {
+            base.Singal(sender, message);
+
+            if (message == "RECONNECT")
+            {
+                ArchipelagoConnection.ReconnectAsync();
             }
         }
     }
