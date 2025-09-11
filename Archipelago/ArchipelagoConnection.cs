@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net.WebSockets;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -213,6 +214,24 @@ namespace RainWorldRandomizer
             CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
+        }
+
+        public static void ReconnectAsync()
+        {
+            HasConnected = false;
+            CurrentlyConnecting = true;
+
+            Plugin.Log.LogInfo("Attempting reconnection...");
+            Task reconnect = Task.Run(Reconnect);
+        }
+
+        public static string Reconnect()
+        {
+            Disconnect(false);
+            return Connect(RandoOptions.archipelagoHostName.Value,
+                RandoOptions.archipelagoPort.Value,
+                RandoOptions.archipelagoSlotName.Value,
+                RandoOptions.archipelagoPassword.Value);
         }
 
         /// <summary>
