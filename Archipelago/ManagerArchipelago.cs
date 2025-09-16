@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -136,19 +137,27 @@ namespace RainWorldRandomizer
         public void CreateNewSave(string saveId)
         {
             currentSlugcat = ArchipelagoConnection.Slugcat;
-
             locationsStatus.Clear();
+            Plugin.Log.LogInfo($"Found no saved game, creating new save");
+
+            if (IDToLocation.Count == 0)
+            {
+                Plugin.Log.LogError("Cannot create Archipelago save game without datapackage");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                    $"Failed to create new Archipelago save, no datapackage is present", UnityEngine.Color.red));
+                return;
+            }
+
             foreach (long locID in ArchipelagoConnection.Session.Locations.AllLocations)
             {
                 if (!IDToLocation.TryGetValue(locID, out string loc))
                 {
-                    Plugin.Log.LogError($"Location {locID} does not exist in DataPackage");
+                    Plugin.Log.LogError($"Error writing save, location {locID} does not exist in DataPackage");
                     continue;
                 }
                 locationsStatus.Add(loc, false);
             }
-            Plugin.Log.LogInfo($"Found no saved game, creating new save");
-
+            
             locationsLoaded = true;
             SaveGame(false);
         }
@@ -319,7 +328,10 @@ namespace RainWorldRandomizer
 
             if (!LocationToID.TryGetValue(location, out long locID))
             {
-                Plugin.Log.LogError($"Failed to find ID for location: {location}");
+                Plugin.Log.LogError($"Failed to find ID for found location: {location}");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                    $"Checked \"{location}\""));
+                return true;
             }
 
             // We still gave the location, but we're offline so it can't be sent yet
@@ -328,8 +340,7 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogInfo($"Found location while offline: {location}");
                 string logName = ArchipelagoConnection.Session?.Locations.GetLocationNameFromId(locID) ?? location;
                 Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
-                    $"{logName} was found but not sent, as client is disconnected. Reconnect to send found locations.",
-                    UnityEngine.Color.yellow));
+                    $"Checked \"{logName}\""));
                 return true;
             }
 
@@ -412,9 +423,17 @@ namespace RainWorldRandomizer
             APReadableNames names = JsonConvert.DeserializeObject<APReadableNames>(File.ReadAllText(path));
 
             // Create alternate datapackage with client names
-            IDToLocation = names.locations.Keys.ToDictionary((clientName)
-                => ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, names.locations[clientName]));
-            foreach (var kvp in IDToLocation) LocationToID.Add(kvp.Value, kvp.Key);
+            try
+            {
+                IDToLocation = names.locations.Keys.ToDictionary((clientName)
+                    => ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, names.locations[clientName]));
+                foreach (var kvp in IDToLocation) LocationToID.Add(kvp.Value, kvp.Key);
+            }
+            catch (ArgumentException e)
+            {
+                // Argument exception happens when GetLocationIdFromName() returns the same ID (-1) multiple times
+                Plugin.Log.LogError("Failed to load datapackage location IDs. Datapackage is either missing or doesn't match this client version's location names.");
+            }
 
             // Create translation from AP item names to client ones.
             // Would prefer to map to the numerical AP item IDs, but MultiClient doesn't provide an easy way to convert item names to ID
