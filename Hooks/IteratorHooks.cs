@@ -561,7 +561,7 @@ namespace RainWorldRandomizer
 
                         oracleBehavior.voice = oracle.room.PlaySound(sound, oracle.firstChunk);
                         oracleBehavior.voice.requireActiveUpkeep = true;
-                        if (oracleBehavior.conversation is null)
+                        if (oracleBehavior.conversation is not null)
                         {
                             oracleBehavior.conversation.waitForStill = true;
                         }
