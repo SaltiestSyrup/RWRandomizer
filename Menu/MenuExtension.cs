@@ -258,6 +258,7 @@ namespace RainWorldRandomizer
                 selectedIndices.Add(index);
                 buttons[index].buttonBehav.greyedOut = true;
             }
+            ArchipelagoConnection.Disconnect(false);
         }
 
         public static FSprite ItemToFSprite(Unlock.Item item)
@@ -309,6 +310,8 @@ namespace RainWorldRandomizer
     /// </summary>
     public class ConnectionStatusDisplay : PositionedMenuObject
     {
+        private const float BUTTON_DEFAULT_Y = -40f;
+
         public FSprite logoSprite;
         public MenuLabel statusLabel;
         public SimpleButton reconnectButton;
@@ -331,11 +334,15 @@ namespace RainWorldRandomizer
             statusLabel.label.color = IsConnected ? connectedColor : disconnectedColor;
             subObjects.Add(statusLabel);
 
-            reconnectButton = new SimpleButton(menu, this, "Reconnect", "RECONNECT", new Vector2(-40f, -40f), new Vector2(80f, 30f));
+            reconnectButton = new SimpleButton(menu, this, "Reconnect", "RECONNECT", new Vector2(-40f, BUTTON_DEFAULT_Y), new Vector2(80f, 30f));
             reconnectButton.buttonBehav.greyedOut = IsConnected;
-            reconnectButton.fadeAlpha = IsConnected ? 0f : 1f;
+            if (IsConnected)
+            {
+                // Move button offscreen to hide it when already connected
+                reconnectButton.pos = new Vector2(reconnectButton.pos.x, 1000);
+                reconnectButton.lastPos = reconnectButton.pos;
+            }
             subObjects.Add(reconnectButton);
-            Plugin.Log.LogDebug("Create display");
         }
 
         public override void Update()
@@ -346,7 +353,8 @@ namespace RainWorldRandomizer
                 statusLabel.label.text = IsConnected ? "Connected" : "Disconnected";
                 statusLabel.label.color = IsConnected ? connectedColor : disconnectedColor;
                 reconnectButton.buttonBehav.greyedOut = IsConnected;
-                reconnectButton.fadeAlpha = IsConnected ? 1f : 1f;
+                reconnectButton.pos = new Vector2(reconnectButton.pos.x, IsConnected ? 1000 : BUTTON_DEFAULT_Y);
+                reconnectButton.lastPos = reconnectButton.pos;
             }
             reconnectButton.buttonBehav.greyedOut = IsConnected || ArchipelagoConnection.CurrentlyConnecting;
             lastConnected = IsConnected;
