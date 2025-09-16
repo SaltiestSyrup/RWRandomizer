@@ -470,7 +470,7 @@ namespace RainWorldRandomizer
                 // Disconnect connection when AP is turned off
                 if (APDisabled && ArchipelagoConnection.HasConnected)
                 {
-                    ArchipelagoConnection.Disconnect();
+                    ArchipelagoConnection.Disconnect(true);
                     slotDataLabelLeft.text = "";
                     slotDataLabelRight.text = "";
                 }
@@ -535,7 +535,7 @@ namespace RainWorldRandomizer
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
             {
-                if (ArchipelagoConnection.Disconnect())
+                if (ArchipelagoConnection.Disconnect(true))
                 {
                     connectResultLabel.text = "Disconnected from server";
                     slotDataLabelLeft.text = "";

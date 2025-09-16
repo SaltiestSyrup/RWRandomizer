@@ -128,7 +128,7 @@ namespace RainWorldRandomizer
             }
 
             ArchipelagoConnection.Session.Socket.SocketClosed += QuitAfterDisconnect;
-            ArchipelagoConnection.Disconnect();
+            ArchipelagoConnection.Disconnect(true);
 
             void QuitAfterDisconnect(string reason)
             {

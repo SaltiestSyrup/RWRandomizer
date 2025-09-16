@@ -196,7 +196,7 @@ namespace RainWorldRandomizer
                 {
                     // Log an error if slot data was not valid
                     Plugin.Log.LogError(errLog);
-                    Disconnect();
+                    Disconnect(true);
                     return errLog;
                 }
             }
@@ -205,7 +205,7 @@ namespace RainWorldRandomizer
                 // Log an error if no slot data packet was present
                 string errLog = "Did not receive any slot data. Please try again.";
                 Plugin.Log.LogError(errLog);
-                Disconnect();
+                Disconnect(true);
                 return errLog;
             }
 
@@ -238,7 +238,7 @@ namespace RainWorldRandomizer
         /// Disconnect from the current session
         /// </summary>
         /// <returns>True if there was a running session to disconnect</returns>
-        public static bool Disconnect(bool resetManager = true)
+        public static bool Disconnect(bool resetManager)
         {
             if (Session is null) return false;
 
