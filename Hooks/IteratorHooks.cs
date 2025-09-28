@@ -21,10 +21,11 @@ namespace RainWorldRandomizer
 
             try
             {
+                IL.SSOracleBehavior.Update += SSOracleBehaviorUpdateIL;
                 IL.SSOracleBehavior.SSOracleMeetWhite.Update += PebblesMeetWhiteUpdateIL;
                 IL.SSOracleBehavior.SSOracleMeetYellow.Update += PebblesMeetYellowOrGourmandUpdateIL;
                 IL.SSOracleBehavior.SSOracleMeetGourmand.Update += PebblesMeetYellowOrGourmandUpdateIL;
-                IL.SSOracleBehavior.SSOracleMeetArty.Update += PebblesMeetArtiUpdateIL;
+                IL.SSOracleBehavior.SSOracleMeetArty.Update += PebblesMeetArtyUpdateIL;
                 IL.SSOracleBehavior.ThrowOutBehavior.Update += IteratorThrowOutBehaviorIL;
                 IL.SLOracleWakeUpProcedure.Update += ILMoonWakeUpUpdate;
                 IL.MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.Update += RotCoreRoomUpdateIL;
@@ -47,10 +48,11 @@ namespace RainWorldRandomizer
             On.SLOracleBehaviorHasMark.SpecialEvent -= OnMoonSpecialEvent;
             On.HUD.DialogBox.NewMessage_string_float_float_int -= DialogueAddMessage;
 
+            IL.SSOracleBehavior.Update -= SSOracleBehaviorUpdateIL;
             IL.SSOracleBehavior.SSOracleMeetWhite.Update -= PebblesMeetWhiteUpdateIL;
             IL.SSOracleBehavior.SSOracleMeetYellow.Update -= PebblesMeetYellowOrGourmandUpdateIL;
             IL.SSOracleBehavior.SSOracleMeetGourmand.Update -= PebblesMeetYellowOrGourmandUpdateIL;
-            IL.SSOracleBehavior.SSOracleMeetArty.Update -= PebblesMeetArtiUpdateIL;
+            IL.SSOracleBehavior.SSOracleMeetArty.Update -= PebblesMeetArtyUpdateIL;
             IL.SSOracleBehavior.ThrowOutBehavior.Update -= IteratorThrowOutBehaviorIL;
             IL.SLOracleWakeUpProcedure.Update -= ILMoonWakeUpUpdate;
             IL.MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.Update -= RotCoreRoomUpdateIL;
@@ -155,6 +157,25 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
+        /// Make Pebbles not ignore Artificer if they don't have a robot
+        /// </summary>
+        /// <param name="il"></param>
+        static void SSOracleBehaviorUpdateIL(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            // Check if player has a robot at 0DDB
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.myRobot)))
+                );
+
+            c.EmitDelegate(AllPlayersHaveRobot);
+
+            static bool AllPlayersHaveRobot(AncientBot foundRobot) => true;
+        }
+
+        /// <summary>
         /// Hack Pebbles to give the mark when he otherwise wouldn't
         /// </summary>
         // TODO: Rewrite Pebbles meet white hook, goto is volatile
@@ -223,56 +244,60 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Hack Pebbles to behave properly in strange randomizer circumstances for Artificer
+        /// Make Pebbles act correctly for Arty
         /// </summary>
-        static void PebblesMeetArtiUpdateIL(ILContext il)
+        static void PebblesMeetArtyUpdateIL(ILContext il)
         {
             ILCursor c = new(il);
-            c.GotoNext(
-                MoveType.Before,
-                x => x.MatchStfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
-                );
 
-            c.Emit(OpCodes.Pop); // Only set robo if it has been given
-            c.EmitDelegate(() => { return Plugin.RandoManager.GivenRobo; });
-
-            // ------
+            // Before assigning the player at 0041
             c.GotoNext(
                 MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld(typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner))),
-                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SSOracleBehaviorAction).GetField(nameof(MoreSlugcatsEnums.SSOracleBehaviorAction.MeetArty_Talking))),
+                x => x.MatchCallOrCallvirt(typeof(OracleBotResync).GetMethod(nameof(OracleBotResync.PlayerWithRobot)))
+                );
+
+            // If the player doesn't have the robot yet, make sure Pebbles doesn't ignore them
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(AssignDefaultPlayerIfNoRobot);
+
+            static Player AssignDefaultPlayerIfNoRobot(Player foundPlayerWithRobot, SSOracleBehavior.SSOracleMeetArty self)
+            {
+                if (foundPlayerWithRobot is not null) return foundPlayerWithRobot;
+                return self.oracle.room.game.FirstRealizedPlayer;
+            }
+
+            // Check if player has the mark at 00CF
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.theMark)))
+                );
+
+            // Make sure check is given on the first meeting, and only once
+            c.EmitDelegate(ShouldPebblesNotGiveMark);
+
+            static bool ShouldPebblesNotGiveMark(bool hasTheMark)
+            {
+                return Plugin.RandoManager.IsLocationGiven("Meet_FP") is true;
+            }
+
+
+            // Before assigning afterGiveMarkAction at 0116
+            c.GotoNext(
+                MoveType.Before,
                 x => x.MatchStfld(typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)))
                 );
 
             // Throw Arty out after trying to give mark if no robot
-            c.Index--;
-            c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.ThrowOut_ThrowOut)));
-
-            c.Index++;
             c.Emit(OpCodes.Ldarg_0);
-            c.Emit(OpCodes.Callvirt, typeof(SSOracleBehavior.SubBehavior).GetMethod(nameof(SSOracleBehavior.SubBehavior.Deactivate)));
+            c.EmitDelegate(ThrowOutIfNoRobo);
 
-            // ------
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld(typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance)),
-                x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.myRobot))),
-                x => x.MatchLdflda(out _),
-                x => x.MatchInitobj(out _)
-                );
+            static SSOracleBehavior.Action ThrowOutIfNoRobo(SSOracleBehavior.Action origNextAction, SSOracleBehavior.SSOracleMeetArty self)
+            {
+                if (self.oracle.room.game.GetStorySession.saveState.hasRobo) return origNextAction;
 
-            ILLabel jump = c.MarkLabel();
-
-            // Add a null check for this.player.myRobot
-            c.Index -= 5;
-            c.Emit(OpCodes.Ldarg_0);
-            c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SSOracleMeetArty).GetField(nameof(SSOracleBehavior.SSOracleMeetArty.player), BindingFlags.NonPublic | BindingFlags.Instance));
-            c.Emit(OpCodes.Ldfld, typeof(Player).GetField(nameof(Player.myRobot)));
-            c.EmitDelegate<Func<AncientBot, bool>>(r => { return r == null; });
-            c.Emit(OpCodes.Brfalse, jump);
+                self.Deactivate();
+                return SSOracleBehavior.Action.ThrowOut_ThrowOut;
+            }
         }
 
         /// <summary>

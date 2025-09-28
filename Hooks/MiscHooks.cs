@@ -419,13 +419,13 @@ namespace RainWorldRandomizer
             // After myRobot load at 0018
             c.GotoNext(
                 MoveType.After,
-                x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.myRobot)))
+                x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
                 );
             // Skip cutscene if we saw it instead of if robo is present
             c.Emit(OpCodes.Pop);
             c.EmitDelegate(() => hasSeenArtyStart);
 
-            // Jump further into method to dodge first call to Destroy()
+            // Jump further into method to dodge last call to Destroy()
             c.GotoNext(x => x.MatchLdsfld(typeof(CutsceneArtificer.Phase).GetField(nameof(CutsceneArtificer.Phase.End))));
             // Before call to Destroy at 043A
             c.GotoNext(
@@ -440,7 +440,6 @@ namespace RainWorldRandomizer
             {
                 hasSeenArtyStart = true;
                 RainWorldGame.ForceSaveNewDenLocation(self.room.game, "GW_A24", true);
-                Plugin.Log.LogDebug("Saved cutscene status");
             });
         }
 
