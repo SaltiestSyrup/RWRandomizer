@@ -196,29 +196,32 @@ namespace RainWorldRandomizer
 
             #region Pearls read from optional regions
             ILCursor c1 = new(il);
+
+            // End of long af pearl checking if statement at 060A
+            c1.GotoNext(x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.DataPearlType).GetField(nameof(MoreSlugcatsEnums.DataPearlType.Spearmasterpearl))));
+            // Right before assigning "newData" local at 0641
             c1.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(out _),
-                x => x.MatchCallOrCallvirt(out _),
-                x => x.MatchStloc(31)
+                x => x.MatchCallOrCallvirt(out _)
                 );
 
             c1.Emit(OpCodes.Ldloc, 12);
             c1.Emit(OpCodes.Ldarg_2);
-            c1.EmitDelegate<Func<List<SlugcatStats.Name>, string, List<SlugcatStats.Name>>>((list3, region) =>
+            c1.EmitDelegate(MakePearlsReadOptionalRegions);
+
+            static List<SlugcatStats.Name> MakePearlsReadOptionalRegions(List<SlugcatStats.Name> newData, List<SlugcatStats.Name> list3, string region)
             {
                 return [.. list3.Where(slugcat =>
                 {
                     IEnumerable<string> regions = SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat));
                     return regions.Any(r => r.Equals(region, StringComparison.InvariantCultureIgnoreCase));
                 })];
-            });
-            c1.Emit(OpCodes.Stloc, 31);
+            }
             #endregion
 
             #region Room accessibility fix
             FieldReference regionNameField = null;
-            //MethodReference listGetMethod = null;
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdarg(0),
@@ -244,15 +247,16 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate(IntersectClearance);
 
+            // Third load of regionBlueTokensAccessibility at 0A53
             c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility))),
-                x => x.MatchLdloc(0),
-                x => x.MatchLdfld(out _),
-                x => x.MatchCallOrCallvirt(out _),
-                x => x.MatchLdloc(43),
-                x => x.MatchCallOrCallvirt(out _),
-                x => x.MatchLdloc(12)
+                x => x.MatchLdfld(typeof(CollectToken.CollectTokenData).GetField(nameof(CollectToken.CollectTokenData.availableToPlayers))),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility)))
+                );
+            // Before call to FilterTokenClearance at 0A6C
+            c.GotoNext(
+                MoveType.Before,
+                x => x.MatchCallOrCallvirt(typeof(RainWorld).GetMethod(nameof(RainWorld.FilterTokenClearance)))
                 );
 
             c.Emit(OpCodes.Ldloc_0);
