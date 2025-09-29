@@ -134,6 +134,8 @@ namespace RainWorldRandomizer
                 {
                     ImprovedCollectibleTrackerCompat.ApplyHooks();
                 }
+
+                WatcherIntegration.EntryPoint.ApplyHooks();
             }
             catch (Exception e)
             {
@@ -171,6 +173,8 @@ namespace RainWorldRandomizer
                 On.StaticWorld.InitStaticWorld -= OnInitStaticWorld;
                 On.RainWorld.LoadModResources -= LoadResources;
                 On.RainWorld.UnloadResources -= UnloadResources;
+
+                WatcherIntegration.EntryPoint.RemoveHooks();
             }
             catch (Exception e)
             {
