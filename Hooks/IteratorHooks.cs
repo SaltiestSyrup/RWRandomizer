@@ -311,25 +311,16 @@ namespace RainWorldRandomizer
             // Make the game think the power is still on if we turned it off
             while (c.TryGotoNext(
                 MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld(typeof(UpdatableAndDeletable).GetField(nameof(UpdatableAndDeletable.room))),
-                x => x.MatchLdfld(typeof(Room).GetField(nameof(Room.game))),
-                x => x.MatchLdfld(typeof(RainWorldGame).GetField(nameof(RainWorldGame.session))),
-                x => x.MatchIsinst(typeof(StoryGameSession)),
-                x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
                 x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.miscWorldSaveData))),
                 x => x.MatchLdfld(typeof(MiscWorldSaveData).GetField(nameof(MiscWorldSaveData.pebblesEnergyTaken)))
                 ))
             {
-                //c.Index--;
-                c.EmitDelegate<Func<bool, bool>>((energyTaken) =>
-                {
-                    if (RandoOptions.UseEnergyCell)
-                    {
-                        return Plugin.RandoManager.IsLocationGiven("Kill_FP") ?? false;
-                    }
-                    return energyTaken;
-                });
+                c.EmitDelegate(ReplaceWithLocationCheck);
+            }
+
+            static bool ReplaceWithLocationCheck(bool energyTaken)
+            {
+                return RandoOptions.UseEnergyCell ? Plugin.RandoManager.IsLocationGiven("Kill_FP") ?? false : energyTaken;
             }
 
             ILCursor c1 = new(il);
@@ -358,21 +349,19 @@ namespace RainWorldRandomizer
 
             static bool EnergyCellCheck(MSCRoomSpecificScript.RM_CORE_EnergyCell self)
             {
-                if (RandoOptions.UseEnergyCell)
+                if (!RandoOptions.UseEnergyCell) return false;
+
+                Plugin.RandoManager.GiveLocation("Kill_FP");
+
+                // If power is not supposed to be off yet, turn it back on
+                if (!Plugin.RandoManager.GivenPebblesOff)
                 {
-                    Plugin.RandoManager.GiveLocation("Kill_FP");
-
-                    // If power is not supposed to be off yet, turn it back on
-                    if (!Plugin.RandoManager.GivenPebblesOff)
-                    {
-                        (self.room.game.session as StoryGameSession).saveState.miscWorldSaveData.pebblesEnergyTaken = false;
-                    }
-
-                    self.myEnergyCell = null;
-                    self.ReloadRooms();
-                    return true;
+                    (self.room.game.session as StoryGameSession).saveState.miscWorldSaveData.pebblesEnergyTaken = false;
                 }
-                return false;
+
+                self.myEnergyCell = null;
+                self.ReloadRooms();
+                return true;
             }
         }
 
