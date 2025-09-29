@@ -4,7 +4,6 @@ using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -15,13 +14,15 @@ namespace RainWorldRandomizer
     {
         public static void ApplyHooks()
         {
+            On.Menu.MainMenu.ExitButtonPressed += OnMainMenuExitButtonPressed;
             On.RegionGate.customKarmaGateRequirements += OnGateRequirements;
             On.PlayerProgression.ReloadLocksList += OnReloadLocksList;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
-            //On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
+            On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
+            On.ScavengerAI.CollectScore_PhysicalObject_bool += OnScavengerAICollectScore;
 
             try
             {
@@ -74,13 +75,15 @@ namespace RainWorldRandomizer
 
         public static void RemoveHooks()
         {
+            On.Menu.MainMenu.ExitButtonPressed -= OnMainMenuExitButtonPressed;
             On.RegionGate.customKarmaGateRequirements -= OnGateRequirements;
             On.PlayerProgression.ReloadLocksList -= OnReloadLocksList;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
-            //On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
+            On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
+            On.ScavengerAI.CollectScore_PhysicalObject_bool -= OnScavengerAICollectScore;
 
             IL.Menu.MainMenu.ctor -= MainMenuCtorIL;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
@@ -112,7 +115,27 @@ namespace RainWorldRandomizer
                 );
 
             c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldstr, Plugin.RandoManager is null ? "STORY" : "RANDOMIZER");
+            c.Emit(OpCodes.Ldstr, "RANDOMIZER");
+        }
+
+        /// <summary>
+        /// Cleanly disconnect any active AP connection before quitting application
+        /// </summary>
+        private static void OnMainMenuExitButtonPressed(On.Menu.MainMenu.orig_ExitButtonPressed orig, MainMenu self)
+        {
+            if (!ArchipelagoConnection.SocketConnected)
+            {
+                orig(self);
+                return;
+            }
+
+            ArchipelagoConnection.Session.Socket.SocketClosed += QuitAfterDisconnect;
+            ArchipelagoConnection.Disconnect(true);
+
+            void QuitAfterDisconnect(string reason)
+            {
+                orig(self);
+            }
         }
 
         /// <summary>
@@ -187,48 +210,23 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Disable start game button if proper conditions are not met
         /// </summary>
-        // TODO: Rewrite this hook to shorten goto
         private static void SlugcatSelectMenuUpdateIL(ILContext il)
         {
-            try
+            ILCursor c1 = new(il);
+
+            // Check slugcat unlocked at 0362
+            c1.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.SlugcatUnlocked)))
+                );
+            c1.Emit(OpCodes.Ldarg_0);
+            c1.EmitDelegate(CanPlaySlugcat);
+
+            static bool CanPlaySlugcat(bool orig, SlugcatSelectMenu self)
             {
-                ILCursor c1 = new(il);
+                if (!RandoOptions.archipelago.Value) return orig;
 
-                ILLabel resultJump = null;
-                c1.GotoNext(MoveType.Before,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.slugcatPageIndex))),
-                    x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.colorFromIndex))),
-                    x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.SlugcatUnlocked))),
-                    x => x.MatchLdcI4(0),
-                    x => x.MatchCeq(),
-                    x => x.MatchBr(out resultJump)
-                    );
-
-                // Move the label a step back, to ldc.i4.1
-                ILCursor c2 = new(il);
-                c2.GotoLabel(resultJump, MoveType.Before);
-                c2.Index--;
-                resultJump = c2.MarkLabel();
-
-                c1.Emit(OpCodes.Ldarg_0);
-                // When AP is enabled, start game button should only be available if AP is connected and the correct slugcat is chosen
-                c1.EmitDelegate<Func<SlugcatSelectMenu, bool>>((self) =>
-                {
-                    return !RandoOptions.archipelago.Value
-                        || (Plugin.RandoManager is ManagerArchipelago manager
-                            && manager.locationsLoaded
-                            && manager.currentSlugcat == self.colorFromIndex(self.slugcatPageIndex)
-                            && ModManager.MSC == ArchipelagoConnection.IsMSC);
-                });
-                c1.Emit(OpCodes.Brfalse, resultJump);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for SlugcatSelectMenuUpdate");
-                Plugin.Log.LogError(e);
+                return ArchipelagoConnection.SocketConnected
+                    && ArchipelagoConnection.Slugcat == self.colorFromIndex(self.slugcatPageIndex);
             }
         }
 
@@ -237,11 +235,11 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void OnGateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
         {
+            orig(self);
             if (Plugin.RandoManager.isRandomizerActive)
             {
                 self.karmaRequirements = Plugin.GetGateRequirement(self.room.abstractRoom.name);
             }
-            orig(self);
         }
 
         /// <summary>
@@ -433,13 +431,13 @@ namespace RainWorldRandomizer
             // After myRobot load at 0018
             c.GotoNext(
                 MoveType.After,
-                x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.myRobot)))
+                x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
                 );
             // Skip cutscene if we saw it instead of if robo is present
             c.Emit(OpCodes.Pop);
             c.EmitDelegate(() => hasSeenArtyStart);
 
-            // Jump further into method to dodge first call to Destroy()
+            // Jump further into method to dodge last call to Destroy()
             c.GotoNext(x => x.MatchLdsfld(typeof(CutsceneArtificer.Phase).GetField(nameof(CutsceneArtificer.Phase.End))));
             // Before call to Destroy at 043A
             c.GotoNext(
@@ -454,7 +452,6 @@ namespace RainWorldRandomizer
             {
                 hasSeenArtyStart = true;
                 RainWorldGame.ForceSaveNewDenLocation(self.room.game, "GW_A24", true);
-                Plugin.Log.LogDebug("Saved cutscene status");
             });
         }
 
@@ -500,7 +497,6 @@ namespace RainWorldRandomizer
             }
 
             c.EmitDelegate(TreatSeedsAsCobs);
-
         }
 
         [Obsolete("Not currently applied")]
@@ -631,13 +627,15 @@ namespace RainWorldRandomizer
         internal static WinState.GourmandTrackerData[] expanded;
 
         /// <summary>
-        /// Add a sprite for SeedCobs to use in ItemSymbols.
+        /// Add sprite name definitions for custom icon symbols
         /// </summary>
-        [Obsolete("Currently not needed since Watcher added their own version of sprites we had added")]
         private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intData)
         {
-            //if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return "Symbol_SeedCob";
-            return orig(itemType, intData);
+            return itemType.value switch
+            {
+                "KarmaFlower" => "Symbol_KarmaFlower",
+                _ => orig(itemType, intData)
+            };
         }
 
         /// <summary>
@@ -645,8 +643,37 @@ namespace RainWorldRandomizer
         /// </summary>
         private static Color ItemSymbol_ColorForItem(On.ItemSymbol.orig_ColorForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intdata)
         {
-            if (itemType == AbstractPhysicalObject.AbstractObjectType.SeedCob) return new Color(0.4117f, 0.1608f, 0.2275f);
-            return orig(itemType, intdata);
+            return itemType.value switch
+            {
+                "SeedCob" => new Color(0.4117f, 0.1608f, 0.2275f),
+                "KarmaFlower" => new Color(0.9059f, 0.8745f, 0.5647f),
+                _ => orig(itemType, intdata)
+            };
+        }
+
+        /// <summary>
+        /// Restrict scavengers from taking certain objects from the ground on their own
+        /// to avoid needed items for checks disappearing.
+        /// </summary>
+        private static int OnScavengerAICollectScore(On.ScavengerAI.orig_CollectScore_PhysicalObject_bool orig, ScavengerAI self, PhysicalObject obj, bool weaponFiltered)
+        {
+            int origValue = orig(self, obj, weaponFiltered);
+
+            // Items are allowed to be a part of social events
+            if (self.scavenger.room?.socialEventRecognizer.ItemOwnership(obj) is not null) return origValue;
+
+            bool setNoValue = false;
+            // Do not take unpicked flowers
+            setNoValue |= RandoOptions.UseKarmaFlowerChecks
+                && obj is KarmaFlower flower
+                && flower.growPos is not null;
+            // Do not take unique data pearls
+            setNoValue |= RandoOptions.UsePearlChecks
+                && obj is DataPearl pearl
+                && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType)
+                && pearl.grabbedBy.Count == 0; // Allowed to value already carried pearls
+
+            return setNoValue ? 0 : origValue;
         }
 
         /// <summary>

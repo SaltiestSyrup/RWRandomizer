@@ -35,6 +35,19 @@ namespace RainWorldRandomizer
                 _spoilerMenu.SetTarget(value);
             }
         }
+        public static WeakReference<PendingItemsDisplay> _pendingItemsDisplay = new(null);
+        public static PendingItemsDisplay PendingItemsDisplay
+        {
+            get
+            {
+                if (_pendingItemsDisplay.TryGetTarget(out PendingItemsDisplay menu)) return menu;
+                else return null;
+            }
+            set
+            {
+                _pendingItemsDisplay.SetTarget(value);
+            }
+        }
 
         public static void ApplyHooks()
         {
@@ -77,11 +90,19 @@ namespace RainWorldRandomizer
 
             self.pages[0].subObjects.Add(gateDisplay);
 
-            if (RandoOptions.GiveObjectItems && Plugin.Singleton.itemDeliveryQueue.Count > 0)
+            if (Plugin.RandoManager.itemDeliveryQueue.Count > 0)
             {
-                PendingItemsDisplay pendingItemsDisplay = new(self, self.pages[0],
+                PendingItemsDisplay = new(self, self.pages[0],
                     new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));
-                self.pages[0].subObjects.Add(pendingItemsDisplay);
+                self.pages[0].subObjects.Add(PendingItemsDisplay);
+            }
+            else { PendingItemsDisplay = null; }
+
+            if (Plugin.RandoManager is ManagerArchipelago)
+            {
+                ConnectionStatusDisplay connectStatusDisplay = new(self, self.pages[0], 
+                    new Vector2(manager.rainWorld.screenSize.x / 2f, manager.rainWorld.screenSize.y - 20f));
+                self.pages[0].subObjects.Add(connectStatusDisplay);
             }
         }
 
@@ -171,7 +192,7 @@ namespace RainWorldRandomizer
             };
             subObjects.Add(roundedRect);
 
-            menuLabels[0] = new MenuLabel(menu, this, "Currently Unlocked Gates:", new Vector2(10f, -13f), default, false, null);
+            menuLabels[0] = new MenuLabel(menu, this, "Currently Unlocked Gates:", new Vector2(10.01f, -13.01f), default, false, null);
             menuLabels[0].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
             menuLabels[0].label.alignment = FLabelAlignment.Left;
             subObjects.Add(menuLabels[0]);
@@ -180,7 +201,7 @@ namespace RainWorldRandomizer
             {
                 menuLabels[i] = new MenuLabel(menu, this,
                     Plugin.GateToString(openedGates[i - 1], Plugin.RandoManager.currentSlugcat),
-                    new Vector2(10f, -15f - (15f * i)), default, false, null);
+                    new Vector2(10.01f, -15.01f - (15f * i)), default, false, null);
                 menuLabels[i].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
                 menuLabels[i].label.alignment = FLabelAlignment.Left;
                 subObjects.Add(menuLabels[i]);
@@ -195,12 +216,14 @@ namespace RainWorldRandomizer
     {
         public RoundedRect roundedRect;
         public MenuLabel label;
-        public FSprite[] sprites;
+        public BorderlessSymbolButton[] buttons;
+
+        public List<int> selectedIndices = [];
 
         public PendingItemsDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
         {
-            Unlock.Item[] pendingItems = [.. Plugin.Singleton.itemDeliveryQueue];
-            sprites = new FSprite[pendingItems.Length];
+            Unlock.Item[] pendingItems = [.. Plugin.RandoManager.itemDeliveryQueue];
+            buttons = new BorderlessSymbolButton[pendingItems.Length];
             size = new Vector2(250f, ((pendingItems.Length - 1) / 8 * 30f) + 57f);
 
             myContainer = new FContainer();
@@ -212,32 +235,33 @@ namespace RainWorldRandomizer
             };
             subObjects.Add(roundedRect);
 
-            label = new MenuLabel(menu, this, "Pending items:", new Vector2(10f, -13f), default, false, null);
+            label = new MenuLabel(menu, this, "Pending items (Click to retrieve)", new Vector2(10.01f, -13.01f), default, false, null);
             label.label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
             label.label.alignment = FLabelAlignment.Left;
             subObjects.Add(label);
 
             for (int i = 0; i < pendingItems.Length; i++)
             {
-                sprites[i] = ItemToFSprite(pendingItems[i]);
-                Container.AddChild(sprites[i]);
+                buttons[i] = new(menu, this, ItemToFSprite(pendingItems[i]), $"OBJ_{i}",
+                    new((30f * (i % 8)) + 5f, -(30f * Mathf.FloorToInt(i / 8)) - 50f));
+                subObjects.Add(buttons[i]);
             }
         }
 
-        public override void GrafUpdate(float timeStacker)
+        public override void Singal(MenuObject sender, string message)
         {
-            base.GrafUpdate(timeStacker);
-
-            for (int i = 0; i < sprites.Length; i++)
+            base.Singal(sender, message);
+            if (message.StartsWith("OBJ_"))
             {
-                sprites[i].isVisible = true;
-                sprites[i].x = DrawX(timeStacker) + (30f * (i % 8)) + 20f;
-                sprites[i].y = DrawY(timeStacker) - (30f * Mathf.FloorToInt(i / 8)) - 35f;
-                sprites[i].alpha = 1f;
+                if (!int.TryParse(message[4..], out int index)) return;
+
+                selectedIndices.Add(index);
+                buttons[index].buttonBehav.greyedOut = true;
             }
+            ArchipelagoConnection.Disconnect(false);
         }
 
-        public FSprite ItemToFSprite(Unlock.Item item)
+        public static FSprite ItemToFSprite(Unlock.Item item)
         {
             string spriteName;
             float spriteScale = 1f;
@@ -245,33 +269,25 @@ namespace RainWorldRandomizer
 
             IconSymbol.IconSymbolData iconData;
 
-            if (item.id == "KarmaFlower")
+            if (item.id is "FireSpear" or "ExplosiveSpear")
             {
-                spriteName = "FlowerMarker";
-                spriteColor = RainWorld.GoldRGB;
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
+            }
+            else if (item.id is "ElectricSpear")
+            {
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
+            }
+            else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))
+            {
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
             }
             else
             {
-                if (item.id is "FireSpear" or "ExplosiveSpear")
-                {
-                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
-                }
-                else if (item.id is "ElectricSpear")
-                {
-                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
-                }
-                else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))
-                {
-                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
-                }
-                else
-                {
-                    iconData = new IconSymbol.IconSymbolData();
-                }
-
-                spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
-                spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
+                iconData = new IconSymbol.IconSymbolData();
             }
+
+            spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
+            spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
 
             try
             {
@@ -287,5 +303,128 @@ namespace RainWorldRandomizer
                 return new FSprite("Futile_White", true);
             }
         }
+    }
+
+    /// <summary>
+    /// Indication of Archipelago connection status
+    /// </summary>
+    public class ConnectionStatusDisplay : PositionedMenuObject
+    {
+        private const float BUTTON_DEFAULT_Y = -40f;
+
+        public FSprite logoSprite;
+        public MenuLabel statusLabel;
+        public SimpleButton reconnectButton;
+
+        private readonly Color connectedColor = Color.green;
+        private readonly Color disconnectedColor = Color.red;
+
+        private bool lastConnected;
+        private bool IsConnected => ArchipelagoConnection.SocketConnected;
+
+        public ConnectionStatusDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
+        {
+            lastConnected = IsConnected;
+
+            myContainer = new FContainer();
+            owner.Container.AddChild(myContainer);
+
+            statusLabel = new MenuLabel(menu, this, IsConnected ? "Connected" : "Disconnected", new Vector2(0.01f, 0.01f), default, false);
+            statusLabel.label.alignment = FLabelAlignment.Center;
+            statusLabel.label.color = IsConnected ? connectedColor : disconnectedColor;
+            subObjects.Add(statusLabel);
+
+            reconnectButton = new SimpleButton(menu, this, "Reconnect", "RECONNECT", new Vector2(-40f, BUTTON_DEFAULT_Y), new Vector2(80f, 30f));
+            reconnectButton.buttonBehav.greyedOut = IsConnected;
+            if (IsConnected)
+            {
+                // Move button offscreen to hide it when already connected
+                reconnectButton.pos = new Vector2(reconnectButton.pos.x, 1000);
+                reconnectButton.lastPos = reconnectButton.pos;
+            }
+            subObjects.Add(reconnectButton);
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            if (IsConnected != lastConnected)
+            {
+                statusLabel.label.text = IsConnected ? "Connected" : "Disconnected";
+                statusLabel.label.color = IsConnected ? connectedColor : disconnectedColor;
+                reconnectButton.buttonBehav.greyedOut = IsConnected;
+                reconnectButton.pos = new Vector2(reconnectButton.pos.x, IsConnected ? 1000 : BUTTON_DEFAULT_Y);
+                reconnectButton.lastPos = reconnectButton.pos;
+            }
+            reconnectButton.buttonBehav.greyedOut = IsConnected || ArchipelagoConnection.CurrentlyConnecting;
+            lastConnected = IsConnected;
+        }
+
+        public override void Singal(MenuObject sender, string message)
+        {
+            base.Singal(sender, message);
+
+            if (message == "RECONNECT")
+            {
+                ArchipelagoConnection.ReconnectAsync();
+            }
+        }
+    }
+
+    public class BorderlessSymbolButton : ButtonTemplate
+    {
+        public string signalText;
+        public FSprite symbolSprite;
+        private readonly Color baseColor;
+        private readonly Color greyColor;
+        private readonly float baseScale;
+
+        public BorderlessSymbolButton(Menu.Menu menu, MenuObject owner, string symbolName, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
+        {
+            this.signalText = signalText;
+
+            symbolSprite = new FSprite(symbolName, true);
+            baseColor = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
+            greyColor = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.VeryDarkGrey);
+            baseScale = 1f;
+            Container.AddChild(symbolSprite);
+        }
+
+        public BorderlessSymbolButton(Menu.Menu menu, MenuObject owner, FSprite sprite, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
+        {
+            this.signalText = signalText;
+
+            symbolSprite = sprite;
+            baseColor = sprite.color;
+            greyColor = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.VeryDarkGrey);
+            baseScale = sprite.scale;
+            Container.AddChild(symbolSprite);
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            symbolSprite.scale = baseScale * (1 + buttonBehav.sizeBump * 0.2f);
+        }
+
+        public override void GrafUpdate(float timeStacker)
+        {
+            base.GrafUpdate(timeStacker);
+
+            float cycle = 0.5f - 0.5f * Mathf.Sin(Mathf.Lerp(buttonBehav.lastSin, buttonBehav.sin, timeStacker) / 30f * Mathf.PI * 2f);
+            cycle *= buttonBehav.sizeBump;
+
+            symbolSprite.color = buttonBehav.greyedOut ? greyColor : Color.Lerp(baseColor, greyColor, cycle);
+            symbolSprite.x = DrawX(timeStacker) + DrawSize(timeStacker).x / 2;
+            symbolSprite.y = DrawY(timeStacker) + DrawSize(timeStacker).y / 2;
+        }
+
+        public override void RemoveSprites()
+        {
+            symbolSprite.RemoveFromContainer();
+            base.RemoveSprites();
+        }
+
+        public override void Clicked() => Singal(this, signalText);
     }
 }

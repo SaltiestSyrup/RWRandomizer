@@ -440,7 +440,7 @@ namespace RainWorldRandomizer
             static float ModifyYPos(float old, bool isWatcher)
             {
                 return isWatcher ? old + 50f : old;
-            } 
+            }
         }
 
         /// <summary>
@@ -474,7 +474,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static WinState.EndgameID NextPassageToken(On.WinState.orig_GetNextEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !RandoOptions.GivePassageItems) return orig(self);
+            if (Plugin.RandoManager?.isRandomizerActive is not true || !RandoOptions.GivePassageItems) return orig(self);
 
             foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
             {

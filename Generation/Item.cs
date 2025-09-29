@@ -12,6 +12,7 @@ namespace RainWorldRandomizer.Generation
             Passage,
             Karma,
             Object,
+            Trap,
             Other
         }
         public enum Importance
@@ -59,6 +60,20 @@ namespace RainWorldRandomizer.Generation
             { "Object-ElectricSpear", 3 },
             { "Object-SingularityBomb", 1 },
         };
+        public static readonly Dictionary<string, int> trapWeights = new()
+        {
+            { "Trap-Stun", 6 },
+            { "Trap-Zoomies", 5 },
+            { "Trap-Timer", 5 },
+            { "Trap-Rain", 5 },
+            { "Trap-Alarm", 3 },
+            { "Trap-RedLizard", 3 },
+            { "Trap-RedCentipede", 3 },
+            { "Trap-SpitterSpider", 3 },
+            { "Trap-BrotherLongLegs", 3 },
+            { "Trap-DaddyLongLegs", 1 },
+            { "Trap-Gravity", 1 },
+        };
 
         public static Item RandomJunkItem(ref Random random)
         {
@@ -85,6 +100,28 @@ namespace RainWorldRandomizer.Generation
             }
 
             return new Item("Object-Rock", Type.Object, Importance.Filler);
+        }
+
+        public static Item RandomTrapItem(ref Random random)
+        {
+            List<string> items = [.. trapWeights.Keys];
+            List<int> weights = [.. trapWeights.Values];
+
+            int sum = weights.Sum();
+            int randomValue = random.Next(sum + 1);
+
+            int cursor = 0;
+            for (int i = 0; i < items.Count; i++)
+            {
+                cursor += weights[i];
+                if (cursor >= randomValue)
+                {
+                    return new Item(items[i], Type.Trap, Importance.Filler);
+                }
+            }
+
+            return new Item("Trap-Stun", Type.Trap, Importance.Filler);
+
         }
     }
 }

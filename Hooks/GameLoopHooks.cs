@@ -3,16 +3,22 @@ using MonoMod.Cil;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RainWorldRandomizer
 {
     public static class GameLoopHooks
     {
+        private const int SHELTER_ITEMS_PER_CYCLE = 5;
+
         public static void ApplyHooks()
         {
             On.ProcessManager.PostSwitchMainProcess += OnPostSwitchMainProcess;
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
+            On.RainWorldGame.ExitGame += OnExitGame;
+            On.RainWorldGame.ContinuePaused += OnContinuePaused;
             On.PlayerProgression.SaveToDisk += OnSaveGame;
+            On.SaveState.GhostEncounter += OnGhostEncounter;
             On.SaveState.SessionEnded += OnSessionEnded;
             On.RainWorldGame.ctor += OnRainWorldGameCtor;
             On.HardmodeStart.Update += OnHardmodeStart;
@@ -35,6 +41,7 @@ namespace RainWorldRandomizer
         {
             On.ProcessManager.PostSwitchMainProcess -= OnPostSwitchMainProcess;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
+            On.RainWorldGame.ContinuePaused -= OnContinuePaused;
             On.PlayerProgression.SaveToDisk -= OnSaveGame;
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
@@ -54,7 +61,10 @@ namespace RainWorldRandomizer
             if (ID == ProcessManager.ProcessID.Game
                 && (Plugin.RandoManager is null || !Plugin.RandoManager.isRandomizerActive))
             {
-                // If we don't have a manager yet, create one
+                // If AP is connected, use AP manager
+                if (ArchipelagoConnection.SocketConnected) Plugin.RandoManager = new ManagerArchipelago();
+
+                // Default to vanilla manager
                 Plugin.RandoManager ??= new ManagerVanilla();
 
                 if (self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat is null)
@@ -63,10 +73,16 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
+                    // Assign contents of Gourmand's tracker data
+                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest ? MiscHooks.expanded : MiscHooks.unexpanded;
+
                     try
                     {
                         Plugin.RandoManager.StartNewGameSession(self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat,
                             self.menuSetup.startGameCondition != ProcessManager.MenuSetup.StoryGameInitCondition.New);
+
+                        // Have AP manager grab the first item packet (the one with the full inventory) right away
+                        if (Plugin.RandoManager is ManagerArchipelago managerAP) managerAP.TryAquireNextItemPacket();
                     }
                     catch (Exception e)
                     {
@@ -79,7 +95,8 @@ namespace RainWorldRandomizer
 
             if (ID == ProcessManager.ProcessID.MainMenu)
             {
-                // Turn off randomizer when quitting to menu
+                // Vanilla manager does not exist outside of the scope of gameplay. TODO: Eventually, neither will any other manager
+                if (Plugin.RandoManager is ManagerVanilla) Plugin.RandoManager = null;
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
             }
 
@@ -192,10 +209,12 @@ namespace RainWorldRandomizer
             {
                 // Spawn pending items in spawn room
                 if (!RandoOptions.ItemShelterDelivery) return;
-                
-                while (Plugin.Singleton.itemDeliveryQueue.Count > 0)
+
+                for (int i = 0; i < SHELTER_ITEMS_PER_CYCLE; i++)
                 {
-                    AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
+                    if (Plugin.RandoManager.itemDeliveryQueue.Count == 0) break;
+
+                    AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
                     try
                     {
                         self.world.GetAbstractRoom(roomIndex).AddEntity(obj);
@@ -282,6 +301,9 @@ namespace RainWorldRandomizer
             // Active only
             if (!Plugin.RandoManager.isRandomizerActive) return;
 
+            // Read and apply a single queued item packet every frame
+            if (Plugin.RandoManager is ManagerArchipelago APManager) APManager.TryAquireNextItemPacket();
+
             // Applying glow effect if unlock has been given
             for (int i = 0; i < self.Players.Count; i++)
             {
@@ -297,8 +319,7 @@ namespace RainWorldRandomizer
             Room currentRoom = self.FirstRealizedPlayer?.room;
             if (currentRoom?.abstractRoom.shelter ?? false)
             {
-                if (Plugin.RandoManager is ManagerArchipelago
-                    && ArchipelagoConnection.sheltersanity
+                if (RandoOptions.UseShelterChecks
                     && $"Shelter-{currentRoom.abstractRoom.name.ToUpper()}" is string checkName
                     && Plugin.RandoManager.LocationExists(checkName))
                 {
@@ -339,36 +360,80 @@ namespace RainWorldRandomizer
             }
         }
 
+        private static void OnContinuePaused(On.RainWorldGame.orig_ContinuePaused orig, RainWorldGame self)
+        {
+            orig(self);
+
+            // Remove and spawn items selected while paused
+            if ((MenuExtension.PendingItemsDisplay?.selectedIndices.Count ?? 0) > 0)
+            {
+                List<Unlock.Item> items = [.. Plugin.RandoManager.itemDeliveryQueue];
+                MenuExtension.PendingItemsDisplay.selectedIndices.Sort();
+                MenuExtension.PendingItemsDisplay.selectedIndices.Reverse();
+                foreach (int index in MenuExtension.PendingItemsDisplay.selectedIndices)
+                {
+                    // Try to spawn the item, and remove from queue if successful
+                    if (self.TryGivePlayerItem(items[index])) items.RemoveAt(index);
+                }
+                Plugin.RandoManager.itemDeliveryQueue = new(items);
+            }
+        }
+
         /// <summary>
         /// Save randomizer state when game is saved
         /// </summary>
         public static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
-            if (Plugin.RandoManager.isRandomizerActive)
+            bool origSuccess = orig(self, saveCurrentState, saveMaps, saveMiscProg);
+
+            if (Plugin.RandoManager?.isRandomizerActive is true)
             {
                 Plugin.RandoManager.SaveGame(saveCurrentState);
             }
 
-            return orig(self, saveCurrentState, saveMaps, saveMiscProg);
+            return origSuccess;
         }
 
         /// <summary>
         /// Update item delivery queue on session end
         /// </summary>
-        public static void OnSessionEnded(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished)
+        private static void OnSessionEnded(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished)
         {
             orig(self, game, survived, newMalnourished);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            SaveDiskUpdateItemQueue(survived, self.malnourished);
+        }
 
-            // If we survived this cycle, paste current queue to saved backup
-            // If we died, restore current queue from saved backup
-            if (survived)
+        /// <summary>
+        /// Update item delivery queue on quit to menu
+        /// </summary>
+        private static void OnExitGame(On.RainWorldGame.orig_ExitGame orig, RainWorldGame self, bool asDeath, bool asQuit)
+        {
+            orig(self, asDeath, asQuit);
+            SaveDiskUpdateItemQueue(false, false);
+        }
+
+        /// <summary>
+        /// Update item delivery queue on Echo encounter
+        /// </summary>
+        private static void OnGhostEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
+        {
+            orig(self, ghost, rainWorld);
+            SaveDiskUpdateItemQueue(false, false);
+        }
+
+        private static void SaveDiskUpdateItemQueue(bool completeCycle, bool malnourished)
+        {
+            // If we did not finish the cycle (death, quit out, etc.), restore current queue from saved backup
+            if (!completeCycle)
             {
-                Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
+                Plugin.RandoManager.itemDeliveryQueue = new(Plugin.RandoManager.lastItemDeliveryQueue);
+                return;
             }
-            else
+
+            // If we survived without starving this cycle, paste current queue to saved backup
+            if (!malnourished)
             {
-                Plugin.Singleton.itemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.lastItemDeliveryQueue);
+                Plugin.RandoManager.lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
             }
         }
 
@@ -378,29 +443,8 @@ namespace RainWorldRandomizer
         public static void ILCycleCompleted(ILContext il)
         {
             ILCursor c = new(il);
-            c.GotoNext(
-                x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField("karmaCap")),
-                x => x.MatchLdcI4(4)
-                );
-
-            // Remove the check for if the player has at least 5 karma
-            // for the Survivor passage increase
-            c.Index += 1;
-            c.EmitDelegate<Func<int, int>>((orig) =>
-            {
-                // Remain as normal in AP
-                if (Plugin.RandoManager is ManagerArchipelago)
-                {
-                    return orig;
-                }
-                else
-                {
-                    return 4;
-                }
-            });
 
             // Fake the "Passage Progress without Survivor" option if needed
-            ILCursor c1 = new(il);
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdsfld(typeof(MMF).GetField(nameof(MMF.cfgSurvivorPassageNotRequired))),
@@ -478,6 +522,45 @@ namespace RainWorldRandomizer
             {
                 managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
             }
+        }
+
+        public static bool TryGivePlayerItem(this RainWorldGame game, Unlock.Item item)
+        {
+            // Find first living player to give to
+            if (game.FirstAlivePlayer.realizedCreature is not Player player)
+            {
+                Plugin.Log.LogError("Failed to spawn item for player, no valid player found");
+                return false;
+            }
+
+            // Try to create the object
+            AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(item, game.world, player.room.abstractRoom);
+            try
+            {
+                player.room.abstractRoom.AddEntity(obj);
+                obj.pos = player.abstractCreature.pos;
+                obj.RealizeInRoom();
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Failed to spawn item for player, invalid item?");
+                Plugin.Log.LogError(e);
+                return false;
+            }
+
+            player.room.PlaySound(SoundID.Slugcat_Regurgitate_Item, player.mainBodyChunk);
+
+            // Set position and try to grab
+            obj.realizedObject.firstChunk.HardSetPosition(player.bodyChunks[0].pos);
+            if (!player.CanIPickThisUp(obj.realizedObject)
+                || (player.Grabability(obj.realizedObject) >= Player.ObjectGrabability.TwoHands
+                    && player.grasps.Any(g => g is not null)))
+            {
+                return true;
+            }
+
+            player.SlugcatGrab(obj.realizedObject, player.FreeHand());
+            return true;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,13 +11,7 @@ namespace RainWorldRandomizer
     {
         public static bool IsThereASavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
-            return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"))
-                || IsThereALegacySavedGame(slugcat, saveSlot);
-        }
-
-        public static bool IsThereALegacySavedGame(SlugcatStats.Name slugcat, int saveSlot)
-        {
-            return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.json"));
+            return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
         }
 
         // Meant for vanilla saves only
@@ -36,23 +31,12 @@ namespace RainWorldRandomizer
             }
 
             file.Close();
-
-            // If this game was loaded from a legacy save, delete it now
-            if (IsThereALegacySavedGame(slugcat, saveSlot))
-            {
-                File.Delete(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.json"));
-            }
         }
 
         // Meant for vanilla saves only
         public static Dictionary<string, Unlock> LoadSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
             Dictionary<string, Unlock> game = [];
-
-            if (IsThereALegacySavedGame(slugcat, saveSlot))
-            {
-                return DeserializeGameFromJson(slugcat, saveSlot);
-            }
 
             string[] file = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
@@ -98,45 +82,12 @@ namespace RainWorldRandomizer
             return game;
         }
 
-        // Load game from legacy .json format
-        private static Dictionary<string, Unlock> DeserializeGameFromJson(SlugcatStats.Name slugcat, int saveSlot)
-        {
-            Dictionary<string, Unlock> game = [];
-
-            string[] json = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.json"));
-
-            foreach (string line in json)
-            {
-                string[] keyValue = Regex.Split(line
-                    .Replace("\\u0022", "")
-                    .TrimStart("[\"".ToCharArray())
-                    .TrimEnd("\"]".ToCharArray()), "\",\"");
-
-                string[] unlockString = keyValue[1]
-                    .Replace("ID:", "")
-                    .Replace("IsGiven:", "")
-                    .Replace("Type:", "")
-                    .TrimStart('{')
-                    .TrimEnd('}')
-                    .Split(',');
-
-                Unlock unlock = new Unlock(
-                    Unlock.UnlockType.typeOrder[int.Parse(unlockString[1])],
-                    unlockString[0],
-                    bool.Parse(unlockString[2]));
-
-                game.Add(keyValue[0], unlock);
-            }
-
-            return game;
-        }
-
-        public static void WriteItemQueueToFile(Queue<Unlock.Item> itemQueue, SlugcatStats.Name slugcat, int saveSlot)
+        public static void WriteItemQueueToFile(IEnumerable<Unlock.Item> items, IEnumerable<TrapsHandler.Trap> traps, SlugcatStats.Name slugcat, int saveSlot)
         {
             string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt");
 
             // If there is nothing to store, delete any stored data
-            if (itemQueue.Count == 0)
+            if (items.Count() + traps.Count() == 0)
             {
                 if (File.Exists(path))
                 {
@@ -147,7 +98,11 @@ namespace RainWorldRandomizer
 
             StreamWriter file = File.CreateText(path);
 
-            foreach (Unlock.Item item in itemQueue)
+            foreach (TrapsHandler.Trap trap in traps)
+            {
+                file.WriteLine($"Trap,{trap.id}");
+            }
+            foreach (Unlock.Item item in items)
             {
                 file.WriteLine($"{item.type.enumType.Name},{item.id}");
             }
@@ -155,12 +110,13 @@ namespace RainWorldRandomizer
             file.Close();
         }
 
-        public static Queue<Unlock.Item> LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
+        public static (Queue<Unlock.Item>, Queue<TrapsHandler.Trap>) LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
         {
             Queue<Unlock.Item> itemQueue = [];
+            Queue<TrapsHandler.Trap> trapQueue = [];
 
             if (!File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt")))
-                return itemQueue;
+                return (itemQueue, trapQueue);
 
             string[] text = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt"));
 
@@ -169,15 +125,19 @@ namespace RainWorldRandomizer
                 string[] itemString = Regex.Split(line, ",");
                 Unlock.Item item;
 
+                if (itemString[0] == "Trap")
+                {
+                    trapQueue.Enqueue(new TrapsHandler.Trap(itemString[1]));
+                    continue;
+                }
+
                 if (itemString[0] == nameof(DataPearl.AbstractDataPearl.DataPearlType))
                 {
                     item = Unlock.IDToItem(itemString[1], true);
-                    //item = new Unlock.Item(itemString[2], new DataPearl.AbstractDataPearl.DataPearlType(itemString[1]));
                 }
                 else if (itemString[0] == nameof(AbstractPhysicalObject.AbstractObjectType))
                 {
                     item = Unlock.IDToItem(itemString[1]);
-                    //item = new Unlock.Item(itemString[2], new AbstractPhysicalObject.AbstractObjectType(itemString[1]));
                 }
                 else
                 {
@@ -185,17 +145,13 @@ namespace RainWorldRandomizer
                     continue;
                 }
 
-                //if (itemString.Length >= 4)
-                //{
-                //    item.id = itemString[3];
-                //}
-
                 itemQueue.Enqueue(item);
             }
 
-            return itemQueue;
+            return (itemQueue, trapQueue);
         }
 
+        [Obsolete("Unsafe when RandoManager is null, which is the only case where it is useful")]
         public static int CountRedsCycles(int saveSlot)
         {
             if (!IsThereASavedGame(SlugcatStats.Name.Red, saveSlot))
@@ -207,81 +163,7 @@ namespace RainWorldRandomizer
             return game.Values.Where(u => u.Type == Unlock.UnlockType.HunterCycles && u.IsGiven).Count();
         }
 
-        #region Archipelago saved data
-        // Fetch locally saved checksum
-        /*
-        public static string GetDataPackageChecksum()
-        {
-            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_checksum.txt");
-            if (!File.Exists(path))
-            {
-                return "";
-            }
-
-            string[] file = File.ReadAllLines(path);
-
-            return file.Length > 0 ? file[0] : "";
-        }
-        
-        public static void WriteDataPackageToFile(Dictionary<string, long> itemLookup, Dictionary<string, long> locationLookup, string checksum)
-        {
-            Plugin.Log.LogDebug("Writing Data package files...");
-            StreamWriter itemsFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_items.txt"));
-
-            foreach (var item in itemLookup)
-            {
-                itemsFile.Write($"{item.Key}->{item.Value}");
-                itemsFile.WriteLine();
-            }
-            itemsFile.Close();
-
-            StreamWriter locationsFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_locations.txt"));
-
-            foreach (var item in locationLookup)
-            {
-                locationsFile.Write($"{item.Key}->{item.Value}");
-                locationsFile.WriteLine();
-            }
-            locationsFile.Close();
-
-            StreamWriter checksumFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_checksum.txt"));
-            checksumFile.Write(checksum);
-            checksumFile.Close();
-
-            Plugin.Log.LogDebug("DataPackage file write complete");
-        }
-
-        public static bool LoadDataPackage(out Dictionary<string, long> itemLookup, out Dictionary<string, long> locationLookup)
-        {
-            itemLookup = new Dictionary<string, long>();
-            locationLookup = new Dictionary<string, long>();
-
-            string itemsPath = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_items.txt");
-            string locationsPath = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_datapackage_locations.txt");
-
-            if (!(File.Exists(itemsPath) && File.Exists(locationsPath)))
-            {
-                return false;
-            }
-
-            string[] itemsFile = File.ReadAllLines(itemsPath);
-            foreach (string line in itemsFile)
-            {
-                string[] keyValue = Regex.Split(line, "->");
-                itemLookup.Add(keyValue[0], long.Parse(keyValue[1]));
-            }
-
-            string[] locationsFile = File.ReadAllLines(locationsPath);
-            foreach (string line in locationsFile)
-            {
-                string[] keyValue = Regex.Split(line, "->");
-                locationLookup.Add(keyValue[0], long.Parse(keyValue[1]));
-            }
-
-            return true;
-        }
-        */
-
+        #region Archipelago save data
         public struct APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
         {
             public long lastIndex = lastIndex;
@@ -336,36 +218,6 @@ namespace RainWorldRandomizer
                 }
             }
         }
-
-        public static void WriteLastItemIndexToFile(string saveId, long lastIndex)
-        {
-            Dictionary<string, long> origRegistry = LoadLastItemIndices();
-            if (origRegistry.ContainsKey(saveId))
-            {
-                origRegistry[saveId] = lastIndex;
-            }
-            else
-            {
-                origRegistry.Add(saveId, lastIndex);
-            }
-
-            StreamWriter indexFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_save_registry.txt"));
-
-            indexFile.Write(JsonConvert.SerializeObject(origRegistry));
-            indexFile.Close();
-        }
-
-        public static Dictionary<string, long> LoadLastItemIndices()
-        {
-            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, "ap_save_registry.txt");
-            if (!File.Exists(path))
-            {
-                return [];
-            }
-
-            return JsonConvert.DeserializeObject<Dictionary<string, long>>(File.ReadAllText(path)) ?? [];
-        }
-
         #endregion
     }
 }

@@ -58,9 +58,17 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Include checks for story objectives", null, "",
                     ["Use Special checks"]));
 
-            RandoOptions.giveItemUnlocks = config.Bind<bool>("giveItemUnlocks", true,
-                new ConfigurableInfo("Whether random objects will be used as filler items. If not, extra gate keys will be added instead", null, "",
-                    ["Use random objects as filler"]));
+            RandoOptions.useShelterChecks = config.Bind<bool>("useShelterChecks", false,
+                new ConfigurableInfo("Include checks for entering shelters", null, "",
+                    ["Use Shelters as checks"]));
+
+            RandoOptions.useDevTokenChecks = config.Bind<bool>("useDevTokenChecks", false,
+                new ConfigurableInfo("Include checks for collecting developer commentary tokens", null, "",
+                    ["Use Dev Tokens as checks"]));
+
+            RandoOptions.useKarmaFlowerChecks = config.Bind<bool>("useKarmaFlowerChecks", false,
+                new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations", null, "",
+                    ["Use Karma Flowers as checks"]));
 
             RandoOptions.itemShelterDelivery = config.Bind<bool>("itemShelterDelivery", false,
                 new ConfigurableInfo("Whether objects should be delivered in the next shelter instead of placed inside slugcat's stomach", null, "",
@@ -71,10 +79,15 @@ namespace RainWorldRandomizer
                     ["Use Passage tokens as filler"]));
 
             RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
-                new ConfigurableInfo("The percentage amount of filler items that will be cycle increases when playing as Hunter (1 is 100%)." +
+                new ConfigurableInfo("The percentage amount of filler items that will increase the remaining cycles when playing as Hunter." +
                     "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
                     new ConfigAcceptableRange<float>(0, 1), "",
                     ["Hunter cycle increases"]));
+
+            RandoOptions.trapsDensity = config.Bind<float>("trapsDensity", 0.2f,
+                new ConfigurableInfo("The percentage amount of filler items that will be trap effects. Set to 0 to disable traps entirely",
+                    new ConfigAcceptableRange<float>(0, 1), "",
+                    ["Traps percentage"]));
 
             RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
@@ -82,8 +95,13 @@ namespace RainWorldRandomizer
 
             RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
                 new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
-                "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
+                    "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
                     ["Start with low karma"]));
+
+            RandoOptions.extraKarmaIncreases = config.Bind<int>("extraKarmaIncreases", 2,
+                new ConfigurableInfo("How many extra karma items above the minimum required will be placed in the world",
+                    new ConfigAcceptableRange<int>(0, 10), "",
+                    ["Extra karma increases"]));
 
             RandoOptions.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
                 new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
@@ -110,9 +128,17 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
                     ["Open Submerged Superstructure"]));
 
-            RandoOptions.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", true,
-                new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check", null, "",
+            RandoOptions.allowExteriorForInv = config.Bind<bool>("allowExteriorForInv", false, 
+                new ConfigurableInfo("By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty", null, "",
+                    ["Open Exterior for Inv"]));
+
+            RandoOptions.useFoodQuestChecks = config.Bind<string>("useFoodQuestChecks", "Disabled",
+                new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check. Other slugcats will only consider the foods they can eat", null, "",
                     ["Use Food quest checks"]));
+
+            RandoOptions.useExpandedFoodQuestChecks = config.Bind<bool>("useExpandedFoodQuestChecks", false,
+                new ConfigurableInfo("Extends food quest checks to include almost all creatures (Some of these can be very difficult)", null, "",
+                    ["Use Expanded Food Quest"]));
 
             RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
                 new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized", null, "",
@@ -120,7 +146,7 @@ namespace RainWorldRandomizer
 
             RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
                 new ConfigurableInfo("Include Spearmaster's broadcast tokens as checks", null, "",
-                    ["Use Broadcasts"]));
+                    ["Use Broadcast Checks"]));
 
             // ----- Archipelago -----
             RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
@@ -135,11 +161,12 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Port for server connection", null, "",
                     ["Port"]));
 
-            RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
+            // Default value must contain a space to allow spaces in the field
+            RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", " ",
                 new ConfigurableInfo("Your slot name for server connection", null, "",
                     ["Slot Name"]));
 
-            RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
+            RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", " ",
                 new ConfigurableInfo("Password for server connection (Optional)", null, "",
                     ["Password"]));
 
@@ -227,6 +254,8 @@ namespace RainWorldRandomizer
             miscGroup.AddCheckBox(RandoOptions.randomizeSpawnLocation, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             miscGroup.AddCheckBox(RandoOptions.startMinKarma, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            miscGroup.AddUpDown(RandoOptions.extraKarmaIncreases, true, new(LEFT_OPTION_X, runningY), 50f);
             runningY -= NEWLINE_DECREMENT * 1.5f;
             miscGroup.AddToTab(tabIndex);
             optionGroups.Add(miscGroup);
@@ -242,17 +271,21 @@ namespace RainWorldRandomizer
             checksGroup.AddCheckBox(RandoOptions.usePassageChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useSpecialChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useShelterChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useKarmaFlowerChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT * 1.5f;
             checksGroup.AddToTab(tabIndex);
             optionGroups.Add(checksGroup);
 
             // Filler Items
             OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            fillerGroup.AddCheckBox(RandoOptions.giveItemUnlocks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            fillerGroup.AddUpDown(RandoOptions.trapsDensity, false, new(LEFT_OPTION_X, runningY), 60f);
             fillerGroup.AddToTab(tabIndex);
             optionGroups.Add(fillerGroup);
 
@@ -276,8 +309,33 @@ namespace RainWorldRandomizer
             globalGroup.AddCheckBox(RandoOptions.legacyNotifications, new(RIGHT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             globalGroup.AddCheckBox(RandoOptions.useGateMap, new(RIGHT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT * 1.65f;
             globalGroup.AddToTab(tabIndex);
             optionGroups.Add(globalGroup);
+
+            OptionGroup trapGroup = new(this, "Traps", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            OpUpdown trapMinUpDown = trapGroup.AddUpDown(RandoOptions.trapMinimumCooldown, true, new(RIGHT_OPTION_X, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            OpUpdown trapMaxUpDown = trapGroup.AddUpDown(RandoOptions.trapMaximumCooldown, true, new(RIGHT_OPTION_X, runningY), 60f);
+            runningY -= NEWLINE_DECREMENT;
+            trapGroup.AddToTab(tabIndex);
+            optionGroups.Add(trapGroup);
+
+            // Add logic to prevent minimum > maximum and vice versa
+            trapMinUpDown.OnChange += () =>
+            {
+                if (trapMinUpDown.GetValueInt() > trapMaxUpDown.GetValueInt())
+                {
+                    trapMaxUpDown.SetValueInt(trapMinUpDown.GetValueInt());
+                }
+            };
+            trapMaxUpDown.OnChange += () =>
+            {
+                if (trapMaxUpDown.GetValueInt() < trapMinUpDown.GetValueInt())
+                {
+                    trapMinUpDown.SetValueInt(trapMaxUpDown.GetValueInt());
+                }
+            };
         }
 
         public void PopulateDownpourTab()
@@ -296,11 +354,22 @@ namespace RainWorldRandomizer
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowMetroForOthers, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 1.5f;
+            runningY -= NEWLINE_DECREMENT;
+            unlockRegionsGroup.AddCheckBox(RandoOptions.allowExteriorForInv, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT * 3.5f;
 
             // Check types
-            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            checksGroup.AddCheckBox(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY));
+            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 235f));
+
+            OpListBox listBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
+                ["Disabled", "Enabled", "Gourmand Only"], 3, false);
+            OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string))
+            { bumpBehav = listBox.bumpBehav };
+            checksGroup.AddElements(listBox, foodQuestLabel);
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useExpandedFoodQuestChecks, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            checksGroup.AddCheckBox(RandoOptions.useDevTokenChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useEnergyCell, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
@@ -333,6 +402,11 @@ namespace RainWorldRandomizer
             runningY -= NEWLINE_DECREMENT;
             OpTextBox passwordTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f);
             runningY -= NEWLINE_DECREMENT;
+
+            // Force infinite length on important information fields
+            hostNameTextBox.maxLength = int.MaxValue;
+            slotNameTextBox.maxLength = int.MaxValue;
+            passwordTextBox.maxLength = int.MaxValue;
 
             OpSimpleButton connectButton = new(new Vector2(LEFT_OPTION_X, runningY), new Vector2(60f, 20f), "Connect")
             {
@@ -372,14 +446,6 @@ namespace RainWorldRandomizer
             deathLinkGroup.AddToTab(tabIndex);
             optionGroups.Add(deathLinkGroup);
 
-            OptionGroup trapGroup = new(this, "AP_Traps", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
-            OpUpdown trapMinUpDown = trapGroup.AddUpDown(RandoOptions.trapMinimumCooldown, true, new(RIGHT_OPTION_X + 30f, runningY), 60f);
-            runningY -= NEWLINE_DECREMENT;
-            OpUpdown trapMaxUpDown = trapGroup.AddUpDown(RandoOptions.trapMaximumCooldown, true, new(RIGHT_OPTION_X + 30f, runningY), 60f);
-            runningY -= NEWLINE_DECREMENT;
-            trapGroup.AddToTab(tabIndex);
-            optionGroups.Add(trapGroup);
-
             // Slot data information
             runningY = Mathf.Min(runningY, 322.5f);
             OptionGroup slotDataGroup = new(this, "AP_Slot_Data", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
@@ -402,15 +468,14 @@ namespace RainWorldRandomizer
             {
                 bool APDisabled = !APCheckBox.GetValueBool();
                 // Disconnect connection when AP is turned off
-                if (APDisabled && ArchipelagoConnection.Authenticated)
+                if (APDisabled && ArchipelagoConnection.HasConnected)
                 {
-                    ArchipelagoConnection.Disconnect();
+                    ArchipelagoConnection.Disconnect(true);
                     slotDataLabelLeft.text = "";
                     slotDataLabelRight.text = "";
                 }
                 connectionGroup.Disabled = APDisabled;
                 deathLinkGroup.Disabled = APDisabled;
-                trapGroup.Disabled = APDisabled;
                 foreach (OptionGroup group in standaloneExclusiveGroups)
                 {
                     group.Disabled = !APDisabled;
@@ -430,7 +495,7 @@ namespace RainWorldRandomizer
                     slotNameTextBox.value,
                     passwordTextBox.value == "" ? null : passwordTextBox.value);
 
-                if (!ArchipelagoConnection.Authenticated) return;
+                if (!ArchipelagoConnection.HasConnected) return;
 
                 deathLinkOverrideCheckbox.SetValueBool(DeathLinkHandler.Active);
 
@@ -470,7 +535,7 @@ namespace RainWorldRandomizer
             // Disconnect from AP on click
             disconnectButton.OnClick += (trigger) =>
             {
-                if (ArchipelagoConnection.Disconnect())
+                if (ArchipelagoConnection.Disconnect(true))
                 {
                     connectResultLabel.text = "Disconnected from server";
                     slotDataLabelLeft.text = "";
@@ -482,22 +547,6 @@ namespace RainWorldRandomizer
             {
                 // TODO: DeathLink probably shouldn't send a toggle to server every time the box is clicked, change to happen on apply settings
                 DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
-            };
-
-            // Add logic to prevent minimum > maximum and vice versa
-            trapMinUpDown.OnChange += () =>
-            {
-                if (trapMinUpDown.GetValueInt() > trapMaxUpDown.GetValueInt())
-                {
-                    trapMaxUpDown.SetValueInt(trapMinUpDown.GetValueInt());
-                }
-            };
-            trapMaxUpDown.OnChange += () =>
-            {
-                if (trapMaxUpDown.GetValueInt() < trapMinUpDown.GetValueInt())
-                {
-                    trapMinUpDown.SetValueInt(trapMaxUpDown.GetValueInt());
-                }
             };
 
             clearSavesButton.OnClick += AskToClearSaveFiles;

@@ -39,23 +39,6 @@ namespace RainWorldRandomizer
             { "VultureMask", "Vulture Mask" },
         };
 
-        public static Dictionary<Item, int> junkItems = new()
-        {
-            { new Item("Spear", AbstractPhysicalObject.AbstractObjectType.Spear), 20 },
-            { IDToItem("FireSpear"), 12 },
-            { new Item("Bomb", AbstractPhysicalObject.AbstractObjectType.ScavengerBomb), 15 },
-            { new Item("Spore Puff", AbstractPhysicalObject.AbstractObjectType.PuffBall), 7 },
-            { new Item("Mushroom", AbstractPhysicalObject.AbstractObjectType.Mushroom), 7 },
-            { new Item("Bubble Weed", AbstractPhysicalObject.AbstractObjectType.BubbleGrass), 7 },
-            { new Item("Lantern", AbstractPhysicalObject.AbstractObjectType.Lantern), 5 },
-            { new Item("Pearl", AbstractPhysicalObject.AbstractObjectType.DataPearl), 5 },
-            { new Item("Karma Flower", AbstractPhysicalObject.AbstractObjectType.KarmaFlower), 5 },
-            { new Item("Vulture Mask", AbstractPhysicalObject.AbstractObjectType.VultureMask), 3 }
-        };
-
-        // MSC exclusive
-        public static Dictionary<Item, int> junkItemsMSC;
-
         public static bool hasSeenItemTutorial = false;
 
         public string ID { get; set; }
@@ -72,6 +55,7 @@ namespace RainWorldRandomizer
             public static readonly UnlockType Mark = new("The_Mark", true);
             public static readonly UnlockType Item = new("Item", true);
             public static readonly UnlockType ItemPearl = new("ItemPearl", true);
+            public static readonly UnlockType Trap = new("Trap", true);
             public static readonly UnlockType HunterCycles = new("HunterCycles", true);
             public static readonly UnlockType IdDrone = new("IdDrone", true);
             public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
@@ -138,13 +122,13 @@ namespace RainWorldRandomizer
                 case "Item":
                     if (item != null)
                     {
-                        Plugin.Singleton.itemDeliveryQueue.Enqueue((Item)item);
-                        Plugin.Singleton.lastItemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue((Item)item);
                     }
                     else
                     {
-                        Plugin.Singleton.itemDeliveryQueue.Enqueue(IDToItem(ID));
-                        Plugin.Singleton.lastItemDeliveryQueue.Enqueue(IDToItem(ID));
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue(IDToItem(ID));
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID));
                         item = IDToItem(ID);
                     }
                     ShowItemTutorial();
@@ -152,16 +136,19 @@ namespace RainWorldRandomizer
                 case "ItemPearl":
                     if (item != null)
                     {
-                        Plugin.Singleton.itemDeliveryQueue.Enqueue((Item)item);
-                        Plugin.Singleton.lastItemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue((Item)item);
                     }
                     else
                     {
-                        Plugin.Singleton.itemDeliveryQueue.Enqueue(IDToItem(ID, true));
-                        Plugin.Singleton.lastItemDeliveryQueue.Enqueue(IDToItem(ID, true));
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue(IDToItem(ID, true));
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID, true));
                         item = IDToItem(ID, true);
                     }
                     ShowItemTutorial();
+                    break;
+                case "Trap":
+                    TrapsHandler.EnqueueTrap(ID);
                     break;
                 case "HunterCycles":
                     Plugin.RandoManager.HunterBonusCyclesGiven++;
@@ -191,44 +178,13 @@ namespace RainWorldRandomizer
                 "Neuron_Glow" => "Unlocked Neuron Glow",
                 "The_Mark" => "Unlocked The Mark",
                 "Item" => $"Found {ItemToEncodedIcon((Item)item)}",
+                "Trap" => $"Found a trap!",
                 "HunterCycles" => "Increased Lifespan",
                 "IdDrone" => "Found Citizen ID Drone",
                 "DisconnectFP" => "Disconnected Five Pebbles",
                 "RewriteSpearPearl" => "Unlocked Broadcast Encoding",
                 _ => $"Unlocked {ID}",
             };
-        }
-
-        public static Item RandomJunkItem()
-        {
-            List<Item> items = junkItems.Keys.ToList();
-            List<int> weights = junkItems.Values.ToList();
-
-            if (ModManager.MSC)
-            {
-                junkItemsMSC ??= new Dictionary<Item, int>()
-                {
-                    { IDToItem("ElectricSpear"), 3 },
-                    { new Item("Singularity Bomb", DLCSharedEnums.AbstractObjectType.SingularityBomb), 1 }
-                };
-                items.AddRange(junkItemsMSC.Keys);
-                weights.AddRange(junkItemsMSC.Values);
-            }
-
-            int sum = weights.Sum();
-            int randomValue = UnityEngine.Random.Range(0, sum + 1);
-
-            int cursor = 0;
-            for (int i = 0; i < items.Count; i++)
-            {
-                cursor += weights[i];
-                if (cursor >= randomValue)
-                {
-                    return items[i];
-                }
-            }
-
-            return new Item();
         }
 
         public override string ToString()
@@ -241,6 +197,7 @@ namespace RainWorldRandomizer
                 "Neuron_Glow" => "Neuron Glow",
                 "The_Mark" => "The Mark",
                 "Item" => item.Value.name,
+                "Trap" => ID[5..],
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
                 "IdDrone" => "Citizen ID Drone",
                 "DisconnectFP" => "Disconnect Pebbles",

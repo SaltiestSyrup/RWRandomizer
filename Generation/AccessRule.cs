@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MoreSlugcats;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -40,6 +41,7 @@ namespace RainWorldRandomizer.Generation
         public virtual bool IsMet(State state)
         {
             if (ReqName.Equals("")) return true;
+            if (ReqName.Equals(IMPOSSIBLE_ID)) return false;
             return state.SpecialProg.Contains(ReqName);
         }
 
@@ -50,6 +52,8 @@ namespace RainWorldRandomizer.Generation
 
         public override string ToString()
         {
+            if (ReqName is "") return "Always met";
+            if (ReqName is IMPOSSIBLE_ID) return "Impossible";
             return $"Has item {ReqName}";
         }
     }
@@ -67,12 +71,12 @@ namespace RainWorldRandomizer.Generation
 
         public override bool IsMet(State state)
         {
-            return ReqName is not null && state.Regions.Contains(ReqName);
+            return ReqName is not null && state.HasRegion(ReqName);
         }
 
         public override bool IsPossible(State state)
         {
-            return Region.GetFullRegionOrder(state.Timeline).Contains(ReqName);
+            return state.AllRegions.Any(r => r.ID == ReqName);
         }
 
         public override string ToString()
@@ -152,6 +156,20 @@ namespace RainWorldRandomizer.Generation
             return state.Creatures.Contains(creature);
         }
 
+        public override bool IsPossible(State state)
+        {
+            // Costly calculation, hopefully fine since this shouldn't be checked after init
+            return state.AllRegions
+                .Any(r =>
+                {
+                    string regLower = r.ID.ToLowerInvariant();
+                    if (!TokenCachePatcher.regionCreatures.TryGetValue(regLower, out List<CreatureTemplate.Type> critList)) return false;
+                    int index = critList.IndexOf(creature);
+                    if (index < 0) return false;
+                    return TokenCachePatcher.regionCreaturesAccessibility[regLower][index].Contains(state.Slugcat);
+                });
+        }
+
         public override string ToString()
         {
             return $"Can find {ReqName}";
@@ -175,6 +193,20 @@ namespace RainWorldRandomizer.Generation
         public override bool IsMet(State state)
         {
             return state.Objects.Contains(item);
+        }
+
+        public override bool IsPossible(State state)
+        {
+            // Costly calculation, hopefully fine since this shouldn't be checked after init
+            return state.AllRegions
+                .Any(r =>
+                {
+                    string regLower = r.ID.ToLowerInvariant();
+                    if (!TokenCachePatcher.regionObjects.TryGetValue(regLower, out List<AbstractPhysicalObject.AbstractObjectType> objList)) return false;
+                    int index = objList.IndexOf(item);
+                    if (index < 0) return false;
+                    return TokenCachePatcher.regionObjectsAccessibility[regLower][index].Contains(state.Slugcat);
+                });
         }
 
         public override string ToString()
@@ -206,23 +238,26 @@ namespace RainWorldRandomizer.Generation
     public class SlugcatAccessRule : AccessRule
     {
         private readonly SlugcatStats.Name slugcat;
+        public bool inverted;
 
-        public SlugcatAccessRule(SlugcatStats.Name slugcat)
+        /// <param name="invert">If true will pass if chosen is not this slugcat</param>
+        public SlugcatAccessRule(SlugcatStats.Name slugcat, bool invert = false)
         {
             this.slugcat = slugcat;
             ReqName = slugcat.value;
+            inverted = invert;
         }
 
-        public override bool IsMet(State state) => true;
+        public override bool IsMet(State state) => IsPossible(state);
 
         public override bool IsPossible(State state)
         {
-            return state.Slugcat == slugcat;
+            return inverted ? state.Slugcat != slugcat : state.Slugcat == slugcat;
         }
 
         public override string ToString()
         {
-            return $"Playing as {ReqName}";
+            return $"{(inverted ? "Not p" : "P")}laying as {ReqName}";
         }
     }
 
@@ -248,7 +283,7 @@ namespace RainWorldRandomizer.Generation
             ReqName = timeline.value;
         }
 
-        public override bool IsMet(State state) => true;
+        public override bool IsMet(State state) => IsPossible(state);
 
         public override bool IsPossible(State state)
         {
@@ -300,7 +335,7 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
-        public override bool IsMet(State state) => true;
+        public override bool IsMet(State state) => IsPossible(state);
 
         public override bool IsPossible(State state)
         {
@@ -329,7 +364,10 @@ namespace RainWorldRandomizer.Generation
     /// Most notably applies to Passages and Story locations.
     /// These can be chained together to create arbitrarily complex rules for any situation.
     /// </summary>
-    public class CompoundAccessRule : AccessRule
+    /// <param name="rules">Array of rules that this rule will reference</param>
+    /// <param name="operation">The type of operation used to determine if given rules are met</param>
+    /// <param name="valAmount">Optional value utilized by some operations</param>
+    public class CompoundAccessRule(AccessRule[] rules, CompoundAccessRule.CompoundOperation operation, int valAmount = 0) : AccessRule
     {
         public enum CompoundOperation
         {
@@ -347,19 +385,9 @@ namespace RainWorldRandomizer.Generation
             AtLeast
         }
 
-        protected CompoundOperation operation;
-        protected AccessRule[] accessRules;
-        protected int valAmount;
-
-        /// <param name="rules">Array of rules that this rule will reference</param>
-        /// <param name="operation">The type of operation used to determine if given rules are met</param>
-        /// <param name="valAmount">Optional value utilized by some operations</param>
-        public CompoundAccessRule(AccessRule[] rules, CompoundOperation operation, int valAmount = 0)
-        {
-            accessRules = rules;
-            this.operation = operation;
-            this.valAmount = valAmount;
-        }
+        protected CompoundOperation operation = operation;
+        protected AccessRule[] accessRules = rules;
+        protected int valAmount = valAmount;
 
         public override bool IsMet(State state)
         {
@@ -385,11 +413,18 @@ namespace RainWorldRandomizer.Generation
 
         public override string ToString()
         {
-            string joinedRules = string.Join(", ", accessRules.Select(r => r.ToString()));
+            string seperator = operation switch
+            {
+                CompoundOperation.All => $" AND ",
+                CompoundOperation.Any => $" OR ",
+                CompoundOperation.AtLeast => $", ",
+                _ => $", ",
+            };
+            string joinedRules = string.Join(seperator, accessRules.Select(r => r.ToString()));
             return operation switch
             {
-                CompoundOperation.All => $"ALL of: ({joinedRules})",
-                CompoundOperation.Any => $"ANY of: ({joinedRules})",
+                CompoundOperation.All => $"({joinedRules})",
+                CompoundOperation.Any => $"({joinedRules})",
                 CompoundOperation.AtLeast => $"At least {valAmount} of: ({joinedRules})",
                 _ => $"Invalid compound operation containing: ({joinedRules})",
             };
@@ -399,45 +434,82 @@ namespace RainWorldRandomizer.Generation
     /// <summary>
     /// Shorthand for a rule allowing any of the given slugcats to be used
     /// </summary>
-    public class MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats) 
-        : CompoundAccessRule([.. slugcats.Select((scug) => new SlugcatAccessRule(scug))], CompoundOperation.Any)
+    /// <param name="invert">If true, will instead pass if slugcat is none of those listed</param>
+    public class MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats, bool invert = false) 
+        : CompoundAccessRule([.. slugcats.Select((scug) => new SlugcatAccessRule(scug, invert))],
+            invert ? CompoundOperation.All : CompoundOperation.Any)
     { }
 
     public static class AccessRuleConstants
     {
-        public static AccessRule[] Lizards;
-        public static AccessRule[] Regions;
-        public static CompoundAccessRule NeuronAccess;
+        public static List<SlugcatStats.Name> strictCarnivores = [];
 
+        public static AccessRule[] Lizards;
+        public static AccessRule[] OutlawCrits;
+        public static AccessRule[] HunterFoods;
+        public static AccessRule[] MonkFoods;
+        public static AccessRule[] Regions;
+
+        /// <summary>
+        /// Initialize constant helpers for creating AccessRules. 
+        /// Called after <see cref="StaticWorld.InitStaticWorld"/> (Post mod loading)
+        /// </summary>
         public static void InitConstants()
         {
-            NeuronAccess = new CompoundAccessRule(
+            List<AccessRule> lizards = [];
+            List<AccessRule> outlaw = [];
+            List<AccessRule> hunter =
             [
-                new RegionAccessRule("SS"),
-                new RegionAccessRule("SL"),
-                new RegionAccessRule("DM"),
-                new RegionAccessRule("CL"),
-                new RegionAccessRule("RM"),
-            ], CompoundAccessRule.CompoundOperation.Any);
-
-            List<AccessRule> lizards =
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.JellyFish),
+                new CreatureAccessRule(CreatureTemplate.Type.Centipede),
+                new CreatureAccessRule(CreatureTemplate.Type.Fly),
+                new CreatureAccessRule(CreatureTemplate.Type.VultureGrub),
+                new CreatureAccessRule(CreatureTemplate.Type.Hazer),
+            ];
+            List<AccessRule> monk = 
             [
-                new CreatureAccessRule(CreatureTemplate.Type.BlueLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.PinkLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.GreenLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.YellowLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.BlackLizard),
-                new CreatureAccessRule(CreatureTemplate.Type.WhiteLizard)
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.DangleFruit),
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.WaterNut),
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SeedCob),
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SlimeMold),
+                new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer),
             ];
 
+            foreach (string name in ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)))
+            {
+                CreatureTemplate.Type type = new(name);
+                CreatureTemplate template = StaticWorld.GetCreatureTemplate(type);
+                if (template is null) continue;
+
+                if (template.IsLizard) lizards.Add(new CreatureAccessRule(type));
+                // bodySize check filters out large creatures that are unreasonable to kill for Outlaw
+                if (template.countsAsAKill > 1 && template.bodySize < 5f) outlaw.Add(new CreatureAccessRule(type));
+            }
+
+            strictCarnivores.Add(SlugcatStats.Name.Red);
+            if (ModManager.MSC)
+            {
+                strictCarnivores.AddRange(
+                [
+                    MoreSlugcatsEnums.SlugcatStatsName.Artificer,
+                    MoreSlugcatsEnums.SlugcatStatsName.Spear
+                ]);
+            }
             if (ModManager.DLCShared)
             {
-                lizards.Add(new CreatureAccessRule(CreatureTemplate.Type.RedLizard));
-                lizards.Add(new CreatureAccessRule(CreatureTemplate.Type.CyanLizard));
-                lizards.Add(new CreatureAccessRule(DLCSharedEnums.CreatureTemplateType.ZoopLizard));
-                lizards.Add(new CreatureAccessRule(DLCSharedEnums.CreatureTemplateType.SpitLizard));
+                monk.AddRange(
+                [
+                    new ObjectAccessRule(DLCSharedEnums.AbstractObjectType.LillyPuck),
+                    new ObjectAccessRule(DLCSharedEnums.AbstractObjectType.GlowWeed),
+                    new ObjectAccessRule(DLCSharedEnums.AbstractObjectType.DandelionPeach),
+                    new ObjectAccessRule(DLCSharedEnums.AbstractObjectType.GooieDuck),
+                ]);
             }
+
             Lizards = [.. lizards];
+            OutlawCrits = [.. outlaw];
+            HunterFoods = [.. hunter];
+            MonkFoods = [.. monk];
 
             List<string> regionStrings = Region.GetFullRegionOrder();
             Regions = new AccessRule[regionStrings.Count];

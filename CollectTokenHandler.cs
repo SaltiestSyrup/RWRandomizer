@@ -22,6 +22,10 @@ namespace RainWorldRandomizer
                 IL.CollectToken.Update += CollectTokenUpdateIL;
                 IL.Player.ProcessChatLog += Player_ProcessChatLog;
                 IL.Player.InitChatLog += Player_InitChatLog;
+
+                IL.CollectToken.CollectTokenData.ctor += ILOverrideHiddenOrUnplayable;
+                IL.CollectToken.CollectTokenData.ToString += ILOverrideHiddenOrUnplayable;
+                IL.CollectToken.CollectTokenData.FromString += ILOverrideHiddenOrUnplayable;
             }
             catch (Exception e)
             {
@@ -38,6 +42,10 @@ namespace RainWorldRandomizer
             IL.CollectToken.Update -= CollectTokenUpdateIL;
             IL.Player.ProcessChatLog -= Player_ProcessChatLog;
             IL.Player.InitChatLog -= Player_InitChatLog;
+
+            IL.CollectToken.CollectTokenData.ctor -= ILOverrideHiddenOrUnplayable;
+            IL.CollectToken.CollectTokenData.ToString -= ILOverrideHiddenOrUnplayable;
+            IL.CollectToken.CollectTokenData.FromString -= ILOverrideHiddenOrUnplayable;
         }
 
         /// <summary>
@@ -290,8 +298,31 @@ namespace RainWorldRandomizer
         /// </summary>
         public bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
         {
-            bool isInv = !(self.room.game.StoryCharacter == null) && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
-            return orig(self) || (ModManager.MSC && (isInv || self.devToken));
+            if (self.room.game.StoryCharacter is null) return false;
+
+            bool isInv = ModManager.MSC && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
+            bool shouldBeAvailable = (self.placedObj.data as CollectToken.CollectTokenData).availableToPlayers.Contains(self.room.game.StoryCharacter);
+            return orig(self) || (shouldBeAvailable && (isInv || self.devToken));
+        }
+
+        private void ILOverrideHiddenOrUnplayable(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            int localIndex = -1;
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdloc(out localIndex),
+                x => x.MatchCallOrCallvirt(typeof(SlugcatStats).GetMethod(nameof(SlugcatStats.HiddenOrUnplayableSlugcat)))
+                );
+
+            c.Emit(OpCodes.Ldloc, localIndex);
+            c.EmitDelegate(HiddenOrUnplayableAndNotInv);
+
+            static bool HiddenOrUnplayableAndNotInv(bool isHiddenOrUnplayable, SlugcatStats.Name slugcat)
+            {
+                return isHiddenOrUnplayable && (!ModManager.MSC || slugcat != MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
+            }
         }
 
         /// <summary>

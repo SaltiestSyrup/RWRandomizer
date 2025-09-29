@@ -43,32 +43,14 @@ namespace RainWorldRandomizer
         {
             if (!Plugin.RandoManager.isRandomizerActive
                 || RandoOptions.ItemShelterDelivery
-                || Plugin.Singleton.itemDeliveryQueue.Count == 0)
+                || Plugin.RandoManager.itemDeliveryQueue.Count == 0)
             {
                 orig(self);
                 return;
             }
 
-            AbstractPhysicalObject tempObject = null;
-
-            // If there's already something swallowed, store it as a temp variable
-            if (self.objectInStomach != null)
-            {
-                tempObject = self.objectInStomach;
-            }
-            // Swap in queued object
-
-            //Logger.LogDebug($"Stored item: {itemDeliveryQueue.Peek().id}, {itemDeliveryQueue.Peek().type.value}");
-            self.objectInStomach = Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Dequeue(), self.room);
-            //Logger.LogDebug($"Converted object: {self.objectInStomach?.type}");
-
+            self.objectInStomach ??= Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.room);
             orig(self);
-
-            // If we stored an already swallowed object, put it back now
-            if (tempObject != null)
-            {
-                self.objectInStomach = tempObject;
-            }
         }
 
         /// <summary>
@@ -102,82 +84,74 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void ILPlayerGrabUpdate(ILContext il)
         {
-            try
+            // Substitution function
+            static AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, Player player)
             {
-                // Substitution function
-                static AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, Player player)
+                if (objectInstomach != null)
                 {
-                    if (objectInstomach != null)
-                    {
-                        return objectInstomach;
-                    }
-                    if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
-                    {
-                        return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), player.room);
-                    }
-
-                    return null;
+                    return objectInstomach;
+                }
+                if (!RandoOptions.ItemShelterDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
+                {
+                    return Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Peek(), player.room);
                 }
 
-                ILCursor c = new(il);
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdloc(11),
-                    x => x.MatchLdcI4(-1),
-                    x => x.MatchBgt(out ILLabel label),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<Player>(nameof(Player.objectInStomach))
-                    );
-
-                c.Emit(OpCodes.Ldarg_0);
-                // If we have a waiting item to be delivered, act as if there is an item in stomach
-                c.EmitDelegate(objectReplace);
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchAdd(),
-                    x => x.MatchStfld<Player>(nameof(Player.swallowAndRegurgitateCounter)),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<Player>(nameof(Player.objectInStomach))
-                    );
-
-                c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate(objectReplace);
-
-                // Make item delivery spit up faster
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.swallowAndRegurgitateCounter))),
-                    x => x.MatchLdcI4(110)
-                    );
-
-                c.EmitDelegate<Func<int, int>>((origTime) =>
-                {
-                    if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
-                    {
-                        // This time needs to be longer than the 90 ticks swallowing an item takes
-                        return 95;
-                    }
-                    return origTime;
-                });
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchCallOrCallvirt<Player>(typeof(Player).GetProperty(nameof(Player.isGourmand)).GetGetMethod().Name),
-                    x => x.MatchBrfalse(out _),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<Player>(nameof(Player.objectInStomach))
-                    );
-
-                c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate(objectReplace);
+                return null;
             }
-            catch (Exception e)
+
+            ILCursor c = new(il);
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdloc(11),
+                x => x.MatchLdcI4(-1),
+                x => x.MatchBgt(out _),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<Player>(nameof(Player.objectInStomach))
+                );
+
+            c.Emit(OpCodes.Ldarg_0);
+            // If we have a waiting item to be delivered, act as if there is an item in stomach
+            c.EmitDelegate(objectReplace);
+
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchAdd(),
+                x => x.MatchStfld<Player>(nameof(Player.swallowAndRegurgitateCounter)),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<Player>(nameof(Player.objectInStomach))
+                );
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(objectReplace);
+
+            // Make item delivery spit up faster
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.swallowAndRegurgitateCounter))),
+                x => x.MatchLdcI4(110)
+                );
+
+            c.EmitDelegate<Func<int, int>>((origTime) =>
             {
-                Plugin.Log.LogError("Failed Hooking for PlayerGrabUpdate");
-                Plugin.Log.LogError(e);
-            }
+                if (!RandoOptions.ItemShelterDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
+                {
+                    // This time needs to be longer than the 90 ticks swallowing an item takes
+                    return 95;
+                }
+                return origTime;
+            });
+
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchCallOrCallvirt<Player>(typeof(Player).GetProperty(nameof(Player.isGourmand)).GetGetMethod().Name),
+                x => x.MatchBrfalse(out _),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<Player>(nameof(Player.objectInStomach))
+                );
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(objectReplace);
         }
 
         /// <summary>
@@ -185,40 +159,32 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void ILPlayerGraphicsUpdate(ILContext il)
         {
-            try
+            // Substitution function
+            static AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, PlayerGraphics playerGraphics)
             {
-                // Substitution function
-                static AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, PlayerGraphics playerGraphics)
+                if (objectInstomach != null)
                 {
-                    if (objectInstomach != null)
-                    {
-                        return objectInstomach;
-                    }
-                    if (!RandoOptions.ItemShelterDelivery && Plugin.Singleton.itemDeliveryQueue.Count > 0)
-                    {
-                        return Plugin.ItemToAbstractObject(Plugin.Singleton.itemDeliveryQueue.Peek(), playerGraphics.player.room);
-                    }
-
-                    return null;
+                    return objectInstomach;
+                }
+                if (!RandoOptions.ItemShelterDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
+                {
+                    return Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Peek(), playerGraphics.player.room);
                 }
 
-                ILCursor c = new(il);
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<PlayerGraphics>(nameof(PlayerGraphics.player)),
-                    x => x.MatchLdfld<Player>(nameof(Player.objectInStomach))
-                    );
+                return null;
+            }
 
-                c.Emit(OpCodes.Ldarg_0);
-                // If we have a waiting item to be delivered, act as if there is an item in stomach
-                c.EmitDelegate(objectReplace);
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for PlayerGraphicsUpdate");
-                Plugin.Log.LogError(e);
-            }
+            ILCursor c = new(il);
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<PlayerGraphics>(nameof(PlayerGraphics.player)),
+                x => x.MatchLdfld<Player>(nameof(Player.objectInStomach))
+                );
+
+            c.Emit(OpCodes.Ldarg_0);
+            // If we have a waiting item to be delivered, act as if there is an item in stomach
+            c.EmitDelegate(objectReplace);
         }
 
         public static void OnNewRoom(On.Player.orig_NewRoom orig, Player self, Room newRoom)
@@ -234,6 +200,8 @@ namespace RainWorldRandomizer
         public static int OnRedsCycles(On.RedsIllness.orig_RedsCycles orig, bool extracycles)
         {
             int origResult = orig(extracycles);
+
+            if (Plugin.RandoManager is null) return int.MaxValue;
 
             // Remove cycle limit completely for Archipelago
             if (Plugin.RandoManager is ManagerArchipelago)
@@ -252,16 +220,16 @@ namespace RainWorldRandomizer
             int baseCycles = extracycles ? origResult - bonusCycles : origResult;
 
             // If the save hasn't been initialized, read the file to count cycles
-            if (!Plugin.RandoManager.isRandomizerActive)
-            {
-                int countedCycles = SaveManager.CountRedsCycles(Plugin.Singleton.rainWorld.options.saveSlot);
-                if (countedCycles == -1)
-                {
-                    return origResult;
-                }
+            //if (!Plugin.RandoManager.isRandomizerActive)
+            //{
+            //    int countedCycles = SaveManager.CountRedsCycles(Plugin.Singleton.rainWorld.options.saveSlot);
+            //    if (countedCycles == -1)
+            //    {
+            //        return origResult;
+            //    }
 
-                return baseCycles + (countedCycles * bonusCycles);
-            }
+            //    return baseCycles + (countedCycles * bonusCycles);
+            //}
 
             return baseCycles + (Plugin.RandoManager.HunterBonusCyclesGiven * bonusCycles);
         }
@@ -281,6 +249,10 @@ namespace RainWorldRandomizer
             if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripMoon)
             {
                 Plugin.RandoManager.GiveLocation("Ascend_LttM");
+
+                // These would become impossible for Saint after LttM is gone, so send them now
+                Plugin.RandoManager.GiveLocation("Eat_Neuron");
+                Plugin.RandoManager.GiveLocation("FoodQuest-SSOracleSwarmer");
             }
         }
     }

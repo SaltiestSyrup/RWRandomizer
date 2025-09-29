@@ -444,8 +444,8 @@ namespace RainWorldRandomizer
                 ,
                 EntrySortType.ItemName => (x, y) =>
                 {
-                    string xStr = x.ShowItem ? x.item.ID : null;
-                    string yStr = y.ShowItem ? y.item.ID : null;
+                    string xStr = x.ShowItem ? x.item.ToString() : null;
+                    string yStr = y.ShowItem ? y.item.ToString() : null;
                     return string.Compare(xStr, yStr);
                 }
                 ,
@@ -716,6 +716,11 @@ namespace RainWorldRandomizer
                         spriteScale = 2f;
                         spriteColor = CollectToken.WhiteColor.rgb;
                         break;
+                    case "DevToken":
+                        spriteName = "ctOn";
+                        spriteScale = 2f;
+                        spriteColor = new Color(0.85f, 0.75f, 0.64f);
+                        break;
                     case "FoodQuest":
                         if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(name))
                         {
@@ -729,6 +734,13 @@ namespace RainWorldRandomizer
                             spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
                             spriteColor = CreatureSymbol.ColorOfCreature(iconData);
                         }
+                        break;
+                    case "Shelter":
+                        spriteName = "ShelterMarker";
+                        break;
+                    case "Flower":
+                        spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.KarmaFlower, 0);
+                        spriteColor = ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.KarmaFlower, 0);
                         break;
                     default:
                         spriteName = "EndGameCircle";
@@ -753,7 +765,7 @@ namespace RainWorldRandomizer
 
             public static FSprite UnlockToFSprite(Unlock unlock)
             {
-                string spriteName;
+                string spriteName = "Futile_White";
                 float spriteScale = 1f;
                 Color spriteColor = Futile.white;
 
@@ -772,38 +784,32 @@ namespace RainWorldRandomizer
                         spriteScale = 0.5f;
                         break;
                     case "Item":
-                        if (unlock.item.Value.id == "KarmaFlower")
+                        if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(unlock.ID))
                         {
-                            spriteName = "FlowerMarker";
-                            spriteColor = RainWorld.GoldRGB;
+                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(unlock.ID), 0);
                         }
-                        else
+                        else if (unlock.item.Value.id == "FireSpear")
                         {
-                            if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(unlock.ID))
-                            {
-                                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(unlock.ID), 0);
-                            }
-                            else if (unlock.item.Value.id == "FireSpear")
-                            {
-                                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
-                            }
-                            else if (unlock.item.Value.id == "ElectricSpear")
-                            {
-                                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
-                            }
-                            else
-                            {
-                                iconData = new IconSymbol.IconSymbolData();
-                            }
+                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
+                        }
+                        else if (unlock.item.Value.id == "ElectricSpear")
+                        {
+                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
+                        }
+                        else break;
 
-                            spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
-                            spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
-                        }
+                        spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
+                        spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                         break;
                     case "ItemPearl":
                         iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.DataPearl, 0);
                         spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                         spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
+                        break;
+                    case "Trap":
+                        spriteName = "smallKarmaNoRing0";
+                        spriteColor = Color.red;
+                        spriteScale = 0.75f;
                         break;
                     case "HunterCycles":
                         iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);

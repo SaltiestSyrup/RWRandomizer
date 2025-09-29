@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -52,6 +51,12 @@ namespace RainWorldRandomizer
             {
                 Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(storyGameCharacter), region));
             }
+            // Init passage list
+            foreach (string passage in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
+            {
+                if (passage == "Gourmand") continue;
+                passageTokensStatus.Add(new(passage), false);
+            }
 
             if (Input.GetKey("o"))
             {
@@ -87,17 +92,18 @@ namespace RainWorldRandomizer
 
                 if (!TokenCachePatcher.hasLoadedCache)
                 {
-                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Failed to start randomizer, missing token cache data. Try reloading mods to update cache", Color.red));
+                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Failed to start randomizer, token cache data missing or corrupt. Try reloading mods to update cache", Color.red));
                     return;
                 }
 
                 VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
                     RandoOptions.UseSetSeed ? RandoOptions.SetSeed : UnityEngine.Random.Range(0, int.MaxValue));
+
                 Exception generationException = null;
                 bool timedOut = false;
                 try
                 {
-                    timedOut = !generator.BeginGeneration().Wait(10000);
+                    timedOut = !generator.BeginGeneration(true).Wait(10000);
                 }
                 catch (Exception e)
                 {
@@ -188,7 +194,7 @@ namespace RainWorldRandomizer
                     //Plugin.Log.LogDebug(generators[j].generationLog);
                 }
             }
-            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tTime: {sw.ElapsedMilliseconds} ms");
+            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tAvg time: {sw.ElapsedMilliseconds / howMany} ms");
         }
 
         public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
@@ -234,11 +240,10 @@ namespace RainWorldRandomizer
                         if (item.IsGiven) _givenSpearPearlRewrite = true;
                         break;
                 }
-
             }
 
-            Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(slugcat, saveSlot);
-            Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
+            (itemDeliveryQueue, pendingTrapQueue) = SaveManager.LoadItemQueue(slugcat, saveSlot);
+            lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
         }
 
         public override List<string> GetLocations()
@@ -279,17 +284,15 @@ namespace RainWorldRandomizer
         public override void SaveGame(bool saveCurrentState)
         {
             SaveManager.WriteSavedGameToFile(
-                        randomizerKey,
-                        currentSlugcat,
-                        Plugin.Singleton.rainWorld.options.saveSlot);
+                randomizerKey,
+                currentSlugcat,
+                Plugin.Singleton.rainWorld.options.saveSlot);
 
-            if (saveCurrentState)
-            {
-                SaveManager.WriteItemQueueToFile(
-                    Plugin.Singleton.itemDeliveryQueue,
-                    currentSlugcat,
-                    Plugin.Singleton.rainWorld.options.saveSlot);
-            }
+            SaveManager.WriteItemQueueToFile(
+                saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
+                pendingTrapQueue,
+                currentSlugcat,
+                Plugin.Singleton.rainWorld.options.saveSlot);
         }
     }
 }

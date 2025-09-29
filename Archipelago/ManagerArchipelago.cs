@@ -1,33 +1,29 @@
 ﻿using Newtonsoft.Json;
+using RainWorldRandomizer.Generation;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace RainWorldRandomizer
 {
     public class ManagerArchipelago : ManagerBase
     {
-        public bool isNewGame = true;
         public bool locationsLoaded = false;
         public bool gameCompleted = false;
 
-        public static Dictionary<string, string> NameToAPLocation = [];
-        public static Dictionary<string, string> APLocationToName = [];
-        public static Dictionary<string, string> NameToAPItem = [];
-        public static Dictionary<string, string> APItemToName = [];
-        internal Dictionary<string, bool> locationsStatus = [];
+        // Mapping AP item names to the string IDs the mod uses for items
+        public static Dictionary<string, string> ClientNameToAPItem = [];
+        public static Dictionary<string, string> APItemToClientName = [];
+        // Mapping numerical AP location IDs to the string IDs the mod uses for locations
+        public static Dictionary<string, long> LocationToID = [];
+        public static Dictionary<long, string> IDToLocation = [];
 
-        public void Init()
-        {
-            if (NameToAPLocation.Count == 0) LoadAPLocationDicts();
-        }
+        internal Dictionary<string, bool> locationsStatus = [];
 
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
-            isNewGame = !continueSaved;
-
-            if (!(ArchipelagoConnection.Session?.Socket.Connected ?? false))
+            if (!ArchipelagoConnection.SocketConnected)
             {
                 Plugin.Log.LogError("Tried to start AP campaign without first connecting to server");
                 isRandomizerActive = false;
@@ -35,6 +31,7 @@ namespace RainWorldRandomizer
             }
 
             base.StartNewGameSession(storyGameCharacter, continueSaved);
+            LoadAPLocationDicts();
 
             // Verify slugcat
             if (storyGameCharacter != ArchipelagoConnection.Slugcat)
@@ -45,6 +42,23 @@ namespace RainWorldRandomizer
                 isRandomizerActive = false;
                 Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Archipelago failed to start: Selected campaign does not match archipelago options.", UnityEngine.Color.red));
                 return;
+            }
+
+            // Load save file
+            string saveId = $"{ArchipelagoConnection.generationSeed}_{ArchipelagoConnection.playerName}";
+            try
+            {
+                // TODO: There should be some validation that the save game being loaded is the correct one for the AP slot
+                // Probably do this when integrating data into save file. Then we can mine save data to find if player is loading the correct save
+                if (SaveManager.IsThereAnAPSave(saveId)) LoadSave(saveId);
+                else CreateNewSave(saveId);
+            }
+            catch (Exception e) { Plugin.Log.LogError(e); }
+
+            // Ask for fresh items list if there isn't one waiting
+            if (!ArchipelagoConnection.waitingItemPackets.Any(p => p.Index == 0))
+            {
+                ArchipelagoConnection.SendSyncPacket();
             }
 
             // Attempt initialization
@@ -60,28 +74,21 @@ namespace RainWorldRandomizer
             // All good, randomizer active
         }
 
-        public void Reset()
+        /// <summary>
+        /// Soft reset, clears all items in preperation for a new inventory
+        /// </summary>
+        public void ResetStateForSync()
         {
-            // Reset all tracking variables
-            _currentMaxKarma = 4;
+            _currentMaxKarma = 0;
             _hunterBonusCyclesGiven = 0;
             _givenNeuronGlow = false;
             _givenMark = false;
             _givenRobo = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
-            customStartDen = "";
-            gameCompleted = false;
-            locationsLoaded = false;
 
-            // Reset unlock lists
             gatesStatus.Clear();
             passageTokensStatus.Clear();
-            Plugin.Singleton.itemDeliveryQueue.Clear();
-            Plugin.Singleton.lastItemDeliveryQueue.Clear();
-
-            // Clear notifications
-            Plugin.Singleton.notifQueue.Clear();
         }
 
         public void LoadSave(string saveId)
@@ -94,8 +101,9 @@ namespace RainWorldRandomizer
             // Set locations the server says we found
             foreach (long locID in ArchipelagoConnection.Session.Locations.AllLocationsChecked)
             {
-                string loc = GetLocStringIDFromID(locID);
-                if (locationsStatus.TryGetValue(loc, out bool found) && !found)
+                if (IDToLocation.TryGetValue(locID, out string loc)
+                    && locationsStatus.TryGetValue(loc, out bool found)
+                    && !found)
                 {
                     locationsStatus[loc] = true;
                 }
@@ -105,21 +113,22 @@ namespace RainWorldRandomizer
             List<long> offlineLocs = [];
             foreach (long locID in ArchipelagoConnection.Session.Locations.AllMissingLocations)
             {
-                string loc = GetLocStringIDFromID(locID);
-                if (locationsStatus.TryGetValue(loc, out bool found) && found)
+                if (IDToLocation.TryGetValue(locID, out string loc)
+                    && locationsStatus.TryGetValue(loc, out bool found)
+                    && found)
                 {
                     offlineLocs.Add(locID);
                 }
             }
             if (offlineLocs.Count > 0)
             {
-                ArchipelagoConnection.Session.Locations.CompleteLocationChecks(offlineLocs.ToArray());
+                ArchipelagoConnection.Session.Locations.CompleteLocationChecks([.. offlineLocs]);
                 Plugin.Log.LogInfo($"Sent offline locations: {string.Join(", ", offlineLocs)}");
             }
 
             // Load the item delivery queue from file as normal
-            Plugin.Singleton.itemDeliveryQueue = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
-            Plugin.Singleton.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.Singleton.itemDeliveryQueue);
+            (itemDeliveryQueue, pendingTrapQueue) = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
+            lastItemDeliveryQueue = new(itemDeliveryQueue);
 
             Plugin.Log.LogInfo($"Loaded save game {saveId}");
             locationsLoaded = true;
@@ -127,49 +136,81 @@ namespace RainWorldRandomizer
 
         public void CreateNewSave(string saveId)
         {
-            isNewGame = true;
             currentSlugcat = ArchipelagoConnection.Slugcat;
-
             locationsStatus.Clear();
-            foreach (long loc in ArchipelagoConnection.Session.Locations.AllLocations)
+            Plugin.Log.LogInfo($"Found no saved game, creating new save");
+
+            if (IDToLocation.Count == 0)
             {
-                if (GetLocStringIDFromID(loc) is null)
+                Plugin.Log.LogError("Cannot create Archipelago save game without datapackage");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                    $"Failed to create new Archipelago save, no datapackage is present", UnityEngine.Color.red));
+                return;
+            }
+
+            foreach (long locID in ArchipelagoConnection.Session.Locations.AllLocations)
+            {
+                if (!IDToLocation.TryGetValue(locID, out string loc))
                 {
-                    Plugin.Log.LogError($"Location {loc} does not exist in DataPackage");
+                    Plugin.Log.LogError($"Error writing save, location {locID} does not exist in DataPackage");
                     continue;
                 }
-                locationsStatus.Add(GetLocStringIDFromID(loc), false);
+                locationsStatus.Add(loc, false);
             }
-            Plugin.Log.LogInfo($"Found no saved game, creating new save");
-            SaveManager.WriteAPSaveToFile(saveId, ArchipelagoConnection.lastItemIndex, locationsStatus);
-
+            
             locationsLoaded = true;
+            SaveGame(false);
         }
 
-        public void InitNewInventory(List<string> newItems)
+        public void TryAquireNextItemPacket()
         {
-            _currentMaxKarma = 0;
-            _hunterBonusCyclesGiven = 0;
-            _givenNeuronGlow = false;
-            _givenMark = false;
-            _givenRobo = false;
-            _givenPebblesOff = false;
-            _givenSpearPearlRewrite = false;
+            if (ArchipelagoConnection.waitingItemPackets.Count == 0) return;
 
-            foreach (string item in newItems)
+            Archipelago.MultiClient.Net.Packets.ReceivedItemsPacket itemPacket = ArchipelagoConnection.waitingItemPackets.Dequeue();
+
+            Plugin.Log.LogInfo($"Received items packet. Index: {itemPacket.Index} | Last index: {ArchipelagoConnection.lastItemIndex} | Item count: {itemPacket.Items.Length}");
+
+            bool isNewInventory = false;
+            if (itemPacket.Index == 0)
             {
-                AquireItem(item, false, false);
+                ResetStateForSync();
+                isNewInventory = true;
             }
+            // Multiclient sends Sync packet for us, the new inventory should arrive soon
+            else if (itemPacket.Index < ArchipelagoConnection.lastItemIndex)
+            {
+                // Could happen if host save file was reverted to a previous state.
+                // If that happens, "new" consumable items that are before our last stored ID would be lost.
+                // This is an edge case though, and there are no progression consumables so it isn't worth the effort to fix.
+                Plugin.Log.LogWarning($"New item index is lower than last index. Server is confused?");
+                return;
+            }
+            else if (itemPacket.Index > ArchipelagoConnection.lastItemIndex)
+            {
+                Plugin.Log.LogWarning($"New item index is greater than last index. Missed an item?");
+                return;
+            }
+
+            for (int i = 0; i < itemPacket.Items.Length; i++)
+            {
+                string APItemName = ArchipelagoConnection.Session.Items.GetItemName(itemPacket.Items[i].Item);
+                // Even if item has no client map, try to give it anyway, maybe it works
+                if (!APItemToClientName.TryGetValue(APItemName, out string clientName)) Plugin.Log.LogError($"Could not find client name mapping for AP item: {APItemName}");
+
+                // If item packet index is 0, items before our stored last index are not new
+                AquireItem(clientName, !isNewInventory || i >= ArchipelagoConnection.lastItemIndex);
+            }
+
+            ArchipelagoConnection.lastItemIndex = itemPacket.Index + itemPacket.Items.Length;
         }
 
-        public void AquireItem(string item, bool printLog = true, bool isNew = true)
+        /// <summary>
+        /// Takes in a client item name and awards it to the player.
+        /// </summary>
+        /// <param name="item">Client name of item</param>
+        /// <param name="isNew">If false, if the item is a consumable it will be ignored</param>
+        public void AquireItem(string item, bool isNew)
         {
-            // If this doesn't pass it will just try to parse the AP name
-            if (APItemToName.ContainsKey(item))
-            {
-                item = APItemToName[item];
-            }
-
             if (item.StartsWith("GATE_"))
             {
                 if (!gatesStatus.ContainsKey(item))
@@ -266,36 +307,6 @@ namespace RainWorldRandomizer
             return true;
         }
 
-        /// <summary>
-        /// Finds a random den in the given region
-        /// </summary>
-        public static string FindRandomStart(string selectedRegion)
-        {
-            Dictionary<string, List<string>> contenders = [];
-            if (File.Exists(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt")))
-            {
-                string[] file = File.ReadAllLines(AssetManager.ResolveFilePath($"chkrand_randomstarts.txt"));
-                foreach (string line in file)
-                {
-                    if (!line.StartsWith("//") && line.Length > 0)
-                    {
-                        string region = Regex.Split(line, "_")[0];
-                        if (Region.GetFullRegionOrder().Contains(region))
-                        {
-                            if (!contenders.ContainsKey(region))
-                            {
-                                contenders.Add(region, []);
-                            }
-                            contenders[region].Add(line);
-                        }
-                    }
-                }
-                return contenders[selectedRegion][UnityEngine.Random.Range(0, contenders[selectedRegion].Count)];
-            }
-
-            return "SU_S01";
-        }
-
         public override List<string> GetLocations()
         {
             return [.. locationsStatus.Keys];
@@ -319,19 +330,25 @@ namespace RainWorldRandomizer
 
             locationsStatus[location] = true;
 
-            // We still gave the location, but we're offline so it can't be sent yet
-            if (ArchipelagoConnection.Session?.Socket.Connected is null or false)
+            if (!LocationToID.TryGetValue(location, out long locID))
             {
-                Plugin.Log.LogInfo($"Found location while offline: {location}");
+                Plugin.Log.LogError($"Failed to find ID for found location: {location}");
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                    $"Checked \"{location}\""));
                 return true;
             }
 
-            long locId = GetIDFromLocStringID(location);
-            if (locId == -1L)
+            // We still gave the location, but we're offline so it can't be sent yet
+            if (!ArchipelagoConnection.SocketConnected)
             {
-                Plugin.Log.LogError($"Failed to find ID for location: {location}");
+                Plugin.Log.LogInfo($"Found location while offline: {location}");
+                string logName = ArchipelagoConnection.Session?.Locations.GetLocationNameFromId(locID) ?? location;
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                    $"Checked \"{logName}\""));
+                return true;
             }
-            ArchipelagoConnection.Session.Locations.CompleteLocationChecks(locId);
+
+            ArchipelagoConnection.Session.Locations.CompleteLocationChecks(locID);
             Plugin.Log.LogInfo($"Found location: {location}!");
 
             return true;
@@ -357,13 +374,11 @@ namespace RainWorldRandomizer
 
         public override void SaveGame(bool saveCurrentState)
         {
-            if (saveCurrentState)
-            {
-                SaveManager.WriteItemQueueToFile(
-                    Plugin.Singleton.itemDeliveryQueue,
-                    currentSlugcat,
-                    Plugin.Singleton.rainWorld.options.saveSlot);
-            }
+            SaveManager.WriteItemQueueToFile(
+                saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
+                pendingTrapQueue,
+                currentSlugcat,
+                Plugin.Singleton.rainWorld.options.saveSlot);
 
             // Don't save if locations are not loaded
             if (!locationsLoaded) return;
@@ -373,8 +388,9 @@ namespace RainWorldRandomizer
             {
                 foreach (long locID in ArchipelagoConnection.Session.Locations.AllLocationsChecked)
                 {
-                    string loc = GetLocStringIDFromID(locID);
-                    if (locationsStatus.TryGetValue(loc, out bool found) && !found)
+                    if (IDToLocation.TryGetValue(locID, out string loc)
+                        && locationsStatus.TryGetValue(loc, out bool found)
+                        && !found)
                     {
                         locationsStatus[loc] = true;
                     }
@@ -393,7 +409,7 @@ namespace RainWorldRandomizer
             public Dictionary<string, string> items = items;
         }
 
-        private static void LoadAPLocationDicts()
+        public static void LoadAPLocationDicts()
         {
             string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_names_map.json");
 
@@ -403,45 +419,30 @@ namespace RainWorldRandomizer
                 return;
             }
 
+            IDToLocation.Clear();
+            LocationToID.Clear();
+            ClientNameToAPItem.Clear();
+            APItemToClientName.Clear();
+
             APReadableNames names = JsonConvert.DeserializeObject<APReadableNames>(File.ReadAllText(path));
 
-            NameToAPLocation = names.locations;
-            NameToAPItem = names.items;
+            // Create alternate datapackage with client names
+            try
+            {
+                IDToLocation = names.locations.Keys.ToDictionary((clientName)
+                    => ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, names.locations[clientName]));
+                foreach (var kvp in IDToLocation) LocationToID.Add(kvp.Value, kvp.Key);
+            }
+            catch (ArgumentException e)
+            {
+                // Argument exception happens when GetLocationIdFromName() returns the same ID (-1) multiple times
+                Plugin.Log.LogError("Failed to load datapackage location IDs. Datapackage is either missing or doesn't match this client version's location names.");
+            }
 
-            foreach (var keyVal in NameToAPLocation)
-            {
-                //Plugin.Log.LogDebug($"{keyVal.Key} | {keyVal.Value}");
-                APLocationToName.Add(keyVal.Value, keyVal.Key);
-            }
-            foreach (var keyVal in NameToAPItem)
-            {
-                //Plugin.Log.LogDebug($"{keyVal.Key} | {keyVal.Value}");
-                APItemToName.Add(keyVal.Value, keyVal.Key);
-            }
-        }
-
-        public static string GetLocStringIDFromID(long locID)
-        {
-            if (APLocationToName.TryGetValue(ArchipelagoConnection.Session.Locations.GetLocationNameFromId(locID), out string stringID))
-            {
-                return stringID;
-            }
-            else
-            {
-                return ArchipelagoConnection.Session.Locations.GetLocationNameFromId(locID);
-            }
-        }
-
-        public long GetIDFromLocStringID(string stringID)
-        {
-            if (NameToAPLocation.TryGetValue(stringID, out string loc))
-            {
-                return ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, loc);
-            }
-            else
-            {
-                return ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, stringID);
-            }
+            // Create translation from AP item names to client ones.
+            // Would prefer to map to the numerical AP item IDs, but MultiClient doesn't provide an easy way to convert item names to ID
+            ClientNameToAPItem = names.items;
+            foreach (var kvp in ClientNameToAPItem) APItemToClientName.Add(kvp.Value, kvp.Key);
         }
     }
 }

@@ -17,15 +17,16 @@ namespace RainWorldRandomizer
     public class Plugin : BaseUnityPlugin
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
-        public const string PLUGIN_NAME = "Check Randomizer";
-        public const string PLUGIN_VERSION = "1.3.1";
+        public const string PLUGIN_NAME = "Randomizer";
+        public const string PLUGIN_VERSION = "1.3.6";
 
         internal static ManualLogSource Log;
 
-        public bool hasInitialized = false;
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new();
         public static ManagerBase RandoManager = null;
+        private static List<LogicAddon> logicAddons = [];
+
         public CollectTokenHandler collectTokenHandler;
 
         private OptionsMenu options;
@@ -47,9 +48,6 @@ namespace RainWorldRandomizer
 
         // Queue of pending notifications to be sent to the player in-game
         public Queue<ChatLog.MessageText> notifQueue = new();
-        // Queue of items that the player has recieved and not claimed
-        public Queue<Unlock.Item> lastItemDeliveryQueue = new();
-        public Queue<Unlock.Item> itemDeliveryQueue = new();
 
         // A map of every region to it's display name
         public static Dictionary<string, string> RegionNamesMap = [];
@@ -94,7 +92,6 @@ namespace RainWorldRandomizer
             }
 
             // Assign as vanilla until decided otherwise
-            RandoManager = new ManagerVanilla();
             collectTokenHandler = new CollectTokenHandler();
             Log = Logger;
 
@@ -124,8 +121,9 @@ namespace RainWorldRandomizer
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
                 On.ExtEnumInitializer.InitTypes += OnInitExtEnumTypes;
-                //On.RainWorld.LoadModResources += LoadResources;
-                //On.RainWorld.UnloadResources += UnloadResources;
+                On.StaticWorld.InitStaticWorld += OnInitStaticWorld;
+                On.RainWorld.LoadModResources += LoadResources;
+                On.RainWorld.UnloadResources += UnloadResources;
 
                 if (ExtCollectibleTrackerComptability.Enabled)
                 {
@@ -172,8 +170,9 @@ namespace RainWorldRandomizer
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
                 On.ExtEnumInitializer.InitTypes -= OnInitExtEnumTypes;
-                //On.RainWorld.LoadModResources -= LoadResources;
-                //On.RainWorld.UnloadResources -= UnloadResources;
+                On.StaticWorld.InitStaticWorld -= OnInitStaticWorld;
+                On.RainWorld.LoadModResources -= LoadResources;
+                On.RainWorld.UnloadResources -= UnloadResources;
 
                 WatcherIntegration.EntryPoint.RemoveHooks();
             }
@@ -186,15 +185,9 @@ namespace RainWorldRandomizer
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
-            if (hasInitialized) return;
+            Log.LogInfo("Init Randomizer Mod");
 
             rainWorld = self;
-
-            //try
-            //{
-            //    Futile.atlasManager.LoadImage("atlases/rwrandomizer/ColoredSymbolSeedCob");
-            //}
-            //catch (Exception e) { Logger.LogError(e); }
 
             try
             {
@@ -207,10 +200,6 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
-            AccessRuleConstants.InitConstants();
-            VanillaGenerator.GenerateCustomRules();
-
-            hasInitialized = true;
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
@@ -222,16 +211,36 @@ namespace RainWorldRandomizer
             {
                 RegionNamesMap.Add(regionShort, Region.GetRegionFullName(regionShort, null));
             }
+
+            // Don't even need to save this, it's stored in the addon list
+            if (ModManager.MSC) new InvCompat();
         }
 
+        /// <summary>
+        /// Initialize custom <see cref="ExtEnumType"/>s
+        /// </summary>
         public void OnInitExtEnumTypes(On.ExtEnumInitializer.orig_InitTypes orig)
         {
             orig();
             RandomizerEnums.InitExtEnumTypes();
         }
 
-        // --- Not currently needed but may still be useful in the future ---
-        /*
+        /// <summary>
+        /// Hook for inits that need to run after <see cref="StaticWorld"/> is initialized
+        /// </summary>
+        private static void OnInitStaticWorld(On.StaticWorld.orig_InitStaticWorld orig)
+        {
+            orig();
+            AccessRuleConstants.InitConstants();
+            CustomLogicBuilder.ClearDefinedLogic();
+
+            CustomLogicBuilder.InitNewSlugcats([.. Constants.CompatibleSlugcats]);
+
+            // Make the logic time
+            CustomLogicBuilder.DefineLogic();
+            foreach (LogicAddon addon in logicAddons) addon.DefineLogic();
+        }
+
         public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
         {
             orig(self);
@@ -243,7 +252,8 @@ namespace RainWorldRandomizer
             orig(self);
             Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
         }
-        */
+
+        public static void AddLogicAddon(LogicAddon addon) => logicAddons.Add(addon);
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom, int data = 0)
         {
@@ -372,19 +382,12 @@ namespace RainWorldRandomizer
                 ? (RegionGate.GateRequirement[])v.Clone()
                 : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
 
-            if (gateName.Equals("GATE_OE_SU")) hasKeyForGate = true;
-            if (gateName.Equals("GATE_SL_MS")
-                && ModManager.MSC
-                && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
-            {
-                hasKeyForGate = true;
-            }
+            if (Constants.ForceOpenGates.Contains(gateName)) hasKeyForGate = true;
 
             // Change default Metropolis gate karma
             if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
             {
                 newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
-                newRequirements[1] = RegionGate.GateRequirement.FiveKarma;
             }
 
             // Decide gate behavior
@@ -434,6 +437,12 @@ namespace RainWorldRandomizer
                 case GateBehavior.OnlyKarma:
                     // Nothing to be done here, use vanilla mechanics
                     break;
+            }
+
+            // Ensure proper Metro gate behavior for Arty
+            if (gateName.Equals("GATE_UW_LC") && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+            {
+                newRequirements[0] = MoreSlugcatsEnums.GateRequirement.RoboLock;
             }
 
             return newRequirements;

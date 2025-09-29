@@ -13,16 +13,16 @@ namespace RainWorldRandomizer
         /// Describes which food quest items can be eaten by each slugcat. Matches order of <see cref="WinState.GourmandPassageTracker"/>
         /// </summary>
         public static readonly Dictionary<SlugcatStats.Name, bool[]> SlugcatFoodQuestAccessibility = [];
+
+        // -- Cheat sheet for food quest access definitions --
         // SlimeMold, DangleFruit, BatFly, Mushroom, BlackLizard, WaterNut, JellyFish, JetFish, GlowWeed, Salamander, Snail,
         // Hazer, EggBug, LillyPuck, YellowLizard, GrappleWorm, Neuron, Centiwing, DandelionPeach, CyanLizard, GooieDuck, RedCenti
 
-        // Centipede, SmallCentipede, VultureGrub, SmallNeedleWorm,
+        // SeedCob, Centipede, VultureGrub, SmallNeedleWorm,
         // GreenLizard, BlueLizard, PinkLizard, WhiteLizard, RedLizard, SpitLizard, ZoopLizard, TrainLizard,
         // BigSpider, SpitterSpider, MotherSpider,
         // Vulture, KingVulture, MirosVulture,
-        // LanternMouse, CicadaA, CicadaB, Yeek, BigNeedleWorm,
-        // DropBug, MirosBird, Scavenger, ScavengerElite,
-        // DaddyLongLegs, BrotherLongLegs, TerrorLongLegs,
+        // LanternMouse, CicadaA, Yeek, DropBug, MirosBird, Scavenger, DaddyLongLegs,
         // PoleMimic, TentaclePlant, BigEel, Inspector
 
         /// <summary>
@@ -37,9 +37,8 @@ namespace RainWorldRandomizer
         public static readonly Dictionary<SlugcatStats.Name, string> SlugcatStartingRegion = [];
 
         // { GATE_NAME, IS_LEFT_TRAVEL }
-        public static readonly Dictionary<string, bool> OneWayGates = new Dictionary<string, bool>()
+        public static readonly Dictionary<string, bool> OneWayGates = new()
         {
-            //{ "GATE_OE_SU", false }, This doesn't matter because it should always be unlocked
             { "GATE_LF_SB", false },
         };
 
@@ -75,9 +74,7 @@ namespace RainWorldRandomizer
                     false, false, false, false, false, false, false, false,
                     false, false, false,
                     false, false, false,
-                    false, false, false, false, false,
-                    false, false, false, false,
-                    false, false, false,
+                    false, false, false, false, false, false, false,
                     false, false, false, false,
                 ]},
                 { SlugcatStats.Name.Yellow,
@@ -88,9 +85,7 @@ namespace RainWorldRandomizer
                     false, false, false, false, false, false, false, false,
                     false, false, false,
                     false, false, false,
-                    false, false, false, false, false,
-                    false, false, false, false,
-                    false, false, false,
+                    false, false, false, false, false, false, false,
                     false, false, false, false
                 ]},
                 { SlugcatStats.Name.Red,
@@ -101,9 +96,7 @@ namespace RainWorldRandomizer
                     true, true, true, true, true, true, true, true,
                     true, true, true,
                     true, true, true,
-                    true, true, true, true, true,
-                    true, true, true, true,
-                    true, true, true,
+                    true, true, true, true, true, true, true,
                     false, false, false, false,
                 ]},
             });
@@ -137,9 +130,7 @@ namespace RainWorldRandomizer
                         true, true, true, true, true, true, true, true,
                         true, true, true,
                         true, true, true,
-                        true, true, true, true, true,
-                        true, true, true, true,
-                        true, true, true,
+                        true, true, true, true, true, true, true,
                         false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Artificer,
@@ -150,9 +141,7 @@ namespace RainWorldRandomizer
                         true, true, true, true, true, true, true, true,
                         true, true, true,
                         true, true, true,
-                        true, true, true, true, true,
-                        true, true, true, true,
-                        true, true, true,
+                        true, true, true, true, true, true, true,
                         false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Spear,
@@ -163,9 +152,7 @@ namespace RainWorldRandomizer
                         true, true, true, true, true, true, true, true,
                         true, true, true,
                         true, true, true,
-                        true, true, true, true, true,
-                        true, true, true, true,
-                        true, true, true,
+                        true, true, true, true, true, true, true,
                         true, true, true, true,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
@@ -176,9 +163,7 @@ namespace RainWorldRandomizer
                         false, false, false, false, false, false, false, false,
                         false, false, false,
                         false, false, false,
-                        false, false, false, false, false,
-                        false, false, false, false,
-                        false, false, false,
+                        false, false, false, false, false, false, false,
                         false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Saint,
@@ -190,22 +175,7 @@ namespace RainWorldRandomizer
                         false, false, false, false, false, false, false, false,
                         false, false, false,
                         false, false, false,
-                        false, false, false, false, false,
-                        false, false, false, false,
-                        false, false, false,
-                        false, false, false, false,
-                    ]},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel,
-                    [
-                        true, true, true, true, true, true, true, true, true, true, true,
-                        true, true, true, true, true, true, true, true, true, true, true,
-                        true, true, true, true,
-                        true, true, true, true, true, true, true, true,
-                        true, true, true,
-                        true, true, true,
-                        true, true, true, true, true,
-                        true, true, true, true,
-                        true, true, true,
+                        false, false, false, false, false, false, false,
                         false, false, false, false,
                     ]}
                 });
@@ -216,8 +186,7 @@ namespace RainWorldRandomizer
                     { MoreSlugcatsEnums.SlugcatStatsName.Artificer, "GW_S09" },
                     { MoreSlugcatsEnums.SlugcatStatsName.Rivulet, "DS_S02l" },
                     { MoreSlugcatsEnums.SlugcatStatsName.Spear, "SU_S05" },
-                    { MoreSlugcatsEnums.SlugcatStatsName.Saint, "SI_S04" },
-                    { MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel, "SH_S09" },
+                    { MoreSlugcatsEnums.SlugcatStatsName.Saint, "SI_S04" }
                 });
             }
 
