@@ -17,7 +17,7 @@ namespace RainWorldRandomizer
     public class Plugin : BaseUnityPlugin
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
-        public const string PLUGIN_NAME = "Check Randomizer";
+        public const string PLUGIN_NAME = "Randomizer";
         public const string PLUGIN_VERSION = "1.3.6";
 
         internal static ManualLogSource Log;
