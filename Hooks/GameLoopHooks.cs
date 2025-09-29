@@ -523,7 +523,6 @@ namespace RainWorldRandomizer
 
         public static bool TryGivePlayerItem(this RainWorldGame game, Unlock.Item item)
         {
-            Plugin.Log.LogDebug($"Create item: {item.id}");
             // Find first living player to give to
             if (game.FirstAlivePlayer.realizedCreature is not Player player)
             {
@@ -549,7 +548,6 @@ namespace RainWorldRandomizer
             player.room.PlaySound(SoundID.Slugcat_Regurgitate_Item, player.mainBodyChunk);
 
             // Set position and try to grab
-            Plugin.Log.LogDebug(player.grasps.Any(g => g is not null));
             obj.realizedObject.firstChunk.HardSetPosition(player.bodyChunks[0].pos);
             if (!player.CanIPickThisUp(obj.realizedObject)
                 || (player.Grabability(obj.realizedObject) >= Player.ObjectGrabability.TwoHands
