@@ -3,6 +3,7 @@ using MonoMod.Cil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Watcher;
 using WPOT = Watcher.WatcherEnums.PlacedObjectType;
 
 namespace RainWorldRandomizer.WatcherIntegration
@@ -57,7 +58,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(HUD.HUD).GetMethod(nameof(HUD.HUD.ResetMap))));  // 042c
                 c.MoveBeforeLabels();  // keep cursor inside the conditional
                 c.Emit(OpCodes.Ldarg_0);  // WORA_KarmaSigils this
-                static void Delegate(Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils self)
+                static void Delegate(WatcherRoomSpecificScript.WORA_KarmaSigils self)
                 {
                     if (self.room.game.GetStorySession?.saveState.miscWorldSaveData.numberOfPrinceEncounters is int nope)
                         EntryPoint.TryGiveLocation($"Prince-{nope + 1}");
@@ -91,11 +92,11 @@ namespace RainWorldRandomizer.WatcherIntegration
                 => (ModManager.Watcher && slugcat.value == "Watcher" && trackerId == WinState.EndgameID.Traveller) || orig(trackerId, slugcat);
 
             /// <summary>Prevent Ripple from being raised automatically.
-            /// This also prevents the Ripple ladder from appearing when <see cref="Watcher.SpinningTop.SpawnWarpPoint"/> is called.</summary>
-            private static bool Dont(On.Watcher.SpinningTop.orig_CanRaiseRippleLevel orig, Watcher.SpinningTop self) => false;
+            /// This also prevents the Ripple ladder from appearing when <see cref="SpinningTop.SpawnWarpPoint"/> is called.</summary>
+            private static bool Dont(On.Watcher.SpinningTop.orig_CanRaiseRippleLevel orig, SpinningTop self) => false;
 
             /// <summary>Detect the moment that a Spinning Top is marked as encountered.</summary>
-            internal static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, Watcher.SpinningTop self)
+            internal static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, SpinningTop self)
             {
                 orig(self);
                 string loc = $"SpinningTop-{self.room.abstractRoom.name.Region()}";

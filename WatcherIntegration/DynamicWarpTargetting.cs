@@ -3,6 +3,7 @@ using MonoMod.Cil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Watcher;
 using static RainWorldRandomizer.WatcherIntegration.Settings;
 
 namespace RainWorldRandomizer.WatcherIntegration
@@ -25,16 +26,16 @@ namespace RainWorldRandomizer.WatcherIntegration
         {
             internal static void ApplyHooks()
             {
-                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets += WaiveRippleReq;
-                On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets += PredetermineOrFilter;
-                IL.Player.SpawnDynamicWarpPoint += CustomFailureMessage;
+                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += WaiveRippleReq;
+                On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += PredetermineOrFilter;
+                IL.Player.FailToSpawnWarpPoint += CustomFailureMessage;
             }
 
             internal static void RemoveHooks()
             {
-                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets -= WaiveRippleReq;
-                On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets -= PredetermineOrFilter;
-                IL.Player.SpawnDynamicWarpPoint -= CustomFailureMessage;
+                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= WaiveRippleReq;
+                On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= PredetermineOrFilter;
+                IL.Player.FailToSpawnWarpPoint -= CustomFailureMessage;
             }
 
             /// <summary>Sets a custom failure message for if Archipelago dynamic warping rules specifically cause a failure.</summary>
@@ -62,10 +63,10 @@ namespace RainWorldRandomizer.WatcherIntegration
             }
 
             /// <summary>Intercept the list of normal dynamic warp targets.</summary>
-            private static List<string> PredetermineOrFilter(On.Watcher.WarpPoint.orig_GetAvailableDynamicWarpTargets orig, AbstractRoom room, bool spreadingRot)
+            private static List<string> PredetermineOrFilter(On.Watcher.WarpPoint.orig_GetAvailableDynamicWarpTargets_World_string_string_bool orig, World world, string oldRoom, string targetRegion, bool spreadingRot)
             {
                 failureReason = null;
-                string roomName = room.name.ToUpperInvariant();
+                string roomName = oldRoom.ToUpperInvariant();
                 string region = roomName.Region();
                 WarpSourceKind sourceKind = GetWarpSourceKind(roomName);
                 DynWarpMode relevantMode = sourceKind == WarpSourceKind.Throne ? modeThrone : modeNormal;
@@ -94,7 +95,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 }
 
                 // For a non-predetermined mode, get the ordinarily valid candidate targets.
-                List<string> candidates = orig(room, spreadingRot);
+                List<string> candidates = orig(world, oldRoom, targetRegion, spreadingRot);
 
                 // If, for some reason, there are no valid candidate to begin with,
                 // something else has gone wrong and we don't need to bother with a custom failure reason.
