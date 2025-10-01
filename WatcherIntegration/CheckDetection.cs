@@ -1,6 +1,5 @@
 ﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Watcher;
@@ -16,24 +15,25 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered += DetectSpinningTop;
                 On.Watcher.SpinningTop.CanRaiseRippleLevel += Dont;
-                IL.Room.Loaded += SpinningTopKeyCheck;
+                //IL.Room.Loaded += SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat += LetThemWander;
                 On.SlugcatStats.SlugcatStoryRegions += WatcherStoryRegions;
                 On.Watcher.WarpSpawningRipple.Success += DetectThroneWarpCreation;
                 IL.Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils.Update += DetectPrince;
-                IL.World.SpawnGhost += NullifyPresence;
+                IL.Watcher.SpinningTop.SpawnWarpPoint += SpinningTop_SpawnWarpPoint;
+                //IL.World.SpawnGhost += NullifyPresence;
             }
 
             internal static void RemoveHooks()
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered -= DetectSpinningTop;
                 On.Watcher.SpinningTop.CanRaiseRippleLevel -= Dont;
-                IL.Room.Loaded -= SpinningTopKeyCheck;
+                //IL.Room.Loaded -= SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat -= LetThemWander;
                 On.SlugcatStats.SlugcatStoryRegions -= WatcherStoryRegions;
                 On.Watcher.WarpSpawningRipple.Success -= DetectThroneWarpCreation;
                 IL.Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils.Update -= DetectPrince;
-                IL.World.SpawnGhost -= NullifyPresence;
+                //IL.World.SpawnGhost -= NullifyPresence;
             }
 
             /// <summary>Prevent a <see cref="GhostWorldPresence"/> and <see cref="GhostCreatureSedater"/> (later, in <see cref="Room.Loaded"/>) from being created for a Spinning Top that won't be spawned (due to <see cref="SpinningTopKeyCheck(ILContext)"/>).</summary>
@@ -67,33 +67,47 @@ namespace RainWorldRandomizer.WatcherIntegration
             }
 
             /// <summary>Detect when a Throne dynamic warp is successfully created.</summary>
-            private static void DetectThroneWarpCreation(On.Watcher.WarpSpawningRipple.orig_Success orig, Watcher.WarpSpawningRipple self, float duration, bool bad, bool weird, bool strong)
+            private static void DetectThroneWarpCreation(On.Watcher.WarpSpawningRipple.orig_Success orig, WarpSpawningRipple self, float duration, bool bad, bool weird, bool strong)
             {
                 orig(self, duration, bad, weird, strong);
                 if (DynamicWarpTargetting.GetWarpSourceKind(self.room.abstractRoom.name) == DynamicWarpTargetting.WarpSourceKind.Throne)
                 {
-                    EntryPoint.TryGiveLocation($"ThroneWarp-{self.room.abstractRoom.name.Substring(11)}");
+                    EntryPoint.TryGiveLocation($"ThroneWarp-{self.room.abstractRoom.name[11..]}");
                 }
             }
 
             internal static List<string> watcherStoryRegions =
             [
-                "WARA", "WARB", "WARC", "WARD", "WARE", "WARF", "WARG", "WAUA", "WBLA", 
-                "WDSR", "WGWR", "WHIR", "WORA", "WPTA", "WRFA", "WRFB", "WRRA", "WRSA", 
-                "WSKA", "WSKB", "WSKC", "WSKD", "WSSR", "WSUR", "WTDA", "WTDB", "WVWA" 
+                "WARA", "WARB", "WARC", "WARD", "WARE", "WARF", "WARG", "WAUA", "WBLA",
+                "WDSR", "WGWR", "WHIR", "WORA", "WPTA", "WRFA", "WRFB", "WRRA", "WRSA",
+                "WSKA", "WSKB", "WSKC", "WSKD", "WSSR", "WSUR", "WTDA", "WTDB", "WVWA"
             ];
 
             /// <summary>Return a relevant list of regions for Watcher.</summary>
-            private static List<string> WatcherStoryRegions(On.SlugcatStats.orig_SlugcatStoryRegions orig, SlugcatStats.Name i) 
+            private static List<string> WatcherStoryRegions(On.SlugcatStats.orig_SlugcatStoryRegions orig, SlugcatStats.Name i)
                 => i.value == "Watcher" ? watcherStoryRegions : orig(i);
-            
+
             /// <summary>Don't blacklist The Wanderer for Watcher.</summary>
-            private static bool LetThemWander(On.WinState.orig_TrackerAllowedOnSlugcat orig, WinState.EndgameID trackerId, SlugcatStats.Name slugcat) 
+            private static bool LetThemWander(On.WinState.orig_TrackerAllowedOnSlugcat orig, WinState.EndgameID trackerId, SlugcatStats.Name slugcat)
                 => (ModManager.Watcher && slugcat.value == "Watcher" && trackerId == WinState.EndgameID.Traveller) || orig(trackerId, slugcat);
 
             /// <summary>Prevent Ripple from being raised automatically.
             /// This also prevents the Ripple ladder from appearing when <see cref="SpinningTop.SpawnWarpPoint"/> is called.</summary>
             private static bool Dont(On.Watcher.SpinningTop.orig_CanRaiseRippleLevel orig, SpinningTop self) => false;
+
+            /// <summary>
+            /// Prevent the warp that Spinning Top makes from instantly triggering
+            /// </summary>
+            private static void SpinningTop_SpawnWarpPoint(ILContext il)
+            {
+                ILCursor c = new(il);
+
+                c.GotoNext(MoveType.Before, x => x.MatchStfld(typeof(WarpPoint).GetField(nameof(WarpPoint.guaranteeTrigger))));
+
+                c.EmitDelegate(PreventInstantPull);
+
+                static bool PreventInstantPull(bool value) => false;
+            }
 
             /// <summary>Detect the moment that a Spinning Top is marked as encountered.</summary>
             internal static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, SpinningTop self)
@@ -106,6 +120,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             /// <summary>Detect, at cycle end, what new fixed warp points have been discovered and what regions have been infected.</summary>
             internal static void DetectFixedWarpPointAndRotSpread(SaveState saveState)
             {
+                Plugin.Log.LogDebug("Checking for warps...");
                 foreach (var point in saveState.miscWorldSaveData.discoveredWarpPoints)
                     EntryPoint.TryGiveLocation($"Warp-{point.Key.Split(':')[0].ToUpperInvariant()}");
 
@@ -113,6 +128,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     if (!Region.HasSentientRotResistance(region))
                         EntryPoint.TryGiveLocation($"SpreadRot-{region.ToUpperInvariant()}");
             }
+
             /// <summary>Prevent Spinning Top from spawning if the key is not collected and <see cref="Settings.spinningTopKeys"/> is enabled.</summary>
             private static void SpinningTopKeyCheck(ILContext il)
             {
