@@ -1,36 +1,39 @@
 ﻿using Menu;
+using LogUtils.Enums;
 
 namespace RainWorldRandomizer
 {
     public class RandomizerEnums
     {
-        public static void InitExtEnumTypes()
+        internal static void InitExtEnumTypes()
         {
             Unlock.UnlockType gate = Unlock.UnlockType.Gate;
         }
 
-        public static void RegisterAllValues()
+        internal static void RegisterAllValues()
         {
             SliderId.RegisterValues();
             AbstractObjectType.RegisterValues();
             DataPearlType.RegisterValues();
+            LogID.RegisterValues();
         }
 
-        public static void UnregisterAllValues()
+        internal static void UnregisterAllValues()
         {
             SliderId.UnregisterValues();
             AbstractObjectType.UnregisterValues();
             DataPearlType.UnregisterValues();
+            LogID.UnregisterValues();
         }
 
         public class SliderId
         {
-            public static void RegisterValues()
+            internal static void RegisterValues()
             {
                 SpoilerMenu = new Slider.SliderID("SpoilerMenu", true);
             }
 
-            public static void UnregisterValues()
+            internal static void UnregisterValues()
             {
                 SpoilerMenu?.Unregister();
                 SpoilerMenu = null;
@@ -41,12 +44,12 @@ namespace RainWorldRandomizer
 
         public class AbstractObjectType
         {
-            public static void RegisterValues()
+            internal static void RegisterValues()
             {
                 SpearmasterpearlFake = new AbstractPhysicalObject.AbstractObjectType("SpearmasterpearlFake", true);
             }
 
-            public static void UnregisterValues()
+            internal static void UnregisterValues()
             {
                 SpearmasterpearlFake?.Unregister();
                 SpearmasterpearlFake = null;
@@ -57,18 +60,34 @@ namespace RainWorldRandomizer
 
         public class DataPearlType
         {
-            public static void RegisterValues()
+            internal static void RegisterValues()
             {
                 SpearmasterpearlFake = new DataPearl.AbstractDataPearl.DataPearlType("SpearmasterpearlFake", true);
             }
 
-            public static void UnregisterValues()
+            internal static void UnregisterValues()
             {
                 SpearmasterpearlFake?.Unregister();
                 SpearmasterpearlFake = null;
             }
 
             public static DataPearl.AbstractDataPearl.DataPearlType SpearmasterpearlFake;
+        }
+
+        public class LogID
+        {
+            internal static void RegisterValues()
+            {
+                RandomizerLog = new LogUtils.Enums.LogID("randomizerLog", LogAccess.FullAccess, true);
+            }
+
+            internal static void UnregisterValues()
+            {
+                RandomizerLog?.Unregister();
+                RandomizerLog = null;
+            }
+
+            public static LogUtils.Enums.LogID RandomizerLog;
         }
     }
 }

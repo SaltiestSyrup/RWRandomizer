@@ -1,5 +1,4 @@
 using BepInEx;
-using BepInEx.Logging;
 using MoreSlugcats;
 using RainWorldRandomizer.Generation;
 using System;
@@ -20,7 +19,7 @@ namespace RainWorldRandomizer
         public const string PLUGIN_NAME = "Randomizer";
         public const string PLUGIN_VERSION = "1.3.6.1";
 
-        internal static ManualLogSource Log;
+        internal static LogUtils.Logger Log;
 
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new();
@@ -80,6 +79,10 @@ namespace RainWorldRandomizer
 
         public void OnEnable()
         {
+            // Register Enums
+            RandomizerEnums.RegisterAllValues();
+            Log = new LogUtils.Logger([RandomizerEnums.LogID.RandomizerLog, LogUtils.Enums.LogID.BepInEx]);
+
             if (Singleton == null)
             {
                 Singleton = this;
@@ -87,16 +90,11 @@ namespace RainWorldRandomizer
             else
             {
                 // Something has gone terribly wrong
-                Logger.LogError("Tried to initialize multiple instances of main class!");
+                Log.LogFatal("Tried to initialize multiple instances of main class!", ConsoleColor.DarkRed);
                 return;
             }
 
-            // Assign as vanilla until decided otherwise
             collectTokenHandler = new CollectTokenHandler();
-            Log = Logger;
-
-            // Register Enums
-            RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
 
             // Create hooks
@@ -137,7 +135,7 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
         }
 
@@ -174,14 +172,14 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
         }
 
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
-            Log.LogInfo("Init Randomizer Mod");
+            Log.LogInfo("Init Randomizer Mod", ConsoleColor.Green);
 
             rainWorld = self;
 
@@ -191,7 +189,7 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
 
             Constants.InitializeConstants();
