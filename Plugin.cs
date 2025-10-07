@@ -81,7 +81,9 @@ namespace RainWorldRandomizer
         {
             // Register Enums
             RandomizerEnums.RegisterAllValues();
-            Log = new LogUtils.Logger([RandomizerEnums.LogID.RandomizerLog, LogUtils.Enums.LogID.BepInEx]);
+            // Create logger. Most logs go to both LogOutput.log and a dedicated randomizerLog.log in StreamingAssets
+            Log = new LogUtils.Logger(Logger);
+            Log.LogTargets.Add(RandomizerEnums.LogID.RandomizerLog);
 
             if (Singleton == null)
             {

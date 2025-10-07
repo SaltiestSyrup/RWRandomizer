@@ -79,6 +79,7 @@ namespace RainWorldRandomizer
             internal static void RegisterValues()
             {
                 RandomizerLog = new LogUtils.Enums.LogID("randomizerLog", LogAccess.FullAccess, true);
+                RandomizerLog.Properties.ShowCategories.IsEnabled = true;
             }
 
             internal static void UnregisterValues()
