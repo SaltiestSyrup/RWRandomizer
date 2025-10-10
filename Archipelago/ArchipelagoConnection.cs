@@ -184,7 +184,15 @@ namespace RainWorldRandomizer
                         errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
                         break;
                     case SlotDataResult.InvalidDLC:
-                        errLog = "Currently enabled DLCs do not match those specified in your YAML. Please enable the correct DLC and try again.";
+                        errLog = "Currently enabled DLC mods do not match those specified in your YAML.\n\nPlease have ONLY the following DLC enabled:\n";
+                        bool wantsMSC = (long)loginSuccess.SlotData["is_msc_enabled"] > 0;
+                        bool wantsWatcher = (long)loginSuccess.SlotData["is_watcher_enabled"] > 0;
+                        if (!wantsMSC && !wantsWatcher) errLog += "No DLC";
+                        else
+                        {
+                            if (wantsMSC) errLog += "More Slugcats Expansion\n";
+                            if (wantsWatcher) errLog += "The Watcher";
+                        }
                         break;
                     // Currently don't need to ever return this error, as both possible versions are identical (logic-wise)
                     case SlotDataResult.InvalidGameVersion:
