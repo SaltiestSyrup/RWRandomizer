@@ -489,11 +489,20 @@ namespace RainWorldRandomizer
             // Attempt AP connection on click
             connectButton.OnClick += (trigger) =>
             {
-                connectResultLabel.text = ArchipelagoConnection.Connect(
+                try
+                {
+                    connectResultLabel.text = ArchipelagoConnection.Connect(
                     hostNameTextBox.value,
                     portTextBox.valueInt,
                     slotNameTextBox.value,
                     passwordTextBox.value == "" ? null : passwordTextBox.value);
+                }
+                catch (Exception e)
+                {
+                    connectResultLabel.text = $"An unexpected error occurred while connecting to the server:\n\n {e}";
+                    Plugin.Log.LogError("Encountered exception while connecting to server:");
+                    Plugin.Log.LogError(e);
+                }
 
                 if (!ArchipelagoConnection.HasConnected) return;
 
