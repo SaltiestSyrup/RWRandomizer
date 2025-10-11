@@ -217,7 +217,6 @@ namespace RainWorldRandomizer
                 return errLog;
             }
 
-            generationSeed = Session.RoomState.Seed;
             HasConnected = true;
             CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
@@ -274,8 +273,10 @@ namespace RainWorldRandomizer
         {
             try
             {
-                if (packet is RoomInfoPacket)
+                if (packet is RoomInfoPacket roomPacket)
                 {
+                    generationSeed = roomPacket.SeedName;
+                    Plugin.Log.LogInfo(generationSeed);
                     Plugin.Log.LogInfo($"Received RoomInfo packet");
                     return;
                 }
