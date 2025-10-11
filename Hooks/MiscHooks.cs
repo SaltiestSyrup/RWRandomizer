@@ -145,8 +145,11 @@ namespace RainWorldRandomizer
         {
             orig(self);
 
-            if (RandoOptions.RandomizeSpawnLocation)
+            if (RandoOptions.RandomizeSpawnLocation && Plugin.RandoManager is not null)
             {
+                // Randomized spawn is done a different way for Watcher (see WatcherIntegration.RoomSpecificScript)
+                if (ModManager.Watcher && Plugin.RandoManager.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher) return;
+
                 if (Plugin.RandoManager.customStartDen.Equals(""))
                 {
                     Plugin.Log.LogError("Tried to set starting den while custom den unset");
@@ -154,16 +157,6 @@ namespace RainWorldRandomizer
                     return;
                 }
                 self.denPosition = Plugin.RandoManager.customStartDen;
-
-                if (ModManager.Watcher && Plugin.RandoManager.currentSlugcat.value == "Watcher")
-                {
-                    // set a fake warp data a la `SaveState.LoadGame`
-                    //self.warpPointTargetAfterWarpPointSave = new Watcher.WarpPoint.WarpPointData(null);
-                    //self.warpPointTargetAfterWarpPointSave.FromString("0~0~Watcher~Watcher~wskb~wskb_c17~NULL~NULL~~WatcherOnly");
-                    self.deathPersistentSaveData.minimumRippleLevel = 1f;
-                    self.deathPersistentSaveData.maximumRippleLevel = 1f;
-                    self.deathPersistentSaveData.rippleLevel = 1f;
-                }
             }
         }
 

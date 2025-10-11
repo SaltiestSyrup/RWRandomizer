@@ -22,6 +22,7 @@ namespace RainWorldRandomizer
             On.SaveState.SessionEnded += OnSessionEnded;
             On.RainWorldGame.ctor += OnRainWorldGameCtor;
             On.HardmodeStart.Update += OnHardmodeStart;
+            On.Room.Loaded += AddRoomSpecificScript;
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update += OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update += OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update += OnSpearEndingUpdate;
@@ -46,6 +47,7 @@ namespace RainWorldRandomizer
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
             On.HardmodeStart.Update -= OnHardmodeStart;
+            On.Room.Loaded -= AddRoomSpecificScript;
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update -= OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update -= OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update -= OnSpearEndingUpdate;
@@ -474,6 +476,14 @@ namespace RainWorldRandomizer
                     prev || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.PPwS == ArchipelagoConnection.PPwSBehavior.Bypassed);
                 c.EmitDelegate(BypassHardcodedSurvivorRequirement);
             }
+        }
+
+        private static void AddRoomSpecificScript(On.Room.orig_Loaded orig, Room self)
+        {
+            orig(self);
+            if (Plugin.RandoManager is null) return;
+
+            if (ModManager.Watcher) WatcherIntegration.RoomSpecificScript.AddRoomSpecificScript(self);
         }
 
         /// <summary>

@@ -149,6 +149,7 @@
     <Compile Include="WatcherIntegration\DynamicWarpTargetting.cs" />
     <Compile Include="WatcherIntegration\EntryPoint.cs" />
     <Compile Include="WatcherIntegration\Items.cs" />
+    <Compile Include="WatcherIntegration\RoomSpecificScript.cs" />
     <Compile Include="WatcherIntegration\Settings.cs" />
     <Compile Include="WatcherIntegration\StaticWarps.cs" />
   </ItemGroup>

@@ -1,6 +1,5 @@
 ﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Watcher;
@@ -26,6 +25,9 @@ namespace RainWorldRandomizer.WatcherIntegration
         {
             internal static void ApplyHooks()
             {
+                IL.Player.SpawnDynamicWarpPoint += SpawnDynamicWarpPointIL;
+                On.Watcher.WarpPoint.NewWorldLoaded_Room += OnNewWorldLoaded;
+
                 IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += WaiveRippleReq;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += PredetermineOrFilter;
                 IL.Player.FailToSpawnWarpPoint += CustomFailureMessage;
@@ -33,9 +35,56 @@ namespace RainWorldRandomizer.WatcherIntegration
 
             internal static void RemoveHooks()
             {
+                IL.Player.SpawnDynamicWarpPoint -= SpawnDynamicWarpPointIL;
+                On.Watcher.WarpPoint.NewWorldLoaded_Room -= OnNewWorldLoaded;
+
                 IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= WaiveRippleReq;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= PredetermineOrFilter;
                 IL.Player.FailToSpawnWarpPoint -= CustomFailureMessage;
+            }
+
+            // (This can be modified to make other single use warps if ever needed)
+            /// <summary>
+            /// Make the initial warp into the starting region a one-way
+            /// </summary>
+            private static void SpawnDynamicWarpPointIL(ILContext il)
+            {
+                ILCursor c = new(il);
+
+                // Check if has weaver power at 0268
+                c.GotoNext(
+                    MoveType.After,
+                    x => x.MatchCallOrCallvirt(typeof(MiscWorldSaveData).GetProperty(nameof(MiscWorldSaveData.hasVoidWeaverAbility)).GetGetMethod())
+                    );
+
+                c.Emit(OpCodes.Ldarg_0);
+                c.EmitDelegate(OneWayIfFirstWarp);
+
+                static bool OneWayIfFirstWarp(bool origVal, Player player)
+                {
+                    return RoomSpecificScript.WatcherRandomizedSpawn.warpPending || origVal;
+                }
+            }
+
+            /// <summary>
+            /// Remove ripple death screen effect after warp to start region
+            /// </summary>
+            private static void OnNewWorldLoaded(On.Watcher.WarpPoint.orig_NewWorldLoaded_Room orig, WarpPoint self, Room newRoom)
+            {
+                orig(self, newRoom);
+
+                if (!RoomSpecificScript.WatcherRandomizedSpawn.warpPending) return;
+                foreach (AbstractCreature crit in newRoom.game.Players)
+                {
+                    Player player = crit.realizedCreature as Player;
+                    if (player is not null)
+                    {
+                        player.pendingForcedWarpRoom = null;
+                        player.rippleDeathIntensity = 0f;
+                        player.rippleDeathTime = 0;
+                    }
+                }
+                RoomSpecificScript.WatcherRandomizedSpawn.warpPending = false;
             }
 
             /// <summary>Sets a custom failure message for if Archipelago dynamic warping rules specifically cause a failure.</summary>
@@ -75,7 +124,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 if (relevantMode.Predetermined())
                 {
                     // If we need the key but do not have it, set a failure reason and return empty.
-                    if (relevantMode == DynWarpMode.UnlockablePredetermined 
+                    if (relevantMode == DynWarpMode.UnlockablePredetermined
                         && sourceKind is not WarpSourceKind.Permarotted or WarpSourceKind.Unrottable
                         && !Items.CollectedDynamicKeys.Contains(region))
                     {
@@ -85,7 +134,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     // Specifically in the Throne, we need to index the mapping with the room; otherwise, index with the region.
                     if (predetermination.TryGetValue(sourceKind == WarpSourceKind.Throne ? roomName : region, out string destRoom))
                     {
-                        return [ destRoom ];
+                        return [destRoom];
                     }
 
                     // Ideally this failure state never happens - it would imply either custom regions,
