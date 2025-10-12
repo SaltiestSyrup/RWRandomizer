@@ -276,7 +276,6 @@ namespace RainWorldRandomizer
                 if (packet is RoomInfoPacket roomPacket)
                 {
                     generationSeed = roomPacket.SeedName;
-                    Plugin.Log.LogInfo(generationSeed);
                     Plugin.Log.LogInfo($"Received RoomInfo packet");
                     return;
                 }
