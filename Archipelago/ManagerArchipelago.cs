@@ -429,10 +429,10 @@ namespace RainWorldRandomizer
                     => ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, names.locations[clientName]));
                 foreach (var kvp in IDToLocation) LocationToID.Add(kvp.Value, kvp.Key);
             }
-            catch (ArgumentException e)
+            catch (ArgumentException)
             {
                 // Argument exception happens when GetLocationIdFromName() returns the same ID (-1) multiple times
-                Plugin.Log.LogError("Failed to load datapackage location IDs. Datapackage is either missing or doesn't match this client version's location names.");
+                Plugin.Log.LogError("Failed to load datapackage location IDs. Datapackage is either missing or client is connected to an incompatible AP world.");
             }
 
             // Create translation from AP item names to client ones.
