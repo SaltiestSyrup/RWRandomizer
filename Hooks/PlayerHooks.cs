@@ -8,6 +8,9 @@ namespace RainWorldRandomizer
     {
         public static void ApplyHooks()
         {
+            On.SlugcatStats.ctor += OnSlugcatStatsCtor;
+            On.Player.Jump += OnJump;
+            On.Player.ThrownSpear += OnThrownSpear;
             On.Player.Regurgitate += OnRegurgitate;
             On.Player.Update += OnPlayerUpdate;
             On.Player.NewRoom += OnNewRoom;
@@ -27,6 +30,9 @@ namespace RainWorldRandomizer
 
         public static void RemoveHooks()
         {
+            On.SlugcatStats.ctor -= OnSlugcatStatsCtor;
+            On.Player.Jump -= OnJump;
+            On.Player.ThrownSpear -= OnThrownSpear;
             On.Player.Regurgitate -= OnRegurgitate;
             On.Player.Update -= OnPlayerUpdate;
             On.Player.NewRoom -= OnNewRoom;
@@ -34,6 +40,56 @@ namespace RainWorldRandomizer
             On.Player.ClassMechanicsSaint -= OnClassMechanicsSaint;
             IL.Player.GrabUpdate -= ILPlayerGrabUpdate;
             IL.PlayerGraphics.Update -= ILPlayerGraphicsUpdate;
+        }
+
+        /// <summary>
+        /// Apply movement speed multiplier on stat creation
+        /// </summary>
+        private static void OnSlugcatStatsCtor(On.SlugcatStats.orig_ctor orig, SlugcatStats self, SlugcatStats.Name slugcat, bool malnourished)
+        {
+            orig(self, slugcat, malnourished);
+            if (Plugin.RandoManager is null) return;
+            self.runspeedFac *= Plugin.RandoManager.MovementSpeedMultiplier;
+            self.poleClimbSpeedFac *= Plugin.RandoManager.MovementSpeedMultiplier;
+            self.corridorClimbSpeedFac *= Plugin.RandoManager.MovementSpeedMultiplier;
+        }
+
+        /// <summary>
+        /// Update movement speed multiplier while in-game
+        /// </summary>
+        public static void UpdatePlayerMoveSpeed()
+        {
+            RainWorldGame game = Plugin.Singleton.Game;
+            if (game is null) return;
+
+            // Recreate SlugcatStats to update move speed multiplier
+            bool malnourished = game.session.characterStats.malnourished;
+            game.session.characterStats = new SlugcatStats(game.StoryCharacter, malnourished);
+            if (ModManager.CoopAvailable) game.GetStorySession?.CreateJollySlugStats(malnourished);
+
+            foreach (AbstractCreature crit in game.Players)
+            {
+                if (crit.realizedCreature is not Player player) continue;
+                player.initRunSpeedFac = game.session.characterStats.runspeedFac;
+            }
+        }
+
+        private static void OnJump(On.Player.orig_Jump orig, Player self)
+        {
+            orig(self);
+            self.jumpBoost += 1.2f * Plugin.RandoManager.MovementSpeedMultiplier;
+        }
+
+        /// <summary>
+        /// Modify spear damage based on current multiplier 
+        /// </summary>
+        /// <param name="orig"></param>
+        /// <param name="self"></param>
+        /// <param name="spear"></param>
+        private static void OnThrownSpear(On.Player.orig_ThrownSpear orig, Player self, Spear spear)
+        {
+            orig(self, spear);
+            if (Plugin.RandoManager is not null) spear.spearDamageBonus *= Plugin.RandoManager.SpearDamageMultiplier;
         }
 
         /// <summary>
