@@ -36,6 +36,14 @@ namespace RainWorldRandomizer
             get { return _hunterBonusCyclesGiven; }
             set { _hunterBonusCyclesGiven = value; }
         }
+        public virtual float SpearDamageMultiplier
+        {
+            get { return 1 + (_numDamageUpgrades * 0.1f); }
+        }
+        public virtual float MovementSpeedMultiplier
+        {
+            get { return 1 + (_numMovementUpgrades * 0.1f); }
+        }
         public virtual bool GivenNeuronGlow
         {
             get { return _givenNeuronGlow; }
@@ -64,6 +72,8 @@ namespace RainWorldRandomizer
 
         protected int _currentMaxKarma = 4;
         protected int _hunterBonusCyclesGiven = 0;
+        protected int _numDamageUpgrades = 0;
+        protected int _numMovementUpgrades = 0;
         protected bool _givenNeuronGlow = false;
         protected bool _givenMark = false;
         protected bool _givenRobo = false;
