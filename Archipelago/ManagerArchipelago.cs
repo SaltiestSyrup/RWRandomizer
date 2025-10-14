@@ -255,10 +255,6 @@ namespace RainWorldRandomizer
                     case "Upgrade-SpearDamage":
                         _numDamageUpgrades++;
                         break;
-                    case "Upgrade-MoveSpeed":
-                        _numMovementUpgrades++;
-                        PlayerHooks.UpdatePlayerMoveSpeed();
-                        break;
                     case "The Glow":
                         _givenNeuronGlow = true;
                         if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
