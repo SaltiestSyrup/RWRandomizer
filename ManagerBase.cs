@@ -67,7 +67,7 @@ namespace RainWorldRandomizer
         protected bool _givenRobo = false;
         protected bool _givenPebblesOff = false;
         protected bool _givenSpearPearlRewrite = false;
-        protected bool[] _givenExpeditionPerks = new bool[6];
+        protected bool[] _givenExpeditionPerks = new bool[8];
 
         /// <summary>
         /// The den that this run has started in. If spawn was not randomized, this should be set to <see cref="currentSlugcat"/>'s entry in <see cref="Constants.SlugcatDefaultStartingDen"/>
@@ -79,9 +79,11 @@ namespace RainWorldRandomizer
             BackSpear,
             DualWielding,
             ExplosionResistance,
+            ExplosiveParry,
             ExplosiveJump,
             ItemCrafting,
-            HighAgility
+            Aquatic,
+            Agility
         }
 
         public ManagerBase() { }
@@ -241,6 +243,7 @@ namespace RainWorldRandomizer
         {
             if (!ModManager.MSC) return;
             _givenExpeditionPerks[(int)perk] = true;
+            PlayerHooks.RefreshExpeditionPerks();
         }
 
         public bool HasExpeditionPerk(ExpeditionPerks perk)
