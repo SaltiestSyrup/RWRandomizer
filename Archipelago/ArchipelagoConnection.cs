@@ -92,6 +92,7 @@ namespace RainWorldRandomizer
         public enum CompletionCondition
         {
             Ascension, // The basic void sea ending
+            HelpingHand, // Hunter reviving LttM with the green neuron
             SlugTree, // Survivor, Monk, and Gourmand reaching Outer Expanse
             ScavKing, // Artificer killing the Chieftain scavenger
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
@@ -338,6 +339,10 @@ namespace RainWorldRandomizer
             // Check DLC state
             IsMSC = shouldHaveMSC > 0;
             IsWatcher = shouldHaveWatcher > 0;
+            if (ModManager.MSC != IsMSC || ModManager.Watcher != IsWatcher)
+            {
+                return SlotDataResult.InvalidDLC;
+            }
 
             // Choose campaign and ending
             Slugcat = new SlugcatStats.Name(campaignString);
@@ -349,6 +354,8 @@ namespace RainWorldRandomizer
                     completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
                     break;
                 case "Red":
+                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.HelpingHand;
+                    break;
                 case "Sofanthiel":
                     completionCondition = CompletionCondition.Ascension;
                     break;
@@ -364,12 +371,6 @@ namespace RainWorldRandomizer
                 case "Saint":
                     completionCondition = CompletionCondition.Rubicon;
                     break;
-            }
-
-            if (ModManager.MSC != IsMSC
-                || ModManager.Watcher != IsWatcher)
-            {
-                return SlotDataResult.InvalidDLC;
             }
 
             // Choose starting den
