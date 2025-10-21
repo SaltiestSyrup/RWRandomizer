@@ -408,6 +408,8 @@ namespace RainWorldRandomizer
             if (self.phase == SLOracleWakeUpProcedure.Phase.Done)
             {
                 Plugin.RandoManager.GiveLocation("Save_LttM");
+                if (Plugin.RandoManager is ManagerArchipelago managerAP)
+                    managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.HelpingHand);
             }
 
             orig(self, eu);
