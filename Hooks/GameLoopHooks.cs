@@ -100,14 +100,17 @@ namespace RainWorldRandomizer
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
             }
 
-            if (ID == ProcessManager.ProcessID.SleepScreen)
+            bool anySleepScreen = ID == ProcessManager.ProcessID.SleepScreen 
+                || ID == ProcessManager.ProcessID.GhostScreen 
+                || ID == ProcessManager.ProcessID.KarmaToMaxScreen
+                || (ModManager.MSC && ID == MoreSlugcatsEnums.ProcessID.VengeanceGhostScreen);
+            if (anySleepScreen)
             {
                 // Check for any new passages
+                SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
                 foreach (string check in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
                 {
                     WinState.EndgameID id = new(check, false);
-
-                    SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
 
                     // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
                     if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
