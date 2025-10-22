@@ -408,6 +408,7 @@ namespace RainWorldRandomizer
             if (self.phase == SLOracleWakeUpProcedure.Phase.Done)
             {
                 Plugin.RandoManager.GiveLocation("Save_LttM");
+                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.HelpingHand);
             }
 
             orig(self, eu);
@@ -443,11 +444,9 @@ namespace RainWorldRandomizer
             orig(self, eventName);
 
             // Check for completion via visiting LttM after placing the Rarefaction cell
-            if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && !managerAP.gameCompleted
-                && eventName == "RivEndingFade")
+            if (eventName == "RivEndingFade")
             {
-                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SaveMoon);
+                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SaveMoon);
             }
         }
 

@@ -356,11 +356,7 @@ namespace RainWorldRandomizer
 
         public void GiveCompletionCondition(ArchipelagoConnection.CompletionCondition condition)
         {
-            if (condition != ArchipelagoConnection.completionCondition)
-            {
-                Plugin.Log.LogInfo("Game completed through the wrong condition, not sending completion");
-                return;
-            }
+            if (gameCompleted || condition != ArchipelagoConnection.completionCondition) return;
 
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();
