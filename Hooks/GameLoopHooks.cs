@@ -164,17 +164,17 @@ namespace RainWorldRandomizer
 
             orig(self, ID);
 
-            // Check for Pilgrim goal (Echo count is updated during the orig call above)
+            // Check for Pilgrim goal (Echo count is updated during the orig call above).
             // Condition is not exactly the same as pilgrim passage.
             // This checks for any echoes, so Saint can sub in the MS echo if they choose.
-            if (anySleepScreen && Plugin.RandoManager is ManagerArchipelago manager)
+            if (anySleepScreen)
             {
                 SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
                 // Saint and Artificer have one more echo to get
                 int echoesNeeded = Plugin.RandoManager.currentSlugcat.value == "Saint"
                     || Plugin.RandoManager.currentSlugcat.value == "Artificer" ? 7 : 6;
                 if (saveState.deathPersistentSaveData.ghostsTalkedTo.Count(kvp => kvp.Value >= 2) >= echoesNeeded)
-                    manager.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Pilgrim);
+                    (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Pilgrim);
             }
         }
 
@@ -495,11 +495,9 @@ namespace RainWorldRandomizer
             orig(self, eu);
 
             // Check for completion via Outer Expanse
-            if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && !managerAP.gameCompleted
-                && self.endTrigger)
+            if (self.endTrigger)
             {
-                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SlugTree);
+                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SlugTree);
             }
         }
 
@@ -511,11 +509,9 @@ namespace RainWorldRandomizer
             orig(self, eu);
 
             // Check for completion via killing Chieftain scavenger
-            if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && !managerAP.gameCompleted
-                && self.endingTriggered)
+            if (self.endingTriggered)
             {
-                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.ScavKing);
+                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.ScavKing);
             }
         }
 
@@ -527,11 +523,9 @@ namespace RainWorldRandomizer
             orig(self, eu);
 
             // Check for completion via delivering Spearmaster's pearl to Comms array
-            if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && !managerAP.gameCompleted
-                && self.SMEndingPhase == MSCRoomSpecificScript.SpearmasterEnding.SMEndingState.PEARLDATA)
+            if (self.SMEndingPhase == MSCRoomSpecificScript.SpearmasterEnding.SMEndingState.PEARLDATA)
             {
-                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
+                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
             }
         }
 
