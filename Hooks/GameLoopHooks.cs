@@ -118,16 +118,19 @@ namespace RainWorldRandomizer
                     {
                         WinState.GourFeastTracker gourTracker = saveState.deathPersistentSaveData.winState.GetTracker(id, true) as WinState.GourFeastTracker;
 
+                        bool fullCompletion = true;
                         for (int i = 0; i < gourTracker.progress.Length; i++)
                         {
                             string type = WinState.GourmandPassageTracker[i].type == AbstractPhysicalObject.AbstractObjectType.Creature
                                 ? WinState.GourmandPassageTracker[i].crits[0].value : WinState.GourmandPassageTracker[i].type.value;
 
-                            if (gourTracker.progress[i] > 0)
-                            {
-                                Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
-                            }
+                            if (gourTracker.progress[i] > 0) Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
+                            else fullCompletion = false;
                         }
+
+                        // Check for Food Quest goal
+                        if (fullCompletion) (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.FoodQuest);
+
                         continue;
                     }
 
