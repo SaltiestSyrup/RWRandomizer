@@ -163,6 +163,19 @@ namespace RainWorldRandomizer
             }
 
             orig(self, ID);
+
+            // Check for Pilgrim goal (Echo count is updated during the orig call above)
+            // Condition is not exactly the same as pilgrim passage.
+            // This checks for any echoes, so Saint can sub in the MS echo if they choose.
+            if (anySleepScreen && Plugin.RandoManager is ManagerArchipelago manager)
+            {
+                SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
+                // Saint and Artificer have one more echo to get
+                int echoesNeeded = Plugin.RandoManager.currentSlugcat.value == "Saint"
+                    || Plugin.RandoManager.currentSlugcat.value == "Artificer" ? 7 : 6;
+                if (saveState.deathPersistentSaveData.ghostsTalkedTo.Count(kvp => kvp.Value >= 2) >= echoesNeeded)
+                    manager.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Pilgrim);
+            }
         }
 
         /// <summary>

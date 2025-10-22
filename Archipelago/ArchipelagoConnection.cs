@@ -98,6 +98,9 @@ namespace RainWorldRandomizer
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
             Messenger, // Spearmaster delivering the encoded pearl to Comms array
             Rubicon, // Saint Ascending in Rubicon
+
+            Pilgrim, // Encounter enough Echoes to trigger the Pilgrim passage
+            FoodQuest, // Eat every tracked food quest item
         }
 
         public enum EchoLowKarmaDifficulty
@@ -361,31 +364,21 @@ namespace RainWorldRandomizer
 
             // Choose campaign and ending
             Slugcat = new SlugcatStats.Name(campaignString);
-            switch (campaignString)
+            if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
+            else if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
+            else if (completionType >= 4) completionCondition = CompletionCondition.Ascension; // Unknown condition fallback
+            else
             {
-                case "Yellow":
-                case "White":
-                case "Gourmand":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case "Red":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.HelpingHand;
-                    break;
-                case "Sofanthiel":
-                    completionCondition = CompletionCondition.Ascension;
-                    break;
-                case "Artificer":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing;
-                    break;
-                case "Rivulet":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon;
-                    break;
-                case "Spear":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger;
-                    break;
-                case "Saint":
-                    completionCondition = CompletionCondition.Rubicon;
-                    break;
+                completionCondition = campaignString switch
+                {
+                    "Yellow" or "White" or "Gourmand" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree,
+                    "Red" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.HelpingHand,
+                    "Artificer" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing,
+                    "Rivulet" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon,
+                    "Spear" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger,
+                    "Saint" => CompletionCondition.Rubicon,
+                    "Sofanthiel" or _ => CompletionCondition.Ascension
+                };
             }
 
             // Choose starting den
