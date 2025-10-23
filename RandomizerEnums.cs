@@ -1,5 +1,7 @@
 ﻿using Menu;
 using LogUtils.Enums;
+using System.IO;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -78,8 +80,11 @@ namespace RainWorldRandomizer
         {
             internal static void RegisterValues()
             {
-                RandomizerLog = new LogUtils.Enums.LogID("randomizerLog", LogAccess.FullAccess, true);
+                string logPath = Path.Combine(Application.streamingAssetsPath, "randomizerlogs");
+                Directory.CreateDirectory(logPath);
+                RandomizerLog = new LogUtils.Enums.LogID("randomizerLog", logPath, LogAccess.FullAccess, true);
                 RandomizerLog.Properties.ShowCategories.IsEnabled = true;
+                RandomizerLog.Properties.LogsFolderAware = true;
             }
 
             internal static void UnregisterValues()
