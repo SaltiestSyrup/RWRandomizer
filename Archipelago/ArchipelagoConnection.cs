@@ -213,6 +213,7 @@ namespace RainWorldRandomizer
             HasConnected = true;
             CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
+            Plugin.ServerLog.Log("--- Starting Session ---");
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
         }
 
@@ -243,6 +244,7 @@ namespace RainWorldRandomizer
             if (Session is null) return false;
 
             Plugin.Log.LogInfo("Disconnecting from server...");
+            Plugin.ServerLog.Log("--- Ending Session ---");
             Session.Socket.PacketReceived -= PacketReceived;
             Session.MessageLog.OnMessageReceived -= MessageReceived;
             Session.Socket.ErrorReceived -= ErrorReceived;
@@ -252,8 +254,8 @@ namespace RainWorldRandomizer
             CurrentlyConnecting = false;
             ReceivedSlotData = false;
 
-            if (resetManager) 
-            { 
+            if (resetManager)
+            {
                 Plugin.RandoManager = null;
                 waitingItemPackets.Clear();
             }
@@ -430,7 +432,7 @@ namespace RainWorldRandomizer
 
         private static void MessageReceived(LogMessage message)
         {
-            Plugin.Log.LogInfo($"[Server Message] {message}");
+            Plugin.ServerLog.Log(message);
 
             if ((message is ItemSendLogMessage || message is PlayerSpecificLogMessage) // Filter only items and player specific messages
                 && message is not JoinLogMessage // Filter out join logs

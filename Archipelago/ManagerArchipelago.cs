@@ -168,7 +168,7 @@ namespace RainWorldRandomizer
 
             Archipelago.MultiClient.Net.Packets.ReceivedItemsPacket itemPacket = ArchipelagoConnection.waitingItemPackets.Dequeue();
 
-            Plugin.Log.LogInfo($"Received items packet. Index: {itemPacket.Index} | Last index: {ArchipelagoConnection.lastItemIndex} | Item count: {itemPacket.Items.Length}");
+            Plugin.Log.LogInfo($"Received items packet:");//. Index: {itemPacket.Index} | Last index: {ArchipelagoConnection.lastItemIndex} | Item count: {itemPacket.Items.Length}");
 
             bool isNewInventory = false;
             if (itemPacket.Index == 0)
@@ -278,7 +278,7 @@ namespace RainWorldRandomizer
                     Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
             }
 
-            Plugin.Log.LogInfo($"Received item: {item}");
+            Plugin.Log.LogInfo($"\tReceived item: {item}");
         }
 
         public bool InitializeSession(SlugcatStats.Name slugcat)

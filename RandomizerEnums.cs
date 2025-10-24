@@ -82,18 +82,25 @@ namespace RainWorldRandomizer
             {
                 string logPath = Path.Combine(Application.streamingAssetsPath, "randomizerlogs");
                 Directory.CreateDirectory(logPath);
+
                 RandomizerLog = new LogUtils.Enums.LogID("randomizerLog", logPath, LogAccess.FullAccess, true);
                 RandomizerLog.Properties.ShowCategories.IsEnabled = true;
                 RandomizerLog.Properties.LogsFolderAware = true;
+
+                ServerLog = new LogUtils.Enums.LogID("serverLog", logPath, LogAccess.FullAccess, true);
+                ServerLog.Properties.LogsFolderAware = true;
             }
 
             internal static void UnregisterValues()
             {
                 RandomizerLog?.Unregister();
                 RandomizerLog = null;
+                ServerLog.Unregister();
+                ServerLog = null;
             }
 
             public static LogUtils.Enums.LogID RandomizerLog;
+            public static LogUtils.Enums.LogID ServerLog;
         }
     }
 }

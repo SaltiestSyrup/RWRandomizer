@@ -20,6 +20,11 @@ namespace RainWorldRandomizer
         public const string PLUGIN_VERSION = "1.3.6.1";
 
         internal static LogUtils.Logger Log;
+        /// <summary>
+        /// Used for logging specifically the server messages sent to us by Archipelago,
+        /// this should not be used for any other context.
+        /// </summary>
+        internal static LogUtils.Logger ServerLog;
 
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new();
@@ -84,6 +89,8 @@ namespace RainWorldRandomizer
             // Create logger. Most logs go to both LogOutput.log and a dedicated randomizerLog.log in StreamingAssets
             Log = new LogUtils.Logger(Logger);
             Log.LogTargets.Add(RandomizerEnums.LogID.RandomizerLog);
+            // Server logger for Archipelago
+            ServerLog = new LogUtils.Logger(RandomizerEnums.LogID.ServerLog);
 
             if (Singleton == null)
             {
