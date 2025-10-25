@@ -422,6 +422,16 @@ namespace RainWorldRandomizer
 
             APReadableNames names = JsonConvert.DeserializeObject<APReadableNames>(File.ReadAllText(path));
 
+            foreach (var kvp in names.locations)
+            {
+                LocationInfo loc = new LocationInfo(kvp.Key, false);
+                string display = $"{kvp.Value} | {loc.displayName}";
+                if (kvp.Value == loc.displayName)
+                    Plugin.Log.LogDebug(display);
+                else
+                    Plugin.Log.LogError(display);
+            }
+
             // Create alternate datapackage with client names
             try
             {
