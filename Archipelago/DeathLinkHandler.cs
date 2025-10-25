@@ -79,6 +79,9 @@ namespace RainWorldRandomizer
             if (!RandoOptions.archipelagoIgnoreMenuDL.Value // Ignore menu DeathLinks if setting
                 || Plugin.Singleton.rainWorld.processManager.currentMainLoop is RainWorldGame)
             {
+                string deathMessage = deathLink.Cause ?? $"{deathLink.Source} has died!";
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(deathMessage));
+                Plugin.ServerLog.Log(deathMessage);
                 receiveDeathCooldown = 40; // 1 second
                 deathPending = true;
             }
@@ -122,7 +125,7 @@ namespace RainWorldRandomizer
                 {
                     if (creature.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.SlugNPC
                         && creature.state.alive
-                        && UnityEngine.Random.value < 0.05f)
+                        && UnityEngine.Random.value < 0.2f)
                     {
                         Kill(creature.realizedCreature);
                         return;

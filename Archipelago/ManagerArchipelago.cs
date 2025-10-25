@@ -123,7 +123,7 @@ namespace RainWorldRandomizer
             if (offlineLocs.Count > 0)
             {
                 ArchipelagoConnection.Session.Locations.CompleteLocationChecks([.. offlineLocs]);
-                Plugin.Log.LogInfo($"Sent offline locations: {string.Join(", ", offlineLocs)}");
+                Plugin.Log.LogInfo($"Sent offline locations:\n\t{string.Join("\n\t", offlineLocs.Select(l => IDToLocation[l]))}");
             }
 
             // Load the item delivery queue from file as normal
