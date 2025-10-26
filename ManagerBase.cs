@@ -110,7 +110,7 @@ namespace RainWorldRandomizer
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if giving item successful</returns>
-        public abstract bool GiveLocation(string location);
+        public abstract void GiveLocation(string location);
 
         /// <summary>
         /// Used to find what item is placed at a location

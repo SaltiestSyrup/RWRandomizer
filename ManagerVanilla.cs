@@ -263,15 +263,13 @@ namespace RainWorldRandomizer
             return randomizerKey[location].IsGiven;
         }
 
-        public override bool GiveLocation(string location)
+        public override void GiveLocation(string location)
         {
-            if (IsLocationGiven(location) ?? true) return false;
+            if (IsLocationGiven(location) ?? true) return;
 
             randomizerKey[location].GiveUnlock();
             Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(randomizerKey[location].UnlockCompleteMessage()));
             Plugin.Log.LogInfo($"Completed Check: {location}");
-
-            return true;
         }
 
         public override Unlock GetUnlockAtLocation(string location)

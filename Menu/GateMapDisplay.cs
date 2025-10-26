@@ -56,7 +56,7 @@ namespace RainWorldRandomizer
         {
             if (Plugin.RandoManager is ManagerArchipelago manager)
             {
-                locationInfos = manager.locationsStatus.Select(x => new LocationInfo(x));
+                locationInfos = manager.locations.Select(x => new LocationInfo(x.internalName, x.Collected));
                 foreach (KeyValuePair<string, Node> pair in nodes)
                 {
                     IEnumerable<LocationInfo> nodeInfos = locationInfos.Where(x => x.node == pair.Key);
