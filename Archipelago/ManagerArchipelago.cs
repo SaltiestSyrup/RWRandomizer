@@ -20,7 +20,6 @@ namespace RainWorldRandomizer
         //public static Dictionary<long, string> IDToLocation = [];
 
         //internal Dictionary<string, bool> locationsStatus = [];
-        internal List<LocationInfo> locations = [];
 
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
@@ -303,7 +302,6 @@ namespace RainWorldRandomizer
 
         public override List<string> GetLocations()
         {
-            // TODO: Rewrite things that use this
             return [.. locations.Select(l => l.internalName)];
         }
 

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -124,6 +125,7 @@ namespace RainWorldRandomizer
 
                     // Write new save game
                     randomizerKey = generator.GetCompletedSeed();
+                    locations = [..randomizerKey.Select(kvp => new LocationInfo(kvp.Key, false, false))];
                     customStartDen = generator.customStartDen;
                     currentSeed = generator.generationSeed;
                     SaveManager.WriteSavedGameToFile(randomizerKey, storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot);
@@ -200,6 +202,7 @@ namespace RainWorldRandomizer
         public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
             randomizerKey = SaveManager.LoadSavedGame(slugcat, saveSlot);
+            locations = [.. randomizerKey.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.IsGiven, false))];
 
             // Set unlocked gates and passage tokens
             foreach (Unlock item in randomizerKey.Values)
@@ -268,6 +271,7 @@ namespace RainWorldRandomizer
             if (IsLocationGiven(location) ?? true) return;
 
             randomizerKey[location].GiveUnlock();
+            locations.FirstOrDefault(l => l.internalName == location)?.MarkCollected();
             Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(randomizerKey[location].UnlockCompleteMessage()));
             Plugin.Log.LogInfo($"Completed Check: {location}");
         }

@@ -3,6 +3,7 @@ using RWCustom;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using LocationKind = RainWorldRandomizer.LocationInfo.LocationKind;
 
 namespace RainWorldRandomizer
 {
@@ -54,90 +55,87 @@ namespace RainWorldRandomizer
 
         public void ParseLocationStatus()
         {
-            if (Plugin.RandoManager is ManagerArchipelago manager)
+            locationInfos = Plugin.RandoManager.locations;
+            foreach (KeyValuePair<string, Node> pair in nodes)
             {
-                locationInfos = manager.locations.Select(x => new LocationInfo(x.internalName, x.Collected));
-                foreach (KeyValuePair<string, Node> pair in nodes)
-                {
-                    IEnumerable<LocationInfo> nodeInfos = locationInfos.Where(x => x.node == pair.Key);
-                    pair.Value.completion = nodeInfos.Count(x => x.collected) / (float)nodeInfos.Count();
-                }
+                IEnumerable<LocationInfo> nodeInfos = locationInfos.Where(x => GetNodeName(x.region) == pair.Key);
+                pair.Value.completion = nodeInfos.Count(x => x.Collected) / (float)nodeInfos.Count();
             }
         }
 
-        public readonly struct LocationInfo
-        {
-            public readonly LocationKind kind;
-            public readonly string name;
-            public readonly string region;
-            public readonly string node;
-            public readonly bool collected;
+        //public readonly struct LocationInfo
+        //{
+        //    public readonly LocationKind kind;
+        //    public readonly string name;
+        //    public readonly string region;
+        //    public readonly string node;
+        //    public readonly bool collected;
 
-            public LocationInfo(string location, bool collected)
-            {
-                kind = KindOfLocation(location);
-                region = RegionOfLocation(kind, location);
-                node = GetNodeName(region);
-                name = location;
-                this.collected = collected;
-            }
+        //    public LocationInfo(string location, bool collected)
+        //    {
+        //        kind = KindOfLocation(location);
+        //        region = RegionOfLocation(kind, location);
+        //        node = GetNodeName(region);
+        //        name = location;
+        //        this.collected = collected;
+        //    }
 
-            public LocationInfo(KeyValuePair<string, bool> pair) : this(pair.Key, pair.Value) { }
+        //    public LocationInfo(KeyValuePair<string, bool> pair) : this(pair.Key, pair.Value) { }
 
-            public static string RegionOfLocation(LocationKind kind, string location)
-            {
-                switch (kind)
-                {
-                    case LocationKind.BlueToken:
-                    case LocationKind.RedToken:
-                    case LocationKind.GreenToken:
-                    case LocationKind.Broadcast:
-                    case LocationKind.Pearl:
-                        return location.Split('-')[2];
-                    case LocationKind.Echo:
-                        return location.Split('-')[1];
-                    case LocationKind.GoldToken:
-                        string third = location.Split('-')[2];
-                        return third switch
-                        {
-                            "GWold" => "GW",
-                            "gutter" => "SB",
-                            _ => third,
-                        };
-                    case LocationKind.Shelter:
-                        return location.Substring(8, 2);
-                    case LocationKind.FoodQuest:
-                        return "<FQ>";
-                    case LocationKind.Passage:
-                        return "<P>";
-                    default:
-                        return location switch
-                        {
-                            "Eat_Neuron" => "<P>",
-                            "Meet_LttM_Spear" => "DM",
-                            "Kill_FP" => "RM",
-                            "Gift_Neuron" or "Meet_LttM" or "Save_LttM" or "Ascend_LttM" => "SL",
-                            "Meet_FP" or "Ascend_FP" => "SS",
-                            _ => null,
-                        };
-                }
-            }
+        //    public static string RegionOfLocation(LocationKind kind, string location)
+        //    {
+        //        switch (kind)
+        //        {
+        //            case LocationKind.BlueToken:
+        //            case LocationKind.RedToken:
+        //            case LocationKind.GreenToken:
+        //            case LocationKind.Broadcast:
+        //            case LocationKind.Pearl:
+        //                return location.Split('-')[2];
+        //            case LocationKind.Echo:
+        //                return location.Split('-')[1];
+        //            case LocationKind.GoldToken:
+        //                string third = location.Split('-')[2];
+        //                return third switch
+        //                {
+        //                    "GWold" => "GW",
+        //                    "gutter" => "SB",
+        //                    _ => third,
+        //                };
+        //            case LocationKind.Shelter:
+        //                return location.Substring(8, 2);
+        //            case LocationKind.FoodQuest:
+        //                return "<FQ>";
+        //            case LocationKind.Passage:
+        //                return "<P>";
+        //            default:
+        //                return location switch
+        //                {
+        //                    "Eat_Neuron" => "<P>",
+        //                    "Meet_LttM_Spear" => "DM",
+        //                    "Kill_FP" => "RM",
+        //                    "Gift_Neuron" or "Meet_LttM" or "Save_LttM" or "Ascend_LttM" => "SL",
+        //                    "Meet_FP" or "Ascend_FP" => "SS",
+        //                    _ => null,
+        //                };
+        //        }
+        //    }
 
-            public static LocationKind KindOfLocation(string location)
-            {
-                if (location.StartsWith("Pearl-")) return LocationKind.Pearl;
-                if (location.StartsWith("Shelter-")) return LocationKind.Shelter;
-                if (location.StartsWith("Broadcast-")) return LocationKind.Broadcast;
-                if (location.StartsWith("Echo-")) return LocationKind.Echo;
-                if (location.StartsWith("Token-L-")) return LocationKind.GoldToken;
-                if (location.StartsWith("Token-S-")) return LocationKind.RedToken;
-                if (location.StartsWith("Token-")) return LocationKind.BlueToken;
-                if (location.StartsWith("Passage-")) return LocationKind.Passage;
-                if (location.StartsWith("Wanderer-")) return LocationKind.WandererPip;
-                if (location.StartsWith("FoodQuest-")) return LocationKind.FoodQuest;
-                return LocationKind.Other;
-            }
-        }
+        //    public static LocationKind KindOfLocation(string location)
+        //    {
+        //        if (location.StartsWith("Pearl-")) return LocationKind.Pearl;
+        //        if (location.StartsWith("Shelter-")) return LocationKind.Shelter;
+        //        if (location.StartsWith("Broadcast-")) return LocationKind.Broadcast;
+        //        if (location.StartsWith("Echo-")) return LocationKind.Echo;
+        //        if (location.StartsWith("Token-L-")) return LocationKind.GoldToken;
+        //        if (location.StartsWith("Token-S-")) return LocationKind.RedToken;
+        //        if (location.StartsWith("Token-")) return LocationKind.BlueToken;
+        //        if (location.StartsWith("Passage-")) return LocationKind.Passage;
+        //        if (location.StartsWith("Wanderer-")) return LocationKind.WandererPip;
+        //        if (location.StartsWith("FoodQuest-")) return LocationKind.FoodQuest;
+        //        return LocationKind.Other;
+        //    }
+        //}
 
         public void CreateNodes()
         {
@@ -518,7 +516,7 @@ namespace RainWorldRandomizer
 
         public void UpdateTrackerForRegion(string region)
         {
-            if (Plugin.RandoManager is not ManagerArchipelago) return;
+            //if (Plugin.RandoManager is not ManagerArchipelago) return;
             if (!nodes.TryGetValue(GetNodeName(region), out Node node)) return;
 
             if (highlightedNode != null) highlightedNode.current = false;
@@ -528,13 +526,13 @@ namespace RainWorldRandomizer
 
             checkIconContainer.RemoveAllChildren();
             foreach (LocationInfo info in locationInfos.Where(x => x.region == region))
-                checkIconContainer.AddIcon(info.kind, info.name, info.collected);
+                checkIconContainer.AddIcon(info.kind, info.internalName, info.Collected);
             checkIconContainer.Refresh();
             //Plugin.Log.LogDebug($"Updating for region {region}: {string.Join(", ", locs)}");
             //Plugin.Log.LogDebug($"All locations: {string.Join(", ", Plugin.RandoManager.GetLocations())}");
         }
 
-        public enum LocationKind { BlueToken, RedToken, GoldToken, GreenToken, Broadcast, Pearl, Echo, Shelter, Passage, WandererPip, FoodQuest, Other }
+        //public enum LocationKind { BlueToken, RedToken, GoldToken, GreenToken, Broadcast, Pearl, Echo, Shelter, Passage, WandererPip, FoodQuest, Other }
 
         public class CheckIconContainer : FContainer
         {

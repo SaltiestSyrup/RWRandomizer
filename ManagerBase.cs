@@ -22,6 +22,8 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> lastItemDeliveryQueue = new();
         public Queue<TrapsHandler.Trap> pendingTrapQueue = new();
 
+        internal List<LocationInfo> locations = [];
+
         // These are all properties so the get / set can be modified if needed
         public virtual int CurrentMaxKarma
         {
