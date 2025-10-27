@@ -1,7 +1,9 @@
-﻿using System;
+﻿using RWCustom;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -10,7 +12,7 @@ namespace RainWorldRandomizer
         public readonly LocationKind kind;
         public readonly string displayName;
         public readonly string internalName;
-        private string internalDesc;
+        public readonly string internalDesc;
         public readonly long archipelagoID = -1;
         public readonly string region;
         //public readonly string node;
@@ -281,6 +283,107 @@ namespace RainWorldRandomizer
                 "Ascend_LttM" => "Ascend Looks to the Moon",
                 _ => internalName
             };
+        }
+
+        public FSprite ToFSprite()
+        {
+            string spriteName = "Futile_White";
+            float spriteScale = 1f;
+            Color spriteColor = Futile.white;
+
+            IconSymbol.IconSymbolData iconData;
+            switch (kind)
+            {
+                case LocationKind.Passage:
+                    spriteName = internalDesc + "A";
+                    if (internalDesc == "Gourmand")
+                    {
+                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
+                        spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
+                        spriteColor = PlayerGraphics.DefaultSlugcatColor(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
+                    }
+                    break;
+                case LocationKind.Echo:
+                    spriteName = "smallKarma9-9";
+                    spriteScale = 0.5f;
+                    spriteColor = RainWorld.SaturatedGold;
+                    break;
+                case LocationKind.Pearl:
+                    spriteName = "Symbol_Pearl";
+                    DataPearl.AbstractDataPearl.DataPearlType pearl = new(internalDesc);
+                    spriteColor = DataPearl.UniquePearlMainColor(pearl);
+                    Color? highlight = DataPearl.UniquePearlHighLightColor(pearl);
+                    if (highlight != null)
+                    {
+                        spriteColor = Custom.Screen(spriteColor, highlight.Value * Custom.QuickSaturation(highlight.Value) * 0.5f);
+                    }
+                    break;
+                case LocationKind.BlueToken:
+                case LocationKind.GreenToken:
+                    spriteName = "ctOn";
+                    spriteScale = 2f;
+                    spriteColor = RainWorld.AntiGold.rgb;
+                    break;
+                case LocationKind.GoldToken:
+                    spriteName = "ctOn";
+                    spriteScale = 2f;
+                    spriteColor = new Color(1f, 0.6f, 0.05f);
+                    break;
+                case LocationKind.RedToken:
+                    spriteName = "ctOn";
+                    spriteScale = 2f;
+                    spriteColor = CollectToken.RedColor.rgb;
+                    break;
+                case LocationKind.Broadcast:
+                    spriteName = "ctOn";
+                    spriteScale = 2f;
+                    spriteColor = CollectToken.WhiteColor.rgb;
+                    break;
+                case LocationKind.DevToken:
+                    spriteName = "ctOn";
+                    spriteScale = 2f;
+                    spriteColor = new Color(0.85f, 0.75f, 0.64f);
+                    break;
+                case LocationKind.FoodQuest:
+                    if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(internalDesc))
+                    {
+                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(internalDesc), 0);
+                        spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
+                        spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
+                    }
+                    else if (ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)).Contains(internalDesc))
+                    {
+                        iconData = new IconSymbol.IconSymbolData(new CreatureTemplate.Type(internalDesc), AbstractPhysicalObject.AbstractObjectType.Creature, 0);
+                        spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
+                        spriteColor = CreatureSymbol.ColorOfCreature(iconData);
+                    }
+                    break;
+                case LocationKind.Shelter:
+                    spriteName = "ShelterMarker";
+                    break;
+                case LocationKind.Flower:
+                    spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.KarmaFlower, 0);
+                    spriteColor = ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.KarmaFlower, 0);
+                    break;
+                default:
+                    spriteName = "EndGameCircle";
+                    spriteScale = 0.5f;
+                    break;
+            }
+
+            try
+            {
+                return new FSprite(spriteName, true)
+                {
+                    scale = spriteScale,
+                    color = spriteColor,
+                };
+            }
+            catch
+            {
+                Plugin.Log.LogError($"Failed to load sprite '{spriteName}'");
+                return new FSprite("Futile_White", true);
+            }
         }
     }
 }
