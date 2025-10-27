@@ -10,6 +10,7 @@ namespace RainWorldRandomizer
         public readonly LocationKind kind;
         public readonly string displayName;
         public readonly string internalName;
+        private string internalDesc;
         public readonly long archipelagoID = -1;
         public readonly string region;
         //public readonly string node;
@@ -54,6 +55,7 @@ namespace RainWorldRandomizer
             try
             {
                 region = RegionOfLocation(kind, internalName);
+                internalDesc = CreateInternalDesc();
                 displayName = CreateDisplayName();
                 if (findAPID)
                 {
@@ -65,6 +67,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError($"Failed to parse data for LocationInfo ({internalName}):\n{e}");
                 region ??= "<??>";
+                internalDesc ??= internalName;
                 displayName ??= internalName;
                 archipelagoID = -1;
             }
@@ -87,6 +90,7 @@ namespace RainWorldRandomizer
             internalName = CreateInternalName(displayName);
             kind = KindOfLocation(internalName);
             region = RegionOfLocation(kind, internalName);
+            internalDesc = CreateInternalDesc();
         }
 
         public LocationInfo(KeyValuePair<string, bool> pair, bool findAPID) : this(pair.Key, pair.Value, findAPID) { }
@@ -232,6 +236,18 @@ namespace RainWorldRandomizer
                 "Revive Looks to the Moon" => "Save_LttM",
                 "Ascend Five Pebbles" => "Ascend_FP",
                 "Ascend Looks to the Moon" => "Ascend_LttM",
+                _ => split[1]
+            };
+        }
+
+        private string CreateInternalDesc()
+        {
+            string[] split = internalName.Split('-');
+            return kind switch
+            {
+                LocationKind.GoldToken
+                or LocationKind.RedToken => split[2],
+                LocationKind.Other => internalName,
                 _ => split[1]
             };
         }
