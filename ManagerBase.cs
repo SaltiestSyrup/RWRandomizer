@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace RainWorldRandomizer
 {
@@ -22,7 +23,7 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> lastItemDeliveryQueue = new();
         public Queue<TrapsHandler.Trap> pendingTrapQueue = new();
 
-        internal List<LocationInfo> locations = [];
+        protected List<LocationInfo> locations = [];
 
         // These are all properties so the get / set can be modified if needed
         public virtual int CurrentMaxKarma
@@ -91,21 +92,27 @@ namespace RainWorldRandomizer
         /// Used to find all possible locations the player could find
         /// </summary>
         /// <returns>A list of all locations in the seed</returns>
-        public abstract List<string> GetLocations();
+        public List<string> GetLocationNames() => [.. locations.Select(l => l.internalName)];
+
+        public List<LocationInfo> GetLocations() => locations;
 
         /// <summary>
         /// Check whether a given location exists in the current seed
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if the location is present in the seed</returns>
-        public abstract bool LocationExists(string location);
+        public bool LocationExists(string location) => locations.Exists(l => l.internalName == location);
 
         /// <summary>
         /// Check whether a location has been found yet
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if the location has been found, null if the location does not exist</returns>
-        public abstract bool? IsLocationGiven(string location);
+        public bool? IsLocationGiven(string location)
+        {
+            if (!LocationExists(location)) return null;
+            return locations.First(l => l.internalName == location).Collected;
+        }
 
         /// <summary>
         /// Award the player the item assigned to the specified location

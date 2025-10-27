@@ -249,23 +249,6 @@ namespace RainWorldRandomizer
             lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
         }
 
-        public override List<string> GetLocations()
-        {
-            return [.. randomizerKey.Keys];
-        }
-
-        public override bool LocationExists(string location)
-        {
-            return randomizerKey.ContainsKey(location);
-        }
-
-        public override bool? IsLocationGiven(string location)
-        {
-            if (!LocationExists(location)) return null;
-
-            return randomizerKey[location].IsGiven;
-        }
-
         public override void GiveLocation(string location)
         {
             if (IsLocationGiven(location) ?? true) return;

@@ -19,8 +19,6 @@ namespace RainWorldRandomizer
         //public static Dictionary<string, long> LocationToID = [];
         //public static Dictionary<long, string> IDToLocation = [];
 
-        //internal Dictionary<string, bool> locationsStatus = [];
-
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
             if (!ArchipelagoConnection.SocketConnected)
@@ -298,23 +296,6 @@ namespace RainWorldRandomizer
             }
 
             return true;
-        }
-
-        public override List<string> GetLocations()
-        {
-            return [.. locations.Select(l => l.internalName)];
-        }
-
-        public override bool LocationExists(string location)
-        {
-            return locations.Exists(l => l.internalName == location);//locationsStatus.ContainsKey(location);
-        }
-
-        public override bool? IsLocationGiven(string location)
-        {
-            if (!LocationExists(location)) return null;
-
-            return locations.First(l => l.internalName == location).Collected;// locationsStatus[location];
         }
 
         public override void GiveLocation(string location)

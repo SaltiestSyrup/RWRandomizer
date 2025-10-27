@@ -55,7 +55,7 @@ namespace RainWorldRandomizer
 
         public void ParseLocationStatus()
         {
-            locationInfos = Plugin.RandoManager.locations;
+            locationInfos = Plugin.RandoManager.GetLocations();
             foreach (KeyValuePair<string, Node> pair in nodes)
             {
                 IEnumerable<LocationInfo> nodeInfos = locationInfos.Where(x => GetNodeName(x.region) == pair.Key);

@@ -125,7 +125,7 @@ namespace RainWorldRandomizer
                 "ChatlogID" => "Broadcast-",
                 _ => "Token-",
             };
-            foreach (string loc in Plugin.RandoManager.GetLocations())
+            foreach (string loc in Plugin.RandoManager.GetLocationNames())
             {
                 if (loc.StartsWith(startPattern))
                 {
@@ -162,7 +162,7 @@ namespace RainWorldRandomizer
             // Find pearls and Echoes to place on tracker
             List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = [];
             List<GhostWorldPresence.GhostID> foundEchoes = [];
-            foreach (string loc in Plugin.RandoManager.GetLocations())
+            foreach (string loc in Plugin.RandoManager.GetLocationNames())
             {
                 if (loc.StartsWith("Pearl-"))
                 {
