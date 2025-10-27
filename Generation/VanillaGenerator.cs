@@ -168,7 +168,7 @@ namespace RainWorldRandomizer.Generation
                     {
                         if (Plugin.Singleton.rainWorld.regionDataPearlsAccessibility[regionLower][i].Contains(slugcat))
                         {
-                            regionLocations.Add(new($"Pearl-{Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value}",
+                            regionLocations.Add(new($"Pearl-{Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value}-{regionShort}",
                                 Location.Type.Pearl, new()));
                         }
                     }
@@ -180,7 +180,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     foreach (string token in Plugin.Singleton.collectTokenHandler.availableTokens[regionShort])
                     {
-                        regionLocations.Add(new Location($"Token-{token}", Location.Type.Token, new()));
+                        regionLocations.Add(new Location($"Token-{token}-{regionShort}", Location.Type.Token, new()));
                     }
                 }
 
