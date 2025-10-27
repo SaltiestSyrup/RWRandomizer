@@ -89,11 +89,13 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Used to find all possible locations the player could find
+        /// Returns the names of all possible locations the player could find
         /// </summary>
-        /// <returns>A list of all locations in the seed</returns>
         public List<string> GetLocationNames() => [.. locations.Select(l => l.internalName)];
 
+        /// <summary>
+        /// Returns all possible locations the player could find
+        /// </summary>
         public List<LocationInfo> GetLocations() => locations;
 
         /// <summary>
