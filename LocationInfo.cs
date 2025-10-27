@@ -150,7 +150,12 @@ namespace RainWorldRandomizer
             if (internalName.StartsWith("Echo-")) return LocationKind.Echo;
             if (internalName.StartsWith("Token-L-")) return LocationKind.GoldToken;
             if (internalName.StartsWith("Token-S-")) return LocationKind.RedToken;
-            if (internalName.StartsWith("Token-")) return LocationKind.BlueToken; // TODO: Green tokens are counted as blue
+            if (internalName.StartsWith("Token-"))
+            {
+                if (ExtEnumBase.GetNames(typeof(SlugcatStats.Name)).Contains(internalName.Split('-')[1]))
+                    return LocationKind.GreenToken;
+                return LocationKind.BlueToken;
+            }
             if (internalName.StartsWith("DevToken-")) return LocationKind.DevToken;
             if (internalName.StartsWith("Flower-")) return LocationKind.Flower;
             if (internalName.StartsWith("Passage-")) return LocationKind.Passage;
@@ -319,10 +324,14 @@ namespace RainWorldRandomizer
                     }
                     break;
                 case LocationKind.BlueToken:
-                case LocationKind.GreenToken:
                     spriteName = "ctOn";
                     spriteScale = 2f;
                     spriteColor = RainWorld.AntiGold.rgb;
+                    break;
+                case LocationKind.GreenToken:
+                    spriteName = "ctOn";
+                    spriteScale = 2f;
+                    spriteColor = CollectToken.GreenColor.rgb;
                     break;
                 case LocationKind.GoldToken:
                     spriteName = "ctOn";
