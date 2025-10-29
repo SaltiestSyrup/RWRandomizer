@@ -13,6 +13,7 @@ namespace RainWorldRandomizer.Generation
             Karma,
             Object,
             Trap,
+            ExpPerk,
             Other
         }
         public enum Importance
