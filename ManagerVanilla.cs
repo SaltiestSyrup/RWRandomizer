@@ -249,9 +249,42 @@ namespace RainWorldRandomizer
             lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
         }
 
+        public override bool LocationExists(string location)
+        {
+            if (base.LocationExists(location)) return true;
+
+            // TODO: Remove 1.4 backwards compat in 1.5
+            // Backwards compat for pre-1.4 save files
+            // As of 1.4, tokens and pearls have their origin region appended to the end.
+            // This is not the case when loading pre-1.4 files, so it needs to be checked for
+            string[] split = location.Split('-');
+            if (split.Length == 3 && (split[0] == "Token" || split[0] == "Pearl"))
+                location = $"{split[0]}-{split[1]}";
+            return base.LocationExists(location);
+        }
+
+        public override bool? IsLocationGiven(string location)
+        {
+            if (base.LocationExists(location)) return base.IsLocationGiven(location);
+
+            // Backwards compat w/ 1.3 save files
+            string[] split = location.Split('-');
+            if (split.Length == 3 && (split[0] == "Token" || split[0] == "Pearl"))
+                location = $"{split[0]}-{split[1]}";
+            return base.IsLocationGiven(location);
+        }
+
         public override void GiveLocation(string location)
         {
-            if (IsLocationGiven(location) ?? true) return;
+            if (!base.LocationExists(location))
+            {
+                // Backwards compat w/ 1.3 save files
+                string[] split = location.Split('-');
+                if (split.Length == 3 && (split[0] == "Token" || split[0] == "Pearl"))
+                    location = $"{split[0]}-{split[1]}";
+            }
+
+            if (IsLocationGiven(location) is true or null) return;
 
             randomizerKey[location].GiveUnlock();
             locations.FirstOrDefault(l => l.internalName == location)?.MarkCollected();

@@ -103,14 +103,14 @@ namespace RainWorldRandomizer
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if the location is present in the seed</returns>
-        public bool LocationExists(string location) => locations.Exists(l => l.internalName == location);
+        public virtual bool LocationExists(string location) => locations.Exists(l => l.internalName == location);
 
         /// <summary>
         /// Check whether a location has been found yet
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if the location has been found, null if the location does not exist</returns>
-        public bool? IsLocationGiven(string location)
+        public virtual bool? IsLocationGiven(string location)
         {
             if (!LocationExists(location)) return null;
             return locations.First(l => l.internalName == location).Collected;
