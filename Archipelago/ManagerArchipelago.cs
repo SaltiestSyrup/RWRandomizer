@@ -82,7 +82,6 @@ namespace RainWorldRandomizer
             _currentMaxKarma = 0;
             _hunterBonusCyclesGiven = 0;
             _numDamageUpgrades = 0;
-            _numMovementUpgrades = 0;
             _givenNeuronGlow = false;
             _givenMark = false;
             _givenRobo = false;
