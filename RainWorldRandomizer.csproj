@@ -103,7 +103,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Archipelago\ArchipelagoConnection.cs" />
-    <Compile Include="CollectTokenHandler.cs" />
+    <Compile Include="Hooks\CollectTokenHandler.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Generation\Connection.cs" />
     <Compile Include="Generation\CustomLogicBuilder.cs" />
@@ -112,6 +112,7 @@
     <Compile Include="Generation\RandoRegion.cs" />
     <Compile Include="Hooks\FlowerCheckHandler.cs" />
     <Compile Include="Generation\AccessRule.cs" />
+    <Compile Include="LocationInfo.cs" />
     <Compile Include="Menu\GateMapDisplay.cs" />
     <Compile Include="Menu\SpoilerMenu.cs" />
     <Compile Include="TokenCachePatcher.cs" />

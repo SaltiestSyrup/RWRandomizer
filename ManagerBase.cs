@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace RainWorldRandomizer
 {
@@ -21,6 +22,8 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> itemDeliveryQueue = new();
         public Queue<Unlock.Item> lastItemDeliveryQueue = new();
         public Queue<TrapsHandler.Trap> pendingTrapQueue = new();
+
+        protected List<LocationInfo> locations = [];
 
         // These are all properties so the get / set can be modified if needed
         public virtual int CurrentMaxKarma
@@ -86,31 +89,39 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Used to find all possible locations the player could find
+        /// Returns the names of all possible locations the player could find
         /// </summary>
-        /// <returns>A list of all locations in the seed</returns>
-        public abstract List<string> GetLocations();
+        public List<string> GetLocationNames() => [.. locations.Select(l => l.internalName)];
+
+        /// <summary>
+        /// Returns all possible locations the player could find
+        /// </summary>
+        public List<LocationInfo> GetLocations() => locations;
 
         /// <summary>
         /// Check whether a given location exists in the current seed
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if the location is present in the seed</returns>
-        public abstract bool LocationExists(string location);
+        public virtual bool LocationExists(string location) => locations.Exists(l => l.internalName == location);
 
         /// <summary>
         /// Check whether a location has been found yet
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if the location has been found, null if the location does not exist</returns>
-        public abstract bool? IsLocationGiven(string location);
+        public virtual bool? IsLocationGiven(string location)
+        {
+            if (!LocationExists(location)) return null;
+            return locations.First(l => l.internalName == location).Collected;
+        }
 
         /// <summary>
         /// Award the player the item assigned to the specified location
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if giving item successful</returns>
-        public abstract bool GiveLocation(string location);
+        public abstract void GiveLocation(string location);
 
         /// <summary>
         /// Used to find what item is placed at a location

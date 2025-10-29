@@ -3,6 +3,7 @@ using RWCustom;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using LocationKind = RainWorldRandomizer.LocationInfo.LocationKind;
 
 namespace RainWorldRandomizer
 {
@@ -54,88 +55,11 @@ namespace RainWorldRandomizer
 
         public void ParseLocationStatus()
         {
-            if (Plugin.RandoManager is ManagerArchipelago manager)
+            locationInfos = Plugin.RandoManager.GetLocations();
+            foreach (KeyValuePair<string, Node> pair in nodes)
             {
-                locationInfos = manager.locationsStatus.Select(x => new LocationInfo(x));
-                foreach (KeyValuePair<string, Node> pair in nodes)
-                {
-                    IEnumerable<LocationInfo> nodeInfos = locationInfos.Where(x => x.node == pair.Key);
-                    pair.Value.completion = nodeInfos.Count(x => x.collected) / (float)nodeInfos.Count();
-                }
-            }
-        }
-
-        public readonly struct LocationInfo
-        {
-            public readonly LocationKind kind;
-            public readonly string name;
-            public readonly string region;
-            public readonly string node;
-            public readonly bool collected;
-
-            public LocationInfo(string location, bool collected)
-            {
-                kind = KindOfLocation(location);
-                region = RegionOfLocation(kind, location);
-                node = GetNodeName(region);
-                name = location;
-                this.collected = collected;
-            }
-
-            public LocationInfo(KeyValuePair<string, bool> pair) : this(pair.Key, pair.Value) { }
-
-            public static string RegionOfLocation(LocationKind kind, string location)
-            {
-                switch (kind)
-                {
-                    case LocationKind.BlueToken:
-                    case LocationKind.RedToken:
-                    case LocationKind.GreenToken:
-                    case LocationKind.Broadcast:
-                    case LocationKind.Pearl:
-                        return location.Split('-')[2];
-                    case LocationKind.Echo:
-                        return location.Split('-')[1];
-                    case LocationKind.GoldToken:
-                        string third = location.Split('-')[2];
-                        return third switch
-                        {
-                            "GWold" => "GW",
-                            "gutter" => "SB",
-                            _ => third,
-                        };
-                    case LocationKind.Shelter:
-                        return location.Substring(8, 2);
-                    case LocationKind.FoodQuest:
-                        return "<FQ>";
-                    case LocationKind.Passage:
-                        return "<P>";
-                    default:
-                        return location switch
-                        {
-                            "Eat_Neuron" => "<P>",
-                            "Meet_LttM_Spear" => "DM",
-                            "Kill_FP" => "RM",
-                            "Gift_Neuron" or "Meet_LttM" or "Save_LttM" or "Ascend_LttM" => "SL",
-                            "Meet_FP" or "Ascend_FP" => "SS",
-                            _ => null,
-                        };
-                }
-            }
-
-            public static LocationKind KindOfLocation(string location)
-            {
-                if (location.StartsWith("Pearl-")) return LocationKind.Pearl;
-                if (location.StartsWith("Shelter-")) return LocationKind.Shelter;
-                if (location.StartsWith("Broadcast-")) return LocationKind.Broadcast;
-                if (location.StartsWith("Echo-")) return LocationKind.Echo;
-                if (location.StartsWith("Token-L-")) return LocationKind.GoldToken;
-                if (location.StartsWith("Token-S-")) return LocationKind.RedToken;
-                if (location.StartsWith("Token-")) return LocationKind.BlueToken;
-                if (location.StartsWith("Passage-")) return LocationKind.Passage;
-                if (location.StartsWith("Wanderer-")) return LocationKind.WandererPip;
-                if (location.StartsWith("FoodQuest-")) return LocationKind.FoodQuest;
-                return LocationKind.Other;
+                IEnumerable<LocationInfo> nodeInfos = locationInfos.Where(x => GetNodeName(x.region) == pair.Key);
+                pair.Value.completion = nodeInfos.Count(x => x.Collected) / (float)nodeInfos.Count();
             }
         }
 
@@ -518,7 +442,7 @@ namespace RainWorldRandomizer
 
         public void UpdateTrackerForRegion(string region)
         {
-            if (Plugin.RandoManager is not ManagerArchipelago) return;
+            //if (Plugin.RandoManager is not ManagerArchipelago) return;
             if (!nodes.TryGetValue(GetNodeName(region), out Node node)) return;
 
             if (highlightedNode != null) highlightedNode.current = false;
@@ -528,13 +452,11 @@ namespace RainWorldRandomizer
 
             checkIconContainer.RemoveAllChildren();
             foreach (LocationInfo info in locationInfos.Where(x => x.region == region))
-                checkIconContainer.AddIcon(info.kind, info.name, info.collected);
+                checkIconContainer.AddIcon(info);
             checkIconContainer.Refresh();
             //Plugin.Log.LogDebug($"Updating for region {region}: {string.Join(", ", locs)}");
             //Plugin.Log.LogDebug($"All locations: {string.Join(", ", Plugin.RandoManager.GetLocations())}");
         }
-
-        public enum LocationKind { BlueToken, RedToken, GoldToken, GreenToken, Broadcast, Pearl, Echo, Shelter, Passage, WandererPip, FoodQuest, Other }
 
         public class CheckIconContainer : FContainer
         {
@@ -546,9 +468,9 @@ namespace RainWorldRandomizer
                 AddChild(regionLabel);
             }
 
-            public void AddIcon(LocationKind kind, string name, bool is_checked)
+            public void AddIcon(LocationInfo info)
             {
-                AddChild(CheckIcon.New(kind, name, is_checked));
+                AddChild(CheckIcon.New(info));
             }
 
             public void Refresh()
@@ -562,7 +484,7 @@ namespace RainWorldRandomizer
                 }
             }
 
-            public class CheckIcon(string element, LocationKind kind, string name) : FSprite(element)
+            public class CheckIcon(string element, LocationKind kind) : FSprite(element)
             {
                 public Vector2 Adjustment
                 {
@@ -572,99 +494,15 @@ namespace RainWorldRandomizer
                     }
                 }
                 public LocationKind kind = kind;
-                public string name = name;
 
-                public static CheckIcon New(LocationKind kind, string name, bool is_checked)
+                public static CheckIcon New(LocationInfo check)
                 {
-                    string element = "Futile_White";
-                    float scale = 1f;
-                    Color color = Futile.white;
+                    FSprite sprite = check.ToFSprite();
 
-                    IconSymbol.IconSymbolData iconData;
-                    switch (kind)
+                    CheckIcon ret = new(sprite.element.name, check.kind)
                     {
-                        case LocationKind.Passage:
-                            element = name.Substring(8) + "A";
-                            if (name == "Gourmand")
-                            {
-                                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
-                                element = CreatureSymbol.SpriteNameOfCreature(iconData);
-                                color = PlayerGraphics.DefaultSlugcatColor(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
-                            }
-                            break;
-                        case LocationKind.Echo:
-                            element = "smallKarma9-9";
-                            scale = 0.5f;
-                            color = RainWorld.SaturatedGold;
-                            break;
-                        case LocationKind.Pearl:
-                            element = "Symbol_Pearl";
-                            DataPearl.AbstractDataPearl.DataPearlType pearl = new(name);
-                            color = DataPearl.UniquePearlMainColor(pearl);
-                            Color? highlight = DataPearl.UniquePearlHighLightColor(pearl);
-                            if (highlight != null)
-                            {
-                                color = Custom.Screen(color, highlight.Value * Custom.QuickSaturation(highlight.Value) * 0.5f);
-                            }
-                            break;
-                        case LocationKind.BlueToken:
-                            element = "ctOn";
-                            scale = 2f;
-                            color = RainWorld.AntiGold.rgb;
-                            break;
-                        case LocationKind.GoldToken:
-                            element = "ctOn";
-                            scale = 2f;
-                            color = new Color(1f, 0.6f, 0.05f);
-                            break;
-                        case LocationKind.RedToken:
-                            element = "ctOn";
-                            scale = 2f;
-                            color = CollectToken.RedColor.rgb;
-                            break;
-                        case LocationKind.Broadcast:
-                            element = "ctOn";
-                            scale = 2f;
-                            color = CollectToken.WhiteColor.rgb;
-                            break;
-                        case LocationKind.FoodQuest:
-                            string objtype = name.Substring(10);
-                            if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(objtype))
-                            {
-                                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(objtype), 0);
-                                element = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
-                                color = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
-                            }
-                            else if (ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)).Contains(objtype))
-                            {
-                                iconData = new IconSymbol.IconSymbolData(new CreatureTemplate.Type(objtype), AbstractPhysicalObject.AbstractObjectType.Creature, 0);
-                                element = CreatureSymbol.SpriteNameOfCreature(iconData);
-                                color = CreatureSymbol.ColorOfCreature(iconData);
-                            }
-                            break;
-                        case LocationKind.Shelter:
-                            element = "ShelterMarker";
-                            break;
-                        case LocationKind.Other:
-                            if (name is "Eat_Neuron" or "Gift_Neuron")
-                            {
-                                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
-                                element = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
-                                color = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
-                            }
-                            else if (ModManager.MSC && name is "Kill_FP") { element = "GuidanceEnergyCell"; }
-                            else if (ModManager.MSC) { element = "GuidancePebbles"; }
-                            break;
-                        default:
-                            element = "EndGameCircle";
-                            scale = 0.5f;
-                            break;
-                    }
-
-                    CheckIcon ret = new(element, kind, name)
-                    {
-                        color = is_checked ? color : new Color(0.2f, 0.2f, 0.2f),
-                        scale = scale
+                        color = check.Collected ? sprite.color : new Color(0.2f, 0.2f, 0.2f),
+                        scale = sprite.scale,
                     };
                     return ret;
                 }

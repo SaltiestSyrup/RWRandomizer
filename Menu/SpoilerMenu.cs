@@ -411,12 +411,12 @@ namespace RainWorldRandomizer
             {
                 EntryFilterType.Given => (e) =>
                 {
-                    return (bool)Plugin.RandoManager.IsLocationGiven(e.entryKey);
+                    return e.location.Collected;
                 }
                 ,
                 EntryFilterType.NotGiven => (e) =>
                 {
-                    return !(bool)Plugin.RandoManager.IsLocationGiven(e.entryKey);
+                    return !e.location.Collected;
                 }
                 ,
                 _ => (e) => { return true; }
@@ -434,12 +434,12 @@ namespace RainWorldRandomizer
             {
                 EntrySortType.LocName => (x, y) =>
                 {
-                    return string.Compare(x.checkName, y.checkName);
+                    return string.Compare(x.location.internalName, y.location.internalName);
                 }
                 ,
                 EntrySortType.LocType => (x, y) =>
                 {
-                    return string.Compare(x.checkType, y.checkType);
+                    return (int)x.location.kind - (int)y.location.kind;
                 }
                 ,
                 EntrySortType.ItemName => (x, y) =>
@@ -458,7 +458,7 @@ namespace RainWorldRandomizer
                 ,
                 _ => (x, y) =>
                 {
-                    return string.Compare(x.checkType, y.checkType);
+                    return (int)x.location.kind - (int)y.location.kind;
                 }
             };
 
@@ -510,9 +510,10 @@ namespace RainWorldRandomizer
 
         public class SpoilerEntry : Entry
         {
-            public readonly string entryKey;
-            public readonly string checkType;
-            public readonly string checkName;
+            //public readonly string entryKey;
+            //public readonly string checkType;
+            //public readonly string checkName;
+            public readonly LocationInfo location;
             public readonly Unlock item;
 
             public FSprite arrow;
@@ -533,23 +534,11 @@ namespace RainWorldRandomizer
 
             public bool ShowItem => displayComplete || forceShowItem;
 
-            public SpoilerEntry(Menu.Menu menu, MenuObject owner, Vector2 pos, Vector2 size, string entryKey) : base(menu, owner, pos, size)
+            public SpoilerEntry(Menu.Menu menu, MenuObject owner, Vector2 pos, Vector2 size, LocationInfo location) : base(menu, owner, pos, size)
             {
-                this.entryKey = entryKey;
-                item = Plugin.RandoManager.GetUnlockAtLocation(entryKey);
-                displayComplete = Plugin.RandoManager.IsLocationGiven(entryKey) ?? false;
-
-                string[] split = Regex.Split(entryKey, "-");
-                if (split.Length > 1)
-                {
-                    checkType = split.Length == 3 ? split[0] + "-" + split[1] : split[0];
-                    checkName = split.Length == 3 ? split[2] : split[1];
-                }
-                else
-                {
-                    checkType = "Misc";
-                    checkName = entryKey;
-                }
+                this.location = location;
+                item = Plugin.RandoManager.GetUnlockAtLocation(location.internalName);
+                displayComplete = location.Collected;
 
                 // Button
                 tabWrapper = new MenuTabWrapper(menu, this);
@@ -575,14 +564,14 @@ namespace RainWorldRandomizer
                 };
                 Container.AddChild(arrow);
 
-                checkSprite = CheckToFSprite(checkType, checkName);
+                checkSprite = location.ToFSprite();
                 Container.AddChild(checkSprite);
 
                 unlockSprite = UnlockToFSprite(item);
                 Container.AddChild(unlockSprite);
 
                 // Labels
-                checkLabel = new MenuLabel(menu, this, checkName,
+                checkLabel = new MenuLabel(menu, this, location.internalDesc,
                     new Vector2(0f, 5f),
                     new Vector2(size.x / 2, 20f), false, null);
                 subObjects.Add(checkLabel);
@@ -600,7 +589,7 @@ namespace RainWorldRandomizer
             {
                 base.Update();
                 SpoilerMenu spoilerMenu = owner as SpoilerMenu;
-                displayComplete = Plugin.RandoManager.IsLocationGiven(entryKey) ?? false;
+                displayComplete = location.Collected;
                 forceShowItem |= spoilerMenu.fullSpoilerMode;
 
                 roundedRect.borderColor = displayComplete
@@ -625,11 +614,14 @@ namespace RainWorldRandomizer
             public override void GrafUpdate(float timeStacker)
             {
                 base.GrafUpdate(timeStacker);
+
+                arrow.isVisible = !sleep;
+                checkSprite.isVisible = !sleep;
+                unlockSprite.isVisible = !sleep;
+                if (sleep && !cheatHoldButton.Hidden) cheatHoldButton.Hide();
+
                 if (sleep) return;
 
-                checkSprite.isVisible = true;
-                unlockSprite.isVisible = true;
-                
                 arrow.x = DrawX(timeStacker) + DrawSize(timeStacker).x / 2f;
                 arrow.y = DrawY(timeStacker) + DrawSize(timeStacker).y / 2f;
                 checkSprite.x = DrawX(timeStacker) + 20f;
@@ -660,107 +652,7 @@ namespace RainWorldRandomizer
 
             public void OnPressDone(UIfocusable trigger)
             {
-                Plugin.RandoManager.GiveLocation(entryKey);
-            }
-
-            public static FSprite CheckToFSprite(string type, string name)
-            {
-                string spriteName = "Futile_White";
-                float spriteScale = 1f;
-                Color spriteColor = Futile.white;
-
-                IconSymbol.IconSymbolData iconData;
-                switch (type)
-                {
-                    case "Passage":
-                        spriteName = name + "A";
-                        if (name == "Gourmand")
-                        {
-                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
-                            spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
-                            spriteColor = PlayerGraphics.DefaultSlugcatColor(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
-                        }
-                        break;
-                    case "Echo":
-                        spriteName = "smallKarma9-9";
-                        spriteScale = 0.5f;
-                        spriteColor = RainWorld.SaturatedGold;
-                        break;
-                    case "Pearl":
-                        spriteName = "Symbol_Pearl";
-                        DataPearl.AbstractDataPearl.DataPearlType pearl = new(name);
-                        spriteColor = DataPearl.UniquePearlMainColor(pearl);
-                        Color? highlight = DataPearl.UniquePearlHighLightColor(pearl);
-                        if (highlight != null)
-                        {
-                            spriteColor = Custom.Screen(spriteColor, highlight.Value * Custom.QuickSaturation(highlight.Value) * 0.5f);
-                        }
-                        break;
-                    case "Token":
-                        spriteName = "ctOn";
-                        spriteScale = 2f;
-                        spriteColor = RainWorld.AntiGold.rgb;
-                        break;
-                    case "Token-L":
-                        spriteName = "ctOn";
-                        spriteScale = 2f;
-                        spriteColor = new Color(1f, 0.6f, 0.05f);
-                        break;
-                    case "Token-S":
-                        spriteName = "ctOn";
-                        spriteScale = 2f;
-                        spriteColor = CollectToken.RedColor.rgb;
-                        break;
-                    case "Broadcast":
-                        spriteName = "ctOn";
-                        spriteScale = 2f;
-                        spriteColor = CollectToken.WhiteColor.rgb;
-                        break;
-                    case "DevToken":
-                        spriteName = "ctOn";
-                        spriteScale = 2f;
-                        spriteColor = new Color(0.85f, 0.75f, 0.64f);
-                        break;
-                    case "FoodQuest":
-                        if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(name))
-                        {
-                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(name), 0);
-                            spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
-                            spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
-                        }
-                        else if (ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)).Contains(name))
-                        {
-                            iconData = new IconSymbol.IconSymbolData(new CreatureTemplate.Type(name), AbstractPhysicalObject.AbstractObjectType.Creature, 0);
-                            spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
-                            spriteColor = CreatureSymbol.ColorOfCreature(iconData);
-                        }
-                        break;
-                    case "Shelter":
-                        spriteName = "ShelterMarker";
-                        break;
-                    case "Flower":
-                        spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.KarmaFlower, 0);
-                        spriteColor = ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.KarmaFlower, 0);
-                        break;
-                    default:
-                        spriteName = "EndGameCircle";
-                        spriteScale = 0.5f;
-                        break;
-                }
-
-                try
-                {
-                    return new FSprite(spriteName, true)
-                    {
-                        scale = spriteScale,
-                        color = spriteColor,
-                    };
-                }
-                catch
-                {
-                    Plugin.Log.LogError($"Failed to load sprite '{spriteName}'");
-                    return new FSprite("Futile_White", true);
-                }
+                Plugin.RandoManager.GiveLocation(location.internalName);
             }
 
             public static FSprite UnlockToFSprite(Unlock unlock)
