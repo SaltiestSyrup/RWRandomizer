@@ -675,6 +675,20 @@ namespace RainWorldRandomizer.Generation
             }
 
             List<Item> itemsToAdd = [];
+            bool[] perksToAdd = RandoOptions.ExpeditionPerks;
+
+            // If there is space in item pool, add whichever perks we have selected in options
+            if (state.AllLocations.Count >= itemsToPlace.Count + perksToAdd.Count(b => b))
+            {
+                for (int i = 0; i < perksToAdd.Length; i++)
+                {
+                    if (perksToAdd[i])
+                    {
+                        itemsToAdd.Add(new(((ManagerBase.ExpeditionPerks)i).ToString(), Item.Type.ExpPerk, Item.Importance.Filler));
+                    }
+                }
+            }
+
             int hunterCyclesAdded = 0;
             int trapsAdded = 0;
             while (state.AllLocations.Count > itemsToPlace.Count + itemsToAdd.Count)
@@ -908,6 +922,9 @@ namespace RainWorldRandomizer.Generation
                     break;
                 case Item.Type.Trap:
                     outputType = Unlock.UnlockType.Trap;
+                    break;
+                case Item.Type.ExpPerk:
+                    outputType = Unlock.UnlockType.ExpeditionPerk;
                     break;
                 case Item.Type.Other:
                     if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), item.id, false, out ExtEnumBase type))
