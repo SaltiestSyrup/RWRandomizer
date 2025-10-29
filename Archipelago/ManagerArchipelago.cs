@@ -190,7 +190,11 @@ namespace RainWorldRandomizer
             {
                 string APItemName = ArchipelagoConnection.Session.Items.GetItemName(itemPacket.Items[i].Item);
                 // Even if item has no client map, try to give it anyway, maybe it works
-                if (!APItemToClientName.TryGetValue(APItemName, out string clientName)) Plugin.Log.LogError($"Could not find client name mapping for AP item: {APItemName}");
+                if (!APItemToClientName.TryGetValue(APItemName, out string clientName))
+                {
+                    Plugin.Log.LogError($"Could not find client name mapping for AP item: {APItemName}");
+                    continue;
+                }
 
                 // If item packet index is 0, items before our stored last index are not new
                 AquireItem(clientName, !isNewInventory || i >= ArchipelagoConnection.lastItemIndex);
