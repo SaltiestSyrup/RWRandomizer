@@ -8,6 +8,7 @@ namespace RainWorldRandomizer
     {
         public static void ApplyHooks()
         {
+            On.Player.ThrownSpear += OnThrownSpear;
             On.Player.Regurgitate += OnRegurgitate;
             On.Player.Update += OnPlayerUpdate;
             On.Player.NewRoom += OnNewRoom;
@@ -27,6 +28,7 @@ namespace RainWorldRandomizer
 
         public static void RemoveHooks()
         {
+            On.Player.ThrownSpear -= OnThrownSpear;
             On.Player.Regurgitate -= OnRegurgitate;
             On.Player.Update -= OnPlayerUpdate;
             On.Player.NewRoom -= OnNewRoom;
@@ -34,6 +36,15 @@ namespace RainWorldRandomizer
             On.Player.ClassMechanicsSaint -= OnClassMechanicsSaint;
             IL.Player.GrabUpdate -= ILPlayerGrabUpdate;
             IL.PlayerGraphics.Update -= ILPlayerGraphicsUpdate;
+        }
+
+        /// <summary>
+        /// Modify spear damage based on current multiplier 
+        /// </summary>
+        private static void OnThrownSpear(On.Player.orig_ThrownSpear orig, Player self, Spear spear)
+        {
+            orig(self, spear);
+            if (Plugin.RandoManager is not null) spear.spearDamageBonus *= Plugin.RandoManager.SpearDamageMultiplier;
         }
 
         /// <summary>

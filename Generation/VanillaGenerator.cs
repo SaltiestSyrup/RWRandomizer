@@ -677,9 +677,15 @@ namespace RainWorldRandomizer.Generation
             List<Item> itemsToAdd = [];
             int hunterCyclesAdded = 0;
             int trapsAdded = 0;
+            int damageUpsAdded = 0;
             while (state.AllLocations.Count > itemsToPlace.Count + itemsToAdd.Count)
             {
-                if (slugcat == SlugcatStats.Name.Red
+                if (damageUpsAdded < RandoOptions.TotalDamageIncreases)
+                {
+                    itemsToAdd.Add(new Item("DamageUpgrade", Item.Type.Other, Item.Importance.Filler));
+                    damageUpsAdded++;
+                }
+                else if (slugcat == SlugcatStats.Name.Red
                     && hunterCyclesAdded < state.AllLocations.Count * RandoOptions.HunterCycleIncreaseDensity)
                 {
                     // Add cycle increases for Hunter

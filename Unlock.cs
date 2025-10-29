@@ -56,6 +56,7 @@ namespace RainWorldRandomizer
             public static readonly UnlockType Item = new("Item", true);
             public static readonly UnlockType ItemPearl = new("ItemPearl", true);
             public static readonly UnlockType Trap = new("Trap", true);
+            public static readonly UnlockType DamageUpgrade = new("DamageUpgrade", true);
             public static readonly UnlockType HunterCycles = new("HunterCycles", true);
             public static readonly UnlockType IdDrone = new("IdDrone", true);
             public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
@@ -150,6 +151,9 @@ namespace RainWorldRandomizer
                 case "Trap":
                     TrapsHandler.EnqueueTrap(ID);
                     break;
+                case "DamageUpgrade":
+                    Plugin.RandoManager.NumDamageUpgrades++;
+                    break;
                 case "HunterCycles":
                     Plugin.RandoManager.HunterBonusCyclesGiven++;
                     break;
@@ -180,6 +184,7 @@ namespace RainWorldRandomizer
                 "Item" => $"Found {ItemToEncodedIcon((Item)item)}",
                 "Trap" => $"Found a trap!",
                 "HunterCycles" => "Increased Lifespan",
+                "DamageUpgrade" => "Increased Spear Damage",
                 "IdDrone" => "Found Citizen ID Drone",
                 "DisconnectFP" => "Disconnected Five Pebbles",
                 "RewriteSpearPearl" => "Unlocked Broadcast Encoding",
@@ -199,6 +204,7 @@ namespace RainWorldRandomizer
                 "Item" => item.Value.name,
                 "Trap" => ID[5..],
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
+                "DamageUpgrade" => "+20% Damage",
                 "IdDrone" => "Citizen ID Drone",
                 "DisconnectFP" => "Disconnect Pebbles",
                 _ => ID
