@@ -162,9 +162,13 @@ namespace RainWorldRandomizer
                 }
 
                 Plugin.Log.LogError(errorMessage);
+                Session.Socket.PacketReceived -= PacketReceived;
+                Session.MessageLog.OnMessageReceived -= MessageReceived;
+                Session.Socket.ErrorReceived -= ErrorReceived;
                 playerName = "";
                 HasConnected = false;
                 CurrentlyConnecting = false;
+                Session = null;
                 return errorMessage;
             }
 
