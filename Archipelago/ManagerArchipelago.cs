@@ -96,22 +96,7 @@ namespace RainWorldRandomizer
             locations = [..save.locationsStatus.Select(kvp => new LocationInfo(kvp, true))];
             currentSlugcat = ArchipelagoConnection.Slugcat;
 
-            // Set locations the server says we found, and release checks we found while offline
-            List<long> offlineLocs = [];
-            foreach (LocationInfo loc in locations)
-            {
-                if (ArchipelagoConnection.Session.Locations.AllLocationsChecked.Contains(loc.archipelagoID))
-                    loc.MarkCollected();
-                else if (ArchipelagoConnection.Session.Locations.AllMissingLocations.Contains(loc.archipelagoID)
-                    && loc.Collected)
-                    offlineLocs.Add(loc.archipelagoID);
-            }
-            
-            if (offlineLocs.Count > 0)
-            {
-                ArchipelagoConnection.Session.Locations.CompleteLocationChecks([.. offlineLocs]);
-                Plugin.Log.LogInfo($"Sent offline locations: {string.Join(", ", offlineLocs)}");
-            }
+            SyncLocations();
 
             // Load the item delivery queue from file as normal
             (itemDeliveryQueue, pendingTrapQueue) = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
@@ -155,6 +140,26 @@ namespace RainWorldRandomizer
             
             locationsLoaded = true;
             SaveGame(false);
+        }
+
+        public void SyncLocations()
+        {
+            // Set locations the server says we found, and release checks we found while offline
+            List<long> offlineLocs = [];
+            foreach (LocationInfo loc in locations)
+            {
+                if (ArchipelagoConnection.Session.Locations.AllLocationsChecked.Contains(loc.archipelagoID))
+                    loc.MarkCollected();
+                else if (ArchipelagoConnection.Session.Locations.AllMissingLocations.Contains(loc.archipelagoID)
+                    && loc.Collected)
+                    offlineLocs.Add(loc.archipelagoID);
+            }
+
+            if (offlineLocs.Count > 0)
+            {
+                ArchipelagoConnection.Session.Locations.CompleteLocationChecks([.. offlineLocs]);
+                Plugin.Log.LogInfo($"Sent offline locations: {string.Join(", ", offlineLocs)}");
+            }
         }
 
         public void TryAquireNextItemPacket()

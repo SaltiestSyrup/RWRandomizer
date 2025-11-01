@@ -221,6 +221,9 @@ namespace RainWorldRandomizer
                 return errLog;
             }
 
+            // If we are currently in-game, resync locations
+            (Plugin.RandoManager as ManagerArchipelago)?.SyncLocations();
+
             HasConnected = true;
             CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
