@@ -226,6 +226,18 @@ namespace RainWorldRandomizer
             // If it never reads as a dev token it won't destroy it
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldc_I4_0);
+
+            // --- 
+
+            // Get devToken property at 1040
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.devToken)).GetGetMethod())
+                );
+
+            c.EmitDelegate(ExtendTokenRange);
+
+            static bool ExtendTokenRange(bool origVal) => true;
         }
 
         /// <summary>
