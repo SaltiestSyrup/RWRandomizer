@@ -4,6 +4,7 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -17,6 +18,7 @@ namespace RainWorldRandomizer
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
             On.RainWorldGame.ExitGame += OnExitGame;
             On.RainWorldGame.ContinuePaused += OnContinuePaused;
+            On.OverWorld.LoadWorld_string_Name_Timeline_bool += OnWorldLoaded;
             On.PlayerProgression.SaveToDisk += OnSaveGame;
             On.SaveState.GhostEncounter += OnGhostEncounter;
             On.SaveState.SessionEnded += OnSessionEnded;
@@ -42,6 +44,7 @@ namespace RainWorldRandomizer
             On.ProcessManager.PostSwitchMainProcess -= OnPostSwitchMainProcess;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
             On.RainWorldGame.ContinuePaused -= OnContinuePaused;
+            On.OverWorld.LoadWorld_string_Name_Timeline_bool -= OnWorldLoaded;
             On.PlayerProgression.SaveToDisk -= OnSaveGame;
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
@@ -268,6 +271,35 @@ namespace RainWorldRandomizer
                     self.nshSwarmer = null;
                 }
             }
+        }
+
+        private static void OnWorldLoaded(On.OverWorld.orig_LoadWorld_string_Name_Timeline_bool orig, OverWorld self, string worldName, 
+            SlugcatStats.Name playerCharacterNumber, SlugcatStats.Timeline time, bool singleRoomWorld)
+        {
+            orig(self, worldName, playerCharacterNumber, time, singleRoomWorld);
+            if (Plugin.RandoManager is not ManagerArchipelago managerAP
+                || !RandoOptions.colorPickupsWithHints) return;
+
+            // Get all token and pearl locations in the new region
+            LocationInfo[] locations = [..managerAP.GetLocations()
+                .Where(l => l.IsTokenOrPearl && l.region == self.activeWorld.region.name)];
+
+            // Ask server for all the items at these locations
+            Task<Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo>> scoutingTask = 
+                ArchipelagoConnection.Session.Locations.ScoutLocationsAsync(false, [..locations.Select(l => l.archipelagoID)]);
+
+            // Define callback for when we get the scouted items
+            Task.Factory.StartNew(() =>
+            {
+                //Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo> result = scoutingTask.Result;
+                managerAP.scoutedLocations = locations.ToDictionary(l => l.internalName,
+                        l => scoutingTask.Result.TryGetValue(l.archipelagoID, out var value)
+                            ? value.Flags : Archipelago.MultiClient.Net.Enums.ItemFlags.None);
+                foreach (var kvp in scoutingTask.Result)
+                {
+                    Plugin.Log.LogDebug($"{locations.First(l => l.archipelagoID == kvp.Key).internalName} => {kvp.Value.ItemName}");
+                }
+            });
         }
 
         /// <summary>

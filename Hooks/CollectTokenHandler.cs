@@ -1,8 +1,12 @@
-﻿using Mono.Cecil.Cil;
+﻿using Archipelago.MultiClient.Net.Colors;
+using Archipelago.MultiClient.Net.Enums;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -18,6 +22,8 @@ namespace RainWorldRandomizer
 
             try
             {
+                _ = new Hook(typeof(CollectToken).GetProperty(nameof(CollectToken.TokenColor)).GetGetMethod(), OnGetTokenColor);
+
                 IL.Room.Loaded += ILRoomLoaded;
                 IL.CollectToken.Update += CollectTokenUpdateIL;
                 IL.Player.ProcessChatLog += Player_ProcessChatLog;
@@ -110,6 +116,29 @@ namespace RainWorldRandomizer
 
             string tokenString = TokenToLocationName(self.placedObj.data as CollectToken.CollectTokenData, self.room.abstractRoom.name);
             Plugin.RandoManager.GiveLocation(tokenString);
+        }
+
+        private Color OnGetTokenColor(Func<CollectToken, Color> orig, CollectToken self)
+        {
+            if (Plugin.RandoManager is ManagerArchipelago managerAP && RandoOptions.colorPickupsWithHints)
+            {
+                string tokenString = TokenToLocationName(self.placedObj?.data as CollectToken.CollectTokenData, self.room?.abstractRoom?.name);
+
+                // If the location isn't scouted, make the token white as a fallback
+                if (tokenString is null || !managerAP.scoutedLocations.TryGetValue(tokenString, out ItemFlags flags))
+                    return Color.white;
+
+                if ((int)(flags & ItemFlags.Advancement) > 0) return ArchipelagoConnection.palette[PaletteColor.Magenta];
+                if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) return ArchipelagoConnection.palette[PaletteColor.Blue];
+                return ArchipelagoConnection.palette[PaletteColor.Cyan];
+
+                //return NewColor(0, 0, 139); // USEFUL
+                //return NewColor(209, 0, 209); //PROGRESSION
+                //return NewColor(0, 255, 255); //FILLER
+            }
+            return orig(self);
+
+            static Color NewColor(int r, int g, int b) => new(r / 255f, g / 255f, b / 255f);
         }
 
         /// <summary>
@@ -305,6 +334,7 @@ namespace RainWorldRandomizer
 
         private static string TokenToLocationName(CollectToken.CollectTokenData data, string room)
         {
+            if (data is null || room is null) return null;
             string tokenString = data.tokenString;
 
             if (data.isRed && data.SafariUnlock != null)

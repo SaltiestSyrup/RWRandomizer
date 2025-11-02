@@ -52,6 +52,7 @@ namespace RainWorldRandomizer
         public static Configurable<bool> archipelagoIgnoreMenuDL;
         public static Configurable<int> trapMinimumCooldown;
         public static Configurable<int> trapMaximumCooldown;
+        public static bool colorPickupsWithHints = true;
 
         // Base
         public static bool UseSetSeed => useSeed.Value;
