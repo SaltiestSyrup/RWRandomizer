@@ -170,8 +170,8 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void OnRainWorldGameCtor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
-            orig(self, manager);
             Plugin.Singleton.Game = self;
+            orig(self, manager);
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
 
@@ -284,6 +284,9 @@ namespace RainWorldRandomizer
             LocationInfo[] locations = [..managerAP.GetLocations()
                 .Where(l => l.IsTokenOrPearl && l.region == self.activeWorld.region.name)];
 
+            // If these locations have been fetched already, no need to ask server for them
+            if (locations.Select(l => l.internalName).All(SaveManager.ScoutedLocations.ContainsKey)) return;
+
             // Ask server for all the items at these locations
             Task<Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo>> scoutingTask = 
                 ArchipelagoConnection.Session.Locations.ScoutLocationsAsync(false, [..locations.Select(l => l.archipelagoID)]);
@@ -291,13 +294,15 @@ namespace RainWorldRandomizer
             // Define callback for when we get the scouted items
             Task.Factory.StartNew(() =>
             {
-                //Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo> result = scoutingTask.Result;
-                managerAP.scoutedLocations = locations.ToDictionary(l => l.internalName,
-                        l => scoutingTask.Result.TryGetValue(l.archipelagoID, out var value)
-                            ? value.Flags : Archipelago.MultiClient.Net.Enums.ItemFlags.None);
-                foreach (var kvp in scoutingTask.Result)
+                try
                 {
-                    Plugin.Log.LogDebug($"{locations.First(l => l.archipelagoID == kvp.Key).internalName} => {kvp.Value.ItemName}");
+                    SaveManager.AddScoutedLocations(locations.ToDictionary(l => l.internalName,
+                        l => scoutingTask.Result.TryGetValue(l.archipelagoID, out var value)
+                            ? value.Flags : Archipelago.MultiClient.Net.Enums.ItemFlags.None));
+                }
+                catch (Exception e) 
+                { 
+                    Plugin.Log.LogError($"Exception while scouting locations: {e}");
                 }
             });
         }

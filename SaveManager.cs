@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Archipelago.MultiClient.Net.Enums;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -164,6 +165,51 @@ namespace RainWorldRandomizer
         }
 
         #region Archipelago save data
+
+        const string SCOUTED_LOCS_KEY = "RANDOMIZER_SCOUTED_LOCS";
+        private static Dictionary<string, ItemFlags> _scoutedLocations = null;
+        public static Dictionary<string, ItemFlags> ScoutedLocations
+        {
+            get
+            {
+                if (_scoutedLocations is not null) return _scoutedLocations;
+
+                // If not loaded yet, try to load from save data
+                DeathPersistentSaveData dpsd = Plugin.Singleton.Game?.GetStorySession?.saveState?.deathPersistentSaveData;
+                if (dpsd is null) return null;
+
+                string savedData = dpsd.unrecognizedSaveStrings.FirstOrDefault(s => s.StartsWith(SCOUTED_LOCS_KEY));
+                if (savedData is null) return [];
+
+                var scouted = JsonConvert.DeserializeObject<Dictionary<string, ItemFlags>>(savedData[SCOUTED_LOCS_KEY.Length..]);
+                _scoutedLocations = scouted;
+                return _scoutedLocations;
+            }
+        }
+
+        public static void AddScoutedLocations(Dictionary<string, ItemFlags> scoutedLocs)
+        {
+            DeathPersistentSaveData dpsd = Plugin.Singleton.Game?.GetStorySession?.saveState?.deathPersistentSaveData;
+            if (dpsd is null)
+            {
+                Plugin.Log.LogError("Tried to add scouted locations, but there is no current DeathPersistentSaveData");
+                return;
+            }
+
+            // Save new data in memory and create new save string
+            _scoutedLocations ??= [];
+            foreach (var loc in scoutedLocs) _scoutedLocations[loc.Key] = loc.Value;
+            string newData = $"{SCOUTED_LOCS_KEY}{JsonConvert.SerializeObject(_scoutedLocations)}";
+
+            // Try to find existing key for this data
+            string savedData = dpsd.unrecognizedSaveStrings.FirstOrDefault(s => s.StartsWith(SCOUTED_LOCS_KEY));
+            int index = dpsd.unrecognizedSaveStrings.IndexOf(savedData);
+
+            // Write to DeathPersistentSaveData
+            if (savedData is null) dpsd.unrecognizedSaveStrings.Add(newData);
+            else dpsd.unrecognizedSaveStrings[index] = newData;
+        }
+
         public struct APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
         {
             public long lastIndex = lastIndex;
