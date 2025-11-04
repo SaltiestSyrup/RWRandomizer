@@ -1,11 +1,13 @@
 ﻿using Archipelago.MultiClient.Net.Colors;
 using Archipelago.MultiClient.Net.Enums;
+//using Archipelago.MultiClient.Net.Models;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -16,16 +18,17 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Dummy class to make CWT take a <see cref="Color"/>
         /// </summary>
-        private class TokenColor(Color color) { public Color color = color; }
+        private class ColorAsClass(Color color) { public Color color = color; }
 
         public SlugcatStats.Name tokensLoadedFor = null;
         public Dictionary<string, string[]> availableTokens = [];
-        private ConditionalWeakTable<CollectToken, TokenColor> tokenColors = new();
+        private static ConditionalWeakTable<CollectToken, ColorAsClass> tokenColors = new();
 
         public void ApplyHooks()
         {
             On.CollectToken.AvailableToPlayer += OnTokenAvailableToPlayer;
             On.CollectToken.Pop += OnTokenPop;
+            On.DataPearl.UniquePearlMainColor += OnUniquePearlMainColor;
 
             try
             {
@@ -67,23 +70,9 @@ namespace RainWorldRandomizer
 
         //    static Color ReplaceColor(Color oldColor, CollectToken self)
         //    {
-        //        if (Plugin.RandoManager is ManagerArchipelago managerAP && RandoOptions.colorPickupsWithHints)
+        //        if (Plugin.RandoManager is ManagerArchipelago && RandoOptions.colorPickupsWithHints)
         //        {
-        //            string tokenString = TokenToLocationName(self.placedObj?.data as CollectToken.CollectTokenData, self.room?.abstractRoom?.name);
-
-        //            Dictionary<string, ItemFlags> scouted = SaveManager.ScoutedLocations;
-
-        //            // If the location isn't scouted, make the token white as a fallback
-        //            if (tokenString is null || !scouted.TryGetValue(tokenString, out ItemFlags flags))
-        //                return Color.white;
-
-        //            if ((int)(flags & ItemFlags.Advancement) > 0) return ArchipelagoConnection.palette[PaletteColor.Magenta];
-        //            if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) return ArchipelagoConnection.palette[PaletteColor.Blue];
-        //            return ArchipelagoConnection.palette[PaletteColor.Cyan];
-
-        //            //return NewColor(0, 0, 139); // USEFUL
-        //            //return NewColor(209, 0, 209); //PROGRESSION
-        //            //return NewColor(0, 255, 255); //FILLER
+        //            return GetColorForToken(self).color;
         //        }
         //        return oldColor;
         //    }
@@ -93,6 +82,7 @@ namespace RainWorldRandomizer
         {
             On.CollectToken.AvailableToPlayer -= OnTokenAvailableToPlayer;
             On.CollectToken.Pop -= OnTokenPop;
+            On.DataPearl.UniquePearlMainColor -= OnUniquePearlMainColor;
 
             IL.Room.Loaded -= ILRoomLoaded;
             IL.CollectToken.Update -= CollectTokenUpdateIL;
@@ -172,32 +162,49 @@ namespace RainWorldRandomizer
         {
             if (Plugin.RandoManager is ManagerArchipelago && RandoOptions.colorPickupsWithHints)
             {
-                return GetColorForToken(self).color;
+                if (tokenColors.TryGetValue(self, out ColorAsClass c)) return c.color;
+
+                string tokenString = TokenToLocationName(self.placedObj?.data as CollectToken.CollectTokenData, self.room?.abstractRoom?.name);
+                ColorAsClass color;
+
+                // If the location isn't scouted, make the token white as a fallback
+                if (tokenString is null || !SaveManager.ScoutedLocations.TryGetValue(tokenString, out ItemFlags flags))
+                {
+                    color = new(Color.white);
+                    tokenColors.Add(self, color);
+                    return color.color;
+                }
+
+                color = new(ItemFlagsToColor(flags));
+                tokenColors.Add(self, color);
+                return color.color;
             }
             return orig(self);
         }
 
-        private TokenColor GetColorForToken(CollectToken token)
+        private Color OnUniquePearlMainColor(On.DataPearl.orig_UniquePearlMainColor orig, DataPearl.AbstractDataPearl.DataPearlType pearlType)
         {
-            if (tokenColors.TryGetValue(token, out TokenColor c)) return c;
-
-            string tokenString = TokenToLocationName(token.placedObj?.data as CollectToken.CollectTokenData, token.room?.abstractRoom?.name);
-            TokenColor color;
-
-            // If the location isn't scouted, make the token white as a fallback
-            if (tokenString is null || !SaveManager.ScoutedLocations.TryGetValue(tokenString, out ItemFlags flags))
+            if (Plugin.RandoManager is ManagerArchipelago && RandoOptions.colorPickupsWithHints)
             {
-                color = new(Color.white);
-                tokenColors.Add(token, color);
-                return color;
+                string pearlString = Plugin.RandoManager.GetLocations()
+                    .FirstOrDefault(l => l.kind == LocationInfo.LocationKind.Pearl && l.internalDesc == pearlType.value)
+                    ?.internalName;
+
+                // If the location isn't scouted, leave it as default color
+                if (pearlString is null || !SaveManager.ScoutedLocations.TryGetValue(pearlString, out ItemFlags flags))
+                {
+                    return orig(pearlType);
+                }
+                return ItemFlagsToColor(flags);
             }
+            return orig(pearlType);
+        }
 
-            if ((int)(flags & ItemFlags.Advancement) > 0) color = new(ArchipelagoConnection.palette[PaletteColor.Magenta]);
-            else if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) color = new(ArchipelagoConnection.palette[PaletteColor.Blue]);
-            else color = new(ArchipelagoConnection.palette[PaletteColor.Cyan]);
-
-            tokenColors.Add(token, color);
-            return color;
+        private static Color ItemFlagsToColor(ItemFlags flags)
+        {
+            if ((int)(flags & ItemFlags.Advancement) > 0) return ArchipelagoConnection.palette[PaletteColor.Magenta];
+            if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) return ArchipelagoConnection.palette[PaletteColor.Blue];
+            return ArchipelagoConnection.palette[PaletteColor.Cyan];
         }
 
         /// <summary>
