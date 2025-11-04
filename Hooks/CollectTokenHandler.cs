@@ -6,14 +6,21 @@ using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace RainWorldRandomizer
 {
     public class CollectTokenHandler
     {
+        /// <summary>
+        /// Dummy class to make CWT take a <see cref="Color"/>
+        /// </summary>
+        private class TokenColor(Color color) { public Color color = color; }
+
         public SlugcatStats.Name tokensLoadedFor = null;
         public Dictionary<string, string[]> availableTokens = [];
+        private ConditionalWeakTable<CollectToken, TokenColor> tokenColors = new();
 
         public void ApplyHooks()
         {
@@ -26,6 +33,7 @@ namespace RainWorldRandomizer
 
                 IL.Room.Loaded += ILRoomLoaded;
                 IL.CollectToken.Update += CollectTokenUpdateIL;
+                //IL.CollectToken.DrawSprites += CollectTokenDrawSpritesIL;
                 IL.Player.ProcessChatLog += Player_ProcessChatLog;
                 IL.Player.InitChatLog += Player_InitChatLog;
 
@@ -38,6 +46,48 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogError(e);
             }
         }
+
+        //private void CollectTokenDrawSpritesIL(ILContext il)
+        //{
+        //    ILCursor c = new(il);
+
+        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(FSprite).GetProperty(nameof(FSprite.color)).GetSetMethod()));
+        //    c.Emit(OpCodes.Ldarg_0);
+        //    c.EmitDelegate(ReplaceColor);
+
+        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.LightSprite)).GetGetMethod()));
+        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(FSprite).GetProperty(nameof(FSprite.color)).GetSetMethod()));
+        //    c.Emit(OpCodes.Ldarg_0);
+        //    c.EmitDelegate(ReplaceColor);
+
+        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.LightSprite)).GetGetMethod()));
+        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(FSprite).GetProperty(nameof(FSprite.color)).GetSetMethod()));
+        //    c.Emit(OpCodes.Ldarg_0);
+        //    c.EmitDelegate(ReplaceColor);
+
+        //    static Color ReplaceColor(Color oldColor, CollectToken self)
+        //    {
+        //        if (Plugin.RandoManager is ManagerArchipelago managerAP && RandoOptions.colorPickupsWithHints)
+        //        {
+        //            string tokenString = TokenToLocationName(self.placedObj?.data as CollectToken.CollectTokenData, self.room?.abstractRoom?.name);
+
+        //            Dictionary<string, ItemFlags> scouted = SaveManager.ScoutedLocations;
+
+        //            // If the location isn't scouted, make the token white as a fallback
+        //            if (tokenString is null || !scouted.TryGetValue(tokenString, out ItemFlags flags))
+        //                return Color.white;
+
+        //            if ((int)(flags & ItemFlags.Advancement) > 0) return ArchipelagoConnection.palette[PaletteColor.Magenta];
+        //            if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) return ArchipelagoConnection.palette[PaletteColor.Blue];
+        //            return ArchipelagoConnection.palette[PaletteColor.Cyan];
+
+        //            //return NewColor(0, 0, 139); // USEFUL
+        //            //return NewColor(209, 0, 209); //PROGRESSION
+        //            //return NewColor(0, 255, 255); //FILLER
+        //        }
+        //        return oldColor;
+        //    }
+        //}
 
         public void RemoveHooks()
         {
@@ -120,25 +170,34 @@ namespace RainWorldRandomizer
 
         private Color OnGetTokenColor(Func<CollectToken, Color> orig, CollectToken self)
         {
-            if (Plugin.RandoManager is ManagerArchipelago managerAP && RandoOptions.colorPickupsWithHints)
+            if (Plugin.RandoManager is ManagerArchipelago && RandoOptions.colorPickupsWithHints)
             {
-                string tokenString = TokenToLocationName(self.placedObj?.data as CollectToken.CollectTokenData, self.room?.abstractRoom?.name);
-
-                // If the location isn't scouted, make the token white as a fallback
-                if (tokenString is null || !managerAP.scoutedLocations.TryGetValue(tokenString, out ItemFlags flags))
-                    return Color.white;
-
-                if ((int)(flags & ItemFlags.Advancement) > 0) return ArchipelagoConnection.palette[PaletteColor.Magenta];
-                if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) return ArchipelagoConnection.palette[PaletteColor.Blue];
-                return ArchipelagoConnection.palette[PaletteColor.Cyan];
-
-                //return NewColor(0, 0, 139); // USEFUL
-                //return NewColor(209, 0, 209); //PROGRESSION
-                //return NewColor(0, 255, 255); //FILLER
+                return GetColorForToken(self).color;
             }
             return orig(self);
+        }
 
-            static Color NewColor(int r, int g, int b) => new(r / 255f, g / 255f, b / 255f);
+        private TokenColor GetColorForToken(CollectToken token)
+        {
+            if (tokenColors.TryGetValue(token, out TokenColor c)) return c;
+
+            string tokenString = TokenToLocationName(token.placedObj?.data as CollectToken.CollectTokenData, token.room?.abstractRoom?.name);
+            TokenColor color;
+
+            // If the location isn't scouted, make the token white as a fallback
+            if (tokenString is null || !SaveManager.ScoutedLocations.TryGetValue(tokenString, out ItemFlags flags))
+            {
+                color = new(Color.white);
+                tokenColors.Add(token, color);
+                return color;
+            }
+
+            if ((int)(flags & ItemFlags.Advancement) > 0) color = new(ArchipelagoConnection.palette[PaletteColor.Magenta]);
+            else if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) color = new(ArchipelagoConnection.palette[PaletteColor.Blue]);
+            else color = new(ArchipelagoConnection.palette[PaletteColor.Cyan]);
+
+            tokenColors.Add(token, color);
+            return color;
         }
 
         /// <summary>
