@@ -8,11 +8,8 @@ namespace RainWorldRandomizer
 {
     public class CollectTokenHandler
     {
-
-
         public SlugcatStats.Name tokensLoadedFor = null;
         public Dictionary<string, string[]> availableTokens = [];
-
 
         public void ApplyHooks()
         {

@@ -21,20 +21,28 @@ namespace RainWorldRandomizer
 
         public static void ApplyHooks()
         {
-            On.DataPearl.UniquePearlMainColor += OnUniquePearlMainColor;
-            On.ShortcutGraphics.GenerateSprites += OnShortcutGraphicsGenerateSprites;
+            On.DataPearl.UniquePearlMainColor += OnDataPearl_UniquePearlMainColor;
+            On.ShortcutGraphics.GenerateSprites += OnShortcutGraphics_GenerateSprites;
             On.KarmaFlower.DrawSprites += OnKarmaFlower_DrawSprites;
 
             _ = new Hook(typeof(CollectToken).GetProperty(nameof(CollectToken.TokenColor)).GetGetMethod(), OnGetTokenColor);
+            IL.CollectToken.GoldCol += DontDarkenGoldTokens;
+            IL.CollectToken.DrawSprites += DontDarkenGoldTokens;
+            IL.CollectToken.InitiateSprites += DontDarkenGoldTokens;
+            IL.CollectToken.AddToContainer += DontDarkenGoldTokens;
             IL.ShortcutGraphics.Draw += ShortcutGraphics_DrawIL;
         }
 
         public static void RemoveHooks()
         {
-            On.DataPearl.UniquePearlMainColor -= OnUniquePearlMainColor;
-            On.ShortcutGraphics.GenerateSprites -= OnShortcutGraphicsGenerateSprites;
+            On.DataPearl.UniquePearlMainColor -= OnDataPearl_UniquePearlMainColor;
+            On.ShortcutGraphics.GenerateSprites -= OnShortcutGraphics_GenerateSprites;
             On.KarmaFlower.DrawSprites -= OnKarmaFlower_DrawSprites;
 
+            IL.CollectToken.GoldCol -= DontDarkenGoldTokens;
+            IL.CollectToken.DrawSprites -= DontDarkenGoldTokens;
+            IL.CollectToken.InitiateSprites -= DontDarkenGoldTokens;
+            IL.CollectToken.AddToContainer -= DontDarkenGoldTokens;
             IL.ShortcutGraphics.Draw -= ShortcutGraphics_DrawIL;
         }
 
@@ -65,9 +73,28 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
+        /// When overriding token colors, make every token think it is a blue token
+        /// </summary>
+        private static void DontDarkenGoldTokens(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            while(c.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.blueToken)).GetGetMethod())))
+            {
+                Plugin.Log.LogDebug("Patch");
+                c.EmitDelegate(AlwaysUseLightColor);
+            }
+
+            static bool AlwaysUseLightColor(bool origVal)
+            {
+                return origVal || (Plugin.RandoManager is ManagerArchipelago && RandoOptions.colorPickupsWithHints);
+            }
+        }
+
+        /// <summary>
         /// Overrides the color of a pearl with its item classification color
         /// </summary>
-        private static Color OnUniquePearlMainColor(On.DataPearl.orig_UniquePearlMainColor orig, DataPearl.AbstractDataPearl.DataPearlType pearlType)
+        private static Color OnDataPearl_UniquePearlMainColor(On.DataPearl.orig_UniquePearlMainColor orig, DataPearl.AbstractDataPearl.DataPearlType pearlType)
         {
             if (Plugin.RandoManager is not ManagerArchipelago || !RandoOptions.colorPickupsWithHints) return orig(pearlType);
 
@@ -86,7 +113,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Find and store an item classification color for any shelter connection when the room is entered
         /// </summary>
-        private static void OnShortcutGraphicsGenerateSprites(On.ShortcutGraphics.orig_GenerateSprites orig, ShortcutGraphics self)
+        private static void OnShortcutGraphics_GenerateSprites(On.ShortcutGraphics.orig_GenerateSprites orig, ShortcutGraphics self)
         {
             orig(self);
             if (Plugin.RandoManager is not ManagerArchipelago || !RandoOptions.colorPickupsWithHints) return;
