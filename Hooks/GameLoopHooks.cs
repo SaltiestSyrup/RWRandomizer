@@ -281,8 +281,9 @@ namespace RainWorldRandomizer
                 || !RandoOptions.colorPickupsWithHints) return;
 
             // Get all token and pearl locations in the new region
+            static bool IsColorable(LocationInfo l) => l.IsTokenOrPearl || l.kind == LocationInfo.LocationKind.Shelter || l.kind == LocationInfo.LocationKind.Flower;
             LocationInfo[] locations = [..managerAP.GetLocations()
-                .Where(l => l.IsTokenOrPearl && l.region == self.activeWorld.region.name)];
+                .Where(l => IsColorable(l) && l.region == self.activeWorld.region.name)];
 
             // If these locations have been fetched already, no need to ask server for them
             if (locations.Select(l => l.internalName).All(SaveManager.ScoutedLocations.ContainsKey)) return;

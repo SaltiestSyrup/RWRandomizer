@@ -1,6 +1,5 @@
 ﻿using Archipelago.MultiClient.Net.Colors;
 using Archipelago.MultiClient.Net.Enums;
-//using Archipelago.MultiClient.Net.Models;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
@@ -23,12 +22,15 @@ namespace RainWorldRandomizer
         public SlugcatStats.Name tokensLoadedFor = null;
         public Dictionary<string, string[]> availableTokens = [];
         private static ConditionalWeakTable<CollectToken, ColorAsClass> tokenColors = new();
+        private static ConditionalWeakTable<FSprite, ColorAsClass> shortcutColors = new();
 
         public void ApplyHooks()
         {
             On.CollectToken.AvailableToPlayer += OnTokenAvailableToPlayer;
             On.CollectToken.Pop += OnTokenPop;
             On.DataPearl.UniquePearlMainColor += OnUniquePearlMainColor;
+            On.ShortcutGraphics.GenerateSprites += OnShortcutGraphicsGenerateSprites;
+            On.KarmaFlower.DrawSprites += OnKarmaFlower_DrawSprites;
 
             try
             {
@@ -39,6 +41,7 @@ namespace RainWorldRandomizer
                 //IL.CollectToken.DrawSprites += CollectTokenDrawSpritesIL;
                 IL.Player.ProcessChatLog += Player_ProcessChatLog;
                 IL.Player.InitChatLog += Player_InitChatLog;
+                IL.ShortcutGraphics.Draw += ShortcutGraphics_DrawIL;
 
                 IL.CollectToken.CollectTokenData.ctor += ILOverrideHiddenOrUnplayable;
                 IL.CollectToken.CollectTokenData.ToString += ILOverrideHiddenOrUnplayable;
@@ -198,6 +201,64 @@ namespace RainWorldRandomizer
                 return ItemFlagsToColor(flags);
             }
             return orig(pearlType);
+        }
+
+        private void OnShortcutGraphicsGenerateSprites(On.ShortcutGraphics.orig_GenerateSprites orig, ShortcutGraphics self)
+        {
+            orig(self);
+
+            Room myRoom = self.room;
+            for (int l = 0; l < myRoom.shortcuts.Length; l++)
+            {
+                // Shortcut is room exit and there is a shelter on the other side
+                if (myRoom.shortcuts[l].shortCutType != ShortcutData.Type.RoomExit) continue;
+                if (myRoom.world.GetAbstractRoom(myRoom.abstractRoom.connections[myRoom.shortcuts[l].destNode]) is not AbstractRoom destRoom) continue;
+                if (!destRoom.shelter) continue;
+
+                string shelterString = Plugin.RandoManager.GetLocations()
+                    .FirstOrDefault(l => l.kind == LocationInfo.LocationKind.Shelter && l.internalDesc == destRoom.name && !l.Collected)
+                    ?.internalName;
+
+                if (shelterString is null || !SaveManager.ScoutedLocations.TryGetValue(shelterString, out ItemFlags flags)) continue;
+
+                shortcutColors.Add(self.entranceSprites[l, 0], new(ItemFlagsToColor(flags)));
+            }
+        }
+
+        private void ShortcutGraphics_DrawIL(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            // Fetch the index for the local variable "l"
+            int indexOfl = -1;
+            c.GotoNext(x => x.MatchLdfld(typeof(ShortcutGraphics).GetField(nameof(ShortcutGraphics.entranceSprites), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)), 
+                x => x.MatchLdloc(out indexOfl));
+
+            while (c.TryGotoNext(MoveType.After, x => x.MatchLdfld(typeof(RoomPalette).GetField(nameof(RoomPalette.shortCutSymbol)))))
+            {
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Ldloc, indexOfl);
+                c.EmitDelegate(ReplaceWithCustomColor);
+            }
+
+            static Color ReplaceWithCustomColor(Color origColor, ShortcutGraphics self, int index)
+            {
+                if (shortcutColors.TryGetValue(self.entranceSprites[index, 0], out ColorAsClass color))
+                {
+                    return color.color;
+                }
+                return origColor;
+            }
+        }
+
+        private void OnKarmaFlower_DrawSprites(On.KarmaFlower.orig_DrawSprites orig, KarmaFlower self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
+        {
+            orig(self, sLeaser, rCam, timeStacker, camPos);
+
+            if (!FlowerCheckHandler.trackedFlowers.TryGetValue(self.abstractPhysicalObject, out LocationInfo loc)) return;
+            if (loc.internalName is null || !SaveManager.ScoutedLocations.TryGetValue(loc.internalName, out ItemFlags flags)) return;
+
+            sLeaser.sprites[self.EffectSprite(0)].color = ItemFlagsToColor(flags);
         }
 
         private static Color ItemFlagsToColor(ItemFlags flags)
