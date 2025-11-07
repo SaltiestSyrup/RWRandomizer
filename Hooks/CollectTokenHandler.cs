@@ -1,47 +1,30 @@
-﻿using Archipelago.MultiClient.Net.Colors;
-using Archipelago.MultiClient.Net.Enums;
-using Mono.Cecil.Cil;
+﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
-using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using UnityEngine;
 
 namespace RainWorldRandomizer
 {
     public class CollectTokenHandler
     {
-        /// <summary>
-        /// Dummy class to make CWT take a <see cref="Color"/>
-        /// </summary>
-        private class ColorAsClass(Color color) { public Color color = color; }
+
 
         public SlugcatStats.Name tokensLoadedFor = null;
         public Dictionary<string, string[]> availableTokens = [];
-        private static ConditionalWeakTable<CollectToken, ColorAsClass> tokenColors = new();
-        private static ConditionalWeakTable<FSprite, ColorAsClass> shortcutColors = new();
+
 
         public void ApplyHooks()
         {
             On.CollectToken.AvailableToPlayer += OnTokenAvailableToPlayer;
             On.CollectToken.Pop += OnTokenPop;
-            On.DataPearl.UniquePearlMainColor += OnUniquePearlMainColor;
-            On.ShortcutGraphics.GenerateSprites += OnShortcutGraphicsGenerateSprites;
-            On.KarmaFlower.DrawSprites += OnKarmaFlower_DrawSprites;
 
             try
             {
-                _ = new Hook(typeof(CollectToken).GetProperty(nameof(CollectToken.TokenColor)).GetGetMethod(), OnGetTokenColor);
-
                 IL.Room.Loaded += ILRoomLoaded;
                 IL.CollectToken.Update += CollectTokenUpdateIL;
-                //IL.CollectToken.DrawSprites += CollectTokenDrawSpritesIL;
                 IL.Player.ProcessChatLog += Player_ProcessChatLog;
                 IL.Player.InitChatLog += Player_InitChatLog;
-                IL.ShortcutGraphics.Draw += ShortcutGraphics_DrawIL;
 
                 IL.CollectToken.CollectTokenData.ctor += ILOverrideHiddenOrUnplayable;
                 IL.CollectToken.CollectTokenData.ToString += ILOverrideHiddenOrUnplayable;
@@ -53,39 +36,10 @@ namespace RainWorldRandomizer
             }
         }
 
-        //private void CollectTokenDrawSpritesIL(ILContext il)
-        //{
-        //    ILCursor c = new(il);
-
-        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(FSprite).GetProperty(nameof(FSprite.color)).GetSetMethod()));
-        //    c.Emit(OpCodes.Ldarg_0);
-        //    c.EmitDelegate(ReplaceColor);
-
-        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.LightSprite)).GetGetMethod()));
-        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(FSprite).GetProperty(nameof(FSprite.color)).GetSetMethod()));
-        //    c.Emit(OpCodes.Ldarg_0);
-        //    c.EmitDelegate(ReplaceColor);
-
-        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.LightSprite)).GetGetMethod()));
-        //    c.GotoNext(x => x.MatchCallOrCallvirt(typeof(FSprite).GetProperty(nameof(FSprite.color)).GetSetMethod()));
-        //    c.Emit(OpCodes.Ldarg_0);
-        //    c.EmitDelegate(ReplaceColor);
-
-        //    static Color ReplaceColor(Color oldColor, CollectToken self)
-        //    {
-        //        if (Plugin.RandoManager is ManagerArchipelago && RandoOptions.colorPickupsWithHints)
-        //        {
-        //            return GetColorForToken(self).color;
-        //        }
-        //        return oldColor;
-        //    }
-        //}
-
         public void RemoveHooks()
         {
             On.CollectToken.AvailableToPlayer -= OnTokenAvailableToPlayer;
             On.CollectToken.Pop -= OnTokenPop;
-            On.DataPearl.UniquePearlMainColor -= OnUniquePearlMainColor;
 
             IL.Room.Loaded -= ILRoomLoaded;
             IL.CollectToken.Update -= CollectTokenUpdateIL;
@@ -159,113 +113,6 @@ namespace RainWorldRandomizer
 
             string tokenString = TokenToLocationName(self.placedObj.data as CollectToken.CollectTokenData, self.room.abstractRoom.name);
             Plugin.RandoManager.GiveLocation(tokenString);
-        }
-
-        private Color OnGetTokenColor(Func<CollectToken, Color> orig, CollectToken self)
-        {
-            if (Plugin.RandoManager is ManagerArchipelago && RandoOptions.colorPickupsWithHints)
-            {
-                if (tokenColors.TryGetValue(self, out ColorAsClass c)) return c.color;
-
-                string tokenString = TokenToLocationName(self.placedObj?.data as CollectToken.CollectTokenData, self.room?.abstractRoom?.name);
-                ColorAsClass color;
-
-                // If the location isn't scouted, make the token white as a fallback
-                if (tokenString is null || !SaveManager.ScoutedLocations.TryGetValue(tokenString, out ItemFlags flags))
-                {
-                    color = new(Color.white);
-                    tokenColors.Add(self, color);
-                    return color.color;
-                }
-
-                color = new(ItemFlagsToColor(flags));
-                tokenColors.Add(self, color);
-                return color.color;
-            }
-            return orig(self);
-        }
-
-        private Color OnUniquePearlMainColor(On.DataPearl.orig_UniquePearlMainColor orig, DataPearl.AbstractDataPearl.DataPearlType pearlType)
-        {
-            if (Plugin.RandoManager is ManagerArchipelago && RandoOptions.colorPickupsWithHints)
-            {
-                string pearlString = Plugin.RandoManager.GetLocations()
-                    .FirstOrDefault(l => l.kind == LocationInfo.LocationKind.Pearl && l.internalDesc == pearlType.value)
-                    ?.internalName;
-
-                // If the location isn't scouted, leave it as default color
-                if (pearlString is null || !SaveManager.ScoutedLocations.TryGetValue(pearlString, out ItemFlags flags))
-                {
-                    return orig(pearlType);
-                }
-                return ItemFlagsToColor(flags);
-            }
-            return orig(pearlType);
-        }
-
-        private void OnShortcutGraphicsGenerateSprites(On.ShortcutGraphics.orig_GenerateSprites orig, ShortcutGraphics self)
-        {
-            orig(self);
-
-            Room myRoom = self.room;
-            for (int l = 0; l < myRoom.shortcuts.Length; l++)
-            {
-                // Shortcut is room exit and there is a shelter on the other side
-                if (myRoom.shortcuts[l].shortCutType != ShortcutData.Type.RoomExit) continue;
-                if (myRoom.world.GetAbstractRoom(myRoom.abstractRoom.connections[myRoom.shortcuts[l].destNode]) is not AbstractRoom destRoom) continue;
-                if (!destRoom.shelter) continue;
-
-                string shelterString = Plugin.RandoManager.GetLocations()
-                    .FirstOrDefault(l => l.kind == LocationInfo.LocationKind.Shelter && l.internalDesc == destRoom.name && !l.Collected)
-                    ?.internalName;
-
-                if (shelterString is null || !SaveManager.ScoutedLocations.TryGetValue(shelterString, out ItemFlags flags)) continue;
-
-                shortcutColors.Add(self.entranceSprites[l, 0], new(ItemFlagsToColor(flags)));
-            }
-        }
-
-        private void ShortcutGraphics_DrawIL(ILContext il)
-        {
-            ILCursor c = new(il);
-
-            // Fetch the index for the local variable "l"
-            int indexOfl = -1;
-            c.GotoNext(x => x.MatchLdfld(typeof(ShortcutGraphics).GetField(nameof(ShortcutGraphics.entranceSprites), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)), 
-                x => x.MatchLdloc(out indexOfl));
-
-            while (c.TryGotoNext(MoveType.After, x => x.MatchLdfld(typeof(RoomPalette).GetField(nameof(RoomPalette.shortCutSymbol)))))
-            {
-                c.Emit(OpCodes.Ldarg_0);
-                c.Emit(OpCodes.Ldloc, indexOfl);
-                c.EmitDelegate(ReplaceWithCustomColor);
-            }
-
-            static Color ReplaceWithCustomColor(Color origColor, ShortcutGraphics self, int index)
-            {
-                if (shortcutColors.TryGetValue(self.entranceSprites[index, 0], out ColorAsClass color))
-                {
-                    return color.color;
-                }
-                return origColor;
-            }
-        }
-
-        private void OnKarmaFlower_DrawSprites(On.KarmaFlower.orig_DrawSprites orig, KarmaFlower self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
-        {
-            orig(self, sLeaser, rCam, timeStacker, camPos);
-
-            if (!FlowerCheckHandler.trackedFlowers.TryGetValue(self.abstractPhysicalObject, out LocationInfo loc)) return;
-            if (loc.internalName is null || !SaveManager.ScoutedLocations.TryGetValue(loc.internalName, out ItemFlags flags)) return;
-
-            sLeaser.sprites[self.EffectSprite(0)].color = ItemFlagsToColor(flags);
-        }
-
-        private static Color ItemFlagsToColor(ItemFlags flags)
-        {
-            if ((int)(flags & ItemFlags.Advancement) > 0) return ArchipelagoConnection.palette[PaletteColor.Magenta];
-            if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) return ArchipelagoConnection.palette[PaletteColor.Blue];
-            return ArchipelagoConnection.palette[PaletteColor.Cyan];
         }
 
         /// <summary>
@@ -459,7 +306,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate(PreventStop);
         }
 
-        private static string TokenToLocationName(CollectToken.CollectTokenData data, string room)
+        public static string TokenToLocationName(CollectToken.CollectTokenData data, string room)
         {
             if (data is null || room is null) return null;
             string tokenString = data.tokenString;
