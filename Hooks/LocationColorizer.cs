@@ -81,7 +81,6 @@ namespace RainWorldRandomizer
 
             while(c.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.blueToken)).GetGetMethod())))
             {
-                Plugin.Log.LogDebug("Patch");
                 c.EmitDelegate(AlwaysUseLightColor);
             }
 
