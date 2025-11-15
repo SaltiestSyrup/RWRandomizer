@@ -22,7 +22,7 @@ namespace RainWorldRandomizer
         public bool InMetaRegion => region.StartsWith("<");
         public bool IsPassage => region == "<P>";
         public bool IsFoodQuest => region == "<FQ>";
-        public bool IsTokenOrPearl
+        public bool IsToken
         {
             get
             {
@@ -33,8 +33,7 @@ namespace RainWorldRandomizer
                     LocationKind.GoldToken, 
                     LocationKind.GreenToken, 
                     LocationKind.DevToken, 
-                    LocationKind.Broadcast, 
-                    LocationKind.Pearl
+                    LocationKind.Broadcast,
                 }).Contains(kind);
             }
         }

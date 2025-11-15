@@ -24,6 +24,7 @@ namespace RainWorldRandomizer
             On.DataPearl.UniquePearlMainColor += OnDataPearl_UniquePearlMainColor;
             On.ShortcutGraphics.GenerateSprites += OnShortcutGraphics_GenerateSprites;
             On.KarmaFlower.DrawSprites += OnKarmaFlower_DrawSprites;
+            On.Menu.EndgameMeter.GrafUpdate += EndgameMeter_GrafUpdate;
 
             _ = new Hook(typeof(CollectToken).GetProperty(nameof(CollectToken.TokenColor)).GetGetMethod(), OnGetTokenColor);
             IL.CollectToken.GoldCol += DontDarkenGoldTokens;
@@ -38,6 +39,7 @@ namespace RainWorldRandomizer
             On.DataPearl.UniquePearlMainColor -= OnDataPearl_UniquePearlMainColor;
             On.ShortcutGraphics.GenerateSprites -= OnShortcutGraphics_GenerateSprites;
             On.KarmaFlower.DrawSprites -= OnKarmaFlower_DrawSprites;
+            On.Menu.EndgameMeter.GrafUpdate -= EndgameMeter_GrafUpdate;
 
             IL.CollectToken.GoldCol -= DontDarkenGoldTokens;
             IL.CollectToken.DrawSprites -= DontDarkenGoldTokens;
@@ -177,6 +179,25 @@ namespace RainWorldRandomizer
             if (loc.internalName is null || !SaveManager.ScoutedLocations.TryGetValue(loc.internalName, out ItemFlags flags)) return;
 
             sLeaser.sprites[self.EffectSprite(0)].color = ItemFlagsToColor(flags);
+        }
+
+        /// <summary>
+        /// Overrides the color of a passage meter with its item classification color
+        /// </summary>
+        private static void EndgameMeter_GrafUpdate(On.Menu.EndgameMeter.orig_GrafUpdate orig, Menu.EndgameMeter self, float timeStacker)
+        {
+            orig(self, timeStacker);
+            if (Plugin.RandoManager is not ManagerArchipelago || !RandoOptions.colorPickupsWithHints) return;
+
+            string passageString = Plugin.RandoManager.GetLocations()
+                .FirstOrDefault(l => l.kind == LocationInfo.LocationKind.Passage && l.internalDesc == self.tracker.ID.value)
+                ?.internalName;
+
+            if (passageString is null || !SaveManager.ScoutedLocations.TryGetValue(passageString, out ItemFlags flags)) return;
+
+            self.glowSprite.color = ItemFlagsToColor(flags);
+            self.circleSprite.color = Color.Lerp(self.circleSprite.color, ItemFlagsToColor(flags), 0.5f);
+            self.symbolSprite.color = Color.Lerp(self.symbolSprite.color, ItemFlagsToColor(flags), 0.5f);
         }
 
         /// <summary>
