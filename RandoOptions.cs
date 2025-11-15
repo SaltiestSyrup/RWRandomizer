@@ -52,7 +52,7 @@ namespace RainWorldRandomizer
         public static Configurable<bool> archipelagoIgnoreMenuDL;
         public static Configurable<int> trapMinimumCooldown;
         public static Configurable<int> trapMaximumCooldown;
-        public static bool colorPickupsWithHints = true;
+        internal static Configurable<bool> colorPickupsWithHints;
 
         // Base
         public static bool UseSetSeed => useSeed.Value;
@@ -141,5 +141,7 @@ namespace RainWorldRandomizer
 
         public static bool UseSMBroadcasts => useSMTokens.Value
             || archipelago.Value;
+
+        public static bool ColorPickupsWithHints => archipelago.Value && colorPickupsWithHints.Value;
     }
 }

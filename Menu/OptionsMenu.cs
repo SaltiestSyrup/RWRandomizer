@@ -191,6 +191,10 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("The maximum amount of time between trap triggers (in seconds)", 
                     new ConfigAcceptableRange<int>(1, 600), "",
                     ["Maximum Trap Cooldown"]));
+
+            RandoOptions.colorPickupsWithHints = config.Bind<bool>("ColorPickupsWithHints", true,
+                new ConfigurableInfo("Display colors on many locations in game that hint at their contents. Magenta = Progression, Cyan = Filler, Blue = Useful or Trap", null, "",
+                    ["Location Hint Colors"]));
         }
 
         public override void Initialize()
@@ -442,9 +446,15 @@ namespace RainWorldRandomizer
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X + 30f, runningY));
-            runningY -= NEWLINE_DECREMENT * 1.7f;
+            runningY -= NEWLINE_DECREMENT * 1.5f;
             deathLinkGroup.AddToTab(tabIndex);
             optionGroups.Add(deathLinkGroup);
+
+            OptionGroup qolGroup = new(this, "AP_QoL", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
+            qolGroup.AddCheckBox(RandoOptions.colorPickupsWithHints, new(RIGHT_OPTION_X + 30f, runningY));
+            runningY -= NEWLINE_DECREMENT * 1.7f;
+            qolGroup.AddToTab(tabIndex);
+            optionGroups.Add(qolGroup);
 
             // Slot data information
             runningY = Mathf.Min(runningY, 322.5f);

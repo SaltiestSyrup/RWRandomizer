@@ -277,8 +277,7 @@ namespace RainWorldRandomizer
             SlugcatStats.Name playerCharacterNumber, SlugcatStats.Timeline time, bool singleRoomWorld)
         {
             orig(self, worldName, playerCharacterNumber, time, singleRoomWorld);
-            if (Plugin.RandoManager is not ManagerArchipelago managerAP
-                || !RandoOptions.colorPickupsWithHints) return;
+            if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
 
             // Get all preview-able locations in the new region
             static bool IsColorable(LocationInfo l) => l.IsToken 
@@ -286,7 +285,7 @@ namespace RainWorldRandomizer
                 || l.kind == LocationInfo.LocationKind.Shelter 
                 || l.kind == LocationInfo.LocationKind.Flower;
             LocationInfo[] locations = 
-            [..managerAP.GetLocations().Where(l => (IsColorable(l) && l.region == self.activeWorld.region.name) || l.IsPassage)];
+            [.. Plugin.RandoManager.GetLocations().Where(l => (IsColorable(l) && l.region == self.activeWorld.region.name) || l.IsPassage)];
 
             // If these locations have been fetched already, no need to ask server for them
             if (locations.Select(l => l.internalName).All(SaveManager.ScoutedLocations.ContainsKey)) return;
