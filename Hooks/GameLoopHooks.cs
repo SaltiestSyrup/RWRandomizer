@@ -232,8 +232,7 @@ namespace RainWorldRandomizer
         {
             if (!Plugin.RandoManager.isRandomizerActive
                 || self.room.game.manager.fadeToBlack >= 1f
-                || self.phase != HardmodeStart.Phase.Init
-                || self.nshSwarmer is null)
+                || self.phase != HardmodeStart.Phase.Init)
             {
                 orig(self, eu);
                 return;
@@ -264,8 +263,7 @@ namespace RainWorldRandomizer
                 {
                     grasp.grabbed.AllGraspsLetGoOfThisObject(true);
                     self.room.game.GetStorySession.RemovePersistentTracker(grasp.grabbed.abstractPhysicalObject);
-                    grasp.grabbed.abstractPhysicalObject.Destroy();
-                    self.nshSwarmer = null;
+                    grasp.grabbed.Destroy();
                 }
             }
         }
