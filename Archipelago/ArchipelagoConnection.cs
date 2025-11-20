@@ -92,11 +92,15 @@ namespace RainWorldRandomizer
         public enum CompletionCondition
         {
             Ascension, // The basic void sea ending
+            HelpingHand, // Hunter reviving LttM with the green neuron
             SlugTree, // Survivor, Monk, and Gourmand reaching Outer Expanse
             ScavKing, // Artificer killing the Chieftain scavenger
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
             Messenger, // Spearmaster delivering the encoded pearl to Comms array
             Rubicon, // Saint Ascending in Rubicon
+
+            Pilgrim, // Encounter enough Echoes to trigger the Pilgrim passage
+            FoodQuest, // Eat every tracked food quest item
         }
 
         public enum EchoLowKarmaDifficulty
@@ -353,38 +357,28 @@ namespace RainWorldRandomizer
             // Check DLC state
             IsMSC = shouldHaveMSC > 0;
             IsWatcher = shouldHaveWatcher > 0;
+            if (ModManager.MSC != IsMSC || ModManager.Watcher != IsWatcher)
+            {
+                return SlotDataResult.InvalidDLC;
+            }
 
             // Choose campaign and ending
             Slugcat = new SlugcatStats.Name(campaignString);
-            switch (campaignString)
+            if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
+            else if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
+            else if (completionType >= 4) completionCondition = CompletionCondition.Ascension; // Unknown condition fallback
+            else
             {
-                case "Yellow":
-                case "White":
-                case "Gourmand":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case "Red":
-                case "Sofanthiel":
-                    completionCondition = CompletionCondition.Ascension;
-                    break;
-                case "Artificer":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing;
-                    break;
-                case "Rivulet":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon;
-                    break;
-                case "Spear":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger;
-                    break;
-                case "Saint":
-                    completionCondition = CompletionCondition.Rubicon;
-                    break;
-            }
-
-            if (ModManager.MSC != IsMSC
-                || ModManager.Watcher != IsWatcher)
-            {
-                return SlotDataResult.InvalidDLC;
+                completionCondition = campaignString switch
+                {
+                    "Yellow" or "White" or "Gourmand" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree,
+                    "Red" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.HelpingHand,
+                    "Artificer" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing,
+                    "Rivulet" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon,
+                    "Spear" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger,
+                    "Saint" => CompletionCondition.Rubicon,
+                    "Sofanthiel" or _ => CompletionCondition.Ascension
+                };
             }
 
             // Choose starting den

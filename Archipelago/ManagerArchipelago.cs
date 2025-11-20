@@ -84,6 +84,7 @@ namespace RainWorldRandomizer
         {
             _currentMaxKarma = 0;
             _hunterBonusCyclesGiven = 0;
+            _numDamageUpgrades = 0;
             _givenNeuronGlow = false;
             _givenMark = false;
             _givenRobo = false;
@@ -238,13 +239,13 @@ namespace RainWorldRandomizer
             else if (item.StartsWith("Object-"))
             {
                 if (!isNew) return; // Don't double gift items, unused ones will be read from file
-                Unlock unlock = new(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
+                Unlock unlock = new(Unlock.UnlockType.Item, Unlock.IDToItem(item[7..]));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("PearlObject-"))
             {
                 if (!isNew) return;
-                Unlock unlock = new(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
+                Unlock unlock = new(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item[12..], true));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("Trap-"))
@@ -252,39 +253,46 @@ namespace RainWorldRandomizer
                 if (!isNew) return;
                 TrapsHandler.EnqueueTrap(item);
             }
-            else if (item == "Karma")
+            else if (item.StartsWith("Exp-"))
             {
-                IncreaseKarma();
+                GrantExpeditionPerk(item[4..]);
             }
-            else if (item == "The Glow")
+            else
             {
-                _givenNeuronGlow = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
-                    Plugin.Singleton.Game.GetStorySession.saveState.theGlow = true;
-            }
-            else if (item == "The Mark")
-            {
-                _givenMark = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
-                    Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
-            }
-            else if (item == "IdDrone")
-            {
-                _givenRobo = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
-                    Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
-            }
-            else if (item == "Disconnect_FP")
-            {
-                _givenPebblesOff = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
-                    Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
-            }
-            else if (item == "Rewrite_Spear_Pearl")
-            {
-                _givenSpearPearlRewrite = true;
-                if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
-                    Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
+                switch (item)
+                {
+                    case "Karma":
+                        IncreaseKarma();
+                        break;
+                    case "Upgrade-SpearDamage":
+                        _numDamageUpgrades++;
+                        break;
+                    case "The Glow":
+                        _givenNeuronGlow = true;
+                        if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                            Plugin.Singleton.Game.GetStorySession.saveState.theGlow = true;
+                        break;
+                    case "The Mark":
+                        _givenMark = true;
+                        if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                            Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.theMark = true;
+                        break;
+                    case "IdDrone":
+                        _givenRobo = true;
+                        if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                            Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
+                        break;
+                    case "Disconnect_FP":
+                        _givenPebblesOff = true;
+                        if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                            Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
+                        break;
+                    case "Rewrite_Spear_Pearl":
+                        _givenSpearPearlRewrite = true;
+                        if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                            Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
+                        break;
+                }
             }
 
             Plugin.Log.LogInfo($"Received item: {item}");
@@ -344,11 +352,7 @@ namespace RainWorldRandomizer
 
         public void GiveCompletionCondition(ArchipelagoConnection.CompletionCondition condition)
         {
-            if (condition != ArchipelagoConnection.completionCondition)
-            {
-                Plugin.Log.LogInfo("Game completed through the wrong condition, not sending completion");
-                return;
-            }
+            if (gameCompleted || condition != ArchipelagoConnection.completionCondition) return;
 
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();
