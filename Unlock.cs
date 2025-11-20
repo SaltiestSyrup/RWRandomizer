@@ -37,6 +37,12 @@ namespace RainWorldRandomizer
             { "BubbleGrass", "Bubble Weed" },
             { "KarmaFlower", "Karma Flower" },
             { "VultureMask", "Vulture Mask" },
+            { "BackSpear", "Back Spear" },
+            { "DualWielding", "Dual Wielding" },
+            { "ExplosionResistance", "Explosion Resistance" },
+            { "ExplosiveParry", "Explosive Parry" },
+            { "ExplosiveJump", "Explosive Jump" },
+            { "ItemCrafting", "Item Crafting" },
         };
 
         public static bool hasSeenItemTutorial = false;
@@ -58,6 +64,7 @@ namespace RainWorldRandomizer
             public static readonly UnlockType Trap = new("Trap", true);
             public static readonly UnlockType DamageUpgrade = new("DamageUpgrade", true);
             public static readonly UnlockType HunterCycles = new("HunterCycles", true);
+            public static readonly UnlockType ExpeditionPerk = new("ExpeditionPerk", true);
             public static readonly UnlockType IdDrone = new("IdDrone", true);
             public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
             public static readonly UnlockType RewriteSpearPearl = new("RewriteSpearPearl", true);
@@ -157,6 +164,9 @@ namespace RainWorldRandomizer
                 case "HunterCycles":
                     Plugin.RandoManager.HunterBonusCyclesGiven++;
                     break;
+                case "ExpeditionPerk":
+                    Plugin.RandoManager.GrantExpeditionPerk(ID);
+                    break;
                 case "IdDrone":
                     Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
                     Plugin.RandoManager.GivenRobo = true;
@@ -184,6 +194,7 @@ namespace RainWorldRandomizer
                 "Item" => $"Found {ItemToEncodedIcon((Item)item)}",
                 "Trap" => $"Found a trap!",
                 "HunterCycles" => "Increased Lifespan",
+                "ExpeditionPerk" => $"Found {(readableItemNames.TryGetValue(ID, out string val) ? val : ID)} Perk",
                 "DamageUpgrade" => "Increased Spear Damage",
                 "IdDrone" => "Found Citizen ID Drone",
                 "DisconnectFP" => "Disconnected Five Pebbles",
@@ -204,6 +215,7 @@ namespace RainWorldRandomizer
                 "Item" => item.Value.name,
                 "Trap" => ID[5..],
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
+                "ExpeditionPerk" => readableItemNames.TryGetValue(ID, out string val) ? val : ID,
                 "DamageUpgrade" => "+20% Damage",
                 "IdDrone" => "Citizen ID Drone",
                 "DisconnectFP" => "Disconnect Pebbles",

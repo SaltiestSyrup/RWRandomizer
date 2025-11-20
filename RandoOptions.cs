@@ -1,4 +1,5 @@
 ﻿using MoreSlugcats;
+using System.Linq;
 
 namespace RainWorldRandomizer
 {
@@ -41,6 +42,7 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> useExpandedFoodQuestChecks;
         internal static Configurable<bool> useEnergyCell;
         internal static Configurable<bool> useSMTokens;
+        internal static Configurable<bool>[] expeditionPerks;
 
         // Archipelago
         public static Configurable<bool> archipelago;
@@ -143,5 +145,7 @@ namespace RainWorldRandomizer
 
         public static bool UseSMBroadcasts => useSMTokens.Value
             || archipelago.Value;
+
+        public static bool[] ExpeditionPerks => [..expeditionPerks.Select(p => p.Value)];
     }
 }

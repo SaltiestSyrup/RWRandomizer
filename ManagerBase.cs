@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace RainWorldRandomizer
@@ -55,17 +56,17 @@ namespace RainWorldRandomizer
             get { return _givenMark; }
             set { _givenMark = value; }
         }
-        public bool GivenRobo
+        public virtual bool GivenRobo
         {
             get { return _givenRobo; }
             set { _givenRobo = value; }
         }
-        public bool GivenPebblesOff
+        public virtual bool GivenPebblesOff
         {
             get { return _givenPebblesOff; }
             set { _givenPebblesOff = value; }
         }
-        public bool GivenSpearPearlRewrite
+        public virtual bool GivenSpearPearlRewrite
         {
             get { return _givenSpearPearlRewrite; }
             set { _givenSpearPearlRewrite = value; }
@@ -79,11 +80,24 @@ namespace RainWorldRandomizer
         protected bool _givenRobo = false;
         protected bool _givenPebblesOff = false;
         protected bool _givenSpearPearlRewrite = false;
+        protected bool[] _givenExpeditionPerks = new bool[8];
 
         /// <summary>
         /// The den that this run has started in. If spawn was not randomized, this should be set to <see cref="currentSlugcat"/>'s entry in <see cref="Constants.SlugcatDefaultStartingDen"/>
         /// </summary>
         public string customStartDen = "";
+
+        public enum ExpeditionPerks
+        {
+            BackSpear,
+            DualWielding,
+            ExplosionResistance,
+            ExplosiveParry,
+            ExplosiveJump,
+            ItemCrafting,
+            Aquatic,
+            Agility
+        }
 
         public ManagerBase() { }
 
@@ -238,6 +252,25 @@ namespace RainWorldRandomizer
 
             try { Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = CurrentMaxKarma; }
             catch { }
+        }
+
+        public void GrantExpeditionPerk(string perk)
+        {
+            if (Enum.TryParse(perk, out ExpeditionPerks result)) GrantExpeditionPerk(result);
+            else Plugin.Log.LogError("Received invalid Expedition perk item");
+        }
+
+        public void GrantExpeditionPerk(ExpeditionPerks perk)
+        {
+            if (!ModManager.MSC) return;
+            _givenExpeditionPerks[(int)perk] = true;
+            PlayerHooks.RefreshExpeditionPerks();
+        }
+
+        public bool HasExpeditionPerk(ExpeditionPerks perk)
+        {
+            if (!ModManager.MSC) return false;
+            return _givenExpeditionPerks[(int)perk];
         }
     }
 }

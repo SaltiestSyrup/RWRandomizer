@@ -1,3 +1,4 @@
+using BepInEx;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI.ValueTypes;
@@ -152,6 +153,39 @@ namespace RainWorldRandomizer
             RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
                 new ConfigurableInfo("Include Spearmaster's broadcast tokens as checks", null, "",
                     ["Use Broadcast Checks"]));
+
+            RandoOptions.expeditionPerks = new Configurable<bool>[8];
+            RandoOptions.expeditionPerks[0] = config.Bind<bool>("IncludeBackSpear", false,
+                new ConfigurableInfo("Add the Back Spear perk to the item pool", null, "",
+                    ["Include Back Spear"]));
+
+            RandoOptions.expeditionPerks[1] = config.Bind<bool>("IncludeDualWielding", false,
+                new ConfigurableInfo("Add the Dual Wielding perk to the item pool", null, "",
+                    ["Include Dual Wielding"]));
+
+            RandoOptions.expeditionPerks[2] = config.Bind<bool>("IncludeExplosionResistance", false,
+                new ConfigurableInfo("Add the Explosion Resistance perk to the item pool", null, "",
+                    ["Include Explosion Resistance"]));
+
+            RandoOptions.expeditionPerks[3] = config.Bind<bool>("IncludeExplosiveParry", false,
+                new ConfigurableInfo("Add the Explosive Parry perk to the item pool", null, "",
+                    ["Include Explosive Parry"]));
+
+            RandoOptions.expeditionPerks[4] = config.Bind<bool>("IncludeExplosiveJump", false,
+                new ConfigurableInfo("Add the Explosive Jump perk to the item pool", null, "",
+                    ["Include Explosive Jump"]));
+
+            RandoOptions.expeditionPerks[5] = config.Bind<bool>("IncludeItemCrafting", false,
+                new ConfigurableInfo("Add the Item Crafting perk to the item pool", null, "",
+                    ["Include Item Crafting"]));
+
+            RandoOptions.expeditionPerks[6] = config.Bind<bool>("IncludeAquatic", false,
+                new ConfigurableInfo("Add the Aquatic perk to the item pool", null, "",
+                    ["Include Aquatic"]));
+
+            RandoOptions.expeditionPerks[7] = config.Bind<bool>("IncludeAgility", false,
+                new ConfigurableInfo("Add the Agility perk to the item pool", null, "",
+                    ["Include Agility"]));
 
             // ----- Archipelago -----
             RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
@@ -353,7 +387,7 @@ namespace RainWorldRandomizer
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Downpour"));
             float runningY = FIRST_LINE_Y;
 
-            OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Standalone Options"));
+            OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Checks and Regions"));
             Tabs[tabIndex].AddItems(standaloneConfigsLabel);
             runningY -= NEWLINE_DECREMENT;
 
@@ -382,14 +416,28 @@ namespace RainWorldRandomizer
             checksGroup.AddCheckBox(RandoOptions.useEnergyCell, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useSMTokens, new(LEFT_OPTION_X, runningY));
+            runningY -= NEWLINE_DECREMENT * 1.5f;
+
+            runningY = FIRST_LINE_Y;
+
+            OpLabel expeditionConfigsLabel = new(RIGHT_OPTION_X + 15f, runningY, Translate("Expedition Perks"));
+            Tabs[tabIndex].AddItems(expeditionConfigsLabel);
             runningY -= NEWLINE_DECREMENT;
+
+            OptionGroup expeditionPerksGroup = new(this, "MSC_Perks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            foreach (Configurable<bool> perk in RandoOptions.expeditionPerks)
+            {
+                expeditionPerksGroup.AddCheckBox(perk, new(RIGHT_OPTION_X, runningY));
+                runningY -= NEWLINE_DECREMENT;
+            }
 
             // Add to tab
             unlockRegionsGroup.AddToTab(tabIndex);
             checksGroup.AddToTab(tabIndex);
+            expeditionPerksGroup.AddToTab(tabIndex);
 
-            optionGroups.AddRange([unlockRegionsGroup, checksGroup]);
-            standaloneExclusiveGroups.AddRange([unlockRegionsGroup, checksGroup]);
+            optionGroups.AddRange([unlockRegionsGroup, checksGroup, expeditionPerksGroup]);
+            standaloneExclusiveGroups.AddRange([unlockRegionsGroup, checksGroup, expeditionPerksGroup]);
         }
 
         public void PopulateArchipelagoTab()

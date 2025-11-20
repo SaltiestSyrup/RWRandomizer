@@ -248,6 +248,10 @@ namespace RainWorldRandomizer
                 if (!isNew) return;
                 TrapsHandler.EnqueueTrap(item);
             }
+            else if (item.StartsWith("Exp-"))
+            {
+                GrantExpeditionPerk(item[4..]);
+            }
             else
             {
                 switch (item)

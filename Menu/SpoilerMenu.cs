@@ -708,6 +708,7 @@ namespace RainWorldRandomizer
                         spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
                         spriteColor = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.Red);
                         break;
+                    case "ExpeditionPerk":
                     case "DamageUpgrade":
                         spriteName = "smallKarmaNoRing4";
                         spriteColor = Color.green;
