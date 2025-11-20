@@ -22,6 +22,22 @@ namespace RainWorldRandomizer
         public bool InMetaRegion => region.StartsWith("<");
         public bool IsPassage => region == "<P>";
         public bool IsFoodQuest => region == "<FQ>";
+        public bool IsToken
+        {
+            get
+            {
+                return (new LocationKind[] 
+                { 
+                    LocationKind.BlueToken, 
+                    LocationKind.RedToken, 
+                    LocationKind.GoldToken, 
+                    LocationKind.GreenToken, 
+                    LocationKind.DevToken, 
+                    LocationKind.Broadcast,
+                }).Contains(kind);
+            }
+        }
+
 
 
         public enum LocationKind

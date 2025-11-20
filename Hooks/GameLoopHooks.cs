@@ -4,6 +4,7 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -17,6 +18,7 @@ namespace RainWorldRandomizer
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
             On.RainWorldGame.ExitGame += OnExitGame;
             On.RainWorldGame.ContinuePaused += OnContinuePaused;
+            On.OverWorld.LoadWorld_string_Name_Timeline_bool += OnWorldLoaded;
             On.PlayerProgression.SaveToDisk += OnSaveGame;
             On.SaveState.GhostEncounter += OnGhostEncounter;
             On.SaveState.SessionEnded += OnSessionEnded;
@@ -42,6 +44,7 @@ namespace RainWorldRandomizer
             On.ProcessManager.PostSwitchMainProcess -= OnPostSwitchMainProcess;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
             On.RainWorldGame.ContinuePaused -= OnContinuePaused;
+            On.OverWorld.LoadWorld_string_Name_Timeline_bool -= OnWorldLoaded;
             On.PlayerProgression.SaveToDisk -= OnSaveGame;
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
@@ -186,8 +189,8 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void OnRainWorldGameCtor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
-            orig(self, manager);
             Plugin.Singleton.Game = self;
+            orig(self, manager);
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
 
@@ -285,6 +288,43 @@ namespace RainWorldRandomizer
                     grasp.grabbed.Destroy();
                 }
             }
+        }
+
+        private static void OnWorldLoaded(On.OverWorld.orig_LoadWorld_string_Name_Timeline_bool orig, OverWorld self, string worldName, 
+            SlugcatStats.Name playerCharacterNumber, SlugcatStats.Timeline time, bool singleRoomWorld)
+        {
+            orig(self, worldName, playerCharacterNumber, time, singleRoomWorld);
+            if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
+
+            // Get all preview-able locations in the new region
+            static bool IsColorable(LocationInfo l) => l.IsToken 
+                || l.kind == LocationInfo.LocationKind.Pearl 
+                || l.kind == LocationInfo.LocationKind.Shelter 
+                || l.kind == LocationInfo.LocationKind.Flower;
+            LocationInfo[] locations = 
+            [.. Plugin.RandoManager.GetLocations().Where(l => (IsColorable(l) && l.region == self.activeWorld.region.name) || l.IsPassage)];
+
+            // If these locations have been fetched already, no need to ask server for them
+            if (locations.Select(l => l.internalName).All(SaveManager.ScoutedLocations.ContainsKey)) return;
+
+            // Ask server for all the items at these locations
+            Task<Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo>> scoutingTask = 
+                ArchipelagoConnection.Session.Locations.ScoutLocationsAsync(false, [..locations.Select(l => l.archipelagoID)]);
+
+            // Define callback for when we get the scouted items
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    SaveManager.AddScoutedLocations(locations.ToDictionary(l => l.internalName,
+                        l => scoutingTask.Result.TryGetValue(l.archipelagoID, out var value)
+                            ? value.Flags : Archipelago.MultiClient.Net.Enums.ItemFlags.None));
+                }
+                catch (Exception e) 
+                { 
+                    Plugin.Log.LogError($"Exception while scouting locations: {e}");
+                }
+            });
         }
 
         /// <summary>

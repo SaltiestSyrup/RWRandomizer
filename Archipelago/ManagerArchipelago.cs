@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +10,12 @@ namespace RainWorldRandomizer
     {
         public bool locationsLoaded = false;
         public bool gameCompleted = false;
+
+        /// <summary>
+        /// Locations (by internal name) that are currently scouted and the classification of the item they each contain.
+        /// This only ever contains the token and pearl locations in the current region.
+        /// </summary>
+        public Dictionary<string, Archipelago.MultiClient.Net.Enums.ItemFlags> scoutedLocations = [];
 
         // Mapping AP item names to the string IDs the mod uses for items
         public static Dictionary<string, string> ClientNameToAPItem = [];
@@ -94,7 +99,7 @@ namespace RainWorldRandomizer
         {
             SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
             ArchipelagoConnection.lastItemIndex = save.lastIndex;
-            locations = [..save.locationsStatus.Select(kvp => new LocationInfo(kvp, true))];
+            locations = [.. save.locationsStatus.Select(kvp => new LocationInfo(kvp, true))];
             currentSlugcat = ArchipelagoConnection.Slugcat;
 
             SyncLocations();
@@ -138,7 +143,7 @@ namespace RainWorldRandomizer
                     $"Failed to create new Archipelago save", UnityEngine.Color.red));
                 return;
             }
-            
+
             locationsLoaded = true;
             SaveGame(false);
         }
@@ -337,7 +342,7 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            ArchipelagoConnection.Session.Locations.CompleteLocationChecks(loc.archipelagoID);
+            ArchipelagoConnection.Session.Locations.CompleteLocationChecksAsync(loc.archipelagoID);
             Plugin.Log.LogInfo($"Found location: {location}!");
         }
 
