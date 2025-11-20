@@ -62,6 +62,7 @@ namespace RainWorldRandomizer
             public static readonly UnlockType Item = new("Item", true);
             public static readonly UnlockType ItemPearl = new("ItemPearl", true);
             public static readonly UnlockType Trap = new("Trap", true);
+            public static readonly UnlockType DamageUpgrade = new("DamageUpgrade", true);
             public static readonly UnlockType HunterCycles = new("HunterCycles", true);
             public static readonly UnlockType ExpeditionPerk = new("ExpeditionPerk", true);
             public static readonly UnlockType IdDrone = new("IdDrone", true);
@@ -157,6 +158,9 @@ namespace RainWorldRandomizer
                 case "Trap":
                     TrapsHandler.EnqueueTrap(ID);
                     break;
+                case "DamageUpgrade":
+                    Plugin.RandoManager.NumDamageUpgrades++;
+                    break;
                 case "HunterCycles":
                     Plugin.RandoManager.HunterBonusCyclesGiven++;
                     break;
@@ -191,6 +195,7 @@ namespace RainWorldRandomizer
                 "Trap" => $"Found a trap!",
                 "HunterCycles" => "Increased Lifespan",
                 "ExpeditionPerk" => $"Found {(readableItemNames.TryGetValue(ID, out string val) ? val : ID)} Perk",
+                "DamageUpgrade" => "Increased Spear Damage",
                 "IdDrone" => "Found Citizen ID Drone",
                 "DisconnectFP" => "Disconnected Five Pebbles",
                 "RewriteSpearPearl" => "Unlocked Broadcast Encoding",
@@ -211,6 +216,7 @@ namespace RainWorldRandomizer
                 "Trap" => ID[5..],
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
                 "ExpeditionPerk" => readableItemNames.TryGetValue(ID, out string val) ? val : ID,
+                "DamageUpgrade" => "+20% Damage",
                 "IdDrone" => "Citizen ID Drone",
                 "DisconnectFP" => "Disconnect Pebbles",
                 _ => ID

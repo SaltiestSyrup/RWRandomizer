@@ -11,6 +11,7 @@ namespace RainWorldRandomizer
     {
         public static void ApplyHooks()
         {
+            On.Player.ThrownSpear += OnThrownSpear;
             On.Player.Regurgitate += OnRegurgitate;
             On.Player.Update += OnPlayerUpdate;
             On.Player.NewRoom += OnNewRoom;
@@ -40,6 +41,7 @@ namespace RainWorldRandomizer
 
         public static void RemoveHooks()
         {
+            On.Player.ThrownSpear -= OnThrownSpear;
             On.Player.Regurgitate -= OnRegurgitate;
             On.Player.Update -= OnPlayerUpdate;
             On.Player.NewRoom -= OnNewRoom;
@@ -55,6 +57,15 @@ namespace RainWorldRandomizer
             IL.Player.ClassMechanicsArtificer -= ClassMechanicsArtificerIL;
             IL.Player.GraspsCanBeCrafted -= OverrideItemCrafting;
             IL.Player.SpitUpCraftedObject -= OverrideItemCrafting;
+        }
+
+        /// <summary>
+        /// Modify spear damage based on current multiplier 
+        /// </summary>
+        private static void OnThrownSpear(On.Player.orig_ThrownSpear orig, Player self, Spear spear)
+        {
+            orig(self, spear);
+            if (Plugin.RandoManager is not null) spear.spearDamageBonus *= Plugin.RandoManager.SpearDamageMultiplier;
         }
 
         /// <summary>
@@ -82,20 +93,17 @@ namespace RainWorldRandomizer
             orig(self, eu);
 
             // Check for completion via Void Sea
-            // TODO: Currently if the player reaches here, but their completion condition isn't void sea, it will try to send every frame
-            if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && !managerAP.gameCompleted
-                && self.room is Room room)
+            if (self.room is Room room)
             {
                 if (room.abstractRoom.name == "SB_L01"
                     && self.firstChunk.pos.y < -500f)
                 {
-                    managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Ascension);
+                    (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Ascension);
                 }
                 else if (room.abstractRoom.name == "HR_FINAL"
                     && self.firstChunk.pos.y > room.PixelHeight + 500f)
                 {
-                    managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
+                    (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
                 }
             }
         }

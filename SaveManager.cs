@@ -176,13 +176,13 @@ namespace RainWorldRandomizer
             return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
         }
 
-        public static void WriteAPSaveToFile(string saveId, long lastIndex, Dictionary<string, bool> locationsStatus)
+        public static void WriteAPSaveToFile(string saveId, long lastIndex, List<LocationInfo> locations)
         {
-            if (locationsStatus == null || locationsStatus.Count == 0) return;
+            if (locations == null || locations.Count == 0) return;
 
             StreamWriter saveFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
 
-            APSave save = new(lastIndex, locationsStatus);
+            APSave save = new(lastIndex, locations.ToDictionary(l => l.internalName, l => l.Collected));
 
             string jsonSave = JsonConvert.SerializeObject(save, Formatting.Indented);
             saveFile.Write(jsonSave);

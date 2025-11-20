@@ -22,6 +22,7 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> givePassageUnlocks;
         internal static Configurable<float> hunterCyclesDensity;
         internal static Configurable<float> trapsDensity;
+        internal static Configurable<int> numDamageIncreases;
 
         internal static Configurable<bool> randomizeSpawnLocation;
         internal static Configurable<bool> startMinKarma;
@@ -92,6 +93,8 @@ namespace RainWorldRandomizer
         public static float HunterCycleIncreaseDensity => hunterCyclesDensity.Value;
 
         public static float TrapsDensity => trapsDensity.Value;
+
+        public static int TotalDamageIncreases => numDamageIncreases.Value;
 
         public static bool RandomizeSpawnLocation => archipelago.Value
             ? ArchipelagoConnection.useRandomStart : randomizeSpawnLocation.Value;

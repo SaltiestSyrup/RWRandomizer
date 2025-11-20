@@ -90,6 +90,11 @@ namespace RainWorldRandomizer
                     new ConfigAcceptableRange<float>(0, 1), "",
                     ["Traps percentage"]));
 
+            RandoOptions.numDamageIncreases = config.Bind<int>("numDamageIncreases", 6,
+                new ConfigurableInfo("The amount of permanent damage upgrade items to add to the pool. Each item collected gives an additive +20% damage to thrown spears",
+                    new ConfigAcceptableRange<int>(0, 10), "",
+                    ["Damage Upgrades"]));
+
             RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
                     ["Randomize starting den"]));
@@ -314,12 +319,15 @@ namespace RainWorldRandomizer
             optionGroups.Add(checksGroup);
 
             // Filler Items
-            OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(RIGHT_OPTION_X - LEFT_OPTION_X + GROUP_SIZE_X, 0f));
             fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
             runningY -= NEWLINE_DECREMENT;
             fillerGroup.AddUpDown(RandoOptions.trapsDensity, false, new(LEFT_OPTION_X, runningY), 60f);
+            runningY += NEWLINE_DECREMENT * 2; // new column
+            fillerGroup.AddUpDown(RandoOptions.numDamageIncreases, true, new(RIGHT_OPTION_X, runningY), 60f);
+
             fillerGroup.AddToTab(tabIndex);
             optionGroups.Add(fillerGroup);
 
@@ -537,11 +545,20 @@ namespace RainWorldRandomizer
             // Attempt AP connection on click
             connectButton.OnClick += (trigger) =>
             {
-                connectResultLabel.text = ArchipelagoConnection.Connect(
+                try
+                {
+                    connectResultLabel.text = ArchipelagoConnection.Connect(
                     hostNameTextBox.value,
                     portTextBox.valueInt,
                     slotNameTextBox.value,
                     passwordTextBox.value == "" ? null : passwordTextBox.value);
+                }
+                catch (Exception e)
+                {
+                    connectResultLabel.text = $"An unexpected error occurred while connecting to the server:\n\n {e}";
+                    Plugin.Log.LogError("Encountered exception while connecting to server:");
+                    Plugin.Log.LogError(e);
+                }
 
                 if (!ArchipelagoConnection.HasConnected) return;
 

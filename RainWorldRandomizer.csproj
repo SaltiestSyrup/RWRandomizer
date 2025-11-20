@@ -49,8 +49,8 @@
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Archipelago.MultiClient.Net, Version=6.6.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Archipelago.MultiClient.Net.6.6.1\lib\net45\Archipelago.MultiClient.Net.dll</HintPath>
+    <Reference Include="Archipelago.MultiClient.Net, Version=6.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Archipelago.MultiClient.Net.6.7.0\lib\net45\Archipelago.MultiClient.Net.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
       <HintPath>bin\References\BepInEx.dll</HintPath>
@@ -74,7 +74,7 @@
       <HintPath>bin\References\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Archipelago.MultiClient.Net.6.6.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>packages\Archipelago.MultiClient.Net.6.7.0\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="PUBLIC-Assembly-CSharp">
       <HintPath>bin\References\PUBLIC-Assembly-CSharp.dll</HintPath>
@@ -103,7 +103,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Archipelago\ArchipelagoConnection.cs" />
-    <Compile Include="CollectTokenHandler.cs" />
+    <Compile Include="Hooks\CollectTokenHandler.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Generation\Connection.cs" />
     <Compile Include="Generation\CustomLogicBuilder.cs" />
@@ -112,6 +112,7 @@
     <Compile Include="Generation\RandoRegion.cs" />
     <Compile Include="Hooks\FlowerCheckHandler.cs" />
     <Compile Include="Generation\AccessRule.cs" />
+    <Compile Include="LocationInfo.cs" />
     <Compile Include="Menu\GateMapDisplay.cs" />
     <Compile Include="Menu\SpoilerMenu.cs" />
     <Compile Include="TokenCachePatcher.cs" />

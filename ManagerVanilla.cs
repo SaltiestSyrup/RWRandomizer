@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -124,6 +125,7 @@ namespace RainWorldRandomizer
 
                     // Write new save game
                     randomizerKey = generator.GetCompletedSeed();
+                    locations = [..randomizerKey.Select(kvp => new LocationInfo(kvp.Key, false, false))];
                     customStartDen = generator.customStartDen;
                     currentSeed = generator.generationSeed;
                     SaveManager.WriteSavedGameToFile(randomizerKey, storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot);
@@ -200,6 +202,7 @@ namespace RainWorldRandomizer
         public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
             randomizerKey = SaveManager.LoadSavedGame(slugcat, saveSlot);
+            locations = [.. randomizerKey.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.IsGiven, false))];
 
             // Set unlocked gates and passage tokens
             foreach (Unlock item in randomizerKey.Values)
@@ -246,32 +249,47 @@ namespace RainWorldRandomizer
             lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
         }
 
-        public override List<string> GetLocations()
-        {
-            return [.. randomizerKey.Keys];
-        }
-
         public override bool LocationExists(string location)
         {
-            return randomizerKey.ContainsKey(location);
+            if (base.LocationExists(location)) return true;
+
+            // TODO: Remove 1.4 backwards compat in 1.5
+            // Backwards compat for pre-1.4 save files
+            // As of 1.4, tokens and pearls have their origin region appended to the end.
+            // This is not the case when loading pre-1.4 files, so it needs to be checked for
+            string[] split = location.Split('-');
+            if (split.Length == 3 && (split[0] == "Token" || split[0] == "Pearl"))
+                location = $"{split[0]}-{split[1]}";
+            return base.LocationExists(location);
         }
 
         public override bool? IsLocationGiven(string location)
         {
-            if (!LocationExists(location)) return null;
+            if (base.LocationExists(location)) return base.IsLocationGiven(location);
 
-            return randomizerKey[location].IsGiven;
+            // Backwards compat w/ 1.3 save files
+            string[] split = location.Split('-');
+            if (split.Length == 3 && (split[0] == "Token" || split[0] == "Pearl"))
+                location = $"{split[0]}-{split[1]}";
+            return base.IsLocationGiven(location);
         }
 
-        public override bool GiveLocation(string location)
+        public override void GiveLocation(string location)
         {
-            if (IsLocationGiven(location) ?? true) return false;
+            if (!base.LocationExists(location))
+            {
+                // Backwards compat w/ 1.3 save files
+                string[] split = location.Split('-');
+                if (split.Length == 3 && (split[0] == "Token" || split[0] == "Pearl"))
+                    location = $"{split[0]}-{split[1]}";
+            }
+
+            if (IsLocationGiven(location) is true or null) return;
 
             randomizerKey[location].GiveUnlock();
+            locations.FirstOrDefault(l => l.internalName == location)?.MarkCollected();
             Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(randomizerKey[location].UnlockCompleteMessage()));
             Plugin.Log.LogInfo($"Completed Check: {location}");
-
-            return true;
         }
 
         public override Unlock GetUnlockAtLocation(string location)
