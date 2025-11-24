@@ -450,7 +450,21 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !RandoOptions.GivePassageItems)
+            if (Plugin.RandoManager?.isRandomizerActive != true)
+            {
+                orig(self);
+                return;
+            }
+
+            // If the destination of the passage is the starting den, don't consume a token
+            string customDen = Plugin.RandoManager.customStartDen;
+            if (!RandoOptions.RandomizeSpawnLocation || customDen.Equals("NONE"))
+            {
+                customDen = Constants.SlugcatDefaultStartingDen[Plugin.RandoManager.currentSlugcat];
+            }
+            if (RainWorld.ShelterAfterPassage == customDen) return;
+
+            if (!RandoOptions.GivePassageItems)
             {
                 orig(self);
                 return;
