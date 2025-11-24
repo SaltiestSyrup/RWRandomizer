@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RainWorldRandomizer
 {
@@ -22,6 +24,8 @@ namespace RainWorldRandomizer
         public Queue<Unlock.Item> lastItemDeliveryQueue = new();
         public Queue<TrapsHandler.Trap> pendingTrapQueue = new();
 
+        protected List<LocationInfo> locations = [];
+
         // These are all properties so the get / set can be modified if needed
         public virtual int CurrentMaxKarma
         {
@@ -33,6 +37,15 @@ namespace RainWorldRandomizer
             get { return _hunterBonusCyclesGiven; }
             set { _hunterBonusCyclesGiven = value; }
         }
+        public virtual int NumDamageUpgrades
+        {
+            get { return _numDamageUpgrades; }
+            set { _numDamageUpgrades = value; }
+        }
+        public virtual float SpearDamageMultiplier
+        {
+            get { return 1 + (_numDamageUpgrades * 0.1f); }
+        }
         public virtual bool GivenNeuronGlow
         {
             get { return _givenNeuronGlow; }
@@ -43,17 +56,17 @@ namespace RainWorldRandomizer
             get { return _givenMark; }
             set { _givenMark = value; }
         }
-        public bool GivenRobo
+        public virtual bool GivenRobo
         {
             get { return _givenRobo; }
             set { _givenRobo = value; }
         }
-        public bool GivenPebblesOff
+        public virtual bool GivenPebblesOff
         {
             get { return _givenPebblesOff; }
             set { _givenPebblesOff = value; }
         }
-        public bool GivenSpearPearlRewrite
+        public virtual bool GivenSpearPearlRewrite
         {
             get { return _givenSpearPearlRewrite; }
             set { _givenSpearPearlRewrite = value; }
@@ -61,16 +74,30 @@ namespace RainWorldRandomizer
 
         protected int _currentMaxKarma = 4;
         protected int _hunterBonusCyclesGiven = 0;
+        protected int _numDamageUpgrades = 0;
         protected bool _givenNeuronGlow = false;
         protected bool _givenMark = false;
         protected bool _givenRobo = false;
         protected bool _givenPebblesOff = false;
         protected bool _givenSpearPearlRewrite = false;
+        protected bool[] _givenExpeditionPerks = new bool[8];
 
         /// <summary>
         /// The den that this run has started in. If spawn was not randomized, this should be set to <see cref="currentSlugcat"/>'s entry in <see cref="Constants.SlugcatDefaultStartingDen"/>
         /// </summary>
         public string customStartDen = "";
+
+        public enum ExpeditionPerks
+        {
+            BackSpear,
+            DualWielding,
+            ExplosionResistance,
+            ExplosiveParry,
+            ExplosiveJump,
+            ItemCrafting,
+            Aquatic,
+            Agility
+        }
 
         public ManagerBase() { }
 
@@ -86,31 +113,39 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Used to find all possible locations the player could find
+        /// Returns the names of all possible locations the player could find
         /// </summary>
-        /// <returns>A list of all locations in the seed</returns>
-        public abstract List<string> GetLocations();
+        public List<string> GetLocationNames() => [.. locations.Select(l => l.internalName)];
+
+        /// <summary>
+        /// Returns all possible locations the player could find
+        /// </summary>
+        public List<LocationInfo> GetLocations() => locations;
 
         /// <summary>
         /// Check whether a given location exists in the current seed
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if the location is present in the seed</returns>
-        public abstract bool LocationExists(string location);
+        public virtual bool LocationExists(string location) => locations.Exists(l => l.internalName == location);
 
         /// <summary>
         /// Check whether a location has been found yet
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if the location has been found, null if the location does not exist</returns>
-        public abstract bool? IsLocationGiven(string location);
+        public virtual bool? IsLocationGiven(string location)
+        {
+            if (!LocationExists(location)) return null;
+            return locations.First(l => l.internalName == location).Collected;
+        }
 
         /// <summary>
         /// Award the player the item assigned to the specified location
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>True if giving item successful</returns>
-        public abstract bool GiveLocation(string location);
+        public abstract void GiveLocation(string location);
 
         /// <summary>
         /// Used to find what item is placed at a location
@@ -217,6 +252,25 @@ namespace RainWorldRandomizer
 
             try { Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = CurrentMaxKarma; }
             catch { }
+        }
+
+        public void GrantExpeditionPerk(string perk)
+        {
+            if (Enum.TryParse(perk, out ExpeditionPerks result)) GrantExpeditionPerk(result);
+            else Plugin.Log.LogError("Received invalid Expedition perk item");
+        }
+
+        public void GrantExpeditionPerk(ExpeditionPerks perk)
+        {
+            if (!ModManager.MSC) return;
+            _givenExpeditionPerks[(int)perk] = true;
+            PlayerHooks.RefreshExpeditionPerks();
+        }
+
+        public bool HasExpeditionPerk(ExpeditionPerks perk)
+        {
+            if (!ModManager.MSC) return false;
+            return _givenExpeditionPerks[(int)perk];
         }
     }
 }

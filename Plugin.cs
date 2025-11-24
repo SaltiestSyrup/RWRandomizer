@@ -115,6 +115,7 @@ namespace RainWorldRandomizer
                 SleepScreenHooks.ApplyHooks();
                 FlowerCheckHandler.ApplyHooks();
 
+                LocationColorizer.ApplyHooks();
                 TrapsHandler.ApplyHooks();
                 DeathLinkHandler.ApplyHooks();
 
@@ -162,6 +163,7 @@ namespace RainWorldRandomizer
                 SleepScreenHooks.RemoveHooks();
                 FlowerCheckHandler.RemoveHooks();
 
+                LocationColorizer.RemoveHooks();
                 TrapsHandler.RemoveHooks();
                 DeathLinkHandler.RemoveHooks();
 
@@ -377,8 +379,7 @@ namespace RainWorldRandomizer
                 defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
                 ? (RegionGate.GateRequirement[])v.Clone()
                 : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
-
-            if (Constants.ForceOpenGates.Contains(gateName)) hasKeyForGate = true;
+            RegionGate.GateRequirement[] origRequirements = (RegionGate.GateRequirement[])newRequirements.Clone();
 
             // Change default Metropolis gate karma
             if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
@@ -435,11 +436,24 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            // Ensure proper Metro gate behavior for Arty
-            if (gateName.Equals("GATE_UW_LC") && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+            // Force open relevant gates
+            if (Constants.ForceOpenGates.Contains(gateName))
             {
-                newRequirements[0] = MoreSlugcatsEnums.GateRequirement.RoboLock;
+                newRequirements[0] = RegionGate.GateRequirement.OneKarma;
+                newRequirements[1] = RegionGate.GateRequirement.OneKarma;
             }
+
+            // Ensure proper Metro gate behavior for Arty
+            if (ModManager.MSC)
+            {
+                if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[0] = origRequirements[0];
+                if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[1] = origRequirements[1];
+            }
+
+            //if (gateName.Equals("GATE_UW_LC") && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+            //{
+            //    newRequirements[0] = MoreSlugcatsEnums.GateRequirement.RoboLock;
+            //}
 
             return newRequirements;
         }
