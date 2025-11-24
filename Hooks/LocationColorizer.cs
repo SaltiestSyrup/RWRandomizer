@@ -176,7 +176,7 @@ namespace RainWorldRandomizer
             if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
 
             if (!FlowerCheckHandler.trackedFlowers.TryGetValue(self.abstractPhysicalObject, out LocationInfo loc)) return;
-            if (loc.internalName is null || !SaveManager.ScoutedLocations.TryGetValue(loc.internalName, out ItemFlags flags)) return;
+            if (loc.internalName is null || loc.Collected || !SaveManager.ScoutedLocations.TryGetValue(loc.internalName, out ItemFlags flags)) return;
 
             sLeaser.sprites[self.EffectSprite(0)].color = ItemFlagsToColor(flags);
         }
