@@ -122,9 +122,10 @@ namespace RainWorldRandomizer
             Room myRoom = self.room;
             for (int l = 0; l < myRoom.shortcuts.Length; l++)
             {
-                // Shortcut is room exit and there is a shelter on the other side
+                // Shortcut is non-hidden room exit and there is a shelter on the other side
                 if (myRoom.shortcuts[l].shortCutType != ShortcutData.Type.RoomExit) continue;
                 if (myRoom.world.GetAbstractRoom(myRoom.abstractRoom.connections[myRoom.shortcuts[l].destNode]) is not AbstractRoom destRoom) continue;
+                if (self.entranceSprites[l, 0] is null) continue;
                 if (!destRoom.shelter) continue;
 
                 // Additionally ignore already collected shelter locations
