@@ -18,7 +18,7 @@ namespace RainWorldRandomizer
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
             On.RainWorldGame.ExitGame += OnExitGame;
             On.RainWorldGame.ContinuePaused += OnContinuePaused;
-            On.OverWorld.LoadWorld_string_Name_Timeline_bool += OnWorldLoaded;
+            On.WorldLoader.ctor_RainWorldGame_Name_Timeline_bool_string_Region_SetupValues += OnWorldLoader_ctor;
             On.PlayerProgression.SaveToDisk += OnSaveGame;
             On.SaveState.GhostEncounter += OnGhostEncounter;
             On.SaveState.SessionEnded += OnSessionEnded;
@@ -44,7 +44,7 @@ namespace RainWorldRandomizer
             On.ProcessManager.PostSwitchMainProcess -= OnPostSwitchMainProcess;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
             On.RainWorldGame.ContinuePaused -= OnContinuePaused;
-            On.OverWorld.LoadWorld_string_Name_Timeline_bool -= OnWorldLoaded;
+            On.WorldLoader.ctor_RainWorldGame_Name_Timeline_bool_string_Region_SetupValues -= OnWorldLoader_ctor;
             On.PlayerProgression.SaveToDisk -= OnSaveGame;
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
@@ -103,8 +103,8 @@ namespace RainWorldRandomizer
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
             }
 
-            bool anySleepScreen = ID == ProcessManager.ProcessID.SleepScreen 
-                || ID == ProcessManager.ProcessID.GhostScreen 
+            bool anySleepScreen = ID == ProcessManager.ProcessID.SleepScreen
+                || ID == ProcessManager.ProcessID.GhostScreen
                 || ID == ProcessManager.ProcessID.KarmaToMaxScreen
                 || (ModManager.MSC && ID == MoreSlugcatsEnums.ProcessID.VengeanceGhostScreen);
             if (anySleepScreen)
@@ -290,26 +290,29 @@ namespace RainWorldRandomizer
             }
         }
 
-        private static void OnWorldLoaded(On.OverWorld.orig_LoadWorld_string_Name_Timeline_bool orig, OverWorld self, string worldName, 
-            SlugcatStats.Name playerCharacterNumber, SlugcatStats.Timeline time, bool singleRoomWorld)
+        private static void OnWorldLoader_ctor(On.WorldLoader.orig_ctor_RainWorldGame_Name_Timeline_bool_string_Region_SetupValues orig,
+            WorldLoader self, RainWorldGame game, SlugcatStats.Name playerCharacter, SlugcatStats.Timeline timelinePosition, bool singleRoomWorld,
+            string worldName, Region region, RainWorldGame.SetupValues setupValues)
         {
-            orig(self, worldName, playerCharacterNumber, time, singleRoomWorld);
+            orig(self, game, playerCharacter, timelinePosition, singleRoomWorld, worldName, region, setupValues);
+
             if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
 
             // Get all preview-able locations in the new region
-            static bool IsColorable(LocationInfo l) => l.IsToken 
-                || l.kind == LocationInfo.LocationKind.Pearl 
-                || l.kind == LocationInfo.LocationKind.Shelter 
+            static bool IsColorable(LocationInfo l) => l.IsToken
+                || l.kind == LocationInfo.LocationKind.Pearl
+                || l.kind == LocationInfo.LocationKind.Shelter
                 || l.kind == LocationInfo.LocationKind.Flower;
-            LocationInfo[] locations = 
-            [.. Plugin.RandoManager.GetLocations().Where(l => (IsColorable(l) && l.region == self.activeWorld.region.name) || l.IsPassage)];
+            LocationInfo[] locations =
+            [.. Plugin.RandoManager.GetLocations().Where(l => (IsColorable(l) && l.region == worldName) || l.IsPassage)];
 
             // If these locations have been fetched already, no need to ask server for them
             if (locations.Select(l => l.internalName).All(SaveManager.ScoutedLocations.ContainsKey)) return;
+            Plugin.Log.LogInfo($"Scouting {locations.Length} locations in new region: {worldName}...");
 
             // Ask server for all the items at these locations
-            Task<Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo>> scoutingTask = 
-                ArchipelagoConnection.Session.Locations.ScoutLocationsAsync(false, [..locations.Select(l => l.archipelagoID)]);
+            Task<Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo>> scoutingTask =
+                ArchipelagoConnection.Session.Locations.ScoutLocationsAsync(false, [.. locations.Select(l => l.archipelagoID)]);
 
             // Define callback for when we get the scouted items
             Task.Factory.StartNew(() =>
@@ -319,9 +322,10 @@ namespace RainWorldRandomizer
                     SaveManager.AddScoutedLocations(locations.ToDictionary(l => l.internalName,
                         l => scoutingTask.Result.TryGetValue(l.archipelagoID, out var value)
                             ? value.Flags : Archipelago.MultiClient.Net.Enums.ItemFlags.None));
+                    Plugin.Log.LogInfo($"Scouting complete");
                 }
-                catch (Exception e) 
-                { 
+                catch (Exception e)
+                {
                     Plugin.Log.LogError($"Exception while scouting locations: {e}");
                 }
             });
