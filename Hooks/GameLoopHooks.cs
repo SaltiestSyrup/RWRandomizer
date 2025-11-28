@@ -128,7 +128,7 @@ namespace RainWorldRandomizer
                                 ? WinState.GourmandPassageTracker[i].crits[0].value : WinState.GourmandPassageTracker[i].type.value;
 
                             if (gourTracker.progress[i] > 0) Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
-                            else fullCompletion = false;
+                            else if (Plugin.RandoManager.LocationExists($"FoodQuest-{type}")) fullCompletion = false;
                         }
 
                         // Check for Food Quest goal
