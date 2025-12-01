@@ -118,27 +118,19 @@ namespace RainWorldRandomizer
         private static List<ExtEnumBase> FoundTokensOfType<T>() where T : ExtEnumBase
         {
             List<ExtEnumBase> output = [];
-            string startPattern = typeof(T).Name switch
+            LocationInfo.LocationKind type = typeof(T).Name switch
             {
-                "LevelUnlockID" => "Token-L-",
-                "SafariUnlockID" => "Token-S-",
-                "ChatlogID" => "Broadcast-",
-                _ => "Token-",
+                "LevelUnlockID" => LocationInfo.LocationKind.GoldToken,
+                "SafariUnlockID" => LocationInfo.LocationKind.RedToken,
+                "ChatlogID" => LocationInfo.LocationKind.Broadcast,
+                _ => LocationInfo.LocationKind.BlueToken,
             };
-            foreach (string loc in Plugin.RandoManager.GetLocations())
+            foreach (LocationInfo loc in Plugin.RandoManager.GetLocations())
             {
-                if (loc.StartsWith(startPattern))
+                if (loc.kind == type)
                 {
-                    string trimmedLoc = loc;
-                    // Trim region suffix if present
-                    if (startPattern.Equals("Token-"))
-                    {
-                        string[] split = Regex.Split(loc, "-");
-                        trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
-                    }
-
-                    if (ExtEnumBase.TryParse(typeof(T), trimmedLoc.Substring(startPattern.Length), false, out ExtEnumBase value)
-                        && Plugin.RandoManager.IsLocationGiven(loc) is true)
+                    if (ExtEnumBase.TryParse(typeof(T), loc.internalDesc, false, out ExtEnumBase value)
+                        && loc.Collected)
                     {
                         output.Add(value);
                     }
@@ -162,24 +154,20 @@ namespace RainWorldRandomizer
             // Find pearls and Echoes to place on tracker
             List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = [];
             List<GhostWorldPresence.GhostID> foundEchoes = [];
-            foreach (string loc in Plugin.RandoManager.GetLocations())
+            foreach (LocationInfo loc in Plugin.RandoManager.GetLocations())
             {
-                if (loc.StartsWith("Pearl-"))
+                if (loc.kind == LocationInfo.LocationKind.Pearl)
                 {
-                    // Trim region suffix if present
-                    string[] split = Regex.Split(loc, "-");
-                    string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
-
-                    if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), trimmedLoc.Substring(6), false, out ExtEnumBase value)
-                        && Plugin.RandoManager.IsLocationGiven(loc) is true)
+                    if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), loc.internalDesc, false, out ExtEnumBase value)
+                        && loc.Collected)
                     {
                         foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
                     }
                 }
 
-                if (loc.StartsWith("Echo-")
-                    && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), loc.Substring(5), false, out ExtEnumBase value1)
-                    && Plugin.RandoManager.IsLocationGiven(loc) is true)
+                if (loc.kind == LocationInfo.LocationKind.Echo
+                    && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), loc.internalDesc, false, out ExtEnumBase value1)
+                    && loc.Collected)
                 {
                     foundEchoes.Add((GhostWorldPresence.GhostID)value1);
                 }
@@ -462,7 +450,21 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive || !RandoOptions.GivePassageItems)
+            if (Plugin.RandoManager?.isRandomizerActive != true)
+            {
+                orig(self);
+                return;
+            }
+
+            // If the destination of the passage is the starting den, don't consume a token
+            string customDen = Plugin.RandoManager.customStartDen;
+            if (!RandoOptions.RandomizeSpawnLocation || customDen.Equals("NONE"))
+            {
+                customDen = Constants.SlugcatDefaultStartingDen[Plugin.RandoManager.currentSlugcat];
+            }
+            if (RainWorld.ShelterAfterPassage == customDen) return;
+
+            if (!RandoOptions.GivePassageItems)
             {
                 orig(self);
                 return;

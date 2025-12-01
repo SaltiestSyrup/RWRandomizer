@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace RainWorldRandomizer
 {
@@ -23,7 +24,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Tracks Karma flowers placed in rooms via room settings. Flowers from other sources are not added to this table. 
         /// </summary>
-        private static ConditionalWeakTable<AbstractPhysicalObject, FlowerData> trackedFlowers = new();
+        internal static ConditionalWeakTable<AbstractPhysicalObject, LocationInfo> trackedFlowers = new();
 
         /// <summary>
         /// Register any flowers to the CWT when a room is loaded
@@ -38,7 +39,10 @@ namespace RainWorldRandomizer
                     && abstractObj.type == AbstractPhysicalObject.AbstractObjectType.KarmaFlower)
                 {
                     if (trackedFlowers.TryGetValue(abstractObj, out _) || string.IsNullOrEmpty(abstractObj.placedObjectOrigin)) continue;
-                    trackedFlowers.Add(abstractObj, new FlowerData(abstractObj));
+
+                    string flowerString = $"Flower-{abstractObj.placedObjectOrigin.Split(':')[0].ToUpperInvariant()}";
+                    if (Plugin.RandoManager.GetLocations().FirstOrDefault(l => l.internalName == flowerString) is not LocationInfo loc) continue;
+                    trackedFlowers.Add(abstractObj, loc);
                 }
             }
         }
@@ -52,10 +56,10 @@ namespace RainWorldRandomizer
             // so we check if bites is 1 instead of 0
             if (RandoOptions.UseKarmaFlowerChecks
                 && self.bites == 1
-                && trackedFlowers.TryGetValue(self.abstractPhysicalObject, out FlowerData data)
-                && !data.alreadyChecked)
+                && trackedFlowers.TryGetValue(self.abstractPhysicalObject, out LocationInfo data)
+                && !data.Collected)
             {
-                data.AwardCheck();
+                Plugin.RandoManager.GiveLocation(data.internalName);
             }
             orig(self, grasp, eu);
         }
@@ -68,10 +72,10 @@ namespace RainWorldRandomizer
             if (RandoOptions.UseKarmaFlowerChecks
                 && self.Spear_NeedleCanFeed()
                 && obj is KarmaFlower flower
-                && trackedFlowers.TryGetValue(flower.abstractPhysicalObject, out FlowerData data)
-                && !data.alreadyChecked)
+                && trackedFlowers.TryGetValue(flower.abstractPhysicalObject, out LocationInfo data)
+                && !data.Collected)
             {
-                data.AwardCheck();
+                Plugin.RandoManager.GiveLocation(data.internalName);
             }
             orig(self, obj, chunk, appendage);
         }
@@ -91,10 +95,10 @@ namespace RainWorldRandomizer
                     if (entity is AbstractPhysicalObject abstractObj
                         && abstractObj.realizedObject != null
                         && abstractObj.type == AbstractPhysicalObject.AbstractObjectType.KarmaFlower
-                        && trackedFlowers.TryGetValue(abstractObj, out FlowerData data)
-                        && !data.alreadyChecked)
+                        && trackedFlowers.TryGetValue(abstractObj, out LocationInfo data)
+                        && !data.Collected)
                     {
-                        data.AwardCheck();
+                        Plugin.RandoManager.GiveLocation(data.internalName);
                     }
                 }
             }

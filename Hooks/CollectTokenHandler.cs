@@ -108,44 +108,8 @@ namespace RainWorldRandomizer
             // Prevent TextPrompt from being issued.
             if (RandoOptions.DisableTokenPopUps) self.anythingUnlocked = false;
 
-            CollectToken.CollectTokenData data = self.placedObj.data as CollectToken.CollectTokenData;
-            string tokenString = data.tokenString;
-
-            if (data.isRed
-                && data.SafariUnlock != null)
-            {
-                tokenString = $"S-{tokenString}";
-            }
-            else if (!data.isBlue
-                && data.LevelUnlock != null)
-            {
-                tokenString = $"L-{tokenString}";
-            }
-            else if (Plugin.RandoManager is ManagerArchipelago)
-            {
-                // Add region acronym to location name if using AP
-                tokenString = $"{tokenString}-{self.room.abstractRoom.name.Substring(0, 2)}";
-            }
-
-            if (data.isWhite
-                && data.ChatlogCollect != null
-                && !(Plugin.RandoManager.IsLocationGiven($"Broadcast-{tokenString}") ?? true))
-            {
-                Plugin.RandoManager.GiveLocation($"Broadcast-{tokenString}");
-            }
-            else if (data.isDev && !(Plugin.RandoManager.IsLocationGiven($"DevToken-{player.room.abstractRoom.name.ToUpperInvariant()}") ?? true))
-            {
-                Plugin.RandoManager.GiveLocation($"DevToken-{player.room.abstractRoom.name.ToUpperInvariant()}");
-            }
-            else
-            {
-                tokenString = $"Token-{tokenString}";
-
-                if (!(Plugin.RandoManager.IsLocationGiven(tokenString) ?? true))
-                {
-                    Plugin.RandoManager.GiveLocation(tokenString);
-                }
-            }
+            string tokenString = TokenToLocationName(self.placedObj.data as CollectToken.CollectTokenData, self.room.abstractRoom.name);
+            Plugin.RandoManager.GiveLocation(tokenString);
         }
 
         /// <summary>
@@ -242,37 +206,8 @@ namespace RainWorldRandomizer
 
         private bool AlreadyHasToken(Room room, int index)
         {
-            CollectToken.CollectTokenData data = room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData;
-            string tokenString = data.tokenString;
-
-            if (data.isRed && data.SafariUnlock != null)
-            {
-                tokenString = $"S-{tokenString}";
-            }
-            else if (!data.isBlue && data.LevelUnlock != null)
-            {
-                tokenString = $"L-{tokenString}";
-            }
-            else if (Plugin.RandoManager is ManagerArchipelago)
-            {
-                // Add region acronym to location name if using AP
-                tokenString = $"{tokenString}-{room.abstractRoom.name.Substring(0, 2)}";
-            }
-
-            if (data.isWhite && data.ChatlogCollect != null)
-            {
-                tokenString = $"Broadcast-{tokenString}";
-            }
-            else if (data.isDev)
-            {
-                tokenString = $"DevToken-{room.abstractRoom.name.ToUpperInvariant()}";
-            }
-            else
-            {
-                tokenString = $"Token-{tokenString}";
-            }
-
-            return Plugin.RandoManager.IsLocationGiven(tokenString) ?? true;
+            string tokenString = TokenToLocationName(room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData, room.abstractRoom.name);
+            return Plugin.RandoManager.IsLocationGiven(tokenString) is true or null;
         }
 
         /// <summary>
@@ -291,6 +226,18 @@ namespace RainWorldRandomizer
             // If it never reads as a dev token it won't destroy it
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldc_I4_0);
+
+            // --- 
+
+            // Get devToken property at 1040
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.devToken)).GetGetMethod())
+                );
+
+            c.EmitDelegate(ExtendTokenRange);
+
+            static bool ExtendTokenRange(bool origVal) => true;
         }
 
         /// <summary>
@@ -354,6 +301,41 @@ namespace RainWorldRandomizer
             c.GotoNext(MoveType.Before, x => x.MatchConvI4());  // 0037
             static int PreventStop(int prev) => RandoOptions.DisableTokenPopUps ? 0 : prev;
             c.EmitDelegate(PreventStop);
+        }
+
+        public static string TokenToLocationName(CollectToken.CollectTokenData data, string room)
+        {
+            if (data is null || room is null) return null;
+            string tokenString = data.tokenString;
+
+            if (data.isRed && data.SafariUnlock != null)
+            {
+                tokenString = $"S-{tokenString}";
+            }
+            else if (!data.isBlue && data.LevelUnlock != null)
+            {
+                tokenString = $"L-{tokenString}";
+            }
+            else
+            {
+                // Add region acronym to location name
+                tokenString += $"-{room.Split('_')[0]}";
+            }
+
+            if (data.isWhite && data.ChatlogCollect != null)
+            {
+                tokenString = $"Broadcast-{tokenString}";
+            }
+            else if (data.isDev)
+            {
+                tokenString = $"DevToken-{room.ToUpperInvariant()}";
+            }
+            else
+            {
+                tokenString = $"Token-{tokenString}";
+            }
+
+            return tokenString;
         }
     }
 }

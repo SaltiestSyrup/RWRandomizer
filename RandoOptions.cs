@@ -1,4 +1,5 @@
 ﻿using MoreSlugcats;
+using System.Linq;
 
 namespace RainWorldRandomizer
 {
@@ -21,6 +22,7 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> givePassageUnlocks;
         internal static Configurable<float> hunterCyclesDensity;
         internal static Configurable<float> trapsDensity;
+        internal static Configurable<int> numDamageIncreases;
 
         internal static Configurable<bool> randomizeSpawnLocation;
         internal static Configurable<bool> startMinKarma;
@@ -40,6 +42,7 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> useExpandedFoodQuestChecks;
         internal static Configurable<bool> useEnergyCell;
         internal static Configurable<bool> useSMTokens;
+        internal static Configurable<bool>[] expeditionPerks;
 
         // Archipelago
         public static Configurable<bool> archipelago;
@@ -52,6 +55,7 @@ namespace RainWorldRandomizer
         public static Configurable<bool> archipelagoIgnoreMenuDL;
         public static Configurable<int> trapMinimumCooldown;
         public static Configurable<int> trapMaximumCooldown;
+        internal static Configurable<bool> colorPickupsWithHints;
 
         // Base
         public static bool UseSetSeed => useSeed.Value;
@@ -90,6 +94,8 @@ namespace RainWorldRandomizer
         public static float HunterCycleIncreaseDensity => hunterCyclesDensity.Value;
 
         public static float TrapsDensity => trapsDensity.Value;
+
+        public static int TotalDamageIncreases => numDamageIncreases.Value;
 
         public static bool RandomizeSpawnLocation => archipelago.Value
             ? ArchipelagoConnection.useRandomStart : randomizeSpawnLocation.Value;
@@ -140,5 +146,8 @@ namespace RainWorldRandomizer
 
         public static bool UseSMBroadcasts => useSMTokens.Value
             || archipelago.Value;
+
+        public static bool ColorPickupsWithHints => archipelago.Value && colorPickupsWithHints.Value;
+        public static bool[] ExpeditionPerks => [..expeditionPerks.Select(p => p.Value)];
     }
 }

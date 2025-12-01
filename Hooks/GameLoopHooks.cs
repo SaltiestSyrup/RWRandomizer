@@ -4,6 +4,7 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
 {
@@ -17,6 +18,7 @@ namespace RainWorldRandomizer
             On.RainWorldGame.Update += OnRainWorldGameUpdate;
             On.RainWorldGame.ExitGame += OnExitGame;
             On.RainWorldGame.ContinuePaused += OnContinuePaused;
+            On.WorldLoader.ctor_RainWorldGame_Name_Timeline_bool_string_Region_SetupValues += OnWorldLoader_ctor;
             On.PlayerProgression.SaveToDisk += OnSaveGame;
             On.SaveState.GhostEncounter += OnGhostEncounter;
             On.SaveState.SessionEnded += OnSessionEnded;
@@ -42,6 +44,7 @@ namespace RainWorldRandomizer
             On.ProcessManager.PostSwitchMainProcess -= OnPostSwitchMainProcess;
             On.RainWorldGame.Update -= OnRainWorldGameUpdate;
             On.RainWorldGame.ContinuePaused -= OnContinuePaused;
+            On.WorldLoader.ctor_RainWorldGame_Name_Timeline_bool_string_Region_SetupValues -= OnWorldLoader_ctor;
             On.PlayerProgression.SaveToDisk -= OnSaveGame;
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
@@ -100,14 +103,17 @@ namespace RainWorldRandomizer
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
             }
 
-            if (ID == ProcessManager.ProcessID.SleepScreen)
+            bool anySleepScreen = ID == ProcessManager.ProcessID.SleepScreen
+                || ID == ProcessManager.ProcessID.GhostScreen
+                || ID == ProcessManager.ProcessID.KarmaToMaxScreen
+                || (ModManager.MSC && ID == MoreSlugcatsEnums.ProcessID.VengeanceGhostScreen);
+            if (anySleepScreen)
             {
                 // Check for any new passages
+                SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
                 foreach (string check in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
                 {
                     WinState.EndgameID id = new(check, false);
-
-                    SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
 
                     // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
                     if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
@@ -115,16 +121,19 @@ namespace RainWorldRandomizer
                     {
                         WinState.GourFeastTracker gourTracker = saveState.deathPersistentSaveData.winState.GetTracker(id, true) as WinState.GourFeastTracker;
 
+                        bool fullCompletion = true;
                         for (int i = 0; i < gourTracker.progress.Length; i++)
                         {
                             string type = WinState.GourmandPassageTracker[i].type == AbstractPhysicalObject.AbstractObjectType.Creature
                                 ? WinState.GourmandPassageTracker[i].crits[0].value : WinState.GourmandPassageTracker[i].type.value;
 
-                            if (gourTracker.progress[i] > 0)
-                            {
-                                Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
-                            }
+                            if (gourTracker.progress[i] > 0) Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
+                            else if (Plugin.RandoManager.LocationExists($"FoodQuest-{type}")) fullCompletion = false;
                         }
+
+                        // Check for Food Quest goal
+                        if (fullCompletion) (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.FoodQuest);
+
                         continue;
                     }
 
@@ -160,6 +169,19 @@ namespace RainWorldRandomizer
             }
 
             orig(self, ID);
+
+            // Check for Pilgrim goal (Echo count is updated during the orig call above).
+            // Condition is not exactly the same as pilgrim passage.
+            // This checks for any echoes, so Saint can sub in the MS echo if they choose.
+            if (anySleepScreen)
+            {
+                SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
+                // Saint and Artificer have one more echo to get
+                int echoesNeeded = Plugin.RandoManager.currentSlugcat.value == "Saint"
+                    || Plugin.RandoManager.currentSlugcat.value == "Artificer" ? 7 : 6;
+                if (saveState.deathPersistentSaveData.ghostsTalkedTo.Count(kvp => kvp.Value >= 2) >= echoesNeeded)
+                    (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Pilgrim);
+            }
         }
 
         /// <summary>
@@ -167,8 +189,8 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void OnRainWorldGameCtor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
-            orig(self, manager);
             Plugin.Singleton.Game = self;
+            orig(self, manager);
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
 
@@ -232,8 +254,7 @@ namespace RainWorldRandomizer
         {
             if (!Plugin.RandoManager.isRandomizerActive
                 || self.room.game.manager.fadeToBlack >= 1f
-                || self.phase != HardmodeStart.Phase.Init
-                || self.nshSwarmer is null)
+                || self.phase != HardmodeStart.Phase.Init)
             {
                 orig(self, eu);
                 return;
@@ -264,10 +285,50 @@ namespace RainWorldRandomizer
                 {
                     grasp.grabbed.AllGraspsLetGoOfThisObject(true);
                     self.room.game.GetStorySession.RemovePersistentTracker(grasp.grabbed.abstractPhysicalObject);
-                    grasp.grabbed.abstractPhysicalObject.Destroy();
-                    self.nshSwarmer = null;
+                    grasp.grabbed.Destroy();
                 }
             }
+        }
+
+        private static void OnWorldLoader_ctor(On.WorldLoader.orig_ctor_RainWorldGame_Name_Timeline_bool_string_Region_SetupValues orig,
+            WorldLoader self, RainWorldGame game, SlugcatStats.Name playerCharacter, SlugcatStats.Timeline timelinePosition, bool singleRoomWorld,
+            string worldName, Region region, RainWorldGame.SetupValues setupValues)
+        {
+            orig(self, game, playerCharacter, timelinePosition, singleRoomWorld, worldName, region, setupValues);
+
+            if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
+
+            // Get all preview-able locations in the new region
+            static bool IsColorable(LocationInfo l) => l.IsToken
+                || l.kind == LocationInfo.LocationKind.Pearl
+                || l.kind == LocationInfo.LocationKind.Shelter
+                || l.kind == LocationInfo.LocationKind.Flower;
+            LocationInfo[] locations =
+            [.. Plugin.RandoManager.GetLocations().Where(l => (IsColorable(l) && l.region == worldName) || l.IsPassage)];
+
+            // If these locations have been fetched already, no need to ask server for them
+            if (locations.Select(l => l.internalName).All(SaveManager.ScoutedLocations.ContainsKey)) return;
+            Plugin.Log.LogInfo($"Scouting {locations.Length} locations in new region: {worldName}...");
+
+            // Ask server for all the items at these locations
+            Task<Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo>> scoutingTask =
+                ArchipelagoConnection.Session.Locations.ScoutLocationsAsync(false, [.. locations.Select(l => l.archipelagoID)]);
+
+            // Define callback for when we get the scouted items
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    SaveManager.AddScoutedLocations(locations.ToDictionary(l => l.internalName,
+                        l => scoutingTask.Result.TryGetValue(l.archipelagoID, out var value)
+                            ? value.Flags : Archipelago.MultiClient.Net.Enums.ItemFlags.None));
+                    Plugin.Log.LogInfo($"Scouting complete");
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError($"Exception while scouting locations: {e}");
+                }
+            });
         }
 
         /// <summary>
@@ -481,11 +542,9 @@ namespace RainWorldRandomizer
             orig(self, eu);
 
             // Check for completion via Outer Expanse
-            if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && !managerAP.gameCompleted
-                && self.endTrigger)
+            if (self.endTrigger)
             {
-                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SlugTree);
+                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SlugTree);
             }
         }
 
@@ -497,11 +556,9 @@ namespace RainWorldRandomizer
             orig(self, eu);
 
             // Check for completion via killing Chieftain scavenger
-            if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && !managerAP.gameCompleted
-                && self.endingTriggered)
+            if (self.endingTriggered)
             {
-                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.ScavKing);
+                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.ScavKing);
             }
         }
 
@@ -513,11 +570,9 @@ namespace RainWorldRandomizer
             orig(self, eu);
 
             // Check for completion via delivering Spearmaster's pearl to Comms array
-            if (Plugin.RandoManager is ManagerArchipelago managerAP
-                && !managerAP.gameCompleted
-                && self.SMEndingPhase == MSCRoomSpecificScript.SpearmasterEnding.SMEndingState.PEARLDATA)
+            if (self.SMEndingPhase == MSCRoomSpecificScript.SpearmasterEnding.SMEndingState.PEARLDATA)
             {
-                managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
+                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
             }
         }
 
