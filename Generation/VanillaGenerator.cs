@@ -189,7 +189,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     foreach (ChatlogData.ChatlogID token in Plugin.Singleton.rainWorld.regionGreyTokens[regionLower])
                     {
-                        regionLocations.Add(new Location($"Broadcast-{token.value}", Location.Type.Token, new()));
+                        regionLocations.Add(new Location($"Broadcast-{token.value}-{regionShort}", Location.Type.Token, new()));
                     }
                 }
 
