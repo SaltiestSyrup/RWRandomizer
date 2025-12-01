@@ -64,6 +64,9 @@
     <Reference Include="ImprovedCollectiblesTracker">
       <HintPath>bin\References\ImprovedCollectiblesTracker.dll</HintPath>
     </Reference>
+    <Reference Include="LogUtils">
+      <HintPath>bin\References\LogUtils.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>bin\References\Mono.Cecil.dll</HintPath>
     </Reference>

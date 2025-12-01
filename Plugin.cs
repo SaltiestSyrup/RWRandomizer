@@ -1,5 +1,4 @@
 using BepInEx;
-using BepInEx.Logging;
 using MoreSlugcats;
 using RainWorldRandomizer.Generation;
 using System;
@@ -20,7 +19,12 @@ namespace RainWorldRandomizer
         public const string PLUGIN_NAME = "Randomizer";
         public const string PLUGIN_VERSION = "1.4.0";
 
-        internal static ManualLogSource Log;
+        internal static LogUtils.Logger Log;
+        /// <summary>
+        /// Used for logging specifically the server messages sent to us by Archipelago,
+        /// this should not be used for any other context.
+        /// </summary>
+        internal static LogUtils.Logger ServerLog;
 
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new();
@@ -80,6 +84,14 @@ namespace RainWorldRandomizer
 
         public void OnEnable()
         {
+            // Register Enums
+            RandomizerEnums.RegisterAllValues();
+            // Create logger. Most logs go to both LogOutput.log and a dedicated randomizerLog.log in StreamingAssets
+            Log = new LogUtils.Logger(Logger);
+            Log.LogTargets.Add(RandomizerEnums.LogID.RandomizerLog);
+            // Server logger for Archipelago
+            ServerLog = new LogUtils.Logger(RandomizerEnums.LogID.ServerLog);
+
             if (Singleton == null)
             {
                 Singleton = this;
@@ -87,16 +99,11 @@ namespace RainWorldRandomizer
             else
             {
                 // Something has gone terribly wrong
-                Logger.LogError("Tried to initialize multiple instances of main class!");
+                Log.LogFatal("Tried to initialize multiple instances of main class!", ConsoleColor.DarkRed);
                 return;
             }
 
-            // Assign as vanilla until decided otherwise
             collectTokenHandler = new CollectTokenHandler();
-            Log = Logger;
-
-            // Register Enums
-            RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
 
             // Create hooks
@@ -138,7 +145,7 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
         }
 
@@ -176,14 +183,14 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
         }
 
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
-            Log.LogInfo("Init Randomizer Mod");
+            Log.LogInfo("Init Randomizer Mod", ConsoleColor.Green);
 
             rainWorld = self;
 
@@ -193,7 +200,7 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
 
             Constants.InitializeConstants();
