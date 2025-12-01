@@ -258,7 +258,6 @@ namespace RainWorldRandomizer
                 selectedIndices.Add(index);
                 buttons[index].buttonBehav.greyedOut = true;
             }
-            ArchipelagoConnection.Disconnect(false);
         }
 
         public static FSprite ItemToFSprite(Unlock.Item item)

@@ -1,5 +1,4 @@
 using BepInEx;
-using BepInEx.Logging;
 using MoreSlugcats;
 using RainWorldRandomizer.Generation;
 using System;
@@ -18,9 +17,14 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Randomizer";
-        public const string PLUGIN_VERSION = "1.3.6";
+        public const string PLUGIN_VERSION = "1.4.0";
 
-        internal static ManualLogSource Log;
+        internal static LogUtils.Logger Log;
+        /// <summary>
+        /// Used for logging specifically the server messages sent to us by Archipelago,
+        /// this should not be used for any other context.
+        /// </summary>
+        internal static LogUtils.Logger ServerLog;
 
         public static Plugin Singleton = null;
         public static ArchipelagoConnection APConnection = new();
@@ -80,6 +84,14 @@ namespace RainWorldRandomizer
 
         public void OnEnable()
         {
+            // Register Enums
+            RandomizerEnums.RegisterAllValues();
+            // Create logger. Most logs go to both LogOutput.log and a dedicated randomizerLog.log in StreamingAssets
+            Log = new LogUtils.Logger(Logger);
+            Log.LogTargets.Add(RandomizerEnums.LogID.RandomizerLog);
+            // Server logger for Archipelago
+            ServerLog = new LogUtils.Logger(RandomizerEnums.LogID.ServerLog);
+
             if (Singleton == null)
             {
                 Singleton = this;
@@ -87,16 +99,11 @@ namespace RainWorldRandomizer
             else
             {
                 // Something has gone terribly wrong
-                Logger.LogError("Tried to initialize multiple instances of main class!");
+                Log.LogFatal("Tried to initialize multiple instances of main class!", ConsoleColor.DarkRed);
                 return;
             }
 
-            // Assign as vanilla until decided otherwise
             collectTokenHandler = new CollectTokenHandler();
-            Log = Logger;
-
-            // Register Enums
-            RandomizerEnums.RegisterAllValues();
             options = new OptionsMenu();
 
             // Create hooks
@@ -115,6 +122,7 @@ namespace RainWorldRandomizer
                 SleepScreenHooks.ApplyHooks();
                 FlowerCheckHandler.ApplyHooks();
 
+                LocationColorizer.ApplyHooks();
                 TrapsHandler.ApplyHooks();
                 DeathLinkHandler.ApplyHooks();
 
@@ -139,7 +147,7 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
         }
 
@@ -164,6 +172,7 @@ namespace RainWorldRandomizer
                 SleepScreenHooks.RemoveHooks();
                 FlowerCheckHandler.RemoveHooks();
 
+                LocationColorizer.RemoveHooks();
                 TrapsHandler.RemoveHooks();
                 DeathLinkHandler.RemoveHooks();
 
@@ -178,14 +187,14 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
         }
 
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
-            Log.LogInfo("Init Randomizer Mod");
+            Log.LogInfo("Init Randomizer Mod", ConsoleColor.Green);
 
             rainWorld = self;
 
@@ -195,7 +204,7 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Log.LogError(e);
             }
 
             Constants.InitializeConstants();
@@ -381,8 +390,7 @@ namespace RainWorldRandomizer
                 defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
                 ? (RegionGate.GateRequirement[])v.Clone()
                 : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
-
-            if (Constants.ForceOpenGates.Contains(gateName)) hasKeyForGate = true;
+            RegionGate.GateRequirement[] origRequirements = (RegionGate.GateRequirement[])newRequirements.Clone();
 
             // Change default Metropolis gate karma
             if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
@@ -439,11 +447,24 @@ namespace RainWorldRandomizer
                     break;
             }
 
-            // Ensure proper Metro gate behavior for Arty
-            if (gateName.Equals("GATE_UW_LC") && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+            // Force open relevant gates
+            if (Constants.ForceOpenGates.Contains(gateName))
             {
-                newRequirements[0] = MoreSlugcatsEnums.GateRequirement.RoboLock;
+                newRequirements[0] = RegionGate.GateRequirement.OneKarma;
+                newRequirements[1] = RegionGate.GateRequirement.OneKarma;
             }
+
+            // Ensure proper Metro gate behavior for Arty
+            if (ModManager.MSC)
+            {
+                if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[0] = origRequirements[0];
+                if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[1] = origRequirements[1];
+            }
+
+            //if (gateName.Equals("GATE_UW_LC") && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+            //{
+            //    newRequirements[0] = MoreSlugcatsEnums.GateRequirement.RoboLock;
+            //}
 
             return newRequirements;
         }

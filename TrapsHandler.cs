@@ -336,28 +336,32 @@ namespace RainWorldRandomizer
 
             // --- Redirect if statement
 
-            // After beq at 0481
+            // After beq at 053F
             c.GotoNext(x => x.MatchLdfld(typeof(GlobalRain).GetField(nameof(GlobalRain.preCycleRainPulse_Scale))));
             c.GotoNext(MoveType.After, x => x.MatchBeq(out _));
             // Mark entry to if block
             ILLabel jump = c.MarkLabel();
 
-            // Before checking precycle module at 046C
+            // Before checking precycle module at 0534
             c.GotoPrev(x => x.MatchCallOrCallvirt(typeof(ModManager).GetProperty(nameof(ModManager.PrecycleModule)).GetGetMethod()));
+            c.MoveAfterLabels();
 
             // If rain trap is active, act as if it's a precycle
-            c.Emit(OpCodes.Ldsfld, typeof(TrapsHandler).GetField(nameof(rainTrapActive), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic));
-            //c.EmitDelegate<Func<bool>>(() => rainTrapActive);
+            c.EmitDelegate(ActivateRainTrap);
             c.Emit(OpCodes.Brtrue, jump);
+
+            static bool ActivateRainTrap() => rainTrapActive;
 
             // --- Modify values
 
-            // Load pulse intensity at 0497
+            // Load pulse intensity at 055F
             c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(GlobalRain).GetField(nameof(GlobalRain.preCycleRainPulse_Intensity))));
-            // Load pulse scale at 04AD
+            // Load pulse scale at 0575
             c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(GlobalRain).GetField(nameof(GlobalRain.preCycleRainPulse_Scale))));
             // Supply new value for scale without overriding precyles
-            c.EmitDelegate<Func<float, float>>(oldScale => oldScale > 0 ? oldScale : 1f);
+            c.EmitDelegate(AddRainTrapPulseScale);
+
+            static float AddRainTrapPulseScale(float oldScale) => oldScale > 0 ? oldScale : 1f;
         }
 
         /// <summary>

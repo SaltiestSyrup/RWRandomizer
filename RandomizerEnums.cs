@@ -1,36 +1,41 @@
 ﻿using Menu;
+using LogUtils.Enums;
+using System.IO;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
     public class RandomizerEnums
     {
-        public static void InitExtEnumTypes()
+        internal static void InitExtEnumTypes()
         {
             Unlock.UnlockType gate = Unlock.UnlockType.Gate;
         }
 
-        public static void RegisterAllValues()
+        internal static void RegisterAllValues()
         {
             SliderId.RegisterValues();
             AbstractObjectType.RegisterValues();
             DataPearlType.RegisterValues();
+            LogID.RegisterValues();
         }
 
-        public static void UnregisterAllValues()
+        internal static void UnregisterAllValues()
         {
             SliderId.UnregisterValues();
             AbstractObjectType.UnregisterValues();
             DataPearlType.UnregisterValues();
+            LogID.UnregisterValues();
         }
 
         public class SliderId
         {
-            public static void RegisterValues()
+            internal static void RegisterValues()
             {
                 SpoilerMenu = new Slider.SliderID("SpoilerMenu", true);
             }
 
-            public static void UnregisterValues()
+            internal static void UnregisterValues()
             {
                 SpoilerMenu?.Unregister();
                 SpoilerMenu = null;
@@ -41,12 +46,12 @@ namespace RainWorldRandomizer
 
         public class AbstractObjectType
         {
-            public static void RegisterValues()
+            internal static void RegisterValues()
             {
                 SpearmasterpearlFake = new AbstractPhysicalObject.AbstractObjectType("SpearmasterpearlFake", true);
             }
 
-            public static void UnregisterValues()
+            internal static void UnregisterValues()
             {
                 SpearmasterpearlFake?.Unregister();
                 SpearmasterpearlFake = null;
@@ -57,18 +62,45 @@ namespace RainWorldRandomizer
 
         public class DataPearlType
         {
-            public static void RegisterValues()
+            internal static void RegisterValues()
             {
                 SpearmasterpearlFake = new DataPearl.AbstractDataPearl.DataPearlType("SpearmasterpearlFake", true);
             }
 
-            public static void UnregisterValues()
+            internal static void UnregisterValues()
             {
                 SpearmasterpearlFake?.Unregister();
                 SpearmasterpearlFake = null;
             }
 
             public static DataPearl.AbstractDataPearl.DataPearlType SpearmasterpearlFake;
+        }
+
+        public class LogID
+        {
+            internal static void RegisterValues()
+            {
+                string logPath = Path.Combine(Application.streamingAssetsPath, "randomizerlogs");
+                Directory.CreateDirectory(logPath);
+
+                RandomizerLog = new LogUtils.Enums.LogID("randomizerLog", logPath, LogAccess.FullAccess, true);
+                RandomizerLog.Properties.ShowCategories.IsEnabled = true;
+                RandomizerLog.Properties.LogsFolderAware = true;
+
+                ServerLog = new LogUtils.Enums.LogID("serverLog", logPath, LogAccess.FullAccess, true);
+                ServerLog.Properties.LogsFolderAware = true;
+            }
+
+            internal static void UnregisterValues()
+            {
+                RandomizerLog?.Unregister();
+                RandomizerLog = null;
+                ServerLog.Unregister();
+                ServerLog = null;
+            }
+
+            public static LogUtils.Enums.LogID RandomizerLog;
+            public static LogUtils.Enums.LogID ServerLog;
         }
     }
 }

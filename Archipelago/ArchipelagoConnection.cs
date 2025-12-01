@@ -92,11 +92,14 @@ namespace RainWorldRandomizer
         public enum CompletionCondition
         {
             Ascension, // The basic void sea ending
+            HelpingHand, // Hunter reviving LttM with the green neuron
             SlugTree, // Survivor, Monk, and Gourmand reaching Outer Expanse
             ScavKing, // Artificer killing the Chieftain scavenger
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
             Messenger, // Spearmaster delivering the encoded pearl to Comms array
             Rubicon, // Saint Ascending in Rubicon
+            Pilgrim, // Encounter enough Echoes to trigger the Pilgrim passage
+            FoodQuest, // Eat every tracked food quest item
             SpinningTop,
             SentientRot,
         }
@@ -164,9 +167,13 @@ namespace RainWorldRandomizer
                 }
 
                 Plugin.Log.LogError(errorMessage);
+                Session.Socket.PacketReceived -= PacketReceived;
+                Session.MessageLog.OnMessageReceived -= MessageReceived;
+                Session.Socket.ErrorReceived -= ErrorReceived;
                 playerName = "";
                 HasConnected = false;
                 CurrentlyConnecting = false;
+                Session = null;
                 return errorMessage;
             }
 
@@ -186,7 +193,15 @@ namespace RainWorldRandomizer
                         errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
                         break;
                     case SlotDataResult.InvalidDLC:
-                        errLog = "Currently enabled DLCs do not match those specified in your YAML. Please enable the correct DLC and try again.";
+                        errLog = "Currently enabled DLC mods do not match those specified in your YAML.\n\nPlease have ONLY the following DLC enabled:\n";
+                        bool wantsMSC = (long)loginSuccess.SlotData["is_msc_enabled"] > 0;
+                        bool wantsWatcher = (long)loginSuccess.SlotData["is_watcher_enabled"] > 0;
+                        if (!wantsMSC && !wantsWatcher) errLog += "No DLC";
+                        else
+                        {
+                            if (wantsMSC) errLog += "More Slugcats Expansion\n";
+                            if (wantsWatcher) errLog += "The Watcher";
+                        }
                         break;
                     // Currently don't need to ever return this error, as both possible versions are identical (logic-wise)
                     case SlotDataResult.InvalidGameVersion:
@@ -211,10 +226,13 @@ namespace RainWorldRandomizer
                 return errLog;
             }
 
-            generationSeed = Session.RoomState.Seed;
+            // If we are currently in-game, resync locations
+            (Plugin.RandoManager as ManagerArchipelago)?.SyncLocations();
+
             HasConnected = true;
             CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
+            Plugin.ServerLog.Log("--- Starting Session ---");
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
         }
 
@@ -245,6 +263,7 @@ namespace RainWorldRandomizer
             if (Session is null) return false;
 
             Plugin.Log.LogInfo("Disconnecting from server...");
+            Plugin.ServerLog.Log("--- Ending Session ---");
             Session.Socket.PacketReceived -= PacketReceived;
             Session.MessageLog.OnMessageReceived -= MessageReceived;
             Session.Socket.ErrorReceived -= ErrorReceived;
@@ -254,8 +273,8 @@ namespace RainWorldRandomizer
             CurrentlyConnecting = false;
             ReceivedSlotData = false;
 
-            if (resetManager) 
-            { 
+            if (resetManager)
+            {
                 Plugin.RandoManager = null;
                 waitingItemPackets.Clear();
             }
@@ -268,8 +287,9 @@ namespace RainWorldRandomizer
         {
             try
             {
-                if (packet is RoomInfoPacket)
+                if (packet is RoomInfoPacket roomPacket)
                 {
+                    generationSeed = roomPacket.SeedName;
                     Plugin.Log.LogInfo($"Received RoomInfo packet");
                     return;
                 }
@@ -340,41 +360,29 @@ namespace RainWorldRandomizer
             // Check DLC state
             IsMSC = shouldHaveMSC > 0;
             IsWatcher = shouldHaveWatcher > 0;
+            if (ModManager.MSC != IsMSC || ModManager.Watcher != IsWatcher)
+            {
+                return SlotDataResult.InvalidDLC;
+            }
 
             // Choose campaign and ending
             Slugcat = new SlugcatStats.Name(campaignString);
-            switch (campaignString)
+            if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
+            else if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
+            else if (completionType >= 4) completionCondition = CompletionCondition.Ascension; // Unknown condition fallback
+            else
             {
-                case "Yellow":
-                case "White":
-                case "Gourmand":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree;
-                    break;
-                case "Red":
-                case "Sofanthiel":
-                    completionCondition = CompletionCondition.Ascension;
-                    break;
-                case "Artificer":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing;
-                    break;
-                case "Rivulet":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon;
-                    break;
-                case "Spear":
-                    completionCondition = completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger;
-                    break;
-                case "Saint":
-                    completionCondition = CompletionCondition.Rubicon;
-                    break;
-                case "Watcher":
-                    completionCondition = completionType == 0 ? CompletionCondition.SpinningTop : CompletionCondition.SentientRot;
-                    break;
-            }
-
-            if (ModManager.MSC != IsMSC
-                || ModManager.Watcher != IsWatcher)
-            {
-                return SlotDataResult.InvalidDLC;
+                completionCondition = campaignString switch
+                {
+                    "Yellow" or "White" or "Gourmand" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree,
+                    "Red" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.HelpingHand,
+                    "Artificer" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing,
+                    "Rivulet" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon,
+                    "Spear" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger,
+                    "Saint" => CompletionCondition.Rubicon,
+                    "Watcher" => completionType == 0 ? CompletionCondition.SpinningTop : CompletionCondition.SentientRot;
+                    "Sofanthiel" or _ => CompletionCondition.Ascension
+                };
             }
 
             // Choose starting den
@@ -437,7 +445,7 @@ namespace RainWorldRandomizer
 
         private static void MessageReceived(LogMessage message)
         {
-            Plugin.Log.LogInfo($"[Server Message] {message}");
+            Plugin.ServerLog.Log(message);
 
             if ((message is ItemSendLogMessage || message is PlayerSpecificLogMessage) // Filter only items and player specific messages
                 && message is not JoinLogMessage // Filter out join logs

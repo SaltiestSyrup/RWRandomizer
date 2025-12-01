@@ -59,24 +59,20 @@ namespace RainWorldRandomizer
             // Find pearls and Echoes to place on tracker
             List<DataPearl.AbstractDataPearl.DataPearlType> foundPearls = [];
             List<GhostWorldPresence.GhostID> foundEchoes = [];
-            foreach (string loc in Plugin.RandoManager.GetLocations())
+            foreach (LocationInfo loc in Plugin.RandoManager.GetLocations())
             {
-                if (loc.StartsWith("Pearl-"))
+                if (loc.kind == LocationInfo.LocationKind.Pearl)
                 {
-                    // Trim region suffix if present
-                    string[] split = Regex.Split(loc, "-");
-                    string trimmedLoc = split.Length > 2 ? $"{split[0]}-{split[1]}" : loc;
-
-                    if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), trimmedLoc.Substring(6), false, out ExtEnumBase value)
-                        && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                    if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), loc.internalDesc, false, out ExtEnumBase value)
+                        && loc.Collected)
                     {
                         foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
                     }
                 }
 
-                if (loc.StartsWith("Echo-")
-                    && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), loc.Substring(5), false, out ExtEnumBase value1)
-                    && (Plugin.RandoManager.IsLocationGiven(loc) ?? false))
+                if (loc.kind == LocationInfo.LocationKind.Echo
+                    && ExtEnumBase.TryParse(typeof(GhostWorldPresence.GhostID), loc.internalDesc, false, out ExtEnumBase value1)
+                    && loc.Collected)
                 {
                     foundEchoes.Add((GhostWorldPresence.GhostID)value1);
                 }

@@ -168,7 +168,7 @@ namespace RainWorldRandomizer.Generation
                     {
                         if (Plugin.Singleton.rainWorld.regionDataPearlsAccessibility[regionLower][i].Contains(slugcat))
                         {
-                            regionLocations.Add(new($"Pearl-{Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value}",
+                            regionLocations.Add(new($"Pearl-{Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value}-{regionShort}",
                                 Location.Type.Pearl, new()));
                         }
                     }
@@ -180,7 +180,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     foreach (string token in Plugin.Singleton.collectTokenHandler.availableTokens[regionShort])
                     {
-                        regionLocations.Add(new Location($"Token-{token}", Location.Type.Token, new()));
+                        regionLocations.Add(new Location($"Token-{token}-{regionShort}", Location.Type.Token, new()));
                     }
                 }
 
@@ -189,7 +189,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     foreach (ChatlogData.ChatlogID token in Plugin.Singleton.rainWorld.regionGreyTokens[regionLower])
                     {
-                        regionLocations.Add(new Location($"Broadcast-{token.value}", Location.Type.Token, new()));
+                        regionLocations.Add(new Location($"Broadcast-{token.value}-{regionShort}", Location.Type.Token, new()));
                     }
                 }
 
@@ -675,11 +675,31 @@ namespace RainWorldRandomizer.Generation
             }
 
             List<Item> itemsToAdd = [];
+            bool[] perksToAdd = RandoOptions.ExpeditionPerks;
+
+            // If there is space in item pool, add whichever perks we have selected in options
+            if (state.AllLocations.Count >= itemsToPlace.Count + perksToAdd.Count(b => b))
+            {
+                for (int i = 0; i < perksToAdd.Length; i++)
+                {
+                    if (perksToAdd[i])
+                    {
+                        itemsToAdd.Add(new(((ManagerBase.ExpeditionPerks)i).ToString(), Item.Type.ExpPerk, Item.Importance.Filler));
+                    }
+                }
+            }
+
             int hunterCyclesAdded = 0;
             int trapsAdded = 0;
+            int damageUpsAdded = 0;
             while (state.AllLocations.Count > itemsToPlace.Count + itemsToAdd.Count)
             {
-                if (slugcat == SlugcatStats.Name.Red
+                if (damageUpsAdded < RandoOptions.TotalDamageIncreases)
+                {
+                    itemsToAdd.Add(new Item("DamageUpgrade", Item.Type.Other, Item.Importance.Filler));
+                    damageUpsAdded++;
+                }
+                else if (slugcat == SlugcatStats.Name.Red
                     && hunterCyclesAdded < state.AllLocations.Count * RandoOptions.HunterCycleIncreaseDensity)
                 {
                     // Add cycle increases for Hunter
@@ -908,6 +928,9 @@ namespace RainWorldRandomizer.Generation
                     break;
                 case Item.Type.Trap:
                     outputType = Unlock.UnlockType.Trap;
+                    break;
+                case Item.Type.ExpPerk:
+                    outputType = Unlock.UnlockType.ExpeditionPerk;
                     break;
                 case Item.Type.Other:
                     if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), item.id, false, out ExtEnumBase type))
