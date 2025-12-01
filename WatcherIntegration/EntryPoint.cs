@@ -31,7 +31,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 case null: Plugin.Log.LogDebug($"Giving {loc}?   nope, location does not exist"); break;
                 case true: Plugin.Log.LogDebug($"Giving {loc}?   nope, location is already given"); break;
-                case false: Plugin.Log.LogDebug($"Giving {loc}?   {(Plugin.RandoManager.GiveLocation(loc) ? "yes" : "nope, giving failed")}"); break;
+                case false: Plugin.Log.LogDebug($"Giving {loc}?   yes"); Plugin.RandoManager.GiveLocation(loc); break;
             }
         }
     }

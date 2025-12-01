@@ -111,8 +111,6 @@ namespace RainWorldRandomizer
                 || (ModManager.MSC && ID == MoreSlugcatsEnums.ProcessID.VengeanceGhostScreen);
             if (anySleepScreen)
             {
-                SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
-
                 // Check for any new passages
                 SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
                 foreach (string check in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))

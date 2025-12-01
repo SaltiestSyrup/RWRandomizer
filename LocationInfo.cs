@@ -38,8 +38,6 @@ namespace RainWorldRandomizer
             }
         }
 
-
-
         public enum LocationKind
         {
             BlueToken,
@@ -55,6 +53,12 @@ namespace RainWorldRandomizer
             Passage,
             WandererPip,
             FoodQuest,
+            FixedWarp,
+            SpinningTop,
+            Prince,
+            ThroneWarp,
+            SpreadRot,
+            SpreadRotProgressive,
             Other
         }
 
@@ -128,6 +132,9 @@ namespace RainWorldRandomizer
                 case LocationKind.DevToken:
                 case LocationKind.Flower:
                 case LocationKind.Shelter:
+                case LocationKind.FixedWarp:
+                case LocationKind.SpinningTop:
+                case LocationKind.SpreadRot:
                     return internalName.Split('-')[1].Split('_')[0];
                 case LocationKind.Echo:
                     return internalName.Split('-')[1];
@@ -140,6 +147,9 @@ namespace RainWorldRandomizer
                         "filter" => "SB",
                         _ => third,
                     };
+                case LocationKind.ThroneWarp:
+                case LocationKind.Prince:
+                    return "WORA";
                 case LocationKind.FoodQuest:
                     return "<FQ>";
                 case LocationKind.Passage:
@@ -177,6 +187,11 @@ namespace RainWorldRandomizer
             if (internalName.StartsWith("Passage-")) return LocationKind.Passage;
             if (internalName.StartsWith("Wanderer-")) return LocationKind.WandererPip;
             if (internalName.StartsWith("FoodQuest-")) return LocationKind.FoodQuest;
+            if (internalName.StartsWith("Warp-")) return LocationKind.FixedWarp;
+            if (internalName.StartsWith("SpinningTop-")) return LocationKind.SpinningTop;
+            if (internalName.StartsWith("SpreadRot-")) return LocationKind.SpreadRot;
+            if (internalName.StartsWith("ThroneWarp-")) return LocationKind.ThroneWarp;
+            if (internalName.StartsWith("Prince-")) return LocationKind.Prince;
             return LocationKind.Other;
         }
 
@@ -198,6 +213,18 @@ namespace RainWorldRandomizer
                 LocationKind.Passage => $"Passage - {WinState.PassageDisplayName(new WinState.EndgameID(split[1]))}",
                 LocationKind.WandererPip => $"The Wanderer - {split[1]} pip{(int.TryParse(split[1], out int r) && r > 1 ? "s" : "")}",
                 LocationKind.FoodQuest => GetFoodQuestDisplayName(internalName),
+                LocationKind.FixedWarp => $"Fixed Warp - {split[1]}",
+                LocationKind.SpinningTop => $"Spinning Top",
+                LocationKind.SpreadRot => $"Spread the Rot",
+                LocationKind.ThroneWarp => $"Create {split[1] switch
+                    {
+                        "10" => "lower east",
+                        "05" => "lower west",
+                        "07" => "upper east",
+                        "09" => "upper west",
+                        _ => ""
+                    }} warp",
+                LocationKind.Prince => $"Prince encounter #{split[1]}",
                 LocationKind.Other => GetSpecialDescription(internalName),
                 _ => internalName
             };
@@ -251,6 +278,9 @@ namespace RainWorldRandomizer
                 "Pearl" => $"Pearl-{split[2]}-{regionShort}",
                 "Echo" => $"Echo-{regionShort}",
                 "Shelter" => $"Shelter-{split[2]}",
+                "Fixed Warp" => $"Warp-{split[2]}",
+                "Spinning Top" => $"SpinningTop-{regionShort}",
+                "Spread the Rot" => $"SpreadRot-{regionShort}",
                 // Unique
                 "Give a Neuron Fly to Looks to the Moon" => "Gift_Neuron",
                 "Meet Five Pebbles" => "Meet_FP",
@@ -259,6 +289,10 @@ namespace RainWorldRandomizer
                 "Revive Looks to the Moon" => "Save_LttM",
                 "Ascend Five Pebbles" => "Ascend_FP",
                 "Ascend Looks to the Moon" => "Ascend_LttM",
+                "Create lower east warp" => "ThroneWarp-10",
+                "Create lower west warp" => "ThroneWarp-05",
+                "Create upper east warp" => "ThroneWarp-07",
+                "Create upper west warp" => "ThroneWarp-09",
                 _ => split[1]
             };
         }
@@ -325,6 +359,7 @@ namespace RainWorldRandomizer
                     }
                     break;
                 case LocationKind.Echo:
+                case LocationKind.SpinningTop:
                     spriteName = "smallKarma9-9";
                     spriteScale = 0.5f;
                     spriteColor = RainWorld.SaturatedGold;
@@ -389,6 +424,31 @@ namespace RainWorldRandomizer
                 case LocationKind.Flower:
                     spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.KarmaFlower, 0);
                     spriteColor = ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.KarmaFlower, 0);
+                    break;
+                case LocationKind.FixedWarp:
+                    spriteName = "warpIcon";
+                    spriteColor = RainWorld.RippleColor;
+                    spriteScale = 0.6f;
+                    break;
+                case LocationKind.ThroneWarp:
+                    spriteName = internalDesc switch
+                    {
+                        "10" => "ripple2.0",
+                        "05" => "ripple3.0",
+                        "09" => "ripple4.0",
+                        "07" => "ripple5.0",
+                        _ => "warpIcon"
+                    };
+                    spriteColor = RainWorld.RippleColor;
+                    spriteScale = 0.6f;
+                    break;
+                case LocationKind.Prince:
+                    spriteName = "PrincePetals0";
+                    spriteColor = RainWorld.RippleColor;
+                    spriteScale = 0.5f;
+                    break;
+                case LocationKind.SpreadRot:
+                    spriteName = "Kill_Daddy";
                     break;
                 default:
                     spriteName = "EndGameCircle";

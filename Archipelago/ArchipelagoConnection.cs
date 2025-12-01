@@ -380,7 +380,7 @@ namespace RainWorldRandomizer
                     "Rivulet" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon,
                     "Spear" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger,
                     "Saint" => CompletionCondition.Rubicon,
-                    "Watcher" => completionType == 0 ? CompletionCondition.SpinningTop : CompletionCondition.SentientRot;
+                    "Watcher" => completionType == 0 ? CompletionCondition.SpinningTop : CompletionCondition.SentientRot,
                     "Sofanthiel" or _ => CompletionCondition.Ascension
                 };
             }

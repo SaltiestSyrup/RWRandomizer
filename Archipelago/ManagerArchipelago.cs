@@ -292,11 +292,10 @@ namespace RainWorldRandomizer
                         if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                             Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
                         break;
+                    default:
+                        WatcherIntegration.Items.ReceiveItem(item);
+                        break;
                 }
-            }
-            else
-            {
-                WatcherIntegration.Items.ReceiveItem(item);
             }
 
             Plugin.Log.LogInfo($"\tReceived item: {item}");
