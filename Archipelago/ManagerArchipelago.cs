@@ -294,6 +294,10 @@ namespace RainWorldRandomizer
                         break;
                 }
             }
+            else
+            {
+                WatcherIntegration.Items.ReceiveItem(item);
+            }
 
             Plugin.Log.LogInfo($"\tReceived item: {item}");
         }

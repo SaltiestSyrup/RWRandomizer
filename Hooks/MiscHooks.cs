@@ -65,6 +65,7 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
                 IL.World.SpawnGhost += ILSpawnGhost;
+                IL.ScavengerAI.CheckForScavangeItems += CheckForScavengeItemsIL;
             }
             catch (Exception e)
             {
@@ -97,6 +98,7 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
             IL.World.SpawnGhost -= ILSpawnGhost;
+            IL.ScavengerAI.CheckForScavangeItems += CheckForScavengeItemsIL;
         }
 
         /// <summary>
@@ -143,8 +145,11 @@ namespace RainWorldRandomizer
         {
             orig(self);
 
-            if (RandoOptions.RandomizeSpawnLocation)
+            if (RandoOptions.RandomizeSpawnLocation && Plugin.RandoManager is not null)
             {
+                // Randomized spawn is done a different way for Watcher (see WatcherIntegration.RoomSpecificScript)
+                if (ModManager.Watcher && Plugin.RandoManager.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher) return;
+
                 if (Plugin.RandoManager.customStartDen.Equals(""))
                 {
                     Plugin.Log.LogError("Tried to set starting den while custom den unset");
@@ -662,6 +667,62 @@ namespace RainWorldRandomizer
                 && pearl.grabbedBy.Count == 0; // Allowed to value already carried pearls
 
             return setNoValue ? 0 : origValue;
+        }
+
+        /// <summary>
+        /// Restrict scavengers from taking certain objects from the ground on their own
+        /// to avoid needed items for checks disappearing. 
+        /// This only stops them from taking things they found, will not prevent player gifting them
+        /// </summary>
+        private static void CheckForScavengeItemsIL(ILContext il)
+        {
+            ILCursor c = new(il);
+            ILLabel continueJump;
+            int localForIterationVar = -1;
+
+            // Find for loop iteration at 0102
+            c.GotoNext(
+                x => x.MatchCallOrCallvirt(typeof(ItemTracker).GetProperty(nameof(ItemTracker.ItemCount)).GetGetMethod()),
+                x => x.MatchBlt(out _)
+                );
+            c.GotoPrev(MoveType.Before,
+                x => x.MatchLdcI4(1),
+                x => x.MatchAdd(),
+                x => x.MatchStloc(out localForIterationVar)
+                );
+            continueJump = c.MarkLabel();
+
+            // After assigning PickUpItemScore to a local at 0072
+            c.GotoPrev(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(ScavengerAI).GetMethod(nameof(ScavengerAI.PickUpItemScore), BindingFlags.Instance | BindingFlags.NonPublic)),
+                x => x.MatchStloc(out _)
+                );
+
+            // Emit a conditional jump to the next loop iteration if the current item should not be scavenged
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldloc, localForIterationVar);
+            c.EmitDelegate(ShouldNotScavengeItem);
+            c.Emit(OpCodes.Brtrue, continueJump);
+
+            static bool ShouldNotScavengeItem(ScavengerAI self, int j)
+            {
+                PhysicalObject obj = self.itemTracker.GetRep(j).representedItem.realizedObject;
+                // Do not take unpicked flowers
+                if (RandoOptions.UseKarmaFlowerChecks
+                    && obj is KarmaFlower flower
+                    && flower.growPos is not null)
+                {
+                    return true;
+                }
+                // Do not take unique data pearls
+                if (RandoOptions.UsePearlChecks
+                    && obj is DataPearl pearl
+                    && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType))
+                {
+                    return true;
+                }
+                return false;
+            }
         }
     }
 }

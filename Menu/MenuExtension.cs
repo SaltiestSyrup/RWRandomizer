@@ -80,7 +80,7 @@ namespace RainWorldRandomizer
             if (RandoOptions.useGateMap.Value && (Plugin.RandoManager is ManagerArchipelago || !Plugin.AnyThirdPartyRegions))
             {
                 gateDisplay = new GateMapDisplay(self, self.pages[0],
-                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 320f));
+                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - (GateMapDisplay.Scug is "Watcher" ? 440f : 320f)));
             }
             else
             {
