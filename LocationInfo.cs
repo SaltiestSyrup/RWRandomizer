@@ -58,7 +58,6 @@ namespace RainWorldRandomizer
             Prince,
             ThroneWarp,
             SpreadRot,
-            SpreadRotProgressive,
             Other
         }
 
@@ -114,7 +113,7 @@ namespace RainWorldRandomizer
             region = RegionOfLocation(kind, internalName);
             internalDesc = CreateInternalDesc();
 
-            //Plugin.Log.LogDebug($"New AP LocationInfo: {displayName} => {internalName}, {kind}, {region}, {internalDesc}");
+            Plugin.Log.LogDebug($"New AP LocationInfo: {displayName} => {internalName}, {kind}, {region}, {internalDesc}");
         }
 
         public LocationInfo(KeyValuePair<string, bool> pair, bool findAPID) : this(pair.Key, pair.Value, findAPID) { }
@@ -136,7 +135,6 @@ namespace RainWorldRandomizer
                 case LocationKind.Shelter:
                 case LocationKind.FixedWarp:
                 case LocationKind.SpinningTop:
-                case LocationKind.SpreadRot:
                     return internalName.Split('-')[1].Split('_')[0];
                 case LocationKind.Echo:
                     return internalName.Split('-')[1];
@@ -217,7 +215,7 @@ namespace RainWorldRandomizer
                 LocationKind.FoodQuest => GetFoodQuestDisplayName(internalName),
                 LocationKind.FixedWarp => $"Fixed Warp - {split[1]}",
                 LocationKind.SpinningTop => $"Spinning Top",
-                LocationKind.SpreadRot => $"Spread the Rot",
+                LocationKind.SpreadRot => $"Spread the Rot - Region #{split[1]}",
                 LocationKind.ThroneWarp => $"Create {split[1] switch
                     {
                         "10" => "lower east",
@@ -251,6 +249,8 @@ namespace RainWorldRandomizer
                         return $"Passage-{trimmed}";
                     case "The Wanderer":
                         return $"Wanderer-{split[1].Split(' ')[0]}";
+                    case "Spread the Rot":
+                        return $"SpreadRot-{split[1].Split('#')[1]}";
                     case "Food Quest":
                         string desc = split[1] switch
                         {
@@ -287,7 +287,6 @@ namespace RainWorldRandomizer
                 "Shelter" => $"Shelter-{split[2]}",
                 "Fixed Warp" => $"Warp-{split[2]}",
                 "Spinning Top" => $"SpinningTop-{regionShort}",
-                "Spread the Rot" => $"SpreadRot-{regionShort}",
                 // Unique
                 "Give a Neuron Fly to Looks to the Moon" => "Gift_Neuron",
                 "Meet Five Pebbles" => "Meet_FP",

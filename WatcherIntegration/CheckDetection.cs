@@ -124,9 +124,12 @@ namespace RainWorldRandomizer.WatcherIntegration
                 foreach (var point in saveState.miscWorldSaveData.discoveredWarpPoints)
                     EntryPoint.TryGiveLocation($"Warp-{point.Key.Split(':')[0].ToUpperInvariant()}");
 
-                foreach (string region in saveState.miscWorldSaveData.regionsInfectedBySentientRot)
-                    if (!Region.HasSentientRotResistance(region))
-                        EntryPoint.TryGiveLocation($"SpreadRot-{region.ToUpperInvariant()}");
+                for (int i = 1; i <= saveState.miscWorldSaveData.regionsInfectedBySentientRotSpread.Count; i++)
+                    EntryPoint.TryGiveLocation($"SpreadRot-{i}");
+                
+                //foreach (string region in saveState.miscWorldSaveData.regionsInfectedBySentientRot)
+                //    if (!Region.HasSentientRotResistance(region))
+                //        EntryPoint.TryGiveLocation($"SpreadRot-{region.ToUpperInvariant()}");
             }
 
             /// <summary>Prevent Spinning Top from spawning if the key is not collected and <see cref="Settings.spinningTopKeys"/> is enabled.</summary>

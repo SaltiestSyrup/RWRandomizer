@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 
 namespace RainWorldRandomizer.WatcherIntegration
@@ -27,11 +28,12 @@ namespace RainWorldRandomizer.WatcherIntegration
 
         internal static void TryGiveLocation(string loc)
         {
+            LocationInfo location = Plugin.RandoManager.GetLocations().FirstOrDefault(l => l.internalName == loc);
             switch (Plugin.RandoManager.IsLocationGiven(loc))
             {
-                case null: Plugin.Log.LogDebug($"Giving {loc}?   nope, location does not exist"); break;
-                case true: Plugin.Log.LogDebug($"Giving {loc}?   nope, location is already given"); break;
-                case false: Plugin.Log.LogDebug($"Giving {loc}?   yes"); Plugin.RandoManager.GiveLocation(loc); break;
+                case null: Plugin.Log.LogDebug($"Giving {location?.displayName} ({loc})?   nope, location does not exist"); break;
+                case true: Plugin.Log.LogDebug($"Giving {location?.displayName} ({loc})?   nope, location is already given"); break;
+                case false: Plugin.Log.LogDebug($"Giving {location?.displayName} ({loc})?   yes"); Plugin.RandoManager.GiveLocation(loc); break;
             }
         }
     }
