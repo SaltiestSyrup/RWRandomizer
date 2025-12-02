@@ -113,6 +113,8 @@ namespace RainWorldRandomizer
             kind = KindOfLocation(internalName);
             region = RegionOfLocation(kind, internalName);
             internalDesc = CreateInternalDesc();
+
+            //Plugin.Log.LogDebug($"New AP LocationInfo: {displayName} => {internalName}, {kind}, {region}, {internalDesc}");
         }
 
         public LocationInfo(KeyValuePair<string, bool> pair, bool findAPID) : this(pair.Key, pair.Value, findAPID) { }
@@ -265,6 +267,11 @@ namespace RainWorldRandomizer
                     default:
                         return split[0];
                 }
+            }
+
+            if (split[1].StartsWith("Prince encounter"))
+            {
+                return $"Prince-{split[1].Split('#')[1]}";
             }
 
             return split[1] switch
