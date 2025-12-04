@@ -7,7 +7,9 @@ namespace RainWorldRandomizer.WatcherIntegration
 {
     internal static class Settings
     {
-        internal enum DynWarpMode { Ignored, Visited, StaticPool, UNUSED, UnlockablePool, StaticPredetermined, UnlockablePredetermined }
+        // TODO: All other warp modes are disabled for now, to keep things simple. Look into bringing these back later
+        //internal enum DynWarpMode { Ignored, Visited, StaticPool, UNUSED, UnlockablePool, StaticPredetermined, UnlockablePredetermined }
+        internal enum DynWarpMode { Visited }
         internal enum RippleReqMode { Unaltered, None }
 
         internal static DynWarpMode modeNormal;
@@ -18,8 +20,8 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static bool spinningTopKeys;
         internal static long rottedRegionTarget;
 
-        internal static bool Predetermined(this DynWarpMode mode) => mode == DynWarpMode.StaticPredetermined || mode == DynWarpMode.UnlockablePredetermined;
-        internal static bool Unlockable(this DynWarpMode mode) => mode == DynWarpMode.UnlockablePool || mode == DynWarpMode.UnlockablePredetermined;
+        //internal static bool Predetermined(this DynWarpMode mode) => mode == DynWarpMode.StaticPredetermined || mode == DynWarpMode.UnlockablePredetermined;
+        //internal static bool Unlockable(this DynWarpMode mode) => mode == DynWarpMode.UnlockablePool || mode == DynWarpMode.UnlockablePredetermined;
 
         /// <summary>Get a primitive key from a JObject.</summary>
         internal static T GetSimple<T>(this Dictionary<string, object> self, string key, T defaultValue = default) 
@@ -64,8 +66,8 @@ namespace RainWorldRandomizer.WatcherIntegration
 
         internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, RippleReqMode rippleReq, bool spinningTopKeys, long rottedRegionTarget)
         {
-            Settings.modeNormal = modeNormal;
-            Settings.modeThrone = modeThrone;
+            Settings.modeNormal = DynWarpMode.Visited; // modeNormal;
+            Settings.modeThrone = DynWarpMode.Visited; // modeThrone;
             Settings.targetPool = pool.Select(x => x.ToUpperInvariant());
             Settings.predetermination = predetermination;
             Settings.rippleReq = rippleReq;

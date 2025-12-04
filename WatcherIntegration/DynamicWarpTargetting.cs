@@ -28,8 +28,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                 IL.Player.SpawnDynamicWarpPoint += SpawnDynamicWarpPointIL;
                 On.Watcher.WarpPoint.NewWorldLoaded_Room += OnNewWorldLoaded;
 
-                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += WaiveRippleReq;
-                On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += PredetermineOrFilter;
+                //IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += WaiveRippleReq;
+                On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += GetAvailableDynamicWarpTargets;
                 IL.Player.FailToSpawnWarpPoint += CustomFailureMessage;
             }
 
@@ -38,8 +38,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                 IL.Player.SpawnDynamicWarpPoint -= SpawnDynamicWarpPointIL;
                 On.Watcher.WarpPoint.NewWorldLoaded_Room -= OnNewWorldLoaded;
 
-                IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= WaiveRippleReq;
-                On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= PredetermineOrFilter;
+                //IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= WaiveRippleReq;
+                On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= GetAvailableDynamicWarpTargets;
                 IL.Player.FailToSpawnWarpPoint -= CustomFailureMessage;
             }
 
@@ -111,65 +111,139 @@ namespace RainWorldRandomizer.WatcherIntegration
                 c.EmitDelegate(Delegate);
             }
 
-            /// <summary>Intercept the list of normal dynamic warp targets.</summary>
-            private static List<string> PredetermineOrFilter(On.Watcher.WarpPoint.orig_GetAvailableDynamicWarpTargets_World_string_string_bool orig, World world, string oldRoom, string targetRegion, bool spreadingRot)
+            /// <summary>
+            /// Reimplemtation of this method, because so much has to change. Decides where a regular dynamic warp should go.
+            /// </summary>
+            private static List<string> GetAvailableDynamicWarpTargets(On.Watcher.WarpPoint.orig_GetAvailableDynamicWarpTargets_World_string_string_bool orig,
+                World world, string oldRoom, string targetRegion, bool spreadingRot)
             {
-                failureReason = null;
-                string roomName = oldRoom.ToUpperInvariant();
-                string region = roomName.Region();
-                WarpSourceKind sourceKind = GetWarpSourceKind(roomName);
-                DynWarpMode relevantMode = sourceKind == WarpSourceKind.Throne ? modeThrone : modeNormal;
+                if (Plugin.RandoManager?.isRandomizerActive is not true) return orig(world, oldRoom, targetRegion, spreadingRot);
+                SaveState saveState = world.game.GetStorySession.saveState;
 
-                // For a predetermined mode, we return a single room early instead of running the original method.
-                if (relevantMode.Predetermined())
+                if (saveState.miscWorldSaveData.hasVoidWeaverAbility) spreadingRot = false;
+
+                // All regions that have been visited before (have a RegionState saved in the SaveState)
+                // minus the region we're currently in
+                List<string> regionCandidates = [.. saveState.regionStates
+                    .Where(s => s is not null && s.regionName != world.name)
+                    .Select(s => s.regionName.ToLowerInvariant())];
+
+                // Always respect target region parameter
+                if (targetRegion is not null) regionCandidates = [targetRegion];
+
+                // TODO: Get warps to seal when weaver ability
+
+                Dictionary<string, List<string>> candidatesByRegion = [];
+
+                List<string> normalWeightedCandidates = [];
+
+                world.game.rainWorld.levelDynamicWarpTargets.TryGetValue(999f, out List<string> noRippleTargets);
+                string fallbackWarp = null;
+                foreach (var regionWarpsPair in world.game.rainWorld.regionDynamicWarpTargets)
                 {
-                    // If we need the key but do not have it, set a failure reason and return empty.
-                    if (relevantMode == DynWarpMode.UnlockablePredetermined
-                        && sourceKind is not WarpSourceKind.Permarotted or WarpSourceKind.Unrottable
-                        && !Items.CollectedDynamicKeys.Contains(region))
+                    if (!regionCandidates.Contains(regionWarpsPair.Key)) continue;
+
+                    foreach (string warpTarget in regionWarpsPair.Value)
                     {
-                        failureReason = FailureReason.MissingSourceKey;
-                        return [];
+                        // Skip rooms in the current region unless the target is a special case
+                        if (regionWarpsPair.Key == world.name && (warpTarget == oldRoom || !noRippleTargets.Contains(warpTarget)))
+                            continue;
+
+                        fallbackWarp = warpTarget;
+
+                        // Don't warp to rooms with a warp in them already
+                        if (saveState.miscWorldSaveData.discoveredWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == warpTarget)) continue;
+                        if (saveState.deathPersistentSaveData.spawnedWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == warpTarget)) continue;
+
+                        // If region was targetted, all weights are equal
+                        if (targetRegion is not null)
+                        {
+                            normalWeightedCandidates.Add(warpTarget);
+                            continue;
+                        }
+
+                        // For weighting, the original unvisited region and ripple proximity factors are ignored.
+                        // Warps are weighted by rot spread and how many checks remain in the region.
+                        int weight = 1;
+
+                        if (spreadingRot
+                            && !saveState.miscWorldSaveData.regionsInfectedBySentientRot.Contains(regionWarpsPair.Key)
+                            && !Region.HasSentientRotResistance(regionWarpsPair.Key))
+                        {
+                            weight *= 8;
+                            if (saveState.miscWorldSaveData.highestPrinceConversationSeen >= PrinceBehavior.PrinceConversation.PrinceConversationToId(WatcherEnums.ConversationID.Prince_7))
+                                weight *= 3;
+                        }
+
+                        // TODO: Check completion weights
+
+                        for (int i = 0; i < weight; i++) normalWeightedCandidates.Add(warpTarget);
                     }
-                    // Specifically in the Throne, we need to index the mapping with the room; otherwise, index with the region.
-                    if (predetermination.TryGetValue(sourceKind == WarpSourceKind.Throne ? roomName : region, out string destRoom))
-                    {
-                        return [destRoom];
-                    }
-
-                    // Ideally this failure state never happens - it would imply either custom regions,
-                    // some sort of generation failure, or incomplete slot data.
-                    failureReason = FailureReason.MissingPredetermination;
-                    return [];
                 }
 
-                // For a non-predetermined mode, get the ordinarily valid candidate targets.
-                List<string> candidates = orig(world, oldRoom, targetRegion, spreadingRot);
-
-                // If, for some reason, there are no valid candidate to begin with,
-                // something else has gone wrong and we don't need to bother with a custom failure reason.
-                if (candidates.Count == 0) return candidates;
-                //Plugin.Log.LogDebug($"Original candidates for dynamic warp: [{string.Join(",", candidates)}]");
-
-                // Otherwise, we may need to filter this list, depending on the warp mode.
-                IEnumerable<string> regionFilter = null;
-                FailureReason? latentFR = null;
-                switch (relevantMode)
-                {
-                    case DynWarpMode.Visited: regionFilter = visitedRegions; latentFR = FailureReason.NoOtherVisitedRegions; break;
-                    case DynWarpMode.StaticPool: regionFilter = targetPool; latentFR = FailureReason.NoValidStaticPoolTargets; break;
-                    case DynWarpMode.UnlockablePool: regionFilter = Items.CollectedDynamicKeys; latentFR = FailureReason.NoUsableDynamicKeys; break;
-                }
-
-                if (regionFilter != null)
-                {
-                    regionFilter = regionFilter.Select(x => x.ToUpperInvariant());
-                    candidates = [.. candidates.Where(x => regionFilter.Contains(x.Region()))];
-                    if (candidates.Count == 0) failureReason = latentFR;
-                }
-                //Plugin.Log.LogDebug($"Filtered candidates for dynamic warp: [{string.Join(",", candidates)}]");
-                return candidates;
+                if (normalWeightedCandidates.Count == 0 && fallbackWarp is not null) normalWeightedCandidates.Add(fallbackWarp);
+                return normalWeightedCandidates;
             }
+
+            /// <summary>Intercept the list of normal dynamic warp targets.</summary>
+            //private static List<string> PredetermineOrFilter(On.Watcher.WarpPoint.orig_GetAvailableDynamicWarpTargets_World_string_string_bool orig, World world, string oldRoom, string targetRegion, bool spreadingRot)
+            //{
+            //    failureReason = null;
+            //    string roomName = oldRoom.ToUpperInvariant();
+            //    string region = roomName.Region();
+            //    WarpSourceKind sourceKind = GetWarpSourceKind(roomName);
+            //    DynWarpMode relevantMode = sourceKind == WarpSourceKind.Throne ? modeThrone : modeNormal;
+
+            //    // For a predetermined mode, we return a single room early instead of running the original method.
+            //    if (relevantMode.Predetermined())
+            //    {
+            //        // If we need the key but do not have it, set a failure reason and return empty.
+            //        if (relevantMode == DynWarpMode.UnlockablePredetermined
+            //            && sourceKind is not WarpSourceKind.Permarotted or WarpSourceKind.Unrottable
+            //            && !Items.CollectedDynamicKeys.Contains(region))
+            //        {
+            //            failureReason = FailureReason.MissingSourceKey;
+            //            return [];
+            //        }
+            //        // Specifically in the Throne, we need to index the mapping with the room; otherwise, index with the region.
+            //        if (predetermination.TryGetValue(sourceKind == WarpSourceKind.Throne ? roomName : region, out string destRoom))
+            //        {
+            //            return [destRoom];
+            //        }
+
+            //        // Ideally this failure state never happens - it would imply either custom regions,
+            //        // some sort of generation failure, or incomplete slot data.
+            //        failureReason = FailureReason.MissingPredetermination;
+            //        return [];
+            //    }
+
+            //    // For a non-predetermined mode, get the ordinarily valid candidate targets.
+            //    List<string> candidates = orig(world, oldRoom, targetRegion, spreadingRot);
+
+            //    // If, for some reason, there are no valid candidate to begin with,
+            //    // something else has gone wrong and we don't need to bother with a custom failure reason.
+            //    if (candidates.Count == 0) return candidates;
+            //    //Plugin.Log.LogDebug($"Original candidates for dynamic warp: [{string.Join(",", candidates)}]");
+
+            //    // Otherwise, we may need to filter this list, depending on the warp mode.
+            //    IEnumerable<string> regionFilter = null;
+            //    FailureReason? latentFR = null;
+            //    switch (relevantMode)
+            //    {
+            //        case DynWarpMode.Visited: regionFilter = visitedRegions; latentFR = FailureReason.NoOtherVisitedRegions; break;
+            //        case DynWarpMode.StaticPool: regionFilter = targetPool; latentFR = FailureReason.NoValidStaticPoolTargets; break;
+            //        case DynWarpMode.UnlockablePool: regionFilter = Items.CollectedDynamicKeys; latentFR = FailureReason.NoUsableDynamicKeys; break;
+            //    }
+
+            //    if (regionFilter != null)
+            //    {
+            //        regionFilter = regionFilter.Select(x => x.ToUpperInvariant());
+            //        candidates = [.. candidates.Where(x => regionFilter.Contains(x.Region()))];
+            //        if (candidates.Count == 0) failureReason = latentFR;
+            //    }
+            //    //Plugin.Log.LogDebug($"Filtered candidates for dynamic warp: [{string.Join(",", candidates)}]");
+            //    return candidates;
+            //}
 
             internal enum FailureReason { MissingSourceKey, MissingPredetermination, NoOtherVisitedRegions, NoUsableDynamicKeys, NoValidStaticPoolTargets }
 
