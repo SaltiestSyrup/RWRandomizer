@@ -1,5 +1,6 @@
 ﻿using MonoMod.RuntimeDetour;
 using System;
+using System.Linq;
 using UnityEngine;
 using MWSD = MiscWorldSaveData;
 
@@ -28,7 +29,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
             /// <summary>Reduce the number of regions needed for the Sentient Rot ending to match <see cref="Settings.rottedRegionTarget"/>.</summary>
             internal static int ApplyRottedRegionTarget(Func<MWSD, int> orig, MWSD self) 
-                => Mathf.Max(orig(self) - 18 + (int)Settings.rottedRegionTarget, 0);
+                => Mathf.Max(orig(self) - 21 + (int)Settings.rottedRegionTarget, 0);
 
             /// <summary>Detect completion conditions when switching to the ending slideshows.</summary>
             private static void DetectCompletion(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID orig, ProcessManager self, ProcessManager.ProcessID ID)
@@ -38,7 +39,13 @@ namespace RainWorldRandomizer.WatcherIntegration
                     if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingRot)
                         managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SentientRot);
                     else if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingSpinningTop)
+                    {
                         managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SpinningTop);
+                        // Release all Spinning Top checks because they are now impossible
+                        foreach (var loc in managerAP.GetLocations().Where(l => l.kind == LocationInfo.LocationKind.SpinningTop))
+                            managerAP.GiveLocation(loc.internalName);
+                    }
+                        
                 }
                 orig(self, ID);
             }
