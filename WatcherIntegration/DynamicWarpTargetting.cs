@@ -2,6 +2,7 @@
 using MonoMod.Cil;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using Watcher;
 using static RainWorldRandomizer.WatcherIntegration.Settings;
 
@@ -9,6 +10,16 @@ namespace RainWorldRandomizer.WatcherIntegration
 {
     internal static class DynamicWarpTargetting
     {
+        /// <summary>The maximum multiplier on dynamic warp weighting that check completion can have</summary>
+        private const int INFLUENCE_COMPLETION = 10;
+        /// <summary>The multiplier on dynamic warp weighting that spreading rot provides</summary>
+        private const int INFLUENCE_ROT_SPREAD = 8;
+        /// <summary>The additional multiplier on dynamic warp weighting that spreading rot provides when the flag 
+        /// for rot ending "endgame" is triggered (Spoken to prince after 12 regions)</summary>
+        private const int INFLUENCE_ROT_ENDGAME = 3;
+        /// <summary>The multiplier on dynamic warp weighting applied when the region has warps to seal</summary>
+        private const int INFLUENCE_WARPS_TO_SEAL = 8;
+
         internal enum WarpSourceKind { Other, Normal, Throne, Permarotted, Unrottable }
 
         /// <summary>Get the kind of dynamic warp that would be performed from this room.</summary>
@@ -131,7 +142,21 @@ namespace RainWorldRandomizer.WatcherIntegration
                 // Always respect target region parameter
                 if (targetRegion is not null) regionCandidates = [targetRegion];
 
-                // TODO: Get warps to seal when weaver ability
+                // Get all regions that have warps that need to be sealed
+                List<string> regionsWithSealableWarps = [];
+                if (saveState.miscWorldSaveData.hasVoidWeaverAbility)
+                {
+                    foreach (string room in saveState.RoomsWithWarpsRemainingToBeSealed(true))
+                    {
+                        if (!room.Contains('_')) continue;
+                        string reg = room.Split('_')[0].ToLowerInvariant();
+                        if (!regionsWithSealableWarps.Contains(reg) 
+                            && reg != world.name.ToLowerInvariant()
+                            && world.game.rainWorld.regionDynamicWarpTargets.TryGetValue(reg, out List<string> targets)
+                            && targets.Any())
+                            regionsWithSealableWarps.Add(reg);
+                    }
+                }
 
                 Dictionary<string, List<string>> candidatesByRegion = [];
 
@@ -139,11 +164,36 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 world.game.rainWorld.levelDynamicWarpTargets.TryGetValue(999f, out List<string> noRippleTargets);
                 string fallbackWarp = null;
-                foreach (var regionWarpsPair in world.game.rainWorld.regionDynamicWarpTargets)
+                foreach (var regionWarpsPair in world.game.rainWorld.regionDynamicWarpTargets) // REGION LOOP
                 {
                     if (!regionCandidates.Contains(regionWarpsPair.Key)) continue;
 
-                    foreach (string warpTarget in regionWarpsPair.Value)
+                    int weight = 1;
+
+                    // Weight regions by check completion
+                    float regionCompletion = Plugin.RandoManager.PercentOfRegionComplete(regionWarpsPair.Key);
+                    if (regionCompletion != -1f)
+                    {
+                        // Full influence if region has 0% checks complete, lerp towards no influence if 100% complete
+                        Plugin.Log.LogDebug($"Influence of {regionWarpsPair.Key} with {regionCompletion * 100f}% completion: " +
+                            $"{(int)Mathf.Lerp(INFLUENCE_COMPLETION, 1, regionCompletion)}");
+                        weight *= (int)Mathf.Lerp(INFLUENCE_COMPLETION, 1, regionCompletion);
+                    }
+
+                    // Weight regions if spreading rot to them
+                    if (spreadingRot
+                        && !saveState.miscWorldSaveData.regionsInfectedBySentientRot.Contains(regionWarpsPair.Key)
+                        && !Region.HasSentientRotResistance(regionWarpsPair.Key))
+                    {
+                        weight *= INFLUENCE_ROT_SPREAD;
+                        if (saveState.miscWorldSaveData.highestPrinceConversationSeen >= PrinceBehavior.PrinceConversation.PrinceConversationToId(WatcherEnums.ConversationID.Prince_7))
+                            weight *= INFLUENCE_ROT_ENDGAME;
+                    }
+
+                    // Weight regions if we need to seal warps there
+                    if (regionsWithSealableWarps.Contains(regionWarpsPair.Key)) weight *= INFLUENCE_WARPS_TO_SEAL;
+
+                    foreach (string warpTarget in regionWarpsPair.Value) // WARP DESTINATION LOOP
                     {
                         // Skip rooms in the current region unless the target is a special case
                         if (regionWarpsPair.Key == world.name && (warpTarget == oldRoom || !noRippleTargets.Contains(warpTarget)))
@@ -161,21 +211,6 @@ namespace RainWorldRandomizer.WatcherIntegration
                             normalWeightedCandidates.Add(warpTarget);
                             continue;
                         }
-
-                        // For weighting, the original unvisited region and ripple proximity factors are ignored.
-                        // Warps are weighted by rot spread and how many checks remain in the region.
-                        int weight = 1;
-
-                        if (spreadingRot
-                            && !saveState.miscWorldSaveData.regionsInfectedBySentientRot.Contains(regionWarpsPair.Key)
-                            && !Region.HasSentientRotResistance(regionWarpsPair.Key))
-                        {
-                            weight *= 8;
-                            if (saveState.miscWorldSaveData.highestPrinceConversationSeen >= PrinceBehavior.PrinceConversation.PrinceConversationToId(WatcherEnums.ConversationID.Prince_7))
-                                weight *= 3;
-                        }
-
-                        // TODO: Check completion weights
 
                         for (int i = 0; i < weight; i++) normalWeightedCandidates.Add(warpTarget);
                     }

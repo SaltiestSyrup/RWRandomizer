@@ -123,6 +123,24 @@ namespace RainWorldRandomizer
         public List<LocationInfo> GetLocations() => locations;
 
         /// <summary>
+        /// Returns all locations in the specified region
+        /// </summary>
+        public List<LocationInfo> GetLocationsInRegion(string region) => [.. locations.Where(l => l.region == region)];
+
+        /// <summary>
+        /// Returns a float in range 0-1 representing the percentage of checks in the region that have been collected
+        /// </summary>
+        /// <param name="region"></param>
+        /// <returns>0f-1f if region exists, -1f if it does not</returns>
+        public float PercentOfRegionComplete(string region)
+        {
+            List<LocationInfo> locs = GetLocationsInRegion(region);
+            if (!locs.Any()) return -1f;
+
+            return locs.Count(l => l.Collected) / locs.Count;
+        }
+
+        /// <summary>
         /// Check whether a given location exists in the current seed
         /// </summary>
         /// <param name="location">The string ID of the location</param>
