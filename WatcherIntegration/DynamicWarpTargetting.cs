@@ -2,6 +2,7 @@
 using MonoMod.Cil;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using Watcher;
 using static RainWorldRandomizer.WatcherIntegration.Settings;
@@ -41,6 +42,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 //IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += WaiveRippleReq;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += GetAvailableDynamicWarpTargets;
+                On.Watcher.WarpPoint.GetAvailableBadWarpTargets_World_string += GetAvailableBadWarpTargets;
                 IL.Player.FailToSpawnWarpPoint += CustomFailureMessage;
             }
 
@@ -51,6 +53,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 //IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= WaiveRippleReq;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= GetAvailableDynamicWarpTargets;
+                On.Watcher.WarpPoint.GetAvailableBadWarpTargets_World_string -= GetAvailableBadWarpTargets;
                 IL.Player.FailToSpawnWarpPoint -= CustomFailureMessage;
             }
 
@@ -135,9 +138,14 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 // All regions that have been visited before (have a RegionState saved in the SaveState)
                 // minus the region we're currently in
-                List<string> regionCandidates = [.. saveState.regionStates
-                    .Where(s => s is not null && s.regionName != world.name)
-                    .Select(s => s.regionName.ToLowerInvariant())];
+                List<string> regionCandidates = [];
+                for (int i = 0; i < saveState.regionStates.Length; i++)
+                {
+                    if (saveState.regionStates[i] is not null) 
+                        regionCandidates.Add(saveState.regionStates[i].regionName.ToLowerInvariant());
+                    else if (saveState.regionLoadStrings[i] is not null)
+                        regionCandidates.Add(Regex.Split(Regex.Split(saveState.regionLoadStrings[i], "<rgA>")[0], "<rgB>")[1].ToLowerInvariant());
+                }
 
                 // Always respect target region parameter
                 if (targetRegion is not null) regionCandidates = [targetRegion];
@@ -171,12 +179,12 @@ namespace RainWorldRandomizer.WatcherIntegration
                     int weight = 1;
 
                     // Weight regions by check completion
-                    float regionCompletion = Plugin.RandoManager.PercentOfRegionComplete(regionWarpsPair.Key);
+                    float regionCompletion = Plugin.RandoManager.PercentOfRegionComplete(regionWarpsPair.Key.ToUpperInvariant());
                     if (regionCompletion != -1f)
                     {
                         // Full influence if region has 0% checks complete, lerp towards no influence if 100% complete
-                        Plugin.Log.LogDebug($"Influence of {regionWarpsPair.Key} with {regionCompletion * 100f}% completion: " +
-                            $"{(int)Mathf.Lerp(INFLUENCE_COMPLETION, 1, regionCompletion)}");
+                        //Plugin.Log.LogDebug($"Influence of {regionWarpsPair.Key} with {regionCompletion * 100f}% completion: " +
+                        //    $"{(int)Mathf.Lerp(INFLUENCE_COMPLETION, 1, regionCompletion)}");
                         weight *= (int)Mathf.Lerp(INFLUENCE_COMPLETION, 1, regionCompletion);
                     }
 
@@ -195,29 +203,56 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                     foreach (string warpTarget in regionWarpsPair.Value) // WARP DESTINATION LOOP
                     {
+                        string targetRoom = warpTarget.Split(':')[0];
                         // Skip rooms in the current region unless the target is a special case
-                        if (regionWarpsPair.Key == world.name && (warpTarget == oldRoom || !noRippleTargets.Contains(warpTarget)))
-                            continue;
+                        if (regionWarpsPair.Key == world.name && (targetRoom == oldRoom || !noRippleTargets.Contains(targetRoom))) continue;
+                        if (world.game.rainWorld.levelBadWarpTargets.Contains(targetRoom)) continue;
 
-                        fallbackWarp = warpTarget;
+                        fallbackWarp = targetRoom;
 
                         // Don't warp to rooms with a warp in them already
-                        if (saveState.miscWorldSaveData.discoveredWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == warpTarget)) continue;
-                        if (saveState.deathPersistentSaveData.spawnedWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == warpTarget)) continue;
+                        if (saveState.miscWorldSaveData.discoveredWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == targetRoom)) continue;
+                        if (saveState.deathPersistentSaveData.spawnedWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == targetRoom)) continue;
 
                         // If region was targetted, all weights are equal
                         if (targetRegion is not null)
                         {
-                            normalWeightedCandidates.Add(warpTarget);
+                            normalWeightedCandidates.Add(targetRoom);
                             continue;
                         }
 
-                        for (int i = 0; i < weight; i++) normalWeightedCandidates.Add(warpTarget);
+                        //Plugin.Log.LogDebug($"Adding warp \"{targetRoom}\" to list with weight of {weight}");
+                        for (int i = 0; i < weight; i++) normalWeightedCandidates.Add(targetRoom);
                     }
                 }
 
                 if (normalWeightedCandidates.Count == 0 && fallbackWarp is not null) normalWeightedCandidates.Add(fallbackWarp);
                 return normalWeightedCandidates;
+            }
+
+            private static List<string> GetAvailableBadWarpTargets(On.Watcher.WarpPoint.orig_GetAvailableBadWarpTargets_World_string orig, World world, string oldRoom)
+            {
+                List<string> origRet = orig(world, oldRoom);
+                if (Plugin.RandoManager?.isRandomizerActive is not true) return origRet;
+
+                List<string> badWeightedCandidates = [];
+                foreach (string warpTarget in origRet)
+                {
+                    if (!warpTarget.Contains('_')) continue;
+                    string region = warpTarget.Split('_')[0];
+                    float regionCompletion = Plugin.RandoManager.PercentOfRegionComplete(region.ToUpperInvariant());
+                    if (regionCompletion == -1f) continue;
+
+                    // Full influence if region has 0% checks complete, lerp towards not added at all if 100% complete
+                    //Plugin.Log.LogDebug($"Influence of {region} with {regionCompletion * 100f}% completion: " +
+                    //    $"{(int)Mathf.Lerp(INFLUENCE_COMPLETION, 0, regionCompletion)}");
+                    int weight = (int)Mathf.Lerp(INFLUENCE_COMPLETION, 0, regionCompletion);
+
+                    for (int i = 0; i < weight; i++) badWeightedCandidates.Add(warpTarget);
+                }
+
+                if (badWeightedCandidates.Any()) return badWeightedCandidates;
+                else return origRet;
             }
 
             /// <summary>Intercept the list of normal dynamic warp targets.</summary>

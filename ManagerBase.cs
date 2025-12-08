@@ -137,7 +137,7 @@ namespace RainWorldRandomizer
             List<LocationInfo> locs = GetLocationsInRegion(region);
             if (!locs.Any()) return -1f;
 
-            return locs.Count(l => l.Collected) / locs.Count;
+            return (float)locs.Count(l => l.Collected) / locs.Count;
         }
 
         /// <summary>
