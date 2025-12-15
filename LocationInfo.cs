@@ -163,6 +163,7 @@ namespace RainWorldRandomizer
                         "Gift_Neuron" or "Meet_LttM" or "Save_LttM" or "Ascend_LttM" => "SL",
                         "Meet_FP" => "SS",
                         "Ascend_FP" => "CL",
+                        "Meet_Ripple_Elder" => "WORA",
                         _ => "<??>",
                     };
             }
@@ -299,6 +300,7 @@ namespace RainWorldRandomizer
                 "Create lower west warp" => "ThroneWarp-05",
                 "Create upper east warp" => "ThroneWarp-07",
                 "Create upper west warp" => "ThroneWarp-09",
+                "Meet Elder Ripple Spawn" => "Meet_Ripple_Elder",
                 _ => split[1]
             };
         }
@@ -342,6 +344,7 @@ namespace RainWorldRandomizer
                 "Save_LttM" => "Revive Looks to the Moon",
                 "Ascend_FP" => "Ascend Five Pebbles",
                 "Ascend_LttM" => "Ascend Looks to the Moon",
+                "Meet_Ripple_Elder" => "Meet Elder Ripple Spawn",
                 _ => internalName
             };
         }

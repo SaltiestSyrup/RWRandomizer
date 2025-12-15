@@ -19,6 +19,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.WinState.TrackerAllowedOnSlugcat += LetThemWander;
                 On.SlugcatStats.SlugcatStoryRegions += WatcherStoryRegions;
                 On.Watcher.WarpSpawningRipple.Success += DetectThroneWarpCreation;
+                On.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.PromptSpecialWarp += OnElderSpawn_PromptSpecialWarp;
+
                 IL.Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils.Update += DetectPrince;
                 IL.Watcher.SpinningTop.SpawnWarpPoint += SpinningTop_SpawnWarpPoint;
                 //IL.World.SpawnGhost += NullifyPresence;
@@ -32,7 +34,10 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.WinState.TrackerAllowedOnSlugcat -= LetThemWander;
                 On.SlugcatStats.SlugcatStoryRegions -= WatcherStoryRegions;
                 On.Watcher.WarpSpawningRipple.Success -= DetectThroneWarpCreation;
+                On.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.PromptSpecialWarp -= OnElderSpawn_PromptSpecialWarp;
+
                 IL.Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils.Update -= DetectPrince;
+                IL.Watcher.SpinningTop.SpawnWarpPoint -= SpinningTop_SpawnWarpPoint;
                 //IL.World.SpawnGhost -= NullifyPresence;
             }
 
@@ -149,6 +154,22 @@ namespace RainWorldRandomizer.WatcherIntegration
                     return !Items.StaticKey.IsMissing(self.world.name, dest is null ? "WAUA" : dest);
                 }
                 c.EmitDelegate(Delegate);
+            }
+
+            /// <summary>
+            /// Detect meeting Ripple Elder and cancel warp tutorial
+            /// </summary>
+            private static void OnElderSpawn_PromptSpecialWarp(On.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.orig_PromptSpecialWarp orig, 
+                WatcherRoomSpecificScript.WORA_ElderSpawn self, Player player)
+            {
+                if (Plugin.RandoManager is null)
+                {
+                    orig(self, player);
+                    return;
+                }
+
+                EntryPoint.TryGiveLocation("Meet_Ripple_Elder");
+                self.Destroy();
             }
         }
     }

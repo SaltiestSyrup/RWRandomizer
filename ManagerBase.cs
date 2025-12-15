@@ -71,6 +71,11 @@ namespace RainWorldRandomizer
             get { return _givenSpearPearlRewrite; }
             set { _givenSpearPearlRewrite = value; }
         }
+        public virtual bool GivenRippleEggWarp
+        {
+            get { return _givenRippleEggWarp; }
+            set { _givenRippleEggWarp = value;}
+        }
 
         protected int _currentMaxKarma = 4;
         protected int _hunterBonusCyclesGiven = 0;
@@ -81,6 +86,7 @@ namespace RainWorldRandomizer
         protected bool _givenPebblesOff = false;
         protected bool _givenSpearPearlRewrite = false;
         protected bool[] _givenExpeditionPerks = new bool[8];
+        protected bool _givenRippleEggWarp = false;
 
         /// <summary>
         /// The den that this run has started in. If spawn was not randomized, this should be set to <see cref="currentSlugcat"/>'s entry in <see cref="Constants.SlugcatDefaultStartingDen"/>

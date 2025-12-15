@@ -138,6 +138,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 // All regions that have been visited before (have a RegionState saved in the SaveState)
                 // minus the region we're currently in
+                // TODO: Change dynamic warp targeting to select regions in logic
                 List<string> regionCandidates = [];
                 for (int i = 0; i < saveState.regionStates.Length; i++)
                 {

@@ -208,6 +208,7 @@ namespace RainWorldRandomizer
             self.GetStorySession.saveState.hasRobo = Plugin.RandoManager.GivenRobo;
             self.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = Plugin.RandoManager.GivenPebblesOff;
             self.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
+            self.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = Plugin.RandoManager.GivenRippleEggWarp;
         }
 
         /// <summary>
