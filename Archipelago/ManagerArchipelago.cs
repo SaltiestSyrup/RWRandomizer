@@ -239,13 +239,13 @@ namespace RainWorldRandomizer
             else if (item.StartsWith("Object-"))
             {
                 if (!isNew) return; // Don't double gift items, unused ones will be read from file
-                Unlock unlock = new(Unlock.UnlockType.Item, Unlock.IDToItem(item[7..]));
+                Unlock unlock = new(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("PearlObject-"))
             {
                 if (!isNew) return;
-                Unlock unlock = new(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item[12..], true));
+                Unlock unlock = new(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("Trap-"))
@@ -255,7 +255,7 @@ namespace RainWorldRandomizer
             }
             else if (item.StartsWith("Exp-"))
             {
-                GrantExpeditionPerk(item[4..]);
+                GrantExpeditionPerk(item.Substring(4));
             }
             else
             {

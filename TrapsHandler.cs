@@ -145,7 +145,7 @@ namespace RainWorldRandomizer
 
         public static void EnqueueTrap(string itemId)
         {
-            Plugin.RandoManager?.pendingTrapQueue.Enqueue(new Trap(itemId[5..]));
+            Plugin.RandoManager?.pendingTrapQueue.Enqueue(new Trap(itemId.Substring(5)));
         }
 
         private static void ResetCooldown()

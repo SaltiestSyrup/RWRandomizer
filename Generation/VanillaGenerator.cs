@@ -947,11 +947,11 @@ namespace RainWorldRandomizer.Generation
 
             if (outputType == Unlock.UnlockType.Item)
             {
-                return new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id[7..]));
+                return new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id.Substring(7)));
             }
             if (outputType == Unlock.UnlockType.ItemPearl)
             {
-                return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id[12..], true));
+                return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id.Substring(12), true));
             }
             return new Unlock(outputType, item.id);
         }

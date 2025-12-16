@@ -109,7 +109,7 @@ namespace RainWorldRandomizer
             List<SlugcatStats.Name> IntersectClearance(List<SlugcatStats.Name> tokenClearance, string region, string room)
             {
                 room = Path.GetFileNameWithoutExtension(room);
-                room = room[..room.IndexOf("_setting")].ToLower();
+                room = room.Substring(0, room.IndexOf("_setting")).ToLower();
                 if (GetRoomAccessibility(region).ContainsKey(room))
                 {
                     return [.. tokenClearance.Intersect(GetRoomAccessibility(region)[room])];
@@ -519,7 +519,7 @@ namespace RainWorldRandomizer
             void CacheDevToken(RainWorld self, string region, string room, List<SlugcatStats.Name> list3, PlacedObject obj)
             {
                 string roomName = Path.GetFileNameWithoutExtension(room);
-                roomName = roomName[..roomName.IndexOf("_setting")].ToUpperInvariant();
+                roomName = roomName.Substring(0, roomName.IndexOf("_setting")).ToUpperInvariant();
                 if (!regionDevTokens[region].Contains(roomName))
                 {
                     regionDevTokens[region].Add(roomName);
@@ -541,7 +541,7 @@ namespace RainWorldRandomizer
             void CacheKarmaFlower(RainWorld self, string region, string room, List<SlugcatStats.Name> list3)
             {
                 string roomName = Path.GetFileNameWithoutExtension(room);
-                roomName = roomName[..roomName.IndexOf("_setting")].ToUpperInvariant();
+                roomName = roomName.Substring(0, roomName.IndexOf("_setting")).ToUpperInvariant();
                 if (!regionKarmaFlowers[region].Contains(roomName))
                 {
                     regionKarmaFlowers[region].Add(roomName);

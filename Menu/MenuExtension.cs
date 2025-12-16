@@ -253,7 +253,7 @@ namespace RainWorldRandomizer
             base.Singal(sender, message);
             if (message.StartsWith("OBJ_"))
             {
-                if (!int.TryParse(message[4..], out int index)) return;
+                if (!int.TryParse(message.Substring(4), out int index)) return;
 
                 selectedIndices.Add(index);
                 buttons[index].buttonBehav.greyedOut = true;

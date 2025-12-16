@@ -77,7 +77,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 orig(self, duration, bad, weird, strong);
                 if (DynamicWarpTargetting.GetWarpSourceKind(self.room.abstractRoom.name) == DynamicWarpTargetting.WarpSourceKind.Throne)
                 {
-                    EntryPoint.TryGiveLocation($"ThroneWarp-{self.room.abstractRoom.name[11..]}");
+                    EntryPoint.TryGiveLocation($"ThroneWarp-{self.room.abstractRoom.name.Substring(11)}");
                 }
             }
 

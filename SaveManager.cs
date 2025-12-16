@@ -181,7 +181,7 @@ namespace RainWorldRandomizer
                 string savedData = dpsd.unrecognizedSaveStrings.FirstOrDefault(s => s.StartsWith(SCOUTED_LOCS_KEY));
                 if (savedData is null) return [];
 
-                var scouted = JsonConvert.DeserializeObject<Dictionary<string, ItemFlags>>(savedData[SCOUTED_LOCS_KEY.Length..]);
+                var scouted = JsonConvert.DeserializeObject<Dictionary<string, ItemFlags>>(savedData.Substring(SCOUTED_LOCS_KEY.Length));
                 _scoutedLocations = scouted;
                 return _scoutedLocations;
             }
