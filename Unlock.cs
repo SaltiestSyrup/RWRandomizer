@@ -209,7 +209,7 @@ namespace RainWorldRandomizer
                 "Neuron_Glow" => "Neuron Glow",
                 "The_Mark" => "The Mark",
                 "Item" => item.Value.name,
-                "Trap" => ID[5..],
+                "Trap" => ID.Substring(5),
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
                 "ExpeditionPerk" => readableItemNames.TryGetValue(ID, out string val) ? val : ID,
                 "DamageUpgrade" => "+20% Damage",

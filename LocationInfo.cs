@@ -217,7 +217,7 @@ namespace RainWorldRandomizer
                 switch (split[0])
                 {
                     case "Passage":
-                        string trimmed = split[1][4..].Replace(" ", "");
+                        string trimmed = split[1].Substring(4).Replace(" ", "");
                         if (trimmed == "Wanderer") trimmed = "Traveller";
                         return $"Passage-{trimmed}";
                     case "The Wanderer":
