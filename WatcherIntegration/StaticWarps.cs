@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using RWCustom;
+using System.Runtime.CompilerServices;
+using UnityEngine;
+using Watcher;
 using Random = UnityEngine.Random;
 using WarpPoint = Watcher.WarpPoint;
 
@@ -6,9 +9,16 @@ namespace RainWorldRandomizer.WatcherIntegration
 {
     public static class StaticWarps
     {
-        /// <summary>Determine if this <see cref="WarpPoint"/> needs a key which is not yet collected.</summary>
+        /// <summary>
+        /// Determine if this <see cref="WarpPoint"/> needs a key which is not yet collected.
+        /// </summary>
         private static bool MissingKey(this WarpPoint self) =>
             self.Data.nonDynamicWarpPoint && Items.StaticKey.IsMissing(self.room.world.region.name, self.Data.RegionString is null ? "WRSA" : self.Data.RegionString);
+
+        /// <summary>
+        /// Keeps track of warp tear graphics that should be displaying as locked
+        /// </summary>
+        private static ConditionalWeakTable<WarpTear, WarpPoint> ActiveLockedWarps = new();
 
         /// <summary>
         /// Alt version of <see cref="WarpPoint.LockWarp(bool)"/> that doesn't change any of its data
@@ -58,6 +68,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             internal static void ApplyHooks()
             {
                 On.Watcher.WarpPoint.Update += WarpPoint_Update;
+                On.Watcher.WarpTear.InitiateSprites += WarpTear_InitiateSprites;
             }
 
             internal static void RemoveHooks()
@@ -65,15 +76,32 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.Watcher.WarpPoint.Update -= WarpPoint_Update;
             }
 
-            /// <summary>Temporarily mark static warps as sealed if the key is not collected</summary>
+            /// <summary>
+            /// Temporarily mark static warps as sealed if the key is not collected
+            /// </summary>
             private static void WarpPoint_Update(On.Watcher.WarpPoint.orig_Update orig, WarpPoint self, bool eu)
             {
                 orig(self, eu);
 
-                if (self.currentState != WarpPoint.State.Sealed && self.MissingKey())
+                if (self.MissingKey())
                 {
-                    self.Rando_LockWarp(false);
+                    if (self.currentState != WarpPoint.State.Sealed)
+                        self.Rando_LockWarp(false);
+                    if (self.warpTear is not null && !ActiveLockedWarps.TryGetValue(self.warpTear, out _))
+                        ActiveLockedWarps.Add(self.warpTear, self);
                 }
+
+            }
+
+            /// <summary>
+            /// Apply custom shader to locked warps to make them red
+            /// </summary>
+            private static void WarpTear_InitiateSprites(On.Watcher.WarpTear.orig_InitiateSprites orig, Watcher.WarpTear self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
+            {
+                orig(self, sLeaser, rCam);
+
+                if (ActiveLockedWarps.TryGetValue(self, out _))
+                    sLeaser.sprites[0].shader = Custom.rainWorld.Shaders["Rando.WarpTear"];
             }
         }
     }

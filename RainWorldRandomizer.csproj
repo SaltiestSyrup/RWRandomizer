@@ -96,6 +96,9 @@
     <Reference Include="UnityEngine">
       <HintPath>bin\References\UnityEngine.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>bin\References\UnityEngine.AssetBundleModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>bin\References\UnityEngine.CoreModule.dll</HintPath>
     </Reference>

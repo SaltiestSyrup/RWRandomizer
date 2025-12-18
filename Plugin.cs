@@ -254,6 +254,13 @@ namespace RainWorldRandomizer
         {
             orig(self);
             Futile.atlasManager.LoadAtlas("Atlases/randomizer");
+
+            // If you try to load an already loaded AssetBundle,
+            // a message gets logged to exceptionLog.txt but no exception is actually thrown.
+            if (AssetBundle.GetAllLoadedAssetBundles().Any(a => a.name == "rando")) return;
+
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("AssetBundles/rando"));
+            self.Shaders.Add("Rando.WarpTear", FShader.CreateShader("Rando.WarpTear", assetBundle.LoadAsset<Shader>("Assets/Shaders/RandoWarpTear.shader")));
         }
 
         public void UnloadResources(On.RainWorld.orig_UnloadResources orig, RainWorld self)
