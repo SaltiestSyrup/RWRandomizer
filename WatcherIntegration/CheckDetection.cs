@@ -2,6 +2,7 @@
 using MonoMod.Cil;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using Watcher;
 using WPOT = Watcher.WatcherEnums.PlacedObjectType;
 
@@ -9,11 +10,14 @@ namespace RainWorldRandomizer.WatcherIntegration
 {
     internal static class CheckDetection
     {
+        const float WARP_DETECTION_RADIUS = 200f;
+
         internal static class Hooks
         {
             internal static void ApplyHooks()
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered += DetectSpinningTop;
+                On.Watcher.WarpPoint.Update += WarpPoint_Update;
                 On.Watcher.SpinningTop.CanRaiseRippleLevel += Dont;
                 //IL.Room.Loaded += SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat += LetThemWander;
@@ -29,6 +33,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             internal static void RemoveHooks()
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered -= DetectSpinningTop;
+                On.Watcher.WarpPoint.Update -= WarpPoint_Update;
                 On.Watcher.SpinningTop.CanRaiseRippleLevel -= Dont;
                 //IL.Room.Loaded -= SpinningTopKeyCheck;
                 On.WinState.TrackerAllowedOnSlugcat -= LetThemWander;
@@ -118,16 +123,15 @@ namespace RainWorldRandomizer.WatcherIntegration
             internal static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, SpinningTop self)
             {
                 orig(self);
-                string loc = $"SpinningTop-{self.room.abstractRoom.name.Region()}";
-                if (Plugin.RandoManager.IsLocationGiven(loc) == false) Plugin.RandoManager.GiveLocation(loc);
+                EntryPoint.TryGiveLocation($"SpinningTop-{self.room.abstractRoom.name.Region()}");
             }
 
             /// <summary>Detect, at cycle end, what new fixed warp points have been discovered and what regions have been infected.</summary>
             internal static void DetectFixedWarpPointAndRotSpread(SaveState saveState)
             {
-                Plugin.Log.LogDebug("Checking for warps...");
-                foreach (var point in saveState.miscWorldSaveData.discoveredWarpPoints)
-                    EntryPoint.TryGiveLocation($"Warp-{point.Key.Split(':')[0].ToUpperInvariant()}");
+                //Plugin.Log.LogDebug("Checking for warps...");
+                //foreach (var point in saveState.miscWorldSaveData.discoveredWarpPoints)
+                //    EntryPoint.TryGiveLocation($"Warp-{point.Key.Split(':')[0].ToUpperInvariant()}");
 
                 for (int i = 1; i <= saveState.miscWorldSaveData.regionsInfectedBySentientRotSpread.Count; i++)
                     EntryPoint.TryGiveLocation($"SpreadRot-{i}");
@@ -135,6 +139,24 @@ namespace RainWorldRandomizer.WatcherIntegration
                 //foreach (string region in saveState.miscWorldSaveData.regionsInfectedBySentientRot)
                 //    if (!Region.HasSentientRotResistance(region))
                 //        EntryPoint.TryGiveLocation($"SpreadRot-{region.ToUpperInvariant()}");
+            }
+
+            /// <summary>
+            /// Award warp discovery check when player is near warp
+            /// </summary>
+            private static void WarpPoint_Update(On.Watcher.WarpPoint.orig_Update orig, WarpPoint self, bool eu)
+            {
+                orig(self, eu);
+
+                foreach (var crit in self.room.game.Players)
+                {
+                    if (crit.Room.name == self.room.abstractRoom.name
+                        && crit.realizedCreature is Creature player
+                        && Vector2.Distance(self.pos, player.mainBodyChunk.pos) < WARP_DETECTION_RADIUS)
+                    {
+                        EntryPoint.TryGiveLocation($"Warp-{self.room.abstractRoom.name}");
+                    }
+                }
             }
 
             /// <summary>Prevent Spinning Top from spawning if the key is not collected and <see cref="Settings.spinningTopKeys"/> is enabled.</summary>
