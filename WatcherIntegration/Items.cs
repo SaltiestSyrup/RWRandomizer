@@ -69,6 +69,14 @@ namespace RainWorldRandomizer.WatcherIntegration
                 case "Dynamic": CollectedDynamicKeys.Add(split[1]); break;
                 case "Warp": CollectedStaticKeys.Add(split[1]); break;
                 case "Ripple": RippleIncrements++; UpdateRipple(); break;
+                default:
+                    if (item == "Dial_Warp")
+                    {
+                        Plugin.RandoManager.GivenRippleEggWarp = true;
+                        if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                            Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = true;
+                    }
+                    break;
             }
         }
 
