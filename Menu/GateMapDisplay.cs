@@ -23,7 +23,7 @@ namespace RainWorldRandomizer
 
         public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
         {
-            size = Scug is "Watcher" ? new(440f, 430f) : new(320f, 310f);
+            size = Scug is "Watcher" ? new(540f, 430f) : new(320f, 310f);
             fillAlpha = 1f;
 
             // Nodes have to exist before the connectors, but we want the connectors to be behind the nodes.
@@ -66,13 +66,12 @@ namespace RainWorldRandomizer
 
         internal static List<string> watcherNodeOrder =
         [
-            "WHIR", null, "WDSR", null, "WAUA*", "WARB*", "WARD*",
-            "WSUR", "WORA", "WGWR", "WRSA", "WARA*", "WPTA*", "WSKD*",
-            "WARB", "WARC", "WSSR", "WBLA", "WARC*", "WSKC*", "WBLA*",
-            "WARE", "WTDA", "WSKC", "WARD", "WVWA*", "WARE*", "WTDA*",
-            null, "WTDB", "WARG", "WSKD", "WTDB*", "WRFB*", "WARF*",
-            "WPTA", "WRRA", "WSKB", "WARF", null, null, null,
-            "WVWA", "WRFB", "WRFA", "WSKA", null, null, null,
+             null,  "WARB", "WARC", "WSSR", "WORA", "WRSA", "WARA", "WARB*",
+             null,  "WARE", "WVWB",  null,  "WBLA", "WAUA", "WPTA", "WARC*",
+            "WRFB", "WTDA", "WSKC", "WARD", "WMPA", "WTDA*","WSKC*","WVWA*",
+            "WVWA", "WTDB", "WARG", "WSKD",  null,   null,   null,   null,
+            "WRRA", "WRFA", "WPGA", "WSKA",  null,  "WHIR", "WGWR",  "<P>",
+             null,  "WSKB",  null,   null,  "WARF", "WSUR", "WDSR",  "<FQ>",
         ];
 
         internal static List<string> watcherUnkeyableWarps =
@@ -90,9 +89,15 @@ namespace RainWorldRandomizer
                 {
                     if (nodeName is not null)
                     {
-                        nodes[nodeName] = new(menu, this, pos, nodeName.Substring(1, 3));
+                        string displayName = nodeName switch
+                        {
+                            "<FQ>" => "FQ",
+                            "<P>" => "P",
+                            _ => nodeName.Substring(1, 3)
+                        };
+                        nodes[nodeName] = new(menu, this, pos, displayName);
                     }
-                    pos += pos.x < 400f ? new Vector2(60f, 0f) : new Vector2(-360f, 40f);
+                    pos += pos.x < 460f ? new Vector2(60f, 0f) : new Vector2(-420f, 40f);
                 }
 
                 return;
@@ -136,10 +141,18 @@ namespace RainWorldRandomizer
                 // The second and third items are which side of node A and which side of node B to connect.
                 List<ValueTuple<int, int, int, List<int>>> directives =
                 [
-                    new(1, 0, 4, [5, 7, 8, 10, 11, 14, 16, 21, 23, 29, 30, 32, 36, 37, 42, 43, 44]),  // to right
-                    new(7, 2, 6, [4, 6, 11, 12, 13, 14, 17, 18, 19, 20, 26, 27, 29, 31, 35, 38]),  // to above
-                    new(8, 1, 5, [0, 8, 16, 22, 36]),  // to upper right
-                    new(6, 3, 7, [2, 5, 24, 38]),  // to upper left
+                    new(1, 0, 4, [1, 3, 4, 5, 6, 18, 19, 25, 26, 32, 33, 34]),  // to right
+                    new(8, 2, 6, [1, 2, 6, 9, 12, 14, 15, 16, 19]),  // to above
+                    new(9, 1, 5, [6, 9, 10, 12, 14, 16, 17, 32, 35]),  // to upper right
+                    new(7, 3, 7, [6, 9, 19, 25, 27]),  // to upper left
+                    new(2, 0, 4, [10]), // 2 to the right
+                    new(16, 2, 6, [3]), // 2 to above
+                    new(3, 0, 4, [41]), // 3 to the right
+                    new(24, 2, 6, [20]), // 3 to above
+                    new(11, 1, 5, [33]), // 3 right, 1 above
+                    new(17, 1, 5, [27]), // 1 right, 2 above
+                    new(23, 3, 7, [21]) // 1 left, 3 above
+
                 ];
 
                 foreach ((int, int, int, List<int>) directive in directives)
@@ -236,6 +249,14 @@ namespace RainWorldRandomizer
         /// Note that which region is A and which is B is dependent only on the gate name, not on the physical position of the regions.</returns>
         public static bool[] CanUseGate(string key)
         {
+            // (Most) Daemon warps are one way entering Daemon
+            if (key.Contains("WRSA") && !key.Contains("WORA") && !key.Contains("WARA"))
+            {
+                string[] split = key.Split('-');
+                if (split[1] == "WRSA") return [false, true];
+                else return [true, false];
+            }
+
             return key switch
             {
                 "GATE_LF_SB" => Scug is "Saint" ? [true, true] : [true, false],
@@ -244,13 +265,27 @@ namespace RainWorldRandomizer
                 "GATE_UW_SL" => Scug is "Artificer" or "Spear" ? [true, true] : [false, false],
                 "GATE_SL_VS" => Scug is "Artificer" ? [false, false] : [true, true],
 
-                "Warp-WBLA-WSSR" => [true, false],
+                "Warp-WRFB-WTDB" => [false, true],
+                "Warp-WARE-WRFB" => [false, true],
+                "Warp-WARE-WSKC" => [true, false],
+                "Warp-WARD-WVWB" => [false, true],
+                "Warp-WBLA-WVWB" => [true, false],
+                "Warp-WBLA-WTDA" => [false, true],
+                "Warp-WARF-WTDA" => [true, false],
+                "Warp-WPTA-WSKC" => [false, true],
+                "Warp-WARA-WPTA" => [false, true],
+                "Warp-WARC-WVWA" => [false, true],
+                "Warp-WARA-WARC" => [false, true],
+                "Warp-WARA-WARB" => [false, true],
+                "Warp-WARA-WAUA" => [true, false],
+
+                //"Warp-WBLA-WSSR" => [true, false],
                 "Warp-WARD-WSSR" => [true, false],
                 "Warp-WORA-WSSR" => [false, true],
-                "Warp-WORA-WSUR" => [false, true],
-                "Warp-WGWR-WORA" => [true, false],
-                "Warp-WHIR-WORA" => [true, false],
-                "Warp-WDSR-WORA" => [true, false],
+                //"Warp-WORA-WSUR" => [false, true],
+                //"Warp-WGWR-WORA" => [true, false],
+                //"Warp-WHIR-WORA" => [true, false],
+                //"Warp-WDSR-WORA" => [true, false],
                 "Warp-WARA-WRSA" => [false, true],
 
                 _ => [true, true],
