@@ -45,8 +45,6 @@ namespace RainWorldRandomizer
             { "ItemCrafting", "Item Crafting" },
         };
 
-        public static bool hasSeenItemTutorial = false;
-
         public string ID { get; set; }
         public Item? item = null;
         public UnlockType Type { get; private set; }
@@ -139,7 +137,6 @@ namespace RainWorldRandomizer
                         Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID));
                         item = IDToItem(ID);
                     }
-                    ShowItemTutorial();
                     break;
                 case "ItemPearl":
                     if (item != null)
@@ -153,7 +150,6 @@ namespace RainWorldRandomizer
                         Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID, true));
                         item = IDToItem(ID, true);
                     }
-                    ShowItemTutorial();
                     break;
                 case "Trap":
                     TrapsHandler.EnqueueTrap(ID);
@@ -249,13 +245,6 @@ namespace RainWorldRandomizer
             }
 
             return IDToString(item.name);
-        }
-
-        public static void ShowItemTutorial()
-        {
-            if (hasSeenItemTutorial || RandoOptions.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
-            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("TIP: Unlocked items are stored in your stomach for safe keeping"));
-            hasSeenItemTutorial = true;
         }
     }
 }
