@@ -347,7 +347,7 @@ namespace RainWorldRandomizer
 
             OptionGroup globalGroup = new(this, "Global", new(10f, 10f), new(GROUP_SIZE_X, 0f));
 
-            ComboBox itemDeliveryComboBox = new(RandoOptions.itemDeliveryMethod, new(RIGHT_OPTION_X, runningY), 125f, ["Stomach", "Shelter", "Both", "Menu Only"]);
+            OpComboBox2 itemDeliveryComboBox = new(RandoOptions.itemDeliveryMethod, new(RIGHT_OPTION_X, runningY), 125f, ["Stomach", "Shelter", "Both", "Menu Only"]);
             OpLabel itemDeliveryLabel = new(RIGHT_OPTION_X + 135f, runningY, Translate(RandoOptions.itemDeliveryMethod.info.Tags[0] as string))
             { bumpBehav = itemDeliveryComboBox.bumpBehav };
             globalGroup.AddElements(itemDeliveryComboBox, itemDeliveryLabel);
@@ -407,16 +407,16 @@ namespace RainWorldRandomizer
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowExteriorForInv, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 3.5f;
+            runningY -= NEWLINE_DECREMENT * 1.5f;
 
             // Check types
-            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 235f));
+            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
 
-            OpListBox listBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
-                ["Disabled", "Enabled", "Gourmand Only"], 3, false);
+            OpComboBox2 foodQuestComboBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
+                ["Disabled", "Enabled", "Gourmand Only"]);
             OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string))
-            { bumpBehav = listBox.bumpBehav };
-            checksGroup.AddElements(listBox, foodQuestLabel);
+            { bumpBehav = foodQuestComboBox.bumpBehav };
+            checksGroup.AddElements(foodQuestComboBox, foodQuestLabel);
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useExpandedFoodQuestChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
@@ -822,15 +822,15 @@ namespace RainWorldRandomizer
         /// <summary>
         /// ComboBox variant that fixes draw order and opacity - code attributed to Alduris
         /// </summary>
-        internal class ComboBox : OpComboBox
+        internal class OpComboBox2 : OpComboBox
         {
             public const int BG_SPRITE_INDEX_RANGE = 9;
 
-            public ComboBox(Configurable<string> config, Vector2 pos, float width, string[] array) : base(config, pos, width, array)
+            public OpComboBox2(Configurable<string> config, Vector2 pos, float width, string[] array) : base(config, pos, width, array)
             {
             }
 
-            public ComboBox(Configurable<string> config, Vector2 pos, float width, List<ListItem> list) : base(config, pos, width, list)
+            public OpComboBox2(Configurable<string> config, Vector2 pos, float width, List<ListItem> list) : base(config, pos, width, list)
             {
             }
 
