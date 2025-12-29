@@ -18,7 +18,7 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> useDevTokenChecks;
         internal static Configurable<bool> useKarmaFlowerChecks;
 
-        internal static Configurable<bool> itemShelterDelivery;
+        internal static Configurable<string> itemDeliveryMethod;
         internal static Configurable<bool> givePassageUnlocks;
         internal static Configurable<float> hunterCyclesDensity;
         internal static Configurable<float> trapsDensity;
@@ -85,8 +85,9 @@ namespace RainWorldRandomizer
         public static bool UseKarmaFlowerChecks => archipelago.Value
             ? ArchipelagoConnection.flowersanity : useKarmaFlowerChecks.Value;
 
-        public static bool ItemShelterDelivery => itemShelterDelivery.Value
-            || (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear);
+        public static bool ItemShelterDelivery => itemDeliveryMethod.Value == "Shelter" || itemDeliveryMethod.Value == "Both";
+
+        public static bool ItemStomachDelivery => itemDeliveryMethod.Value == "Stomach" || itemDeliveryMethod.Value == "Both";
 
         public static bool GivePassageItems => givePassageUnlocks.Value
             || archipelago.Value;

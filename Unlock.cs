@@ -83,9 +83,6 @@ namespace RainWorldRandomizer
             if (type == UnlockType.Item || type == UnlockType.ItemPearl)
             {
                 item = IDToItem(ID, type == UnlockType.ItemPearl);
-
-                if (isGiven)
-                    hasSeenItemTutorial = true;
             }
         }
 
@@ -95,9 +92,6 @@ namespace RainWorldRandomizer
             this.item = item;
             this.Type = type;
             IsGiven = isGiven;
-
-            if (isGiven)
-                hasSeenItemTutorial = true;
         }
 
         public void GiveUnlock()
