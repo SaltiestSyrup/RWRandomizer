@@ -206,7 +206,7 @@ namespace RainWorldRandomizer
                 "Trap" => ID.Substring(5),
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
                 "ExpeditionPerk" => readableItemNames.TryGetValue(ID, out string val) ? val : ID,
-                "DamageUpgrade" => "+20% Damage",
+                "DamageUpgrade" => "+10% Damage",
                 "IdDrone" => "Citizen ID Drone",
                 "DisconnectFP" => "Disconnect Pebbles",
                 _ => ID
