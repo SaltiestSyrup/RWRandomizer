@@ -117,6 +117,7 @@
     <Compile Include="Generation\AccessRule.cs" />
     <Compile Include="Hooks\LocationColorizer.cs" />
     <Compile Include="LocationInfo.cs" />
+    <Compile Include="Menu\CurrentBuffsDisplay.cs" />
     <Compile Include="Menu\GateMapDisplay.cs" />
     <Compile Include="Menu\SpoilerMenu.cs" />
     <Compile Include="TokenCachePatcher.cs" />
