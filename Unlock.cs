@@ -45,8 +45,6 @@ namespace RainWorldRandomizer
             { "ItemCrafting", "Item Crafting" },
         };
 
-        public static bool hasSeenItemTutorial = false;
-
         public string ID { get; set; }
         public Item? item = null;
         public UnlockType Type { get; private set; }
@@ -85,9 +83,6 @@ namespace RainWorldRandomizer
             if (type == UnlockType.Item || type == UnlockType.ItemPearl)
             {
                 item = IDToItem(ID, type == UnlockType.ItemPearl);
-
-                if (isGiven)
-                    hasSeenItemTutorial = true;
             }
         }
 
@@ -97,9 +92,6 @@ namespace RainWorldRandomizer
             this.item = item;
             this.Type = type;
             IsGiven = isGiven;
-
-            if (isGiven)
-                hasSeenItemTutorial = true;
         }
 
         public void GiveUnlock()
@@ -139,7 +131,6 @@ namespace RainWorldRandomizer
                         Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID));
                         item = IDToItem(ID);
                     }
-                    ShowItemTutorial();
                     break;
                 case "ItemPearl":
                     if (item != null)
@@ -153,7 +144,6 @@ namespace RainWorldRandomizer
                         Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID, true));
                         item = IDToItem(ID, true);
                     }
-                    ShowItemTutorial();
                     break;
                 case "Trap":
                     TrapsHandler.EnqueueTrap(ID);
@@ -216,7 +206,7 @@ namespace RainWorldRandomizer
                 "Trap" => ID.Substring(5),
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
                 "ExpeditionPerk" => readableItemNames.TryGetValue(ID, out string val) ? val : ID,
-                "DamageUpgrade" => "+20% Damage",
+                "DamageUpgrade" => "+10% Damage",
                 "IdDrone" => "Citizen ID Drone",
                 "DisconnectFP" => "Disconnect Pebbles",
                 _ => ID
@@ -249,13 +239,6 @@ namespace RainWorldRandomizer
             }
 
             return IDToString(item.name);
-        }
-
-        public static void ShowItemTutorial()
-        {
-            if (hasSeenItemTutorial || RandoOptions.ItemShelterDelivery || Plugin.RandoManager is ManagerArchipelago) return;
-            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("TIP: Unlocked items are stored in your stomach for safe keeping"));
-            hasSeenItemTutorial = true;
         }
     }
 }

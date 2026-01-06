@@ -74,18 +74,19 @@ namespace RainWorldRandomizer
 
             // Extra offset if using Warp Menu
             float xOffset = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("LeeMoriya.Warp") ? 190f : 20f;
+            xOffset += (1366f - manager.rainWorld.screenSize.x) / 2f;
 
             RectangularMenuObject gateDisplay;
 
             if (RandoOptions.useGateMap.Value && (Plugin.RandoManager is ManagerArchipelago || !Plugin.AnyThirdPartyRegions))
             {
                 gateDisplay = new GateMapDisplay(self, self.pages[0],
-                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - (GateMapDisplay.Scug is "Watcher" ? 440f : 320f)));
+                    new Vector2(xOffset, manager.rainWorld.screenSize.y - (GateMapDisplay.Scug is "Watcher" ? 440f : 320f)));
             }
             else
             {
                 gateDisplay = new GatesDisplay(self, self.pages[0],
-                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - 20f));
+                    new Vector2(xOffset, manager.rainWorld.screenSize.y - 20f));
             }
 
             self.pages[0].subObjects.Add(gateDisplay);
@@ -93,10 +94,17 @@ namespace RainWorldRandomizer
             if (Plugin.RandoManager.itemDeliveryQueue.Count > 0)
             {
                 PendingItemsDisplay = new(self, self.pages[0],
-                    new Vector2((1366f - manager.rainWorld.screenSize.x) / 2f + xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));
+                    new Vector2(xOffset, manager.rainWorld.screenSize.y - gateDisplay.size.y - 20f));
                 self.pages[0].subObjects.Add(PendingItemsDisplay);
             }
             else { PendingItemsDisplay = null; }
+
+            if (CurrentBuffsDisplay.AnyBuffsToDisplay)
+            {
+                CurrentBuffsDisplay buffsDisplay = new(self, self.pages[0],
+                    new Vector2(xOffset + gateDisplay.size.x, manager.rainWorld.screenSize.y - 20f));
+                self.pages[0].subObjects.Add(buffsDisplay);
+            }
 
             if (Plugin.RandoManager is ManagerArchipelago)
             {

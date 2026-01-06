@@ -296,5 +296,7 @@ namespace RainWorldRandomizer
             if (!ModManager.MSC) return false;
             return _givenExpeditionPerks[(int)perk];
         }
+
+        public bool HasAnyExpeditionPerks() => ModManager.MSC && _givenExpeditionPerks.Any(p => p);
     }
 }

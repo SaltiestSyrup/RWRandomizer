@@ -71,9 +71,9 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations", null, "",
                     ["Use Karma Flowers as checks"]));
 
-            RandoOptions.itemShelterDelivery = config.Bind<bool>("itemShelterDelivery", false,
-                new ConfigurableInfo("Whether objects should be delivered in the next shelter instead of placed inside slugcat's stomach", null, "",
-                    ["Deliver items in shelters"]));
+            RandoOptions.itemDeliveryMethod = config.Bind<string>("itemDeliveryMethod", "Menu Only",
+                new ConfigurableInfo("Additional options for object retrieval. They can be stored in slugcats stomach, or automatically spawned in shelters", null, "",
+                    ["Item delivery method"]));
 
             RandoOptions.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
                 new ConfigurableInfo("Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages", null, "",
@@ -346,7 +346,12 @@ namespace RainWorldRandomizer
             runningY -= NEWLINE_DECREMENT;
 
             OptionGroup globalGroup = new(this, "Global", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            globalGroup.AddCheckBox(RandoOptions.itemShelterDelivery, new(RIGHT_OPTION_X, runningY));
+
+            OpComboBox2 itemDeliveryComboBox = new(RandoOptions.itemDeliveryMethod, new(RIGHT_OPTION_X, runningY), 125f, ["Stomach", "Shelter", "Both", "Menu Only"]);
+            OpLabel itemDeliveryLabel = new(RIGHT_OPTION_X + 135f, runningY, Translate(RandoOptions.itemDeliveryMethod.info.Tags[0] as string))
+            { bumpBehav = itemDeliveryComboBox.bumpBehav };
+            globalGroup.AddElements(itemDeliveryComboBox, itemDeliveryLabel);
+
             runningY -= NEWLINE_DECREMENT;
             globalGroup.AddCheckBox(RandoOptions.disableNotificationQueue, new(RIGHT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
@@ -402,16 +407,16 @@ namespace RainWorldRandomizer
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
             unlockRegionsGroup.AddCheckBox(RandoOptions.allowExteriorForInv, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 3.5f;
+            runningY -= NEWLINE_DECREMENT * 1.5f;
 
             // Check types
-            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 235f));
+            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
 
-            OpListBox listBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
-                ["Disabled", "Enabled", "Gourmand Only"], 3, false);
+            OpComboBox2 foodQuestComboBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
+                ["Disabled", "Enabled", "Gourmand Only"]);
             OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string))
-            { bumpBehav = listBox.bumpBehav };
-            checksGroup.AddElements(listBox, foodQuestLabel);
+            { bumpBehav = foodQuestComboBox.bumpBehav };
+            checksGroup.AddElements(foodQuestComboBox, foodQuestLabel);
             runningY -= NEWLINE_DECREMENT;
             checksGroup.AddCheckBox(RandoOptions.useExpandedFoodQuestChecks, new(LEFT_OPTION_X, runningY));
             runningY -= NEWLINE_DECREMENT;
@@ -812,6 +817,36 @@ namespace RainWorldRandomizer
         {
             public OpLabel leftLabel = new(pos, size, leftText, FLabelAlignment.Left);
             public OpLabel rightLabel = new(pos, size, rightText, FLabelAlignment.Right);
+        }
+
+        /// <summary>
+        /// ComboBox variant that fixes draw order and opacity - code attributed to Alduris
+        /// </summary>
+        internal class OpComboBox2 : OpComboBox
+        {
+            public const int BG_SPRITE_INDEX_RANGE = 9;
+
+            public OpComboBox2(Configurable<string> config, Vector2 pos, float width, string[] array) : base(config, pos, width, array)
+            {
+            }
+
+            public OpComboBox2(Configurable<string> config, Vector2 pos, float width, List<ListItem> list) : base(config, pos, width, list)
+            {
+            }
+
+            public override void GrafUpdate(float timeStacker)
+            {
+                base.GrafUpdate(timeStacker);
+                if (_rectList != null && !_rectList.isHidden)
+                {
+                    myContainer.MoveToFront();
+
+                    for (int i = 0; i < BG_SPRITE_INDEX_RANGE; i++)
+                    {
+                        _rectList.sprites[i].alpha = 1;
+                    }
+                }
+            }
         }
     }
 }
