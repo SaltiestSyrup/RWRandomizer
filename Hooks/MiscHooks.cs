@@ -392,11 +392,14 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Completely skip Artificer robo cutscene
+        /// Changes to trigger conditions for MSC RoomSpecificScripts
         /// </summary>
         private static void AddMSCRoomSpecificScriptIL(ILContext il)
         {
             ILCursor c = new(il);
+
+            // --- Completely skip Artificer robo cutscene
+
             // Check if room is GW_A25 at 018F
             c.GotoNext(x => x.MatchLdstr("GW_A25"));
             // After hasRobo load at 01D8
@@ -407,6 +410,20 @@ namespace RainWorldRandomizer
             // Tell check that we always have robo
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldc_I4_1);
+
+            // --- Stop Saint intro from triggering when start den is randomized
+
+            // Check if room is SI_SAINTINTRO at 043D
+            c.GotoNext(x => x.MatchLdstr("SI_SAINTINTRO"));
+            // Load cycleNumber for checking at 045A
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.cycleNumber)))
+                );
+            // Tell game this isn't cycle 0 if randomizer using random starting location
+            c.EmitDelegate(SkipSaintIntro);
+
+            static int SkipSaintIntro(int cycleNumber) => RandoOptions.RandomizeSpawnLocation ? 1 : cycleNumber;
         }
 
         private static bool hasSeenArtyStart = false;
