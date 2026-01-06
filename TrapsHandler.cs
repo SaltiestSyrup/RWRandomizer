@@ -97,7 +97,7 @@ namespace RainWorldRandomizer
             { "Gravity", new TrapDefinition(TrapGravityActivate, TrapGravityDeactivate, null, TrapGravityActivate, 1200) },
             //{ "Fog", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             //{ "KillSquad", game => { throw new NotImplementedException("Trap not implemented yet"); } },
-            { "Alarm", new TrapDefinition(TrapAlarm) },
+            { "Alarm", new TrapDefinition(TrapAlarmActivate, TrapAlarmDeactivate, null, null, 2400) },
 
             { "RedLizard", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); }) },
             { "RedCentipede", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedCentipede); }) },
@@ -232,6 +232,8 @@ namespace RainWorldRandomizer
             }
         }
 
+        private static List<WeakReference<AbstractCreature>> huntingCreatures = [];
+
         /// <summary>Spawns the desired creature in an adjacent room</summary>
         /// <param name="template">The type of creature to spawn</param>
         /// <param name="count">How many of the creature to spawn</param>
@@ -254,6 +256,7 @@ namespace RainWorldRandomizer
                 AbstractCreature crit = new(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
 
                 chosenRoom.AddEntity(crit);
+                huntingCreatures.Add(new(crit));
 
                 if (chosenRoom.realizedRoom != null)
                 {
@@ -263,9 +266,19 @@ namespace RainWorldRandomizer
             }
         }
 
-        /// <summary>Alerts every creature of the player's position</summary>
-        private static void TrapAlarm(this RainWorldGame game)
+        private static void TrapSpawnCreatureNearbyDeactivate(this RainWorldGame game, CreatureTemplate.Type template)
         {
+            // Clear elements that are of the template type of this trap, as well as elements that have been dereferenced
+            huntingCreatures = huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template);
+        }
+
+        private static bool alarmTrapActive = false;
+
+        /// <summary>Alerts every creature of the player's position</summary>
+        private static void TrapAlarmActivate(this RainWorldGame game)
+        {
+            alarmTrapActive = true;
+
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
 
             // For each realized room
@@ -277,6 +290,33 @@ namespace RainWorldRandomizer
                     creature.abstractAI?.RealAI?.tracker?.SeeCreature(player.abstractCreature);
                 }
             }
+        }
+
+        private static void TrapAlarmDeactivate(this RainWorldGame game)
+        {
+            alarmTrapActive = false;
+        }
+
+        private static void ILAbstractCreatureAI(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            ILLabel jump = c.DefineLabel();
+
+            // Expedition check at 0136
+            c.GotoNext(MoveType.AfterLabel, x => x.MatchLdsfld(typeof(ModManager).GetField(nameof(ModManager.Expedition))));
+
+            // Check if an alarm trap is active, or this creature was spawned by a trap and should still be locked on to the player
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldfld, typeof(AbstractCreatureAI).GetField(nameof(AbstractCreatureAI.parent)));
+            c.EmitDelegate(CreatureHuntPlayer);
+            // Jump past the expedition check
+            c.Emit(OpCodes.Brtrue, jump);
+
+            c.GotoNext(x => x.MatchLdcI4(0));
+            c.MarkLabel(jump);
+
+            static bool CreatureHuntPlayer(AbstractCreature crit) => alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && crit == crit2);
         }
 
         /// <summary>
