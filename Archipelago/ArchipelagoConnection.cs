@@ -98,9 +98,10 @@ namespace RainWorldRandomizer
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
             Messenger, // Spearmaster delivering the encoded pearl to Comms array
             Rubicon, // Saint Ascending in Rubicon
-
             Pilgrim, // Encounter enough Echoes to trigger the Pilgrim passage
             FoodQuest, // Eat every tracked food quest item
+            SpinningTop,
+            SentientRot,
         }
 
         public enum EchoLowKarmaDifficulty
@@ -379,6 +380,7 @@ namespace RainWorldRandomizer
                     "Rivulet" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon,
                     "Spear" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger,
                     "Saint" => CompletionCondition.Rubicon,
+                    "Watcher" => completionType == 0 ? CompletionCondition.SpinningTop : CompletionCondition.SentientRot,
                     "Sofanthiel" or _ => CompletionCondition.Ascension
                 };
             }
@@ -410,6 +412,8 @@ namespace RainWorldRandomizer
             ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
 
             //Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
+
+            WatcherIntegration.Settings.ReceiveSlotData(slotData);
 
             return SlotDataResult.Success;
         }

@@ -24,6 +24,7 @@ namespace RainWorldRandomizer
             On.SaveState.SessionEnded += OnSessionEnded;
             On.RainWorldGame.ctor += OnRainWorldGameCtor;
             On.HardmodeStart.Update += OnHardmodeStart;
+            On.Room.Loaded += AddRoomSpecificScript;
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update += OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update += OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update += OnSpearEndingUpdate;
@@ -49,6 +50,7 @@ namespace RainWorldRandomizer
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
             On.HardmodeStart.Update -= OnHardmodeStart;
+            On.Room.Loaded -= AddRoomSpecificScript;
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update -= OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update -= OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update -= OnSpearEndingUpdate;
@@ -166,6 +168,8 @@ namespace RainWorldRandomizer
                         }
                     }
                 }
+
+                if (ModManager.Watcher) WatcherIntegration.CheckDetection.Hooks.DetectFixedWarpPointAndRotSpread(saveState);
             }
 
             orig(self, ID);
@@ -196,6 +200,7 @@ namespace RainWorldRandomizer
 
             Plugin.UpdateKarmaLocks();
             self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
+            WatcherIntegration.Items.UpdateRipple();
 
             // Ensure found state triggers are set
             self.GetStorySession.saveState.theGlow = Plugin.RandoManager.GivenNeuronGlow;
@@ -203,6 +208,7 @@ namespace RainWorldRandomizer
             self.GetStorySession.saveState.hasRobo = Plugin.RandoManager.GivenRobo;
             self.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = Plugin.RandoManager.GivenPebblesOff;
             self.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
+            self.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = Plugin.RandoManager.GivenRippleEggWarp;
         }
 
         /// <summary>
@@ -532,6 +538,14 @@ namespace RainWorldRandomizer
                     prev || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.PPwS == ArchipelagoConnection.PPwSBehavior.Bypassed);
                 c.EmitDelegate(BypassHardcodedSurvivorRequirement);
             }
+        }
+
+        private static void AddRoomSpecificScript(On.Room.orig_Loaded orig, Room self)
+        {
+            orig(self);
+            if (Plugin.RandoManager is null) return;
+
+            if (ModManager.Watcher) WatcherIntegration.RoomSpecificScript.AddRoomSpecificScript(self);
         }
 
         /// <summary>

@@ -71,6 +71,11 @@ namespace RainWorldRandomizer
             get { return _givenSpearPearlRewrite; }
             set { _givenSpearPearlRewrite = value; }
         }
+        public virtual bool GivenRippleEggWarp
+        {
+            get { return _givenRippleEggWarp; }
+            set { _givenRippleEggWarp = value;}
+        }
 
         protected int _currentMaxKarma = 4;
         protected int _hunterBonusCyclesGiven = 0;
@@ -81,6 +86,7 @@ namespace RainWorldRandomizer
         protected bool _givenPebblesOff = false;
         protected bool _givenSpearPearlRewrite = false;
         protected bool[] _givenExpeditionPerks = new bool[8];
+        protected bool _givenRippleEggWarp = false;
 
         /// <summary>
         /// The den that this run has started in. If spawn was not randomized, this should be set to <see cref="currentSlugcat"/>'s entry in <see cref="Constants.SlugcatDefaultStartingDen"/>
@@ -121,6 +127,24 @@ namespace RainWorldRandomizer
         /// Returns all possible locations the player could find
         /// </summary>
         public List<LocationInfo> GetLocations() => locations;
+
+        /// <summary>
+        /// Returns all locations in the specified region
+        /// </summary>
+        public List<LocationInfo> GetLocationsInRegion(string region) => [.. locations.Where(l => l.region == region)];
+
+        /// <summary>
+        /// Returns a float in range 0-1 representing the percentage of checks in the region that have been collected
+        /// </summary>
+        /// <param name="region"></param>
+        /// <returns>0f-1f if region exists, -1f if it does not</returns>
+        public float PercentOfRegionComplete(string region)
+        {
+            List<LocationInfo> locs = GetLocationsInRegion(region);
+            if (!locs.Any()) return -1f;
+
+            return (float)locs.Count(l => l.Collected) / locs.Count;
+        }
 
         /// <summary>
         /// Check whether a given location exists in the current seed

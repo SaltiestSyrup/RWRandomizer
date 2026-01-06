@@ -494,23 +494,18 @@ namespace RainWorldRandomizer
         /// </summary>
         static void DialogueAddMessage(On.HUD.DialogBox.orig_NewMessage_string_float_float_int orig, HUD.DialogBox self, string text, float xOrientation, float yPos, int extraLinger)
         {
-            // Swap Pebbles dialogue for gibberish if mark not obtained
-            if (Plugin.RandoManager.GivenMark
-                || (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint))
+            // Act as normal if conditions met
+            bool shouldIteratorSpeak = Plugin.RandoManager.GivenMark
+                || (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint);
+            bool noRoomExists = (self.hud.owner as Player)?.room is null;
+            if (shouldIteratorSpeak || noRoomExists)
             {
                 orig(self, text, xOrientation, yPos, extraLinger);
                 return;
             }
 
-            // Don't try to play sound if player doesn't exist
-            if (self.hud.owner is null
-                || self.hud.owner is not Player player
-                || player.room is null)
-            {
-                return;
-            }
-
-            Room room = player.room;
+            bool foundIteratorTarget = false;
+            Room room = (self.hud.owner as Player).room;
             for (int i = 0; i < room.physicalObjects.Length; i++)
             {
                 for (int j = 0; j < room.physicalObjects[i].Count; j++)
@@ -520,6 +515,7 @@ namespace RainWorldRandomizer
                         && oracle.oracleBehavior is SSOracleBehavior oracleBehavior
                         && oracleBehavior.currSubBehavior is SSOracleBehavior.TalkBehavior oracleTalkBehavior)
                     {
+                        foundIteratorTarget = true;
                         SoundID sound;
                         int pause;
 
@@ -571,7 +567,6 @@ namespace RainWorldRandomizer
                             }
                         }
 
-
                         oracleBehavior.voice = oracle.room.PlaySound(sound, oracle.firstChunk);
                         oracleBehavior.voice.requireActiveUpkeep = true;
                         if (oracleBehavior.conversation is not null)
@@ -579,10 +574,13 @@ namespace RainWorldRandomizer
                             oracleBehavior.conversation.waitForStill = true;
                         }
                         oracleTalkBehavior.communicationPause = pause;
-                        return;
+                        break;
                     }
                 }
             }
+
+            // Play the dialogue if this wasn't an iterator talking
+            if (!foundIteratorTarget) orig(self, text, xOrientation, yPos, extraLinger);
         }
     }
 }

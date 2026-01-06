@@ -96,6 +96,9 @@
     <Reference Include="UnityEngine">
       <HintPath>bin\References\UnityEngine.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>bin\References\UnityEngine.AssetBundleModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>bin\References\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
@@ -150,6 +153,14 @@
     <Compile Include="Menu\MenuExtension.cs" />
     <Compile Include="TrapsHandler.cs" />
     <Compile Include="Unlock.cs" />
+    <Compile Include="WatcherIntegration\CheckDetection.cs" />
+    <Compile Include="WatcherIntegration\Completion.cs" />
+    <Compile Include="WatcherIntegration\DynamicWarpTargetting.cs" />
+    <Compile Include="WatcherIntegration\EntryPoint.cs" />
+    <Compile Include="WatcherIntegration\Items.cs" />
+    <Compile Include="WatcherIntegration\RoomSpecificScript.cs" />
+    <Compile Include="WatcherIntegration\Settings.cs" />
+    <Compile Include="WatcherIntegration\StaticWarps.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
