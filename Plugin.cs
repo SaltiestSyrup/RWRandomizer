@@ -271,9 +271,9 @@ namespace RainWorldRandomizer
 
         public static void AddLogicAddon(LogicAddon addon) => logicAddons.Add(addon);
 
-        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom, int data = 0)
+        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom)
         {
-            AbstractPhysicalObject output = ItemToAbstractObject(item, spawnRoom.game.world, spawnRoom.abstractRoom, data);
+            AbstractPhysicalObject output = ItemToAbstractObject(item, spawnRoom.game.world, spawnRoom.abstractRoom);
 
             if (output == null)
             {
@@ -283,7 +283,7 @@ namespace RainWorldRandomizer
             return output;
         }
 
-        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, World world, AbstractRoom spawnRoom, int data = 0)
+        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, World world, AbstractRoom spawnRoom)
         {
             if (item.name == "" || spawnRoom == null || world.game == null)
             {
@@ -319,10 +319,14 @@ namespace RainWorldRandomizer
                 {
                     return new AbstractSpear(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
-                        item.id is "FireSpear" or "ExplosiveSpear", item.id == "ElectricSpear");
+                        item.id is "FireSpear" or "ExplosiveSpear", item.id == "ElectricSpear")
+                    {
+                        poison = item.id == "PoisonSpear" ? 1 : 0,
+                        poisonHue = UnityEngine.Random.value
+                    };
                 }
                 // Lillypuck is a consumable, but still needs its own constructor
-                if (ModManager.MSC && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
+                if (ModManager.DLCShared && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
                 {
                     return new LillyPuck.AbstractLillyPuck(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
@@ -337,7 +341,12 @@ namespace RainWorldRandomizer
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DangleFruit)
                 {
                     return new DangleFruit.AbstractDangleFruit(world, null,
-                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, false, null);
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, item.id == "RotFruit", null);
+                }
+                if (ModManager.Watcher && itemObjectType == AbstractPhysicalObject.AbstractObjectType.GraffitiBomb)
+                {
+                    return new GraffitiBomb.AbstractGraffitiBomb(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
                 }
                 // Handles all "Consumables"
                 if (AbstractConsumable.IsTypeConsumable(itemObjectType))
