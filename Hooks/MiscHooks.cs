@@ -644,6 +644,7 @@ namespace RainWorldRandomizer
             return itemType.value switch
             {
                 "KarmaFlower" => "Symbol_KarmaFlower",
+                "Spear" => intData == 4 ? "Symbol_PoisonSpear" : orig(itemType, intData),
                 _ => orig(itemType, intData)
             };
         }
@@ -657,6 +658,7 @@ namespace RainWorldRandomizer
             {
                 "SeedCob" => new Color(0.4117f, 0.1608f, 0.2275f),
                 "KarmaFlower" => new Color(0.9059f, 0.8745f, 0.5647f),
+                "Spear" => intdata == 4 ? new Color(0f, 1f, 1f) : orig(itemType, intdata),
                 _ => orig(itemType, intdata)
             };
         }
