@@ -1,20 +1,72 @@
-{"frames": {
-
-"Symbol_KarmaFlower.png":
 {
-	"frame": {"x":0,"y":0,"w":17,"h":30},
-	"rotated": false,
-	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":17,"h":30},
-	"sourceSize": {"w":17,"h":30}
-}},
-"meta": {
-	"app": "https://www.codeandweb.com/texturepacker",
-	"version": "1.0",
-	"image": "randomizer.png",
-	"format": "RGBA8888",
-	"size": {"w":17,"h":30},
-	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:bb43848365bd812099cd21bb04d74165:1504c977c6f3806b6ba657154b27aff3:b5b9a77a33a16f520eacc0c60efcf69d$"
-}
+	"frames": {
+		"Symbol_Archipelago.png": {
+			"frame": {
+				"x": 0,
+				"y": 0,
+				"w": 27,
+				"h": 28
+			},
+			"rotated": false,
+			"trimmed": false,
+			"sourceSize": {
+				"w": 27,
+				"h": 28
+			},
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 27,
+				"h": 28
+			}
+		},
+		"Symbol_PoisonSpear.png": {
+			"frame": {
+				"x": 27,
+				"y": 0,
+				"w": 20,
+				"h": 36
+			},
+			"rotated": false,
+			"trimmed": false,
+			"sourceSize": {
+				"w": 20,
+				"h": 36
+			},
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 20,
+				"h": 36
+			}
+		},
+		"Symbol_KarmaFlower.png": {
+			"frame": {
+				"x": 0,
+				"y": 28,
+				"w": 17,
+				"h": 30
+			},
+			"rotated": false,
+			"trimmed": false,
+			"sourceSize": {
+				"w": 17,
+				"h": 30
+			},
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 17,
+				"h": 30
+			}
+		}
+	},
+	"meta": {
+		"app": "https://goofybox-studios.github.io/tools/texture_packer",
+		"image": "randomizer",
+		"size": {
+			"w": 47,
+			"h": 58
+		}
+	}
 }
