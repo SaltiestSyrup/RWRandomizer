@@ -227,6 +227,10 @@ namespace RainWorldRandomizer
                 return new Item("Explosive Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
             if (id is "ElectricSpear")
                 return new Item("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
+            if (id is "PoisonSpear")
+                return new Item("Poison Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
+            if (id is "RotFruit")
+                return new Item("Rot Fruit", id, AbstractPhysicalObject.AbstractObjectType.DangleFruit);
 
             return new Item(IDToString(id), new AbstractPhysicalObject.AbstractObjectType(id));
         }

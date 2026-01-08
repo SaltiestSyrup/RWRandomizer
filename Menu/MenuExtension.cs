@@ -284,13 +284,18 @@ namespace RainWorldRandomizer
             {
                 iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
             }
+            else if (item.id is "PoisonSpear")
+            {
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 4);
+            }
             else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))
             {
                 iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
+                if (item.id is "RotFruit") iconData.intData = 1;
             }
             else
             {
-                iconData = new IconSymbol.IconSymbolData();
+                return new FSprite("Futile_White", true);
             }
 
             spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
