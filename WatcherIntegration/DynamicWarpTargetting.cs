@@ -205,11 +205,16 @@ namespace RainWorldRandomizer.WatcherIntegration
                     foreach (string warpTarget in regionWarpsPair.Value) // WARP DESTINATION LOOP
                     {
                         string targetRoom = warpTarget.Split(':')[0];
-                        // Skip rooms in the current region unless the target is a special case
-                        if (regionWarpsPair.Key == world.name && (targetRoom == oldRoom || !noRippleTargets.Contains(targetRoom))) continue;
-                        if (world.game.rainWorld.levelBadWarpTargets.Contains(targetRoom)) continue;
 
+                        if (targetRoom == oldRoom) continue;
+                        if (world.game.rainWorld.levelBadWarpTargets.Contains(targetRoom)) continue;
+                        if (targetRegion is null && noRippleTargets.Contains(targetRoom)) continue;
+
+                        // The fallback warp can be in the current region or a room with a warp in it
+                        // It cannot be the current room or 
                         fallbackWarp = targetRoom;
+
+                        if (targetRegion is null && regionWarpsPair.Key == world.name) continue;
 
                         // Don't warp to rooms with a warp in them already
                         if (saveState.miscWorldSaveData.discoveredWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == targetRoom)) continue;
@@ -222,7 +227,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                             continue;
                         }
 
-                        //Plugin.Log.LogDebug($"Adding warp \"{targetRoom}\" to list with weight of {weight}");
+                        Plugin.Log.LogDebug($"Adding warp \"{targetRoom}\" to list with weight of {weight}");
                         for (int i = 0; i < weight; i++) normalWeightedCandidates.Add(targetRoom);
                     }
                 }
@@ -249,6 +254,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     //    $"{(int)Mathf.Lerp(INFLUENCE_COMPLETION, 0, regionCompletion)}");
                     int weight = (int)Mathf.Lerp(INFLUENCE_COMPLETION, 0, regionCompletion);
 
+                    Plugin.Log.LogDebug($"Adding warp \"{warpTarget}\" to list with weight of {weight}");
                     for (int i = 0; i < weight; i++) badWeightedCandidates.Add(warpTarget);
                 }
 
