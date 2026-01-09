@@ -13,7 +13,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// Determine if this <see cref="WarpPoint"/> needs a key which is not yet collected.
         /// </summary>
         private static bool MissingKey(this WarpPoint self) =>
-            self.Data.nonDynamicWarpPoint && Items.StaticKey.IsMissing(self.room.world.region.name, self.Data.RegionString is null ? "WRSA" : self.Data.RegionString);
+            self.Data.nonDynamicWarpPoint && Items.StaticKey.IsMissing(self.room.world.region.name, self.Data.RegionString ?? "WRSA");
 
         /// <summary>
         /// Keeps track of warp tear graphics that should be displaying as locked

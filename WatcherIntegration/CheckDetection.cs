@@ -135,7 +135,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 for (int i = 1; i <= saveState.miscWorldSaveData.regionsInfectedBySentientRotSpread.Count; i++)
                     EntryPoint.TryGiveLocation($"SpreadRot-{i}");
-                
+
                 //foreach (string region in saveState.miscWorldSaveData.regionsInfectedBySentientRot)
                 //    if (!Region.HasSentientRotResistance(region))
                 //        EntryPoint.TryGiveLocation($"SpreadRot-{region.ToUpperInvariant()}");
@@ -148,13 +148,13 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 orig(self, eu);
 
-                foreach (var crit in self.room.game.Players)
+                foreach (var crit in self.room?.game?.Players)
                 {
                     if (crit.Room.name == self.room.abstractRoom.name
                         && crit.realizedCreature is Creature player
                         && Vector2.Distance(self.pos, player.mainBodyChunk.pos) < WARP_DETECTION_RADIUS)
                     {
-                        EntryPoint.TryGiveLocation($"Warp-{self.room.abstractRoom.name}");
+                        Plugin.RandoManager.GiveLocation($"Warp-{self.room.abstractRoom.name}");
                     }
                 }
             }
@@ -181,7 +181,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             /// <summary>
             /// Detect meeting Ripple Elder and cancel warp tutorial
             /// </summary>
-            private static void OnElderSpawn_PromptSpecialWarp(On.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.orig_PromptSpecialWarp orig, 
+            private static void OnElderSpawn_PromptSpecialWarp(On.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.orig_PromptSpecialWarp orig,
                 WatcherRoomSpecificScript.WORA_ElderSpawn self, Player player)
             {
                 if (Plugin.RandoManager is null)
