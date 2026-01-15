@@ -15,6 +15,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             DynamicWarpTargetting.Hooks.ApplyHooks();
             StaticWarps.Hooks.ApplyHooks();
             Completion.Hooks.ApplyHooks();
+            MiscChanges.ApplyHooks();
         }
 
         internal static void RemoveHooks()
@@ -23,6 +24,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             DynamicWarpTargetting.Hooks.RemoveHooks();
             StaticWarps.Hooks.RemoveHooks();
             Completion.Hooks.RemoveHooks();
+            MiscChanges.RemoveHooks();
         }
         internal static string Region(this string self) => self?.Split('_')[0].ToUpperInvariant();
 
