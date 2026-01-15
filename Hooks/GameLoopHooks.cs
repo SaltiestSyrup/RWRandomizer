@@ -301,6 +301,7 @@ namespace RainWorldRandomizer
             string worldName, Region region, RainWorldGame.SetupValues setupValues)
         {
             orig(self, game, playerCharacter, timelinePosition, singleRoomWorld, worldName, region, setupValues);
+            worldName = worldName.ToUpperInvariant(); // Why are rotted regions in lowercase this game is evil
 
             if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
 
