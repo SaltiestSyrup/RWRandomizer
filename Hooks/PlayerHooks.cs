@@ -30,6 +30,7 @@ namespace RainWorldRandomizer
                 IL.Player.ClassMechanicsArtificer += ClassMechanicsArtificerIL;
                 IL.Player.GraspsCanBeCrafted += OverrideItemCrafting;
                 IL.Player.SpitUpCraftedObject += OverrideItemCrafting;
+                IL.Watcher.WarpPoint.SuckInCreatures += WarpPoint_SuckInCreatures;
 
                 _ = new Hook(typeof(Player).GetProperty(nameof(Player.isRivulet)).GetGetMethod(), OverrideIsRivulet);
             }
@@ -57,6 +58,7 @@ namespace RainWorldRandomizer
             IL.Player.ClassMechanicsArtificer -= ClassMechanicsArtificerIL;
             IL.Player.GraspsCanBeCrafted -= OverrideItemCrafting;
             IL.Player.SpitUpCraftedObject -= OverrideItemCrafting;
+            IL.Watcher.WarpPoint.SuckInCreatures -= WarpPoint_SuckInCreatures;
         }
 
         /// <summary>
@@ -501,5 +503,21 @@ namespace RainWorldRandomizer
         }
 
         private static bool OverrideIsRivulet(Func<Player, bool> orig, Player self) => orig(self) || Plugin.RandoManager?.HasExpeditionPerk(Perks.Agility) is true;
+
+        /// <summary>
+        /// When getting sucked into a warp, drop the spear on a player's back if possible to avoid double-spawning on the other side
+        /// </summary>
+        private static void WarpPoint_SuckInCreatures(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            // LoseAllGrasps call at 021C
+            c.GotoNext(x => x.MatchCallOrCallvirt(typeof(Creature).GetMethod(nameof(Creature.LoseAllGrasps))));
+
+            c.Emit(OpCodes.Dup);
+            c.EmitDelegate(DropBackSpear);
+
+            static void DropBackSpear(Creature crit) => (crit as Player)?.spearOnBack?.DropSpear();
+        }
     }
 }
