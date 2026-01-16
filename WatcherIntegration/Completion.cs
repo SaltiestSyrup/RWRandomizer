@@ -36,16 +36,21 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 if (ID == ProcessManager.ProcessID.SlideShow && Plugin.RandoManager is ManagerArchipelago managerAP && !managerAP.gameCompleted)
                 {
-                    if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingRot)
-                        managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SentientRot);
-                    else if (self.nextSlideshow == Watcher.WatcherEnums.SlideShowID.EndingSpinningTop)
+                    switch (self.nextSlideshow.value)
                     {
-                        managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SpinningTop);
-                        // Release all Spinning Top checks because they are now impossible
-                        foreach (var loc in managerAP.GetLocations().Where(l => l.kind == LocationInfo.LocationKind.SpinningTop))
-                            managerAP.GiveLocation(loc.internalName);
+                        case "EndingSpinningTop":
+                            managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SpinningTop);
+                            // Release all Spinning Top checks because they are now impossible
+                            foreach (var loc in managerAP.GetLocations().Where(l => l.kind == LocationInfo.LocationKind.SpinningTop))
+                                managerAP.GiveLocation(loc.internalName);
+                            break;
+                        case "EndindRot":
+                            managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SentientRot);
+                            break;
+                        case "EndingVoidWeaver":
+                            managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Weaver);
+                            break;
                     }
-                        
                 }
                 orig(self, ID);
             }
