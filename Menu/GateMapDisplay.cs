@@ -35,7 +35,7 @@ namespace RainWorldRandomizer
 
             IEnumerable<string> gates =
                 Plugin.RandoManager.GetGatesStatus().Where(x => x.Value).Select(x => x.Key)
-                .Union(Items.CollectedStaticKeys.Union(watcherUnkeyableWarps).Select(x => $"Warp-{x}"));
+                .Union(Items.GetAllOpenWarps().Select(x => $"Warp-{x}"));
 
             foreach (string gate in gates)
             {
@@ -72,11 +72,6 @@ namespace RainWorldRandomizer
             "WVWA", "WTDB", "WARG", "WSKD",  null,   null,   null,   null,
             "WRRA", "WRFA", "WPGA", "WSKA",  null,  "WHIR", "WGWR",  "<P>",
              null,  "WSKB",  null,   null,  "WARF", "WSUR", "WDSR",  "<FQ>",
-        ];
-
-        internal static List<string> watcherUnkeyableWarps =
-        [
-            "WORA-WSSR", "WORA-WSUR", "WGWR-WORA", "WHIR-WORA", "WDSR-WORA", "WARA-WRSA"
         ];
 
         public void CreateNodes()
