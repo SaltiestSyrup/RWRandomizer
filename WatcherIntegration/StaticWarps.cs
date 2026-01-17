@@ -1,5 +1,7 @@
 ﻿using RWCustom;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using Watcher;
 using Random = UnityEngine.Random;
@@ -70,11 +72,14 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 On.Watcher.WarpPoint.Update += WarpPoint_Update;
                 On.Watcher.WarpTear.InitiateSprites += WarpTear_InitiateSprites;
+                On.Watcher.WarpPoint.ExpireWarpByWeaver += WarpPoint_ExpireWarpByWeaver;
             }
 
             internal static void RemoveHooks()
             {
                 On.Watcher.WarpPoint.Update -= WarpPoint_Update;
+                On.Watcher.WarpTear.InitiateSprites -= WarpTear_InitiateSprites;
+                On.Watcher.WarpPoint.ExpireWarpByWeaver -= WarpPoint_ExpireWarpByWeaver;
             }
 
             /// <summary>
@@ -91,7 +96,6 @@ namespace RainWorldRandomizer.WatcherIntegration
                     if (self.warpTear is not null && !ActiveLockedWarps.TryGetValue(self.warpTear, out _))
                         ActiveLockedWarps.Add(self.warpTear, self);
                 }
-
             }
 
             /// <summary>
@@ -103,6 +107,75 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 if (ActiveLockedWarps.TryGetValue(self, out _))
                     sLeaser.sprites[0].shader = Custom.rainWorld.Shaders["Rando.WarpTear"];
+            }
+
+            /// <summary>
+            /// When sealing a warp, make the Weaver seal all other warps in the region the player left
+            /// </summary>
+            private static void WarpPoint_ExpireWarpByWeaver(On.Watcher.WarpPoint.orig_ExpireWarpByWeaver orig, WarpPoint self)
+            {
+                orig(self);
+                Plugin.Log.LogDebug($"Attempting to seal all region warps");
+                Plugin.Log.LogDebug($"This warp point: origin = {self.room.abstractRoom}, destination = {self.Data.destRoom}");
+
+                SaveState saveState = self.room.game.GetStorySession.saveState;
+                List<string> roomsWithWarpsRemaining = self.room.game.GetStorySession.saveState.RoomsWithWarpsRemainingToBeSealed(true, self.room.world.name);
+                foreach (string warpRoom in roomsWithWarpsRemaining)
+                {
+                    string destRoom = FindDestRoom(self.room.world.name, warpRoom);
+                    if (destRoom is null)
+                    {
+                        Plugin.Log.LogDebug($"Could not find destination room to seal warp in room: {warpRoom}");
+                        continue;
+                    }
+
+                    if (!saveState.miscWorldSaveData.roomsSealedByVoidWeaver.Contains(warpRoom))
+                        saveState.miscWorldSaveData.roomsSealedByVoidWeaver.Add(warpRoom);
+                    if (!saveState.miscWorldSaveData.roomsSealedByVoidWeaver.Contains(destRoom))
+                        saveState.miscWorldSaveData.roomsSealedByVoidWeaver.Add(destRoom);
+
+                    Plugin.Log.LogDebug($"Added {warpRoom} & {destRoom} to roomsSealedByVoidWeaver");
+                }
+
+                // Attempts to find the specified warp and return the room the warp leads to
+                string FindDestRoom(string regionLower, string warpRoom)
+                {
+                    foreach (var kvp in saveState.deathPersistentSaveData.spawnedWarpPoints)
+                    {
+                        if (WarpPoint.RoomFromIdentifyingString(kvp.Key).ToLowerInvariant() == warpRoom)
+                        {
+                            PlacedObject placedObject = new PlacedObject(PlacedObject.Type.WarpPoint, null);
+                            (placedObject.data as WarpPoint.WarpPointData).owner.FromString(Regex.Split(kvp.Value.Trim(), "><"));
+                            return (placedObject.data as WarpPoint.WarpPointData).destRoom;
+                        }
+                    }
+                    foreach (var kvp in saveState.miscWorldSaveData.discoveredWarpPoints)
+                    {
+                        if (WarpPoint.RoomFromIdentifyingString(kvp.Key).ToLowerInvariant() == warpRoom)
+                        {
+                            PlacedObject placedObject = new PlacedObject(PlacedObject.Type.WarpPoint, null);
+                            (placedObject.data as WarpPoint.WarpPointData).owner.FromString(Regex.Split(kvp.Value.Trim(), "><"));
+                            return (placedObject.data as WarpPoint.WarpPointData).destRoom;
+                        }
+                    }
+                    if (Custom.rainWorld.regionWarpRooms.TryGetValue(regionLower, out List<string> regionWarps))
+                    {
+                        foreach (string data in regionWarps)
+                        {
+                            string[] split = data.Split([':']);
+                            if (split[0] == warpRoom && split.Length > 3) return split[3];
+                        }
+                    }
+                    if (Custom.rainWorld.regionSpinningTopRooms.TryGetValue(regionLower, out List<string> regionWarps2))
+                    {
+                        foreach (string data in regionWarps2)
+                        {
+                            string[] split = data.Split([':']);
+                            if (split[0] == warpRoom && split.Length > 2) return split[2];
+                        }
+                    }
+                    return null;
+                }
             }
         }
     }
