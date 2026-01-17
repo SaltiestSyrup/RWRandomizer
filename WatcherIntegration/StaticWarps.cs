@@ -115,14 +115,25 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static void WarpPoint_ExpireWarpByWeaver(On.Watcher.WarpPoint.orig_ExpireWarpByWeaver orig, WarpPoint self)
             {
                 orig(self);
-                Plugin.Log.LogDebug($"Attempting to seal all region warps");
-                Plugin.Log.LogDebug($"This warp point: origin = {self.room.abstractRoom}, destination = {self.Data.destRoom}");
-
                 SaveState saveState = self.room.game.GetStorySession.saveState;
-                List<string> roomsWithWarpsRemaining = self.room.game.GetStorySession.saveState.RoomsWithWarpsRemainingToBeSealed(true, self.room.world.name);
+                string regionToSeal = self.Data.destRegion;
+                // Don't seal the region if any of the following are true
+                if (regionToSeal is null // The region we left is unknown
+                    || Region.IsWatcherVanillaRegion(regionToSeal) // Leaving a tutorial region
+                    || Region.IsSentientRotRegion(regionToSeal) // Leaving a rotted region
+                    || self.Data.rippleWarp // The warp is a ripple warp
+                    || (self.Data.limitedUse && self.Data.uses <= 1) // The warp is a "limited use" warp
+                    || self.MyIdentifyingString() != self.room.game.GetStorySession.pendingWarpPointTransferId) // We didn't just pass through this warp
+                    return;
+
+                Plugin.Log.LogDebug($"Attempting to seal all region warps");
+                Plugin.Log.LogDebug($"This warp point: origin = {self.room.abstractRoom.name}, destination = {self.Data.destRoom}, sealing region = {regionToSeal}");
+
+                List<string> roomsWithWarpsRemaining = self.room.game.GetStorySession.saveState.RoomsWithWarpsRemainingToBeSealed(true, regionToSeal);
                 foreach (string warpRoom in roomsWithWarpsRemaining)
                 {
-                    string destRoom = FindDestRoom(self.room.world.name, warpRoom);
+
+                    string destRoom = FindDestRoom(regionToSeal.ToLowerInvariant(), warpRoom).ToLowerInvariant();
                     if (destRoom is null)
                     {
                         Plugin.Log.LogDebug($"Could not find destination room to seal warp in room: {warpRoom}");
@@ -163,7 +174,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                         foreach (string data in regionWarps)
                         {
                             string[] split = data.Split([':']);
-                            if (split[0] == warpRoom && split.Length > 3) return split[3];
+                            if (split[0].ToLowerInvariant() == warpRoom && split.Length > 3) return split[3];
                         }
                     }
                     if (Custom.rainWorld.regionSpinningTopRooms.TryGetValue(regionLower, out List<string> regionWarps2))
@@ -171,7 +182,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                         foreach (string data in regionWarps2)
                         {
                             string[] split = data.Split([':']);
-                            if (split[0] == warpRoom && split.Length > 2) return split[2];
+                            if (split[0].ToLowerInvariant() == warpRoom && split.Length > 2) return split[2];
                         }
                     }
                     return null;
