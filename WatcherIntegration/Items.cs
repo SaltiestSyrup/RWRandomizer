@@ -15,6 +15,11 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static List<string> collectedStaticKeys = [];
         internal static List<string> CollectedStaticKeys => collectedStaticKeys;
 
+        internal static List<string> unkeyableWarps =
+        [
+            "WORA-WSSR", "WORA-WSUR", "WGWR-WORA", "WHIR-WORA", "WDSR-WORA", "WARA-WRSA"
+        ];
+
         internal struct StaticKey
         {
             internal string name;
@@ -85,6 +90,37 @@ namespace RainWorldRandomizer.WatcherIntegration
             CollectedDynamicKeys.Clear();
             CollectedStaticKeys.Clear();
             RippleIncrements = 0;
+        }
+
+        internal static List<string> GetAllOpenWarps() => [.. CollectedStaticKeys, .. unkeyableWarps];
+
+        internal static List<string> GetAllAccessibleRegions()
+        {
+            List<string> ret = [Plugin.RandoManager.customStartDen.Split('_')[0]];
+            Dictionary<string, bool[]> keyDict = GetAllOpenWarps().ToDictionary(x => x, GateMapDisplay.CanUseGate);
+            bool updated = true;
+            while (updated)
+            {
+                updated = false;
+                foreach (var pair in keyDict)
+                {
+                    List<string> names = [.. pair.Key.Split('-')];
+                    bool[] usable = pair.Value;
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        string here = names[i];
+                        string there = names[1 - i];
+                        if (usable[i] && ret.Contains(here) && !ret.Contains(there))
+                        {
+                            ret.Add(there);
+                            ret.Add($"{there}*");
+                            updated = true;
+                        }
+                    }
+                }
+            }
+            return ret;
         }
     }
 }

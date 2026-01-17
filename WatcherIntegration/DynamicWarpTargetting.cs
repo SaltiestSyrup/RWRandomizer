@@ -138,15 +138,18 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 // All regions that have been visited before (have a RegionState saved in the SaveState)
                 // minus the region we're currently in
-                // TODO: Change dynamic warp targeting to select regions in logic
                 List<string> regionCandidates = [];
-                for (int i = 0; i < saveState.regionStates.Length; i++)
-                {
-                    if (saveState.regionStates[i] is not null) 
-                        regionCandidates.Add(saveState.regionStates[i].regionName.ToLowerInvariant());
-                    else if (saveState.regionLoadStrings[i] is not null)
-                        regionCandidates.Add(Regex.Split(Regex.Split(saveState.regionLoadStrings[i], "<rgA>")[0], "<rgB>")[1].ToLowerInvariant());
-                }
+
+                regionCandidates = [..Items.GetAllAccessibleRegions().Select(r => r.ToLowerInvariant())];
+
+                //TODO: Make only targetting visited regions an option (Either client or yaml, depending on if other methods get added)
+                //for (int i = 0; i < saveState.regionStates.Length; i++)
+                //{
+                //    if (saveState.regionStates[i] is not null) 
+                //        regionCandidates.Add(saveState.regionStates[i].regionName.ToLowerInvariant());
+                //    else if (saveState.regionLoadStrings[i] is not null)
+                //        regionCandidates.Add(Regex.Split(Regex.Split(saveState.regionLoadStrings[i], "<rgA>")[0], "<rgB>")[1].ToLowerInvariant());
+                //}
 
                 // Always respect target region parameter
                 if (targetRegion is not null) regionCandidates = [targetRegion];
