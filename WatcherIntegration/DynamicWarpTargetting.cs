@@ -19,7 +19,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// for rot ending "endgame" is triggered (Spoken to prince after 12 regions)</summary>
         private const int INFLUENCE_ROT_ENDGAME = 3;
         /// <summary>The multiplier on dynamic warp weighting applied when the region has warps to seal</summary>
-        private const int INFLUENCE_WARPS_TO_SEAL = 8;
+        private const int INFLUENCE_WARPS_TO_SEAL = 16;
 
         internal enum WarpSourceKind { Other, Normal, Throne, Permarotted, Unrottable }
 
@@ -193,17 +193,20 @@ namespace RainWorldRandomizer.WatcherIntegration
                     }
 
                     // Weight regions if spreading rot to them
+                    bool inRotEndgame = saveState.miscWorldSaveData.highestPrinceConversationSeen >= PrinceBehavior.PrinceConversation.PrinceConversationToId(WatcherEnums.ConversationID.Prince_7);
                     if (spreadingRot
                         && !saveState.miscWorldSaveData.regionsInfectedBySentientRot.Contains(regionWarpsPair.Key)
                         && !Region.HasSentientRotResistance(regionWarpsPair.Key))
                     {
                         weight *= INFLUENCE_ROT_SPREAD;
-                        if (saveState.miscWorldSaveData.highestPrinceConversationSeen >= PrinceBehavior.PrinceConversation.PrinceConversationToId(WatcherEnums.ConversationID.Prince_7))
-                            weight *= INFLUENCE_ROT_ENDGAME;
+                        if (inRotEndgame) weight *= INFLUENCE_ROT_ENDGAME;
                     }
 
                     // Weight regions if we need to seal warps there
                     if (regionsWithSealableWarps.Contains(regionWarpsPair.Key)) weight *= INFLUENCE_WARPS_TO_SEAL;
+
+                    // If we're close to rot ending or have the weaver ability, remove the possibility of warping to regions without checks remaining
+                    if (weight == 1 && (inRotEndgame || saveState.miscWorldSaveData.hasVoidWeaverAbility)) weight--;
 
                     foreach (string warpTarget in regionWarpsPair.Value) // WARP DESTINATION LOOP
                     {
@@ -213,11 +216,10 @@ namespace RainWorldRandomizer.WatcherIntegration
                         if (world.game.rainWorld.levelBadWarpTargets.Contains(targetRoom)) continue;
                         if (targetRegion is null && noRippleTargets.Contains(targetRoom)) continue;
 
-                        // The fallback warp can be in the current region or a room with a warp in it
-                        // It cannot be the current room or 
+                        // The fallback warp can be in the current region or a room with a warp in it if need be
                         fallbackWarp = targetRoom;
 
-                        if (targetRegion is null && regionWarpsPair.Key == world.name) continue;
+                        if (targetRegion is null && regionWarpsPair.Key.Equals(world.name, System.StringComparison.InvariantCultureIgnoreCase)) continue;
 
                         // Don't warp to rooms with a warp in them already
                         if (saveState.miscWorldSaveData.discoveredWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == targetRoom)) continue;
