@@ -255,6 +255,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     MiscWorldSaveData mwsd = room.game.GetStorySession.saveState.miscWorldSaveData;
 
                     if (player.room.warpPoints.Count == 0) return false;
+                    if (!mwsd.hasVoidWeaverAbility) return false;
 
                     // There should only be one in a room, but iterate anyway just in case
                     foreach (WarpPoint warp in player.room.warpPoints)
