@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using RegionKit.Extras;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -19,7 +20,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// for rot ending "endgame" is triggered (Spoken to prince after 12 regions)</summary>
         private const int INFLUENCE_ROT_ENDGAME = 3;
         /// <summary>The multiplier on dynamic warp weighting applied when the region has warps to seal</summary>
-        private const int INFLUENCE_WARPS_TO_SEAL = 8;
+        private const int INFLUENCE_WARPS_TO_SEAL = 16;
 
         internal enum WarpSourceKind { Other, Normal, Throne, Permarotted, Unrottable }
 
@@ -133,11 +134,8 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 if (Plugin.RandoManager?.isRandomizerActive is not true) return orig(world, oldRoom, targetRegion, spreadingRot);
                 SaveState saveState = world.game.GetStorySession.saveState;
+                bool hasWeaverAbility = saveState.miscWorldSaveData.hasVoidWeaverAbility;
 
-                if (saveState.miscWorldSaveData.hasVoidWeaverAbility) spreadingRot = false;
-
-                // All regions that have been visited before (have a RegionState saved in the SaveState)
-                // minus the region we're currently in
                 List<string> regionCandidates = [];
 
                 regionCandidates = [..Items.GetAllAccessibleRegions().Select(r => r.ToLowerInvariant())];
@@ -151,12 +149,22 @@ namespace RainWorldRandomizer.WatcherIntegration
                 //        regionCandidates.Add(Regex.Split(Regex.Split(saveState.regionLoadStrings[i], "<rgA>")[0], "<rgB>")[1].ToLowerInvariant());
                 //}
 
+                List<string> rottedRegions = ["WSUR", "WHIR", "WGWR", "WDSR", "WORA"];
+
+                // If bad warping is difficult, make rotted regions possible dynamic targets
+                // TODO: Adjust this when karmaless warping item is added
+                if (hasWeaverAbility)
+                {
+                    spreadingRot = false;
+                    regionCandidates.AddRange(rottedRegions.Where(r => Plugin.RandoManager.PercentOfRegionComplete(r) >= 0 && Plugin.RandoManager.PercentOfRegionComplete(r) < 1));
+                }
+
                 // Always respect target region parameter
                 if (targetRegion is not null) regionCandidates = [targetRegion];
 
                 // Get all regions that have warps that need to be sealed
                 List<string> regionsWithSealableWarps = [];
-                if (saveState.miscWorldSaveData.hasVoidWeaverAbility)
+                if (hasWeaverAbility)
                 {
                     foreach (string room in saveState.RoomsWithWarpsRemainingToBeSealed(true))
                     {
@@ -193,37 +201,40 @@ namespace RainWorldRandomizer.WatcherIntegration
                     }
 
                     // Weight regions if spreading rot to them
+                    bool inRotEndgame = saveState.miscWorldSaveData.highestPrinceConversationSeen >= PrinceBehavior.PrinceConversation.PrinceConversationToId(WatcherEnums.ConversationID.Prince_7);
                     if (spreadingRot
                         && !saveState.miscWorldSaveData.regionsInfectedBySentientRot.Contains(regionWarpsPair.Key)
                         && !Region.HasSentientRotResistance(regionWarpsPair.Key))
                     {
                         weight *= INFLUENCE_ROT_SPREAD;
-                        if (saveState.miscWorldSaveData.highestPrinceConversationSeen >= PrinceBehavior.PrinceConversation.PrinceConversationToId(WatcherEnums.ConversationID.Prince_7))
-                            weight *= INFLUENCE_ROT_ENDGAME;
+                        if (inRotEndgame) weight *= INFLUENCE_ROT_ENDGAME;
                     }
 
                     // Weight regions if we need to seal warps there
                     if (regionsWithSealableWarps.Contains(regionWarpsPair.Key)) weight *= INFLUENCE_WARPS_TO_SEAL;
+
+                    // If we're close to rot ending or have the weaver ability, remove the possibility of warping to regions without checks remaining
+                    if (weight == 1 && (inRotEndgame || hasWeaverAbility)) weight--;
 
                     foreach (string warpTarget in regionWarpsPair.Value) // WARP DESTINATION LOOP
                     {
                         string targetRoom = warpTarget.Split(':')[0];
 
                         if (targetRoom == oldRoom) continue;
-                        if (world.game.rainWorld.levelBadWarpTargets.Contains(targetRoom)) continue;
+                        //if (world.game.rainWorld.levelBadWarpTargets.Contains(targetRoom)) continue;
                         if (targetRegion is null && noRippleTargets.Contains(targetRoom)) continue;
 
-                        // The fallback warp can be in the current region or a room with a warp in it
-                        // It cannot be the current room or 
+                        // The fallback warp can be in the current region or a room with a warp in it if need be
                         fallbackWarp = targetRoom;
 
-                        if (targetRegion is null && regionWarpsPair.Key == world.name) continue;
+                        // Don't warp to the region we're currently in
+                        if (targetRegion is null && regionWarpsPair.Key.Equals(world.name, System.StringComparison.InvariantCultureIgnoreCase)) continue;
 
                         // Don't warp to rooms with a warp in them already
                         if (saveState.miscWorldSaveData.discoveredWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == targetRoom)) continue;
                         if (saveState.deathPersistentSaveData.spawnedWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == targetRoom)) continue;
 
-                        // If region was targetted, all weights are equal
+                        // If region was targeted, all weights are equal
                         if (targetRegion is not null)
                         {
                             normalWeightedCandidates.Add(targetRoom);

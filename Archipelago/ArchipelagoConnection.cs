@@ -100,8 +100,10 @@ namespace RainWorldRandomizer
             Rubicon, // Saint Ascending in Rubicon
             Pilgrim, // Encounter enough Echoes to trigger the Pilgrim passage
             FoodQuest, // Eat every tracked food quest item
-            SpinningTop,
-            SentientRot,
+            SpinningTop, // Watcher witnessing Spinning Top's ascension in Ancient Urban
+            SentientRot, // Watcher rotting all regions and having their final encounter with The Prince
+            Weaver, // Watcher sealing all warp points and having their final encounter with the Weaver
+            TrueEnding, // Watcher activating the pillars in Daemon and ascending
         }
 
         public enum EchoLowKarmaDifficulty
@@ -369,7 +371,16 @@ namespace RainWorldRandomizer
             Slugcat = new SlugcatStats.Name(campaignString);
             if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
             else if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
-            else if (completionType >= 4) completionCondition = CompletionCondition.Ascension; // Unknown condition fallback
+            else if (campaignString == "Watcher")
+            {
+                completionCondition = completionType switch
+                {
+                    1 => CompletionCondition.SentientRot,
+                    4 => CompletionCondition.Weaver,
+                    5 => CompletionCondition.TrueEnding,
+                    0 or _ => CompletionCondition.SpinningTop,
+                };
+            }
             else
             {
                 completionCondition = campaignString switch
@@ -380,7 +391,6 @@ namespace RainWorldRandomizer
                     "Rivulet" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon,
                     "Spear" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger,
                     "Saint" => CompletionCondition.Rubicon,
-                    "Watcher" => completionType == 0 ? CompletionCondition.SpinningTop : CompletionCondition.SentientRot,
                     "Sofanthiel" or _ => CompletionCondition.Ascension
                 };
             }

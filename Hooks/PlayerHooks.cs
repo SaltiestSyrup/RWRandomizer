@@ -100,6 +100,8 @@ namespace RainWorldRandomizer
                 if (room.abstractRoom.name == "SB_L01"
                     && self.firstChunk.pos.y < -500f)
                 {
+                    if (Plugin.RandoManager?.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher)
+                        (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.TrueEnding);
                     (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Ascension);
                 }
                 else if (room.abstractRoom.name == "HR_FINAL"
