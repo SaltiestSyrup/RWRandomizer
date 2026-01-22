@@ -25,6 +25,8 @@ namespace RainWorldRandomizer
         // LanternMouse, CicadaA, Yeek, DropBug, MirosBird, Scavenger, DaddyLongLegs,
         // PoleMimic, TentaclePlant, BigEel, Inspector
 
+        // Frog, Tardigrade, SandGrub, Rat, FireSpriteLarva, Pomegranate, Barnacle
+
         /// <summary>
         /// The fallback starting den for each slugcat. 
         /// Most slugcats start in an intro scene instead of a den, so this defines the closest den to that starting point
@@ -151,6 +153,13 @@ namespace RainWorldRandomizer
             { "DeadHazer", "Hazer" },
             { "DeadVultureGrub", "VultureGrub" },
             { "SeedCob", "Popcorn Plant" },
+            { "Frog", "Frog" },
+            { "Tardigrade", "Tardigrade" },
+            { "SandGrub", "Sand Grub" },
+            { "Rat", "Rat" },
+            { "FireSpriteLarva", "Fire Sprite Larva" },
+            { "Pomegranate", "Pomegranate" },
+            { "Barnacle", "Barnacle" },
         };
 
         public static void InitializeConstants()
@@ -179,6 +188,7 @@ namespace RainWorldRandomizer
                     false, false, false,
                     false, false, false, false, false, false, false,
                     false, false, false, false,
+                    false, false, false, false, false, false, false,
                 ]},
                 { SlugcatStats.Name.Yellow,
                 [
@@ -189,7 +199,8 @@ namespace RainWorldRandomizer
                     false, false, false,
                     false, false, false,
                     false, false, false, false, false, false, false,
-                    false, false, false, false
+                    false, false, false, false,
+                    false, false, false, false, false, false, false,
                 ]},
                 { SlugcatStats.Name.Red,
                 [
@@ -201,6 +212,7 @@ namespace RainWorldRandomizer
                     true, true, true,
                     true, true, true, true, true, true, true,
                     false, false, false, false,
+                    false, false, false, false, false, false, false,
                 ]},
             });
 
@@ -235,6 +247,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true, true, true, true, true,
                         false, false, false, false,
+                        false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Artificer,
                     [
@@ -246,6 +259,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true, true, true, true, true,
                         false, false, false, false,
+                        false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Spear,
                     [
@@ -257,6 +271,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true, true, true, true, true,
                         true, true, true, true,
+                        false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
                     [
@@ -268,6 +283,7 @@ namespace RainWorldRandomizer
                         false, false, false,
                         false, false, false, false, false, false, false,
                         false, false, false, false,
+                        false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Saint,
                     [
@@ -280,6 +296,7 @@ namespace RainWorldRandomizer
                         false, false, false,
                         false, false, false, false, false, false, false,
                         false, false, false, false,
+                        false, false, false, false, false, false, false,
                     ]}
                 });
 
@@ -296,6 +313,19 @@ namespace RainWorldRandomizer
             // Add Constant entries that require Watcher
             if (ModManager.Watcher)
             {
+                SlugcatFoodQuestAccessibility.Add(WatcherEnums.SlugcatStatsName.Watcher,
+                [
+                    true, true, true, true, false, true, true, false, true, false, false,
+                    true, false, true, false, false, true, false, true, false, true, true,
+                    true, true, true, true,
+                    false, false, false, false, false, false, false, false,
+                    false, false, false,
+                    false, false, false,
+                    false, false, false, false, false, false, false,
+                    false, false, false, false,
+                    true, true, true, true, true, true, true,
+                ]);
+
                 SlugcatDefaultStartingDen.Add(WatcherEnums.SlugcatStatsName.Watcher, "HI_WS01");
             }
 
