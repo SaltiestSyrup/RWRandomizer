@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using Watcher;
 
 namespace RainWorldRandomizer
 {
@@ -628,6 +629,21 @@ namespace RainWorldRandomizer
                 new(null, [CreatureTemplate.Type.BigEel]),
                 new(null, [DLCSharedEnums.CreatureTemplateType.Inspector]),
             ];
+
+            if (ModManager.Watcher)
+            {
+                data =
+                [
+                    ..data,
+                    new(null, [WatcherEnums.CreatureTemplateType.Frog]),
+                    new(null, [WatcherEnums.CreatureTemplateType.Tardigrade]),
+                    new(null, [WatcherEnums.CreatureTemplateType.SandGrub]),
+                    new(null, [WatcherEnums.CreatureTemplateType.Rat]),
+                    new(WatcherEnums.AbstractObjectType.FireSpriteLarva, null),
+                    new(AbstractPhysicalObject.AbstractObjectType.Pomegranate, null),
+                    new(null, [WatcherEnums.CreatureTemplateType.Barnacle])
+                ];
+            }
 
             unexpanded = [.. WinState.GourmandPassageTracker];
             expanded = [.. unexpanded, .. data];
