@@ -46,20 +46,6 @@ namespace RainWorldRandomizer.WatcherIntegration
                 //IL.World.SpawnGhost -= NullifyPresence;
             }
 
-            /// <summary>Prevent a <see cref="GhostWorldPresence"/> and <see cref="GhostCreatureSedater"/> (later, in <see cref="Room.Loaded"/>) from being created for a Spinning Top that won't be spawned (due to <see cref="SpinningTopKeyCheck(ILContext)"/>).</summary>
-            private static void NullifyPresence(ILContext il)
-            {
-                ILCursor c = new(il);
-                // Branch interception at 006a.
-                c.GotoNext(x => x.MatchStloc(3));  // 0044
-                c.GotoNext(MoveType.Before, x => x.MatchStloc(3));  // 0094
-
-                static List<string> Delegate(List<string> orig)
-                    => [.. orig.Where(x => Items.StaticKey.FromSpinningTop(x.Split(':')[0])?.Missing != true)];
-
-                c.EmitDelegate(Delegate);
-            }
-
             /// <summary>Detect when a new Throne room opens up after a Prince encounter.</summary>
             private static void DetectPrince(ILContext il)
             {
@@ -126,19 +112,11 @@ namespace RainWorldRandomizer.WatcherIntegration
                 EntryPoint.TryGiveLocation($"SpinningTop-{self.room.abstractRoom.name.Region()}");
             }
 
-            /// <summary>Detect, at cycle end, what new fixed warp points have been discovered and what regions have been infected.</summary>
+            /// <summary>Detect, at cycle end, what regions have been infected.</summary>
             internal static void DetectFixedWarpPointAndRotSpread(SaveState saveState)
             {
-                //Plugin.Log.LogDebug("Checking for warps...");
-                //foreach (var point in saveState.miscWorldSaveData.discoveredWarpPoints)
-                //    EntryPoint.TryGiveLocation($"Warp-{point.Key.Split(':')[0].ToUpperInvariant()}");
-
                 for (int i = 1; i <= saveState.miscWorldSaveData.regionsInfectedBySentientRotSpread.Count; i++)
                     EntryPoint.TryGiveLocation($"SpreadRot-{i}");
-
-                //foreach (string region in saveState.miscWorldSaveData.regionsInfectedBySentientRot)
-                //    if (!Region.HasSentientRotResistance(region))
-                //        EntryPoint.TryGiveLocation($"SpreadRot-{region.ToUpperInvariant()}");
             }
 
             /// <summary>
@@ -157,25 +135,6 @@ namespace RainWorldRandomizer.WatcherIntegration
                         Plugin.RandoManager.GiveLocation($"Warp-{self.room.abstractRoom.name}");
                     }
                 }
-            }
-
-            /// <summary>Prevent Spinning Top from spawning if the key is not collected and <see cref="Settings.spinningTopKeys"/> is enabled.</summary>
-            private static void SpinningTopKeyCheck(ILContext il)
-            {
-                ILCursor c = new(il);
-                // Branch interception at 1d71 (roomSettings.placedObjects[num10].type == WatcherEnums.PlacedObjectType.SpinningTopSpot).
-                c.GotoNext(x => x.MatchLdsfld(typeof(WPOT).GetField(nameof(WPOT.SpinningTopSpot))));  // 1d67
-                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<PlacedObject.Type>).GetMethod("op_Equality")));  // 1d6c
-
-                c.Emit(OpCodes.Ldarg_0);  // Room this
-                c.Emit(OpCodes.Ldloc, 27);  // int num10 (iteration variable)
-                static bool Delegate(bool orig, Room self, int index)
-                {
-                    if (!orig || !Settings.spinningTopKeys) return orig;
-                    string dest = (self.roomSettings.placedObjects[index].data as SpinningTopData).RegionString;
-                    return !Items.StaticKey.IsMissing(self.world.name, dest is null ? "WAUA" : dest);
-                }
-                c.EmitDelegate(Delegate);
             }
 
             /// <summary>
