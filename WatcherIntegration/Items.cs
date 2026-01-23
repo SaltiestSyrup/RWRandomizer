@@ -20,15 +20,15 @@ namespace RainWorldRandomizer.WatcherIntegration
             "WORA-WSSR", "WORA-WSUR", "WGWR-WORA", "WHIR-WORA", "WDSR-WORA", "WARA-WRSA"
         ];
 
+        internal static string[] spinningTopWarps =
+        [
+            "WARF-WTDA", "WBLA-WVWB", "WRFB-WTDB", "WARA-WARC", "WARD-WVWB", "WARE-WSKC", "WARA-WARB",
+            "WARA-WPTA", "WPTA-WSKC", "WBLA-WTDA", "WARE-WRFB", "WARC-WVWA", "WARA-WAUA"
+        ];
+
         internal struct StaticKey
         {
             internal string name;
-
-            internal static string[] spinningTopWarps = 
-            [
-                "WARA-WAUA", "WTDB-WRFB", "WARF-WTDA", "WARD-WARB", "WARC-WARA", "WARB-WARA", "WPTA-WARA",
-                "WBLA-WSKD", "WRFB-WARE", "WARE-WSKC", "WSKC-WPTA", "WTDA-WBLA", "WSKD-WARD", "WVWA-WARC"
-            ];
 
             internal StaticKey(string region1, string region2)
             {
