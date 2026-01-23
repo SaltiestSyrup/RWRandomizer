@@ -390,24 +390,21 @@ namespace RainWorldRandomizer
                     {
                         string locName = $"Pearl-{pearl.AbstractPearl.dataPearlType.value}";
 
-                        if (Plugin.RandoManager is ManagerArchipelago)
+                        // Check if this pearl matching the current region is valid
+                        if (Plugin.RandoManager.LocationExists(locName + $"-{currentRoom.abstractRoom.name.Substring(0, 2)}"))
                         {
-                            // Check if this pearl matching the current region is valid
-                            if (Plugin.RandoManager.LocationExists(locName + $"-{currentRoom.abstractRoom.name.Substring(0, 2)}"))
+                            locName += $"-{currentRoom.abstractRoom.name.Substring(0, 2)}";
+                        }
+                        else
+                        {
+                            // More costly lookup to find where this pearl comes from
+                            foreach (var region in self.rainWorld.regionDataPearls)
                             {
-                                locName += $"-{currentRoom.abstractRoom.name.Substring(0, 2)}";
-                            }
-                            else
-                            {
-                                // More costly lookup to find where this pearl comes from
-                                foreach (var region in self.rainWorld.regionDataPearls)
+                                if (region.Value.Contains(pearl.AbstractPearl.dataPearlType)
+                                    && Plugin.RandoManager.LocationExists(locName + $"-{region.Key.ToUpperInvariant()}"))
                                 {
-                                    if (region.Value.Contains(pearl.AbstractPearl.dataPearlType)
-                                        && Plugin.RandoManager.LocationExists(locName + $"-{region.Key.ToUpperInvariant()}"))
-                                    {
-                                        locName += $"-{region.Key.ToUpperInvariant()}";
-                                        break;
-                                    }
+                                    locName += $"-{region.Key.ToUpperInvariant()}";
+                                    break;
                                 }
                             }
                         }
