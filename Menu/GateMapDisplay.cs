@@ -157,6 +157,22 @@ namespace RainWorldRandomizer
                         string leftName = watcherNodeOrder[num];
                         string rightName = watcherNodeOrder[num + directive.Item1];
                         string keyName = string.Join("-", (new string[] { leftName.Substring(0, 4), rightName.Substring(0, 4) }).OrderBy(x => x));
+
+                        // One-ways
+                        if (CanUseGate(keyName)[0] ^ CanUseGate(keyName)[1])
+                        {
+                            Vector2[] vertices = 
+                            [
+                                nodes[leftName].FetchDirection(directive.Item2),
+                                nodes[rightName].FetchDirection(directive.Item3)
+                            ];
+                            // Invert direction if ST is on the other side of the warp string XOR the nodes were swapped when making the warp string
+                            if (!CanUseGate(keyName)[0] ^ leftName.CompareTo(rightName) > 0) vertices = [vertices[1], vertices[0]];
+
+                            connectors[$"Warp-{keyName}"] = Connector.OneWay(vertices);
+                            continue;
+                        }
+
                         connectors[$"Warp-{keyName}"] = new(
                             nodes[leftName].FetchDirection(directive.Item2),
                             nodes[rightName].FetchDirection(directive.Item3)
@@ -516,9 +532,24 @@ namespace RainWorldRandomizer
                 return new Connector(segments);
             }
 
+            /// <summary>
+            /// Create a one-way Connector from a list of vector vertices. The first given vertex will be considered the "start" of the connection.
+            /// </summary>
+            public static Connector OneWay(params Vector2[] vertices)
+            {
+                Connector c = new Connector(vertices);
+                Vector2 dotPos = Vector2.MoveTowards(vertices[0], vertices[1], 4);
+                c.AddChild(new Dot(dotPos));
+                return c;
+            }
+
             public Color Color
             {
-                set { foreach (Segment segment in _childNodes.OfType<Segment>()) segment.color = value; }
+                set 
+                {
+                    foreach (Segment segment in _childNodes.OfType<Segment>()) segment.color = value;
+                    foreach (Dot dot in _childNodes.OfType<Dot>()) dot.color = value;
+                }
                 get => _childNodes.OfType<Segment>().FirstOrDefault()?.color ?? COLOR_INACCESSIBLE;
             }
 
@@ -537,6 +568,17 @@ namespace RainWorldRandomizer
                         rotation = Custom.AimFromOneVectorToAnother(start, end);
                         width = 1; height = displacement.magnitude;
                     }
+                }
+            }
+
+            public class Dot : FSprite
+            {
+                public Dot(Vector2 pos) : base("Circle20")
+                {
+                    SetPosition(pos);
+                    color = COLOR_INACCESSIBLE;
+                    width = 7f;
+                    height = 7f;
                 }
             }
         }
