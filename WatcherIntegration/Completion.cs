@@ -28,7 +28,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             }
 
             /// <summary>Reduce the number of regions needed for the Sentient Rot ending to match <see cref="Settings.rottedRegionTarget"/>.</summary>
-            internal static int ApplyRottedRegionTarget(Func<MWSD, int> orig, MWSD self) 
+            internal static int ApplyRottedRegionTarget(Func<MWSD, int> orig, MWSD self)
                 => Mathf.Max(orig(self) - 21 + (int)Settings.rottedRegionTarget, 0);
 
             /// <summary>Detect completion conditions when switching to the ending slideshows.</summary>
@@ -44,7 +44,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                             foreach (var loc in managerAP.GetLocations().Where(l => l.kind == LocationInfo.LocationKind.SpinningTop))
                                 managerAP.GiveLocation(loc.internalName);
                             break;
-                        case "EndindRot":
+                        case "EndingRot":
                             managerAP.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SentientRot);
                             break;
                         case "EndingVoidWeaver":
