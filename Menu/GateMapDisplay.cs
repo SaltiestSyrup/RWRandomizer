@@ -244,6 +244,8 @@ namespace RainWorldRandomizer
         /// Note that which region is A and which is B is dependent only on the gate name, not on the physical position of the regions.</returns>
         public static bool[] CanUseGate(string key)
         {
+            if (key.StartsWith("GATE_") || key.StartsWith("Warp-")) key = key.Substring(5);
+
             // (Most) Daemon warps are one way entering Daemon
             if (key.Contains("WRSA") && !key.Contains("WORA") && !key.Contains("WARA"))
             {
@@ -254,34 +256,34 @@ namespace RainWorldRandomizer
 
             return key switch
             {
-                "GATE_LF_SB" => Scug is "Saint" ? [true, true] : [true, false],
-                "GATE_SL_MS" => [false, true],
-                "GATE_OE_SU" => [true, false],
-                "GATE_UW_SL" => Scug is "Artificer" or "Spear" ? [true, true] : [false, false],
-                "GATE_SL_VS" => Scug is "Artificer" ? [false, false] : [true, true],
+                "LF_SB" => Scug is "Saint" ? [true, true] : [true, false],
+                "SL_MS" => [false, true],
+                "OE_SU" => [true, false],
+                "UW_SL" => Scug is "Artificer" or "Spear" ? [true, true] : [false, false],
+                "SL_VS" => Scug is "Artificer" ? [false, false] : [true, true],
 
-                "Warp-WRFB-WTDB" => [false, true],
-                "Warp-WARE-WRFB" => [false, true],
-                "Warp-WARE-WSKC" => [true, false],
-                "Warp-WARD-WVWB" => [false, true],
-                "Warp-WBLA-WVWB" => [true, false],
-                "Warp-WBLA-WTDA" => [false, true],
-                "Warp-WARF-WTDA" => [true, false],
-                "Warp-WPTA-WSKC" => [false, true],
-                "Warp-WARA-WPTA" => [false, true],
-                "Warp-WARC-WVWA" => [false, true],
-                "Warp-WARA-WARC" => [false, true],
-                "Warp-WARA-WARB" => [false, true],
-                "Warp-WARA-WAUA" => [true, false],
+                "WRFB-WTDB" => [false, true],
+                "WARE-WRFB" => [false, true],
+                "WARE-WSKC" => [true, false],
+                "WARD-WVWB" => [false, true],
+                "WBLA-WVWB" => [true, false],
+                "WBLA-WTDA" => [false, true],
+                "WARF-WTDA" => [true, false],
+                "WPTA-WSKC" => [false, true],
+                "WARA-WPTA" => [false, true],
+                "WARC-WVWA" => [false, true],
+                "WARA-WARC" => [false, true],
+                "WARA-WARB" => [false, true],
+                "WARA-WAUA" => [true, false],
 
-                //"Warp-WBLA-WSSR" => [true, false],
-                "Warp-WARD-WSSR" => [true, false],
-                "Warp-WORA-WSSR" => [false, true],
-                //"Warp-WORA-WSUR" => [false, true],
-                //"Warp-WGWR-WORA" => [true, false],
-                //"Warp-WHIR-WORA" => [true, false],
-                //"Warp-WDSR-WORA" => [true, false],
-                "Warp-WARA-WRSA" => [false, true],
+                //"WBLA-WSSR" => [true, false],
+                "WARD-WSSR" => [true, false],
+                "WORA-WSSR" => [false, true],
+                //"WORA-WSUR" => [false, true],
+                //"WGWR-WORA" => [true, false],
+                //"WHIR-WORA" => [true, false],
+                //"WDSR-WORA" => [true, false],
+                "WARA-WRSA" => [false, true],
 
                 _ => [true, true],
             };
