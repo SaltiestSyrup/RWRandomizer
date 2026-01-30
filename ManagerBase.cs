@@ -116,6 +116,7 @@ namespace RainWorldRandomizer
         public virtual void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
             currentSlugcat = storyGameCharacter;
+            WatcherIntegration.Items.ResetItems();
         }
 
         /// <summary>
