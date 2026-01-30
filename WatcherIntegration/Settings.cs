@@ -57,8 +57,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                     data.GetArray<string>("warp_pool") ?? [],
                     data.GetDict("predetermined_warps")?.SelectStringKeys() ?? [],
                     (RippleReqMode)data.GetSimple("dynamic_warp_ripple_req", 0L),
-                    data.GetSimple("spinning_top_keys", 0L) == 2L,
-                    data.GetSimple("rotted_region_target", 18L)
+                    data.GetSimple("spinning_top_keys", 0L) == 1L,
+                    data.GetSimple("rotted_region_target", 21L)
                     );
             }
             catch (Exception e) { Plugin.Log.LogError(e); }
