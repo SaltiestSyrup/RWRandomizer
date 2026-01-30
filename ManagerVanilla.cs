@@ -233,6 +233,12 @@ namespace RainWorldRandomizer
                     case "HunterCycles":
                         if (item.IsGiven) _hunterBonusCyclesGiven++;
                         break;
+                    case "DamageUpgrade":
+                        if (item.IsGiven) _numDamageUpgrades++;
+                        break;
+                    case "ExpeditionPerk":
+                        if (item.IsGiven) GrantExpeditionPerk(item.ID);
+                        break;
                     case "IdDrone":
                         if (item.IsGiven) _givenRobo = true;
                         break;

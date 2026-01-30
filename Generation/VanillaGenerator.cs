@@ -180,7 +180,9 @@ namespace RainWorldRandomizer.Generation
                 {
                     foreach (string token in Plugin.Singleton.collectTokenHandler.availableTokens[regionShort])
                     {
-                        regionLocations.Add(new Location($"Token-{token}-{regionShort}", Location.Type.Token, new()));
+                        string name = $"Token-{token}";
+                        if (token.Split('-').Length == 1) name += $"-{regionShort}";
+                        regionLocations.Add(new Location(name, Location.Type.Token, new()));
                     }
                 }
 
