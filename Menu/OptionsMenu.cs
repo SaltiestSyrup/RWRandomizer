@@ -234,6 +234,14 @@ namespace RainWorldRandomizer
             RandoOptions.colorPickupsWithHints = config.Bind<bool>("ColorPickupsWithHints", true,
                 new ConfigurableInfo("Display colors on many locations in game that hint at their contents. Magenta = Progression, Cyan = Filler, Blue = Useful or Trap", null, "",
                     ["Location Hint Colors"]));
+
+            RandoOptions.filterRelevantItemLogs = config.Bind<bool>("FilterRelevantItemLogs", false,
+                new ConfigurableInfo("Make AP only show logs in game for the current slot's checks and items", null, "",
+                    ["Notify Only Relevant Checks"]));
+
+            RandoOptions.filterPlayerChatLogs = config.Bind<bool>("FilterPlayerChatLogs", false,
+                new ConfigurableInfo("Stop player sent chat messages from showing up in game", null, "",
+                    ["Don't Notify Chat Messages"]));
         }
 
         public override void Initialize()
@@ -513,6 +521,10 @@ namespace RainWorldRandomizer
 
             OptionGroup qolGroup = new(this, "AP_QoL", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
             qolGroup.AddCheckBox(RandoOptions.colorPickupsWithHints, new(RIGHT_OPTION_X + 30f, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            qolGroup.AddCheckBox(RandoOptions.filterRelevantItemLogs, new(RIGHT_OPTION_X + 30f, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            qolGroup.AddCheckBox(RandoOptions.filterPlayerChatLogs, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT * 1.7f;
             qolGroup.AddToTab(tabIndex);
             optionGroups.Add(qolGroup);

@@ -45,17 +45,19 @@ namespace RainWorldRandomizer
         internal static Configurable<bool>[] expeditionPerks;
 
         // Archipelago
-        public static Configurable<bool> archipelago;
-        public static Configurable<string> archipelagoHostName;
-        public static Configurable<int> archipelagoPort;
-        public static Configurable<string> archipelagoSlotName;
-        public static Configurable<string> archipelagoPassword;
-        public static Configurable<bool> archipelagoDeathLinkOverride;
-        public static Configurable<bool> archipelagoPreventDLKarmaLoss;
-        public static Configurable<bool> archipelagoIgnoreMenuDL;
-        public static Configurable<int> trapMinimumCooldown;
-        public static Configurable<int> trapMaximumCooldown;
+        internal static Configurable<bool> archipelago;
+        internal static Configurable<string> archipelagoHostName;
+        internal static Configurable<int> archipelagoPort;
+        internal static Configurable<string> archipelagoSlotName;
+        internal static Configurable<string> archipelagoPassword;
+        internal static Configurable<bool> archipelagoDeathLinkOverride;
+        internal static Configurable<bool> archipelagoPreventDLKarmaLoss;
+        internal static Configurable<bool> archipelagoIgnoreMenuDL;
+        internal static Configurable<int> trapMinimumCooldown;
+        internal static Configurable<int> trapMaximumCooldown;
         internal static Configurable<bool> colorPickupsWithHints;
+        internal static Configurable<bool> filterRelevantItemLogs;
+        internal static Configurable<bool> filterPlayerChatLogs;
 
         // Base
         public static bool UseSetSeed => useSeed.Value;
