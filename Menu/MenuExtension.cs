@@ -222,6 +222,10 @@ namespace RainWorldRandomizer
     /// </summary>
     public class PendingItemsDisplay : RectangularMenuObject
     {
+        private const int BASE_ELEMENTS_PER_ROW = 15;
+        private const int MAXIMUM_ROWS = 9;
+        public readonly int elementsPerRow = BASE_ELEMENTS_PER_ROW;
+
         public RoundedRect roundedRect;
         public MenuLabel label;
         public BorderlessSymbolButton[] buttons;
@@ -232,7 +236,15 @@ namespace RainWorldRandomizer
         {
             Unlock.Item[] pendingItems = [.. Plugin.RandoManager.itemDeliveryQueue];
             buttons = new BorderlessSymbolButton[pendingItems.Length];
-            size = new Vector2(250f, ((pendingItems.Length - 1) / 8 * 30f) + 57f);
+
+            int maxRows = Mathf.FloorToInt((pos.y - 57f) / 30f);
+            Plugin.Log.LogDebug($"{pendingItems.Length} | {maxRows} | {(float)pendingItems.Length / maxRows}");
+            if (pendingItems.Length > BASE_ELEMENTS_PER_ROW * maxRows)
+            {
+                elementsPerRow = Mathf.CeilToInt((float)pendingItems.Length / maxRows);
+            }
+
+            size = new Vector2((elementsPerRow * 30f) + 10f, ((pendingItems.Length - 1) / elementsPerRow * 30f) + 57f);
 
             myContainer = new FContainer();
             owner.Container.AddChild(myContainer);
@@ -251,7 +263,7 @@ namespace RainWorldRandomizer
             for (int i = 0; i < pendingItems.Length; i++)
             {
                 buttons[i] = new(menu, this, ItemToFSprite(pendingItems[i]), $"OBJ_{i}",
-                    new((30f * (i % 8)) + 5f, -(30f * Mathf.FloorToInt(i / 8)) - 50f));
+                    new((30f * (i % elementsPerRow)) + 5f, -(30f * Mathf.FloorToInt(i / elementsPerRow)) - 50f));
                 subObjects.Add(buttons[i]);
             }
         }
