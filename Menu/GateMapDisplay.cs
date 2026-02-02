@@ -23,7 +23,7 @@ namespace RainWorldRandomizer
 
         public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
         {
-            size = Scug is "Watcher" ? new(540f, 430f) : new(320f, 310f);
+            size = Scug is "Watcher" ? new(540f, 380f) : new(320f, 310f);
             fillAlpha = 1f;
 
             // Nodes have to exist before the connectors, but we want the connectors to be behind the nodes.
@@ -635,7 +635,7 @@ namespace RainWorldRandomizer
 
             public void Refresh()
             {
-                Vector2 pos = new(20f, Scug is "Watcher" ? 400f : 280f);
+                Vector2 pos = new(20f, Scug is "Watcher" ? 350f : 280f);
                 foreach (CheckIcon sprite in _childNodes.OfType<CheckIcon>())
                 {
                     sprite.SetPosition(pos + sprite.Adjustment);
