@@ -18,6 +18,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static IDictionary<string, string> predetermination;
         internal static RippleReqMode rippleReq;
         internal static bool spinningTopKeys;
+        internal static bool daemonKeys;
         internal static long rottedRegionTarget;
 
         //internal static bool Predetermined(this DynWarpMode mode) => mode == DynWarpMode.StaticPredetermined || mode == DynWarpMode.UnlockablePredetermined;
@@ -58,13 +59,15 @@ namespace RainWorldRandomizer.WatcherIntegration
                     data.GetDict("predetermined_warps")?.SelectStringKeys() ?? [],
                     (RippleReqMode)data.GetSimple("dynamic_warp_ripple_req", 0L),
                     data.GetSimple("spinning_top_keys", 0L) == 1L,
+                    data.GetSimple("daemon_keys", 0L) == 1L,
                     data.GetSimple("rotted_region_target", 21L)
                     );
             }
             catch (Exception e) { Plugin.Log.LogError(e); }
         }
 
-        internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, RippleReqMode rippleReq, bool spinningTopKeys, long rottedRegionTarget)
+        internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, 
+            RippleReqMode rippleReq, bool spinningTopKeys, bool daemonKeys, long rottedRegionTarget)
         {
             Settings.modeNormal = DynWarpMode.Visited; // modeNormal;
             Settings.modeThrone = DynWarpMode.Visited; // modeThrone;
@@ -72,6 +75,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             Settings.predetermination = predetermination;
             Settings.rippleReq = rippleReq;
             Settings.spinningTopKeys = spinningTopKeys;
+            Settings.daemonKeys = daemonKeys;
             Settings.rottedRegionTarget = rottedRegionTarget;
             Items.ResetItems();
         }

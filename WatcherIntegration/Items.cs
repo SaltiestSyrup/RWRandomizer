@@ -40,6 +40,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 get
                 {
                     if (!Settings.spinningTopKeys && spinningTopWarps.Contains(name)) return false;
+                    if (!Settings.daemonKeys && name.Contains("WRSA")) return false;
 
                     if (name.Contains("WAUA") && name != "WARA-WAUA") return false;  // leading out of Ancient Urban
                     if (name == "WARA-WRSA") return false;  // leading out of Daemon
