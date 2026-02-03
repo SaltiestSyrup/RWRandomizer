@@ -176,7 +176,7 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Hack Pebbles to give the mark when he otherwise wouldn't
+        /// Modify Pebbles to give the mark when he otherwise wouldn't
         /// </summary>
         // TODO: Rewrite Pebbles meet white hook, goto is volatile
         static void PebblesMeetWhiteUpdateIL(ILContext il)
@@ -225,7 +225,7 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Hack Pebbles to give the mark when he otherwise wouldn't for Monk / Gourm
+        /// Modify Pebbles to give the mark when he otherwise wouldn't for Monk / Gourm
         /// </summary>
         static void PebblesMeetYellowOrGourmandUpdateIL(ILContext il)
         {

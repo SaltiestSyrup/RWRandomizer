@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace RainWorldRandomizer
 {
@@ -66,12 +64,6 @@ namespace RainWorldRandomizer
             public static readonly UnlockType IdDrone = new("IdDrone", true);
             public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
             public static readonly UnlockType RewriteSpearPearl = new("RewriteSpearPearl", true);
-
-            [Obsolete("Only here for backwards compatability with SaveManager integer parsing")]
-            public static UnlockType[] typeOrder =
-            [
-                Gate, Token, Karma, Glow, Mark, Item, ItemPearl, HunterCycles, IdDrone, DisconnectFP, RewriteSpearPearl
-            ];
         }
 
         public Unlock(UnlockType type, string ID, bool isGiven = false)

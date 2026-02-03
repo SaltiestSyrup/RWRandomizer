@@ -259,7 +259,7 @@ namespace RainWorldRandomizer
         {
             if (base.LocationExists(location)) return true;
 
-            // TODO: Remove 1.4 backwards compat in 1.5
+            // TODO: Remove 1.4 backwards compat in 1.6
             // Backwards compat for pre-1.4 save files
             // As of 1.4, tokens and pearls have their origin region appended to the end.
             // This is not the case when loading pre-1.4 files, so it needs to be checked for

@@ -63,11 +63,7 @@ namespace RainWorldRandomizer
                     .TrimEnd('}'), ",");
 
                 Unlock.UnlockType type = Unlock.UnlockType.Item;
-                if (int.TryParse(unlockString[0], out int typeIndex))
-                {
-                    type = Unlock.UnlockType.typeOrder[typeIndex];
-                }
-                else if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), unlockString[0], true, out ExtEnumBase t))
+                if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), unlockString[0], true, out ExtEnumBase t))
                 {
                     type = (Unlock.UnlockType)t;
                 }
