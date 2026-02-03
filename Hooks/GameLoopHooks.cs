@@ -139,11 +139,8 @@ namespace RainWorldRandomizer
                         continue;
                     }
 
-                    if (Plugin.RandoManager.IsLocationGiven($"Passage-{check}") == false // if location exists and is not given
-                        && saveState.deathPersistentSaveData.winState.GetTracker(id, false) is not null)
+                    if (saveState.deathPersistentSaveData.winState.GetTracker(id, false) is WinState.EndgameTracker tracker)
                     {
-                        WinState.EndgameTracker tracker = saveState.deathPersistentSaveData.winState.GetTracker(id, false);
-
                         // Normal Passages
                         if (tracker.GoalFullfilled)
                         {
@@ -158,12 +155,11 @@ namespace RainWorldRandomizer
                             int progressCount = 0;
                             foreach (bool prog in (tracker as WinState.BoolArrayTracker).progress)
                             {
-                                if (prog) progressCount++;
-                            }
-
-                            if (progressCount > 0)
-                            {
-                                Plugin.RandoManager.GiveLocation($"Wanderer-{progressCount}");
+                                if (prog)
+                                {
+                                    progressCount++;
+                                    Plugin.RandoManager.GiveLocation($"Wanderer-{progressCount}");
+                                }
                             }
                         }
                     }
