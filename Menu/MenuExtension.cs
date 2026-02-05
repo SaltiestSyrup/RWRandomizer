@@ -238,7 +238,6 @@ namespace RainWorldRandomizer
             buttons = new BorderlessSymbolButton[pendingItems.Length];
 
             int maxRows = Mathf.FloorToInt((pos.y - 57f) / 30f);
-            Plugin.Log.LogDebug($"{pendingItems.Length} | {maxRows} | {(float)pendingItems.Length / maxRows}");
             if (pendingItems.Length > BASE_ELEMENTS_PER_ROW * maxRows)
             {
                 elementsPerRow = Mathf.CeilToInt((float)pendingItems.Length / maxRows);

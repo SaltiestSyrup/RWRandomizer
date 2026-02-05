@@ -79,7 +79,7 @@ namespace RainWorldRandomizer
                 else
                 {
                     // Assign contents of Gourmand's tracker data
-                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest ? MiscHooks.expanded : MiscHooks.unexpanded;
+                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest ? Constants.GourmandPassageTrackerExpanded : Constants.GourmandPassageTrackerOrig;
 
                     try
                     {

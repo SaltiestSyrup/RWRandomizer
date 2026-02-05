@@ -20,7 +20,6 @@ namespace RainWorldRandomizer
             On.PlayerProgression.ReloadLocksList += OnReloadLocksList;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
-            On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
             On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
             On.ScavengerAI.CollectScore_PhysicalObject_bool += OnScavengerAICollectScore;
@@ -81,7 +80,6 @@ namespace RainWorldRandomizer
             On.PlayerProgression.ReloadLocksList -= OnReloadLocksList;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
-            On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
             On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
             On.ScavengerAI.CollectScore_PhysicalObject_bool -= OnScavengerAICollectScore;
@@ -589,68 +587,6 @@ namespace RainWorldRandomizer
             });
             c.Emit(OpCodes.Brfalse, jump);
         }
-
-        /// <summary>
-        /// Create two arrays of food quest items for normal and expanded food quest.
-        /// </summary>
-        private static void MoreSlugcats_OnInit(On.MoreSlugcats.MoreSlugcats.orig_OnInit orig)
-        {
-            orig();
-            // Order must match APWorld.
-            WinState.GourmandTrackerData[] data =
-            [
-                new(AbstractPhysicalObject.AbstractObjectType.SeedCob, null),
-                new(null, [CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede]),
-                new(null, [CreatureTemplate.Type.VultureGrub]),
-                new(null, [CreatureTemplate.Type.SmallNeedleWorm, CreatureTemplate.Type.BigNeedleWorm]),
-                new(null, [CreatureTemplate.Type.GreenLizard]),
-                new(null, [CreatureTemplate.Type.BlueLizard]),
-                new(null, [CreatureTemplate.Type.PinkLizard]),
-                new(null, [CreatureTemplate.Type.WhiteLizard]),
-                new(null, [CreatureTemplate.Type.RedLizard]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.SpitLizard]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.ZoopLizard]),
-                new(null, [MoreSlugcatsEnums.CreatureTemplateType.TrainLizard]),
-                new(null, [CreatureTemplate.Type.BigSpider]),
-                new(null, [CreatureTemplate.Type.SpitterSpider]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.MotherSpider]),
-                new(null, [CreatureTemplate.Type.Vulture]),
-                new(null, [CreatureTemplate.Type.KingVulture]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.MirosVulture]),
-                new(null, [CreatureTemplate.Type.LanternMouse]),
-                new(null, [CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.Yeek]),
-                new(null, [CreatureTemplate.Type.DropBug]),
-                new(null, [CreatureTemplate.Type.MirosBird]),
-                new(null, [CreatureTemplate.Type.Scavenger, DLCSharedEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing]),
-                new(null, [CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, DLCSharedEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy]),
-                new(null, [CreatureTemplate.Type.PoleMimic]),
-                new(null, [CreatureTemplate.Type.TentaclePlant]),
-                new(null, [CreatureTemplate.Type.BigEel]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.Inspector]),
-            ];
-
-            if (ModManager.Watcher)
-            {
-                data =
-                [
-                    ..data,
-                    new(null, [WatcherEnums.CreatureTemplateType.Frog]),
-                    new(null, [WatcherEnums.CreatureTemplateType.Tardigrade]),
-                    new(null, [WatcherEnums.CreatureTemplateType.SandGrub]),
-                    new(null, [WatcherEnums.CreatureTemplateType.Rat]),
-                    new(WatcherEnums.AbstractObjectType.FireSpriteLarva, null),
-                    new(AbstractPhysicalObject.AbstractObjectType.Pomegranate, null),
-                    new(null, [WatcherEnums.CreatureTemplateType.Barnacle])
-                ];
-            }
-
-            unexpanded = [.. WinState.GourmandPassageTracker];
-            expanded = [.. unexpanded, .. data];
-        }
-
-        internal static WinState.GourmandTrackerData[] unexpanded;
-        internal static WinState.GourmandTrackerData[] expanded;
 
         /// <summary>
         /// Add sprite name definitions for custom icon symbols
