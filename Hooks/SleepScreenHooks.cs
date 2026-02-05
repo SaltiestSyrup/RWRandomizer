@@ -31,7 +31,7 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.CollectiblesTracker.ctor += CreateCollectiblesTrackerIL;
                 IL.Menu.EndgameTokens.ctor += EndgameTokensCtorIL;
                 IL.Menu.SleepAndDeathScreen.AddPassageButton += AddPassageButtonIL;
-                IL.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreenGetDataFromGameIL;
+                IL.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreen_GetDataFromGameIL;
             }
             catch (Exception e)
             {
@@ -53,7 +53,7 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
             IL.Menu.EndgameTokens.ctor -= EndgameTokensCtorIL;
             IL.Menu.SleepAndDeathScreen.AddPassageButton -= AddPassageButtonIL;
-            IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreenGetDataFromGameIL;
+            IL.Menu.SleepAndDeathScreen.GetDataFromGame -= SleepAndDeathScreen_GetDataFromGameIL;
         }
 
         // ----- COLLECTIBLES -----
@@ -220,6 +220,7 @@ namespace RainWorldRandomizer
 
         // Add a button to SleepAndDeathScreen allowing free passage to the starting shelter
         private static ConditionalWeakTable<SleepAndDeathScreen, SimpleButton> passageHomeButton = new();
+
         public static SimpleButton GetPassageHomeButton(this SleepAndDeathScreen self)
         {
             if (passageHomeButton.TryGetValue(self, out SimpleButton button))
@@ -228,13 +229,11 @@ namespace RainWorldRandomizer
             }
             return null;
         }
+
         public static void CreatePassageHomeButton(this SleepAndDeathScreen self)
         {
-            float yPos = ModManager.Watcher && self.saveState.saveStateNumber == WatcherEnums.SlugcatStatsName.Watcher
-                ? 110f : 60f;
-
             SimpleButton button = new(self, self.pages[0], self.Translate("RETURN HOME"), "RETURN_HOME",
-                new Vector2(self.LeftHandButtonsPosXAdd, yPos), new Vector2(110f, 30f));
+                new Vector2(self.LeftHandButtonsPosXAdd, 60f), new Vector2(110f, 30f));
             passageHomeButton.Add(self, button);
             self.pages[0].subObjects.Add(button);
             button.lastPos = button.pos;
@@ -242,7 +241,6 @@ namespace RainWorldRandomizer
 
         /// <summary>
         /// Replace normal passage token list with custom one that contains tokens collected from items rather than tokens from completed passages.
-        /// Also adds the "Passage to Home" button
         /// </summary>
         private static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, EndgameTokens self, Menu.Menu menu, MenuObject owner, Vector2 pos, FContainer container, KarmaLadder ladder)
         {
@@ -282,9 +280,6 @@ namespace RainWorldRandomizer
             {
                 return;
             }
-
-            // Add passage to home button
-            (menu as SleepAndDeathScreen).CreatePassageHomeButton();
         }
 
         /// <summary>
@@ -372,62 +367,52 @@ namespace RainWorldRandomizer
             ILCursor c = new(il);
 
             // Remove check for Hunter / Saint to let them use passages
+            // at 002A
             c.GotoNext(
                 MoveType.After,
-                x => x.MatchLdarg(0),
                 x => x.MatchLdfld(typeof(KarmaLadderScreen).GetField(nameof(KarmaLadderScreen.saveState))),
                 x => x.MatchBrfalse(out _)
                 );
 
             c.Index--;
             c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldc_I4, 0);
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(IsNotWatcher);
 
-            // --- Change Y position of UI if Watcher
-            // Mathf.Max call at 05F0
-            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(Mathf).GetMethod(nameof(Mathf.Max), [typeof(float), typeof(float)])));
-            
-            c.Emit(OpCodes.Ldarg_0); // this is a SleepAndDeathScreen
-            c.EmitDelegate(ModifyYPos);
-            
-            static float ModifyYPos(float old, SleepAndDeathScreen self)
-            {
-                bool isWatcher = ModManager.Watcher && self.saveState.saveStateNumber == WatcherEnums.SlugcatStatsName.Watcher;
-                return isWatcher ? old + 50f : old;
-            } 
+            // Why rewrite your hook when you could just re-add part of the original condition in a delegate :)
+            // If using Watcher passages, the mod that enables that will remove the Watcher check itself
+            static bool IsNotWatcher(SleepAndDeathScreen self) => self.saveState?.saveStateNumber != WatcherEnums.SlugcatStatsName.Watcher;
         }
 
         /// <summary>
-        /// Extra override to allow all slugcats to use passages
+        /// Extra override to allow Hunter and Saint to use passages.
+        /// Also adds the passage to home button because this was the easiest place for it.
         /// </summary>
-        private static void SleepAndDeathScreenGetDataFromGameIL(ILContext il)
+        private static void SleepAndDeathScreen_GetDataFromGameIL(ILContext il)
         {
             ILCursor c = new(il);
 
             ILLabel yesEndgamesJump = c.DefineLabel();
 
-            // Before check if slugcat is Hunter at 0581
+            // Before check if slugcat is Hunter at 059A
             c.GotoNext(x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Red))));
-            c.GotoPrev(MoveType.AfterLabel, x => x.MatchLdarg(1));
+            c.GotoPrev(MoveType.AfterLabel, x => x.MatchLdarg(1)); // 058F
 
-            // Unconditional jump to spawn tokens code
-            c.Emit(OpCodes.Br, yesEndgamesJump);
+            // Conditional jump to spawn tokens code
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(IsNotWatcher);
+            c.Emit(OpCodes.Brtrue, yesEndgamesJump);
 
-            // Define jump position to 059C
+            // Define jump position to 05B5
             c.GotoNext(x => x.MatchBrtrue(out _));
             c.GotoNext(MoveType.After, x => x.MatchBrtrue(out _));
             c.MarkLabel(yesEndgamesJump);
 
-            // --- Change Y position of UI if Watcher
-            // Mathf.Max call at 05F0
-            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(Mathf).GetMethod(nameof(Mathf.Max), [typeof(float), typeof(float)])));
-            
-            c.Emit(OpCodes.Ldloc, 3); // flag3 = current slugcat is Watcher
-            c.EmitDelegate(ModifyYPos);
-            
-            static float ModifyYPos(float old, bool isWatcher)
+            static bool IsNotWatcher(SleepAndDeathScreen self)
             {
-                return isWatcher ? old + 50f : old;
+                // Add passage to home button
+                self.CreatePassageHomeButton();
+                return self.saveState?.saveStateNumber != WatcherEnums.SlugcatStatsName.Watcher;
             }
         }
 
