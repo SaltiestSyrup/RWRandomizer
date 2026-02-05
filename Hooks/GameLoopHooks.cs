@@ -205,6 +205,9 @@ namespace RainWorldRandomizer
             self.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = Plugin.RandoManager.GivenPebblesOff;
             self.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
             self.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = Plugin.RandoManager.GivenRippleEggWarp;
+
+            // If we're spawning in a room with a warp target (likely from Watcher return home), set positon there
+            TryMovePlayersToDynamicWarpTarget(self);
         }
 
         /// <summary>
@@ -621,6 +624,27 @@ namespace RainWorldRandomizer
 
             player.SlugcatGrab(obj.realizedObject, player.FreeHand());
             return true;
+        }
+
+        /// <summary>
+        /// Attempts to move all players to the position of a <see cref="PlacedObject.Type.DynamicWarpTarget"/>, if one is present.
+        /// </summary>
+        /// <returns>True if a dynamic warp target was found, otherwise False.</returns>
+        public static bool TryMovePlayersToDynamicWarpTarget(this RainWorldGame game)
+        {
+            foreach (PlacedObject po in game.FirstAlivePlayer.Room.realizedRoom?.roomSettings.placedObjects)
+            {
+                if (po.type != PlacedObject.Type.DynamicWarpTarget) continue;
+
+                foreach (AbstractCreature player in game.Players)
+                {
+                    player.pos.Tile = new RWCustom.IntVector2((int)(po.pos.x / 20f), (int)(po.pos.y / 20f));
+                    player.realizedCreature?.firstChunk.HardSetPosition(po.pos);
+                }
+                return true;
+            }
+
+            return false;
         }
     }
 }
