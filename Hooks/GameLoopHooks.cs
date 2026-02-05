@@ -425,7 +425,7 @@ namespace RainWorldRandomizer
             // Remove and spawn items selected while paused
             if ((MenuExtension.PendingItemsDisplay?.selectedIndices.Count ?? 0) > 0)
             {
-                List<Unlock.Item> items = [.. Plugin.RandoManager.itemDeliveryQueue];
+                List<ItemInfo.PhysicalObjectItem> items = [.. Plugin.RandoManager.itemDeliveryQueue];
                 MenuExtension.PendingItemsDisplay.selectedIndices.Sort();
                 MenuExtension.PendingItemsDisplay.selectedIndices.Reverse();
                 foreach (int index in MenuExtension.PendingItemsDisplay.selectedIndices)
@@ -584,7 +584,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static bool TryGivePlayerItem(this RainWorldGame game, Unlock.Item item)
+        public static bool TryGivePlayerItem(this RainWorldGame game, ItemInfo.PhysicalObjectItem item)
         {
             // Find first living player to give to
             if (game.FirstAlivePlayer.realizedCreature is not Player player)

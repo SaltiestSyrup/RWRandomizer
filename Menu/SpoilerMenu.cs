@@ -514,7 +514,7 @@ namespace RainWorldRandomizer
             //public readonly string checkType;
             //public readonly string checkName;
             public readonly LocationInfo location;
-            public readonly Unlock item;
+            public readonly ItemInfo item;
 
             public FSprite arrow;
             public FSprite checkSprite;
@@ -655,7 +655,7 @@ namespace RainWorldRandomizer
                 Plugin.RandoManager.GiveLocation(location.internalName);
             }
 
-            public static FSprite UnlockToFSprite(Unlock unlock)
+            public static FSprite UnlockToFSprite(ItemInfo unlock)
             {
                 string spriteName = "Futile_White";
                 float spriteScale = 1f;

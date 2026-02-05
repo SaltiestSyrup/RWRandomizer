@@ -20,7 +20,7 @@ namespace RainWorldRandomizer
         public const int MIN_PASSAGE_TOKENS = 5;
 
         // Values for completed checks
-        public Dictionary<string, Unlock> randomizerKey = [];
+        public Dictionary<string, ItemInfo> randomizerKey = [];
 
         // Called when player starts or continues a run
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
@@ -205,7 +205,7 @@ namespace RainWorldRandomizer
             locations = [.. randomizerKey.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.IsGiven, false))];
 
             // Set unlocked gates and passage tokens
-            foreach (Unlock item in randomizerKey.Values)
+            foreach (ItemInfo item in randomizerKey.Values)
             {
                 switch (item.Type.value)
                 {
@@ -298,7 +298,7 @@ namespace RainWorldRandomizer
             Plugin.Log.LogInfo($"Completed Check: {location}");
         }
 
-        public override Unlock GetUnlockAtLocation(string location)
+        public override ItemInfo GetUnlockAtLocation(string location)
         {
             if (!LocationExists(location)) return null;
 

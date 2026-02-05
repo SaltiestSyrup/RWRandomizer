@@ -239,13 +239,13 @@ namespace RainWorldRandomizer
             else if (item.StartsWith("Object-"))
             {
                 if (!isNew) return; // Don't double gift items, unused ones will be read from file
-                Unlock unlock = new(Unlock.UnlockType.Item, Unlock.IDToItem(item.Substring(7)));
+                ItemInfo unlock = new(ItemInfo.ItemInfoType.Item, ItemInfo.IDToItem(item.Substring(7)));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("PearlObject-"))
             {
                 if (!isNew) return;
-                Unlock unlock = new(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.Substring(12), true));
+                ItemInfo unlock = new(ItemInfo.ItemInfoType.ItemPearl, ItemInfo.IDToItem(item.Substring(12), true));
                 unlock.GiveUnlock();
             }
             else if (item.StartsWith("Trap-"))
@@ -351,7 +351,7 @@ namespace RainWorldRandomizer
 
         // This will have to ask the server to scout the location, which takes time.
         // Thankfully, the only place that uses this is the spoiler menu, which can be re-written for AP
-        public override Unlock GetUnlockAtLocation(string location) => null;
+        public override ItemInfo GetUnlockAtLocation(string location) => null;
 
         public void GiveCompletionCondition(ArchipelagoConnection.CompletionCondition condition)
         {

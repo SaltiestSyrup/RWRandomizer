@@ -16,7 +16,7 @@ namespace RainWorldRandomizer
         }
 
         // Meant for vanilla saves only
-        public static void WriteSavedGameToFile(Dictionary<string, Unlock> game, SlugcatStats.Name slugcat, int saveSlot)
+        public static void WriteSavedGameToFile(Dictionary<string, ItemInfo> game, SlugcatStats.Name slugcat, int saveSlot)
         {
             StreamWriter file = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
@@ -35,9 +35,9 @@ namespace RainWorldRandomizer
         }
 
         // Meant for vanilla saves only
-        public static Dictionary<string, Unlock> LoadSavedGame(SlugcatStats.Name slugcat, int saveSlot)
+        public static Dictionary<string, ItemInfo> LoadSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
-            Dictionary<string, Unlock> game = [];
+            Dictionary<string, ItemInfo> game = [];
 
             string[] file = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
 
@@ -62,13 +62,13 @@ namespace RainWorldRandomizer
                     .TrimStart('{')
                     .TrimEnd('}'), ",");
 
-                Unlock.UnlockType type = Unlock.UnlockType.Item;
-                if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), unlockString[0], true, out ExtEnumBase t))
+                ItemInfo.ItemInfoType type = ItemInfo.ItemInfoType.Item;
+                if (ExtEnumBase.TryParse(typeof(ItemInfo.ItemInfoType), unlockString[0], true, out ExtEnumBase t))
                 {
-                    type = (Unlock.UnlockType)t;
+                    type = (ItemInfo.ItemInfoType)t;
                 }
 
-                Unlock unlock = new(
+                ItemInfo unlock = new(
                     type,
                     unlockString[1],
                     bool.Parse(unlockString[2]));
@@ -79,7 +79,7 @@ namespace RainWorldRandomizer
             return game;
         }
 
-        public static void WriteItemQueueToFile(IEnumerable<Unlock.Item> items, IEnumerable<TrapsHandler.Trap> traps, SlugcatStats.Name slugcat, int saveSlot)
+        public static void WriteItemQueueToFile(IEnumerable<ItemInfo.PhysicalObjectItem> items, IEnumerable<TrapsHandler.Trap> traps, SlugcatStats.Name slugcat, int saveSlot)
         {
             string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt");
 
@@ -99,7 +99,7 @@ namespace RainWorldRandomizer
             {
                 file.WriteLine($"Trap,{trap.id}");
             }
-            foreach (Unlock.Item item in items)
+            foreach (ItemInfo.PhysicalObjectItem item in items)
             {
                 file.WriteLine($"{item.type.enumType.Name},{item.id}");
             }
@@ -107,9 +107,9 @@ namespace RainWorldRandomizer
             file.Close();
         }
 
-        public static (Queue<Unlock.Item>, Queue<TrapsHandler.Trap>) LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
+        public static (Queue<ItemInfo.PhysicalObjectItem>, Queue<TrapsHandler.Trap>) LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
         {
-            Queue<Unlock.Item> itemQueue = [];
+            Queue<ItemInfo.PhysicalObjectItem> itemQueue = [];
             Queue<TrapsHandler.Trap> trapQueue = [];
 
             if (!File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt")))
@@ -120,7 +120,7 @@ namespace RainWorldRandomizer
             foreach (string line in text)
             {
                 string[] itemString = Regex.Split(line, ",");
-                Unlock.Item item;
+                ItemInfo.PhysicalObjectItem item;
 
                 if (itemString[0] == "Trap")
                 {
@@ -130,11 +130,11 @@ namespace RainWorldRandomizer
 
                 if (itemString[0] == nameof(DataPearl.AbstractDataPearl.DataPearlType))
                 {
-                    item = Unlock.IDToItem(itemString[1], true);
+                    item = ItemInfo.IDToItem(itemString[1], true);
                 }
                 else if (itemString[0] == nameof(AbstractPhysicalObject.AbstractObjectType))
                 {
-                    item = Unlock.IDToItem(itemString[1]);
+                    item = ItemInfo.IDToItem(itemString[1]);
                 }
                 else
                 {
@@ -156,8 +156,8 @@ namespace RainWorldRandomizer
                 return -1;
             }
 
-            Dictionary<string, Unlock> game = LoadSavedGame(SlugcatStats.Name.Red, saveSlot);
-            return game.Values.Where(u => u.Type == Unlock.UnlockType.HunterCycles && u.IsGiven).Count();
+            Dictionary<string, ItemInfo> game = LoadSavedGame(SlugcatStats.Name.Red, saveSlot);
+            return game.Values.Where(u => u.Type == ItemInfo.ItemInfoType.HunterCycles && u.IsGiven).Count();
         }
 
         #region Archipelago save data

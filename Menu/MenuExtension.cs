@@ -234,7 +234,7 @@ namespace RainWorldRandomizer
 
         public PendingItemsDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
         {
-            Unlock.Item[] pendingItems = [.. Plugin.RandoManager.itemDeliveryQueue];
+            ItemInfo.PhysicalObjectItem[] pendingItems = [.. Plugin.RandoManager.itemDeliveryQueue];
             buttons = new BorderlessSymbolButton[pendingItems.Length];
 
             int maxRows = Mathf.FloorToInt((pos.y - 57f) / 30f);
@@ -279,7 +279,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static FSprite ItemToFSprite(Unlock.Item item)
+        public static FSprite ItemToFSprite(ItemInfo.PhysicalObjectItem item)
         {
             string spriteName;
             float spriteScale = 1f;

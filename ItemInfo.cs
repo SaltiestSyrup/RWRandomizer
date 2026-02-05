@@ -2,22 +2,22 @@
 
 namespace RainWorldRandomizer
 {
-    public class Unlock
+    public class ItemInfo
     {
-        public struct Item
+        public struct PhysicalObjectItem
         {
             public string name;
             public string id;
             public ExtEnumBase type;
 
-            public Item(string name, string id, ExtEnumBase type)
+            public PhysicalObjectItem(string name, string id, ExtEnumBase type)
             {
                 this.name = name;
                 this.id = id;
                 this.type = type;
             }
 
-            public Item(string name, ExtEnumBase type)
+            public PhysicalObjectItem(string name, ExtEnumBase type)
             {
                 this.name = name;
                 this.id = type.value;
@@ -44,46 +44,52 @@ namespace RainWorldRandomizer
         };
 
         public string ID { get; set; }
-        public Item? item = null;
-        public UnlockType Type { get; private set; }
+        public PhysicalObjectItem? item = null;
+        public ItemInfoType Type { get; private set; }
         public bool IsGiven { get; private set; } = false;
 
-        public class UnlockType(string value, bool register = false) : ExtEnum<UnlockType>(value, register)
+        public class ItemInfoType(string value, bool register = false) : ExtEnum<ItemInfoType>(value, register)
         {
-            public static readonly UnlockType Gate = new("Gate", true);
-            public static readonly UnlockType Token = new("Token", true);
-            public static readonly UnlockType Karma = new("Karma", true);
-            public static readonly UnlockType Glow = new("Neuron_Glow", true);
-            public static readonly UnlockType Mark = new("The_Mark", true);
-            public static readonly UnlockType Item = new("Item", true);
-            public static readonly UnlockType ItemPearl = new("ItemPearl", true);
-            public static readonly UnlockType Trap = new("Trap", true);
-            public static readonly UnlockType DamageUpgrade = new("DamageUpgrade", true);
-            public static readonly UnlockType HunterCycles = new("HunterCycles", true);
-            public static readonly UnlockType ExpeditionPerk = new("ExpeditionPerk", true);
-            public static readonly UnlockType IdDrone = new("IdDrone", true);
-            public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
-            public static readonly UnlockType RewriteSpearPearl = new("RewriteSpearPearl", true);
+            public static readonly ItemInfoType Gate = new("Gate", true);
+            public static readonly ItemInfoType Token = new("Token", true);
+            public static readonly ItemInfoType Karma = new("Karma", true);
+            public static readonly ItemInfoType Glow = new("Neuron_Glow", true);
+            public static readonly ItemInfoType Mark = new("The_Mark", true);
+            public static readonly ItemInfoType Item = new("Item", true);
+            public static readonly ItemInfoType ItemPearl = new("ItemPearl", true);
+            public static readonly ItemInfoType Trap = new("Trap", true);
+            public static readonly ItemInfoType DamageUpgrade = new("DamageUpgrade", true);
+            public static readonly ItemInfoType HunterCycles = new("HunterCycles", true);
+            public static readonly ItemInfoType ExpeditionPerk = new("ExpeditionPerk", true);
+            public static readonly ItemInfoType IdDrone = new("IdDrone", true);
+            public static readonly ItemInfoType DisconnectFP = new("DisconnectFP", true);
+            public static readonly ItemInfoType RewriteSpearPearl = new("RewriteSpearPearl", true);
         }
 
-        public Unlock(UnlockType type, string ID, bool isGiven = false)
+        public ItemInfo(ItemInfoType type, string ID, bool isGiven = false)
         {
             this.ID = ID;
             Type = type;
             IsGiven = isGiven;
 
-            if (type == UnlockType.Item || type == UnlockType.ItemPearl)
+            if (type == ItemInfoType.Item || type == ItemInfoType.ItemPearl)
             {
-                item = IDToItem(ID, type == UnlockType.ItemPearl);
+                item = IDToItem(ID, type == ItemInfoType.ItemPearl);
             }
         }
 
-        public Unlock(UnlockType type, Item item, bool isGiven = false)
+        public ItemInfo(ItemInfoType type, PhysicalObjectItem item, bool isGiven = false)
         {
             this.ID = item.id;
             this.item = item;
             this.Type = type;
             IsGiven = isGiven;
+        }
+
+        public void CreateAndAwardItem(ItemInfoType type, string ID)
+        {
+            ItemInfo item = new(type, ID);
+            item.GiveUnlock();
         }
 
         public void GiveUnlock()
@@ -114,8 +120,8 @@ namespace RainWorldRandomizer
                 case "Item":
                     if (item != null)
                     {
-                        Plugin.RandoManager.itemDeliveryQueue.Enqueue((Item)item);
-                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue((PhysicalObjectItem)item);
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue((PhysicalObjectItem)item);
                     }
                     else
                     {
@@ -127,8 +133,8 @@ namespace RainWorldRandomizer
                 case "ItemPearl":
                     if (item != null)
                     {
-                        Plugin.RandoManager.itemDeliveryQueue.Enqueue((Item)item);
-                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue((Item)item);
+                        Plugin.RandoManager.itemDeliveryQueue.Enqueue((PhysicalObjectItem)item);
+                        Plugin.RandoManager.lastItemDeliveryQueue.Enqueue((PhysicalObjectItem)item);
                     }
                     else
                     {
@@ -173,7 +179,7 @@ namespace RainWorldRandomizer
                 "Karma" => "Unlocked Karma Increase",
                 "Neuron_Glow" => "Unlocked Neuron Glow",
                 "The_Mark" => "Unlocked The Mark",
-                "Item" => $"Found {ItemToEncodedIcon((Item)item)}",
+                "Item" => $"Found {ItemToEncodedIcon((PhysicalObjectItem)item)}",
                 "Trap" => $"Found a trap!",
                 "HunterCycles" => "Increased Lifespan",
                 "ExpeditionPerk" => $"Found {(readableItemNames.TryGetValue(ID, out string val) ? val : ID)} Perk",
@@ -210,24 +216,24 @@ namespace RainWorldRandomizer
             return readableItemNames.ContainsKey(item) ? readableItemNames[item] : item;
         }
 
-        public static Item IDToItem(string id, bool isPearl = false)
+        public static PhysicalObjectItem IDToItem(string id, bool isPearl = false)
         {
             if (isPearl)
-                return new Item(IDToString(id), new DataPearl.AbstractDataPearl.DataPearlType(id));
+                return new PhysicalObjectItem(IDToString(id), new DataPearl.AbstractDataPearl.DataPearlType(id));
 
             if (id is "FireSpear" or "ExplosiveSpear")
-                return new Item("Explosive Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
+                return new PhysicalObjectItem("Explosive Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
             if (id is "ElectricSpear")
-                return new Item("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
+                return new PhysicalObjectItem("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
             if (id is "PoisonSpear")
-                return new Item("Poison Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
+                return new PhysicalObjectItem("Poison Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
             if (id is "RotFruit")
-                return new Item("Rot Fruit", id, AbstractPhysicalObject.AbstractObjectType.DangleFruit);
+                return new PhysicalObjectItem("Rot Fruit", id, AbstractPhysicalObject.AbstractObjectType.DangleFruit);
 
-            return new Item(IDToString(id), new AbstractPhysicalObject.AbstractObjectType(id));
+            return new PhysicalObjectItem(IDToString(id), new AbstractPhysicalObject.AbstractObjectType(id));
         }
 
-        public static string ItemToEncodedIcon(Item item)
+        public static string ItemToEncodedIcon(PhysicalObjectItem item)
         {
             if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), item.id, true, out _))
             {

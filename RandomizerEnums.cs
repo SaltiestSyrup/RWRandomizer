@@ -9,7 +9,7 @@ namespace RainWorldRandomizer
     {
         internal static void InitExtEnumTypes()
         {
-            Unlock.UnlockType gate = Unlock.UnlockType.Gate;
+            ItemInfo.ItemInfoType gate = ItemInfo.ItemInfoType.Gate;
         }
 
         internal static void RegisterAllValues()

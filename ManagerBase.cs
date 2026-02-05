@@ -20,8 +20,8 @@ namespace RainWorldRandomizer
         protected Dictionary<string, bool> gatesStatus = [];
         protected Dictionary<WinState.EndgameID, bool> passageTokensStatus = [];
         // Queue of items that the player has recieved and not claimed
-        public Queue<Unlock.Item> itemDeliveryQueue = new();
-        public Queue<Unlock.Item> lastItemDeliveryQueue = new();
+        public Queue<ItemInfo.PhysicalObjectItem> itemDeliveryQueue = new();
+        public Queue<ItemInfo.PhysicalObjectItem> lastItemDeliveryQueue = new();
         public Queue<TrapsHandler.Trap> pendingTrapQueue = new();
 
         protected List<LocationInfo> locations = [];
@@ -177,7 +177,7 @@ namespace RainWorldRandomizer
         /// </summary>
         /// <param name="location">The string ID of the location</param>
         /// <returns>The Unlock assigned to the given location</returns>
-        public abstract Unlock GetUnlockAtLocation(string location);
+        public abstract ItemInfo GetUnlockAtLocation(string location);
 
 
         /// <summary>

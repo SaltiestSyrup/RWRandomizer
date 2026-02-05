@@ -271,7 +271,7 @@ namespace RainWorldRandomizer
 
         public static void AddLogicAddon(LogicAddon addon) => logicAddons.Add(addon);
 
-        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom)
+        public static AbstractPhysicalObject ItemToAbstractObject(ItemInfo.PhysicalObjectItem item, Room spawnRoom)
         {
             AbstractPhysicalObject output = ItemToAbstractObject(item, spawnRoom.game.world, spawnRoom.abstractRoom);
 
@@ -283,7 +283,7 @@ namespace RainWorldRandomizer
             return output;
         }
 
-        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, World world, AbstractRoom spawnRoom)
+        public static AbstractPhysicalObject ItemToAbstractObject(ItemInfo.PhysicalObjectItem item, World world, AbstractRoom spawnRoom)
         {
             if (item.name == "" || spawnRoom == null || world.game == null)
             {

@@ -891,11 +891,11 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
-        public Dictionary<string, Unlock> GetCompletedSeed()
+        public Dictionary<string, ItemInfo> GetCompletedSeed()
         {
             if (CurrentStage != GenerationStep.Complete) return null;
 
-            Dictionary<string, Unlock> output = [];
+            Dictionary<string, ItemInfo> output = [];
             foreach (var placement in RandomizedGame)
             {
                 if (!output.ContainsKey(placement.Key.ID))
@@ -910,34 +910,34 @@ namespace RainWorldRandomizer.Generation
             return output;
         }
 
-        public static Unlock ItemToUnlock(Item item)
+        public static ItemInfo ItemToUnlock(Item item)
         {
-            Unlock.UnlockType outputType = null;
+            ItemInfo.ItemInfoType outputType = null;
             switch (item.type)
             {
                 case Item.Type.Gate:
-                    outputType = Unlock.UnlockType.Gate;
+                    outputType = ItemInfo.ItemInfoType.Gate;
                     break;
                 case Item.Type.Passage:
-                    outputType = Unlock.UnlockType.Token;
+                    outputType = ItemInfo.ItemInfoType.Token;
                     break;
                 case Item.Type.Karma:
-                    outputType = Unlock.UnlockType.Karma;
+                    outputType = ItemInfo.ItemInfoType.Karma;
                     break;
                 case Item.Type.Object:
-                    if (item.id.StartsWith("PearlObject-")) outputType = Unlock.UnlockType.ItemPearl;
-                    else outputType = Unlock.UnlockType.Item;
+                    if (item.id.StartsWith("PearlObject-")) outputType = ItemInfo.ItemInfoType.ItemPearl;
+                    else outputType = ItemInfo.ItemInfoType.Item;
                     break;
                 case Item.Type.Trap:
-                    outputType = Unlock.UnlockType.Trap;
+                    outputType = ItemInfo.ItemInfoType.Trap;
                     break;
                 case Item.Type.ExpPerk:
-                    outputType = Unlock.UnlockType.ExpeditionPerk;
+                    outputType = ItemInfo.ItemInfoType.ExpeditionPerk;
                     break;
                 case Item.Type.Other:
-                    if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), item.id, false, out ExtEnumBase type))
+                    if (ExtEnumBase.TryParse(typeof(ItemInfo.ItemInfoType), item.id, false, out ExtEnumBase type))
                     {
-                        outputType = (Unlock.UnlockType)type;
+                        outputType = (ItemInfo.ItemInfoType)type;
                     }
                     else
                     {
@@ -947,15 +947,15 @@ namespace RainWorldRandomizer.Generation
                     break;
             }
 
-            if (outputType == Unlock.UnlockType.Item)
+            if (outputType == ItemInfo.ItemInfoType.Item)
             {
-                return new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id.Substring(7)));
+                return new ItemInfo(ItemInfo.ItemInfoType.Item, ItemInfo.IDToItem(item.id.Substring(7)));
             }
-            if (outputType == Unlock.UnlockType.ItemPearl)
+            if (outputType == ItemInfo.ItemInfoType.ItemPearl)
             {
-                return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id.Substring(12), true));
+                return new ItemInfo(ItemInfo.ItemInfoType.ItemPearl, ItemInfo.IDToItem(item.id.Substring(12), true));
             }
-            return new Unlock(outputType, item.id);
+            return new ItemInfo(outputType, item.id);
         }
 
         public Dictionary<string, AccessRule> CreatePassageRules()
