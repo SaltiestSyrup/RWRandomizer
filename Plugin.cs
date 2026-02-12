@@ -389,8 +389,10 @@ namespace RainWorldRandomizer
             RegionGate.GateRequirement[] origRequirements = (RegionGate.GateRequirement[])newRequirements.Clone();
 
             // Change default Metropolis gate karma
-            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
+            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis 
+                && RandoManager.currentSlugcat != MoreSlugcatsEnums.SlugcatStatsName.Artificer)
             {
+                origRequirements[0] = RegionGate.GateRequirement.FiveKarma;
                 newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
             }
 
@@ -456,11 +458,6 @@ namespace RainWorldRandomizer
                 if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[0] = origRequirements[0];
                 if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[1] = origRequirements[1];
             }
-
-            //if (gateName.Equals("GATE_UW_LC") && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
-            //{
-            //    newRequirements[0] = MoreSlugcatsEnums.GateRequirement.RoboLock;
-            //}
 
             return newRequirements;
         }

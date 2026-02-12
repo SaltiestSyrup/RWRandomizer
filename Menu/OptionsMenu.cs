@@ -121,7 +121,7 @@ namespace RainWorldRandomizer
                 new ConfigurableInfo("Use bottom of screen 'tutorial' text for notifications instead of chat feature", null, "",
                     ["Enable legacy notifications"]));
 
-            RandoOptions.useGateMap = config.Bind<bool>("UseGateMap", false,
+            RandoOptions.useGateMap = config.Bind<bool>("UseGateMap", true,
                 new ConfigurableInfo("Use a gate map instead of the gate key list on the pause screen", null, "",
                     ["Use gate map"]));
 
