@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using Watcher;
 
 namespace RainWorldRandomizer
 {
@@ -19,7 +20,6 @@ namespace RainWorldRandomizer
             On.PlayerProgression.ReloadLocksList += OnReloadLocksList;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
-            On.MoreSlugcats.MoreSlugcats.OnInit += MoreSlugcats_OnInit;
             On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
             On.ScavengerAI.CollectScore_PhysicalObject_bool += OnScavengerAICollectScore;
@@ -65,6 +65,7 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
                 IL.World.SpawnGhost += ILSpawnGhost;
+                IL.ScavengerAI.CheckForScavangeItems += CheckForScavengeItemsIL;
             }
             catch (Exception e)
             {
@@ -79,7 +80,6 @@ namespace RainWorldRandomizer
             On.PlayerProgression.ReloadLocksList -= OnReloadLocksList;
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
-            On.MoreSlugcats.MoreSlugcats.OnInit -= MoreSlugcats_OnInit;
             On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
             On.ScavengerAI.CollectScore_PhysicalObject_bool -= OnScavengerAICollectScore;
@@ -97,6 +97,7 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
             IL.World.SpawnGhost -= ILSpawnGhost;
+            IL.ScavengerAI.CheckForScavangeItems += CheckForScavengeItemsIL;
         }
 
         /// <summary>
@@ -143,8 +144,11 @@ namespace RainWorldRandomizer
         {
             orig(self);
 
-            if (RandoOptions.RandomizeSpawnLocation)
+            if (RandoOptions.RandomizeSpawnLocation && Plugin.RandoManager is not null)
             {
+                // Randomized spawn is done a different way for Watcher (see WatcherIntegration.RoomSpecificScript)
+                if (ModManager.Watcher && Plugin.RandoManager.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher) return;
+
                 if (Plugin.RandoManager.customStartDen.Equals(""))
                 {
                     Plugin.Log.LogError("Tried to set starting den while custom den unset");
@@ -585,53 +589,6 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Create two arrays of food quest items for normal and expanded food quest.
-        /// </summary>
-        private static void MoreSlugcats_OnInit(On.MoreSlugcats.MoreSlugcats.orig_OnInit orig)
-        {
-            orig();
-            // Order must match APWorld.
-            WinState.GourmandTrackerData[] data =
-            [
-                new(AbstractPhysicalObject.AbstractObjectType.SeedCob, null),
-                new(null, [CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede]),
-                new(null, [CreatureTemplate.Type.VultureGrub]),
-                new(null, [CreatureTemplate.Type.SmallNeedleWorm, CreatureTemplate.Type.BigNeedleWorm]),
-                new(null, [CreatureTemplate.Type.GreenLizard]),
-                new(null, [CreatureTemplate.Type.BlueLizard]),
-                new(null, [CreatureTemplate.Type.PinkLizard]),
-                new(null, [CreatureTemplate.Type.WhiteLizard]),
-                new(null, [CreatureTemplate.Type.RedLizard]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.SpitLizard]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.ZoopLizard]),
-                new(null, [MoreSlugcatsEnums.CreatureTemplateType.TrainLizard]),
-                new(null, [CreatureTemplate.Type.BigSpider]),
-                new(null, [CreatureTemplate.Type.SpitterSpider]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.MotherSpider]),
-                new(null, [CreatureTemplate.Type.Vulture]),
-                new(null, [CreatureTemplate.Type.KingVulture]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.MirosVulture]),
-                new(null, [CreatureTemplate.Type.LanternMouse]),
-                new(null, [CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.Yeek]),
-                new(null, [CreatureTemplate.Type.DropBug]),
-                new(null, [CreatureTemplate.Type.MirosBird]),
-                new(null, [CreatureTemplate.Type.Scavenger, DLCSharedEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing]),
-                new(null, [CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, DLCSharedEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy]),
-                new(null, [CreatureTemplate.Type.PoleMimic]),
-                new(null, [CreatureTemplate.Type.TentaclePlant]),
-                new(null, [CreatureTemplate.Type.BigEel]),
-                new(null, [DLCSharedEnums.CreatureTemplateType.Inspector]),
-            ];
-
-            unexpanded = [.. WinState.GourmandPassageTracker];
-            expanded = [.. unexpanded, .. data];
-        }
-
-        internal static WinState.GourmandTrackerData[] unexpanded;
-        internal static WinState.GourmandTrackerData[] expanded;
-
-        /// <summary>
         /// Add sprite name definitions for custom icon symbols
         /// </summary>
         private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intData)
@@ -639,6 +596,7 @@ namespace RainWorldRandomizer
             return itemType.value switch
             {
                 "KarmaFlower" => "Symbol_KarmaFlower",
+                "Spear" => intData == 4 ? "Symbol_PoisonSpear" : orig(itemType, intData),
                 _ => orig(itemType, intData)
             };
         }
@@ -652,6 +610,7 @@ namespace RainWorldRandomizer
             {
                 "SeedCob" => new Color(0.4117f, 0.1608f, 0.2275f),
                 "KarmaFlower" => new Color(0.9059f, 0.8745f, 0.5647f),
+                "Spear" => intdata == 4 ? new Color(0f, 1f, 1f) : orig(itemType, intdata),
                 _ => orig(itemType, intdata)
             };
         }
@@ -679,6 +638,62 @@ namespace RainWorldRandomizer
                 && pearl.grabbedBy.Count == 0; // Allowed to value already carried pearls
 
             return setNoValue ? 0 : origValue;
+        }
+
+        /// <summary>
+        /// Restrict scavengers from taking certain objects from the ground on their own
+        /// to avoid needed items for checks disappearing. 
+        /// This only stops them from taking things they found, will not prevent player gifting them
+        /// </summary>
+        private static void CheckForScavengeItemsIL(ILContext il)
+        {
+            ILCursor c = new(il);
+            ILLabel continueJump;
+            int localForIterationVar = -1;
+
+            // Find for loop iteration at 0102
+            c.GotoNext(
+                x => x.MatchCallOrCallvirt(typeof(ItemTracker).GetProperty(nameof(ItemTracker.ItemCount)).GetGetMethod()),
+                x => x.MatchBlt(out _)
+                );
+            c.GotoPrev(MoveType.Before,
+                x => x.MatchLdcI4(1),
+                x => x.MatchAdd(),
+                x => x.MatchStloc(out localForIterationVar)
+                );
+            continueJump = c.MarkLabel();
+
+            // After assigning PickUpItemScore to a local at 0072
+            c.GotoPrev(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(ScavengerAI).GetMethod(nameof(ScavengerAI.PickUpItemScore), BindingFlags.Instance | BindingFlags.NonPublic)),
+                x => x.MatchStloc(out _)
+                );
+
+            // Emit a conditional jump to the next loop iteration if the current item should not be scavenged
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldloc, localForIterationVar);
+            c.EmitDelegate(ShouldNotScavengeItem);
+            c.Emit(OpCodes.Brtrue, continueJump);
+
+            static bool ShouldNotScavengeItem(ScavengerAI self, int j)
+            {
+                PhysicalObject obj = self.itemTracker.GetRep(j).representedItem.realizedObject;
+                // Do not take unpicked flowers
+                if (RandoOptions.UseKarmaFlowerChecks
+                    && obj is KarmaFlower flower
+                    && flower.growPos is not null)
+                {
+                    return true;
+                }
+                // Do not take unique data pearls
+                if (RandoOptions.UsePearlChecks
+                    && obj is DataPearl pearl
+                    && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType))
+                {
+                    return true;
+                }
+                return false;
+            }
         }
     }
 }

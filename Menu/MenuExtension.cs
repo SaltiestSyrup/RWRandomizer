@@ -81,7 +81,7 @@ namespace RainWorldRandomizer
             if (RandoOptions.useGateMap.Value && (Plugin.RandoManager is ManagerArchipelago || !Plugin.AnyThirdPartyRegions))
             {
                 gateDisplay = new GateMapDisplay(self, self.pages[0],
-                    new Vector2(xOffset, manager.rainWorld.screenSize.y - 320f));
+                    new Vector2(xOffset, manager.rainWorld.screenSize.y - (GateMapDisplay.Scug is "Watcher" ? 390f : 320f)));
             }
             else
             {
@@ -222,6 +222,10 @@ namespace RainWorldRandomizer
     /// </summary>
     public class PendingItemsDisplay : RectangularMenuObject
     {
+        private const int BASE_ELEMENTS_PER_ROW = 15;
+        private const int MAXIMUM_ROWS = 9;
+        public readonly int elementsPerRow = BASE_ELEMENTS_PER_ROW;
+
         public RoundedRect roundedRect;
         public MenuLabel label;
         public BorderlessSymbolButton[] buttons;
@@ -232,7 +236,14 @@ namespace RainWorldRandomizer
         {
             Unlock.Item[] pendingItems = [.. Plugin.RandoManager.itemDeliveryQueue];
             buttons = new BorderlessSymbolButton[pendingItems.Length];
-            size = new Vector2(250f, ((pendingItems.Length - 1) / 8 * 30f) + 57f);
+
+            int maxRows = Mathf.FloorToInt((pos.y - 57f) / 30f);
+            if (pendingItems.Length > BASE_ELEMENTS_PER_ROW * maxRows)
+            {
+                elementsPerRow = Mathf.CeilToInt((float)pendingItems.Length / maxRows);
+            }
+
+            size = new Vector2((elementsPerRow * 30f) + 10f, ((pendingItems.Length - 1) / elementsPerRow * 30f) + 57f);
 
             myContainer = new FContainer();
             owner.Container.AddChild(myContainer);
@@ -251,7 +262,7 @@ namespace RainWorldRandomizer
             for (int i = 0; i < pendingItems.Length; i++)
             {
                 buttons[i] = new(menu, this, ItemToFSprite(pendingItems[i]), $"OBJ_{i}",
-                    new((30f * (i % 8)) + 5f, -(30f * Mathf.FloorToInt(i / 8)) - 50f));
+                    new((30f * (i % elementsPerRow)) + 5f, -(30f * Mathf.FloorToInt(i / elementsPerRow)) - 50f));
                 subObjects.Add(buttons[i]);
             }
         }
@@ -284,13 +295,18 @@ namespace RainWorldRandomizer
             {
                 iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
             }
+            else if (item.id is "PoisonSpear")
+            {
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 4);
+            }
             else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))
             {
                 iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
+                if (item.id is "RotFruit") iconData.intData = 1;
             }
             else
             {
-                iconData = new IconSymbol.IconSymbolData();
+                return new FSprite("Futile_White", true);
             }
 
             spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);

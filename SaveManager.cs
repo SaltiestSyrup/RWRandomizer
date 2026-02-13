@@ -63,11 +63,7 @@ namespace RainWorldRandomizer
                     .TrimEnd('}'), ",");
 
                 Unlock.UnlockType type = Unlock.UnlockType.Item;
-                if (int.TryParse(unlockString[0], out int typeIndex))
-                {
-                    type = Unlock.UnlockType.typeOrder[typeIndex];
-                }
-                else if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), unlockString[0], true, out ExtEnumBase t))
+                if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), unlockString[0], true, out ExtEnumBase t))
                 {
                     type = (Unlock.UnlockType)t;
                 }
@@ -226,9 +222,9 @@ namespace RainWorldRandomizer
         {
             if (locations == null || locations.Count == 0) return;
 
-            StreamWriter saveFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
-
             APSave save = new(lastIndex, locations.ToDictionary(l => l.internalName, l => l.Collected));
+
+            StreamWriter saveFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
 
             string jsonSave = JsonConvert.SerializeObject(save, Formatting.Indented);
             saveFile.Write(jsonSave);

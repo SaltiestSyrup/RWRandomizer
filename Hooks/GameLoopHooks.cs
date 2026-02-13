@@ -4,6 +4,7 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
@@ -24,6 +25,7 @@ namespace RainWorldRandomizer
             On.SaveState.SessionEnded += OnSessionEnded;
             On.RainWorldGame.ctor += OnRainWorldGameCtor;
             On.HardmodeStart.Update += OnHardmodeStart;
+            On.Room.Loaded += AddRoomSpecificScript;
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update += OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update += OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update += OnSpearEndingUpdate;
@@ -32,6 +34,7 @@ namespace RainWorldRandomizer
             {
                 IL.RainWorldGame.ctor += RainWorldGameCtorIL;
                 IL.WinState.CycleCompleted += ILCycleCompleted;
+                IL.Menu.SlideShow.ctor += SlideShow_ctor;
             }
             catch (Exception e)
             {
@@ -49,11 +52,13 @@ namespace RainWorldRandomizer
             On.SaveState.SessionEnded -= OnSessionEnded;
             On.RainWorldGame.ctor -= OnRainWorldGameCtor;
             On.HardmodeStart.Update -= OnHardmodeStart;
+            On.Room.Loaded -= AddRoomSpecificScript;
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update -= OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update -= OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update -= OnSpearEndingUpdate;
             IL.RainWorldGame.ctor -= RainWorldGameCtorIL;
             IL.WinState.CycleCompleted -= ILCycleCompleted;
+            IL.Menu.SlideShow.ctor -= SlideShow_ctor;
         }
 
         /// <summary>
@@ -77,7 +82,7 @@ namespace RainWorldRandomizer
                 else
                 {
                     // Assign contents of Gourmand's tracker data
-                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest ? MiscHooks.expanded : MiscHooks.unexpanded;
+                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest ? Constants.GourmandPassageTrackerExpanded : Constants.GourmandPassageTrackerOrig;
 
                     try
                     {
@@ -137,11 +142,8 @@ namespace RainWorldRandomizer
                         continue;
                     }
 
-                    if (Plugin.RandoManager.IsLocationGiven($"Passage-{check}") == false // if location exists and is not given
-                        && saveState.deathPersistentSaveData.winState.GetTracker(id, false) is not null)
+                    if (saveState.deathPersistentSaveData.winState.GetTracker(id, false) is WinState.EndgameTracker tracker)
                     {
-                        WinState.EndgameTracker tracker = saveState.deathPersistentSaveData.winState.GetTracker(id, false);
-
                         // Normal Passages
                         if (tracker.GoalFullfilled)
                         {
@@ -156,16 +158,17 @@ namespace RainWorldRandomizer
                             int progressCount = 0;
                             foreach (bool prog in (tracker as WinState.BoolArrayTracker).progress)
                             {
-                                if (prog) progressCount++;
-                            }
-
-                            if (progressCount > 0)
-                            {
-                                Plugin.RandoManager.GiveLocation($"Wanderer-{progressCount}");
+                                if (prog)
+                                {
+                                    progressCount++;
+                                    Plugin.RandoManager.GiveLocation($"Wanderer-{progressCount}");
+                                }
                             }
                         }
                     }
                 }
+
+                if (ModManager.Watcher) WatcherIntegration.CheckDetection.Hooks.DetectFixedWarpPointAndRotSpread(saveState);
             }
 
             orig(self, ID);
@@ -196,6 +199,7 @@ namespace RainWorldRandomizer
 
             Plugin.UpdateKarmaLocks();
             self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
+            WatcherIntegration.Items.UpdateRipple();
 
             // Ensure found state triggers are set
             self.GetStorySession.saveState.theGlow = Plugin.RandoManager.GivenNeuronGlow;
@@ -203,6 +207,10 @@ namespace RainWorldRandomizer
             self.GetStorySession.saveState.hasRobo = Plugin.RandoManager.GivenRobo;
             self.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = Plugin.RandoManager.GivenPebblesOff;
             self.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
+            self.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = Plugin.RandoManager.GivenRippleEggWarp;
+
+            // If we're spawning in a room with a warp target (likely from Watcher return home), set positon there
+            TryMovePlayersToDynamicWarpTarget(self);
         }
 
         /// <summary>
@@ -295,6 +303,7 @@ namespace RainWorldRandomizer
             string worldName, Region region, RainWorldGame.SetupValues setupValues)
         {
             orig(self, game, playerCharacter, timelinePosition, singleRoomWorld, worldName, region, setupValues);
+            worldName = worldName.ToUpperInvariant(); // Why are rotted regions in lowercase this game is evil
 
             if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
 
@@ -531,6 +540,42 @@ namespace RainWorldRandomizer
             }
         }
 
+        private static void SlideShow_ctor(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            FieldInfo[] relevantSlideShowIDs = [.. new string[]
+            {
+                "DreamSpinningTop",
+                "DreamRot",
+                "DreamVoidWeaver",
+                "DreamTerrace",
+                "EndingVoidBath"
+            }.Select(s => typeof(Watcher.WatcherEnums.SlideShowID).GetField(s))];
+
+            foreach (FieldInfo f in relevantSlideShowIDs)
+            {
+                c.GotoNext(x => x.MatchLdsfld(f));
+                c.GotoNext(MoveType.After, x => x.MatchStfld(typeof(Menu.SlideShow).GetField(nameof(Menu.SlideShow.processAfterSlideShow))));
+
+                c.Emit(OpCodes.Ldarg_0);
+                c.EmitDelegate(SetStartGameCondition);
+            }
+
+            static void SetStartGameCondition(Menu.SlideShow self)
+            {
+                self.manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.Load;
+            }
+        }
+
+        private static void AddRoomSpecificScript(On.Room.orig_Loaded orig, Room self)
+        {
+            orig(self);
+            if (Plugin.RandoManager is null) return;
+
+            if (ModManager.Watcher) WatcherIntegration.RoomSpecificScript.AddRoomSpecificScript(self);
+        }
+
         /// <summary>
         /// Detect Outer Expanse ending trigger
         /// </summary>
@@ -610,6 +655,27 @@ namespace RainWorldRandomizer
 
             player.SlugcatGrab(obj.realizedObject, player.FreeHand());
             return true;
+        }
+
+        /// <summary>
+        /// Attempts to move all players to the position of a <see cref="PlacedObject.Type.DynamicWarpTarget"/>, if one is present.
+        /// </summary>
+        /// <returns>True if a dynamic warp target was found, otherwise False.</returns>
+        public static bool TryMovePlayersToDynamicWarpTarget(this RainWorldGame game)
+        {
+            foreach (PlacedObject po in game.FirstAlivePlayer.Room.realizedRoom?.roomSettings.placedObjects)
+            {
+                if (po.type != PlacedObject.Type.DynamicWarpTarget) continue;
+
+                foreach (AbstractCreature player in game.Players)
+                {
+                    player.pos.Tile = new RWCustom.IntVector2((int)(po.pos.x / 20f), (int)(po.pos.y / 20f));
+                    player.realizedCreature?.firstChunk.HardSetPosition(po.pos);
+                }
+                return true;
+            }
+
+            return false;
         }
     }
 }

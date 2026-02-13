@@ -98,9 +98,12 @@ namespace RainWorldRandomizer
             SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
             Messenger, // Spearmaster delivering the encoded pearl to Comms array
             Rubicon, // Saint Ascending in Rubicon
-
             Pilgrim, // Encounter enough Echoes to trigger the Pilgrim passage
             FoodQuest, // Eat every tracked food quest item
+            SpinningTop, // Watcher witnessing Spinning Top's ascension in Ancient Urban
+            SentientRot, // Watcher rotting all regions and having their final encounter with The Prince
+            Weaver, // Watcher sealing all warp points and having their final encounter with the Weaver
+            TrueEnding, // Watcher activating the pillars in Daemon and ascending
         }
 
         public enum EchoLowKarmaDifficulty
@@ -368,7 +371,16 @@ namespace RainWorldRandomizer
             Slugcat = new SlugcatStats.Name(campaignString);
             if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
             else if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
-            else if (completionType >= 4) completionCondition = CompletionCondition.Ascension; // Unknown condition fallback
+            else if (campaignString == "Watcher")
+            {
+                completionCondition = completionType switch
+                {
+                    1 => CompletionCondition.SentientRot,
+                    4 => CompletionCondition.Weaver,
+                    5 => CompletionCondition.TrueEnding,
+                    0 or _ => CompletionCondition.SpinningTop,
+                };
+            }
             else
             {
                 completionCondition = campaignString switch
@@ -411,6 +423,8 @@ namespace RainWorldRandomizer
 
             //Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
 
+            WatcherIntegration.Settings.ReceiveSlotData(slotData);
+
             return SlotDataResult.Success;
         }
 
@@ -443,14 +457,24 @@ namespace RainWorldRandomizer
         {
             Plugin.ServerLog.Log(message);
 
-            if ((message is ItemSendLogMessage || message is PlayerSpecificLogMessage) // Filter only items and player specific messages
-                && message is not JoinLogMessage // Filter out join logs
-                && message is not LeaveLogMessage // Filter out leave logs
-                && message is not TagsChangedLogMessage // Filter out tag change logs
-                && (message is not ChatLogMessage chatMessage || !chatMessage.Message.StartsWith("!"))) // Filter out chat commands
-            {
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(message));
-            }
+            if ((message is not PlayerSpecificLogMessage && message is not ItemSendLogMessage)
+                || message is JoinLogMessage // Filter out join logs
+                || message is LeaveLogMessage // Filter out leave logs
+                || message is TagsChangedLogMessage) // Filter out tag change logs
+                return;
+
+            // Filter out chats if option chosen, and always filter chat commands
+            if (message is ChatLogMessage chatMessage
+                && (chatMessage.Message.StartsWith("!") || RandoOptions.filterPlayerChatLogs.Value))
+                return;
+
+            // If option chosen, filter out logs not related to this slot
+            if (message is ItemSendLogMessage itemMessage
+                && RandoOptions.filterRelevantItemLogs.Value
+                && !itemMessage.IsRelatedToActivePlayer)
+                return;
+
+            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(message));
         }
 
         private static void ErrorReceived(Exception e, string msg)

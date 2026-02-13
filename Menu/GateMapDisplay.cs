@@ -1,5 +1,7 @@
 ﻿using Menu;
+using RainWorldRandomizer.WatcherIntegration;
 using RWCustom;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -21,7 +23,7 @@ namespace RainWorldRandomizer
 
         public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
         {
-            size = new Vector2(320f, 310f);
+            size = Scug is "Watcher" ? new(540f, 380f) : new(320f, 310f);
             fillAlpha = 1f;
 
             // Nodes have to exist before the connectors, but we want the connectors to be behind the nodes.
@@ -31,17 +33,16 @@ namespace RainWorldRandomizer
             foreach (Connector connector in connectors.Values) Container.AddChild(connector);
             subObjects.AddRange(nodes.Values);
 
-            Dictionary<string, bool> gates = Plugin.RandoManager.GetGatesStatus();
+            IEnumerable<string> gates =
+                Plugin.RandoManager.GetGatesStatus().Where(x => x.Value).Select(x => x.Key)
+                .Union(Items.GetAllOpenWarps().Select(x => $"Warp-{x}"));
 
-            foreach (var pair in gates)
+            foreach (string gate in gates)
             {
-                if (connectors.TryGetValue(pair.Key, out Connector connector))
-                {
-                    connector.Color = pair.Value ? COLOR_ACCESSIBLE : COLOR_INACCESSIBLE;
-                }
+                if (connectors.TryGetValue(gate, out Connector connector)) connector.Color = COLOR_ACCESSIBLE;
             }
 
-            foreach (string nodeName in GetAccessibleNodes(gates.Where(x => x.Value).Select(x => x.Key)))
+            foreach (string nodeName in GetAccessibleNodes(gates))
             {
                 if (nodes.TryGetValue(nodeName, out Node node)) node.Accessible = true;
             }
@@ -63,8 +64,40 @@ namespace RainWorldRandomizer
             }
         }
 
+        internal static List<string> watcherNodeOrder =
+        [
+             null,  "WARB", "WARC", "WSSR", "WORA", "WRSA", "WARA", "WARB*",
+             null,  "WARE", "WVWB",  null,  "WBLA", "WAUA", "WPTA", "WARC*",
+            "WRFB", "WTDA", "WSKC", "WARD", "WMPA", "WTDA*","WSKC*","WVWA*",
+            "WVWA", "WTDB", "WARG", "WSKD",  null,   null,   null,   null,
+            "WRRA", "WRFA", "WPGA", "WSKA",  null,  "WHIR", "WGWR",  "<P>",
+             null,  "WSKB",  null,   null,  "WARF", "WSUR", "WDSR",  "<FQ>",
+        ];
+
         public void CreateNodes()
         {
+            if (Scug is "Watcher")
+            {
+                Vector2 pos = new(40f, 40f);
+
+                foreach (string nodeName in watcherNodeOrder)
+                {
+                    if (nodeName is not null)
+                    {
+                        string displayName = nodeName switch
+                        {
+                            "<FQ>" => "FQ",
+                            "<P>" => "P",
+                            _ => nodeName.Substring(1, 3)
+                        };
+                        nodes[nodeName] = new(menu, this, pos, displayName);
+                    }
+                    pos += pos.x < 460f ? new Vector2(60f, 0f) : new Vector2(-420f, 40f);
+                }
+
+                return;
+            }
+
             // Nodes which are always present, regardless of gamestate.
             nodes["SB"] = new Node(menu, this, new Vector2(40f, 40f), "SB");
             nodes["DS"] = new Node(menu, this, new Vector2(100f, 40f), Scug is "Saint" ? "UG" : "DS");
@@ -96,6 +129,60 @@ namespace RainWorldRandomizer
 
         public void CreateConnectors()
         {
+            if (Scug is "Watcher")
+            {
+                // List every node that is connected to neighboring nodes in a specific way.
+                // The first item is how many places to jump in the array to get from A to B.
+                // The second and third items are which side of node A and which side of node B to connect.
+                List<ValueTuple<int, int, int, List<int>>> directives =
+                [
+                    new(1, 0, 4, [1, 3, 4, 5, 6, 18, 19, 25, 26, 32, 33, 34]),  // to right
+                    new(8, 2, 6, [1, 2, 6, 9, 12, 14, 15, 16, 19]),  // to above
+                    new(9, 1, 5, [6, 9, 10, 12, 14, 16, 17, 32, 35]),  // to upper right
+                    new(7, 3, 7, [6, 9, 19, 25, 27]),  // to upper left
+                    new(2, 0, 4, [10]), // 2 to the right
+                    new(16, 2, 6, [3]), // 2 to above
+                    new(3, 0, 4, [41]), // 3 to the right
+                    new(24, 2, 6, [20]), // 3 to above
+                    new(11, 1, 5, [33]), // 3 right, 1 above
+                    new(17, 1, 5, [27]), // 1 right, 2 above
+                    new(23, 3, 7, [21]) // 1 left, 3 above
+
+                ];
+
+                foreach ((int, int, int, List<int>) directive in directives)
+                {
+                    foreach (int num in directive.Item4)
+                    {
+                        string leftName = watcherNodeOrder[num];
+                        string rightName = watcherNodeOrder[num + directive.Item1];
+                        string keyName = string.Join("-", (new string[] { leftName.Substring(0, 4), rightName.Substring(0, 4) }).OrderBy(x => x));
+
+                        // One-ways
+                        if (CanUseGate(keyName)[0] ^ CanUseGate(keyName)[1])
+                        {
+                            Vector2[] vertices = 
+                            [
+                                nodes[leftName].FetchDirection(directive.Item2),
+                                nodes[rightName].FetchDirection(directive.Item3)
+                            ];
+                            // Invert direction if ST is on the other side of the warp string XOR the nodes were swapped when making the warp string
+                            if (!CanUseGate(keyName)[0] ^ leftName.CompareTo(rightName) > 0) vertices = [vertices[1], vertices[0]];
+
+                            connectors[$"Warp-{keyName}"] = Connector.OneWay(vertices);
+                            continue;
+                        }
+
+                        connectors[$"Warp-{keyName}"] = new(
+                            nodes[leftName].FetchDirection(directive.Item2),
+                            nodes[rightName].FetchDirection(directive.Item3)
+                            );
+                    }
+                }
+
+                return;
+            }
+
             // Vanilla connections that always exist (except SI_LF).
             connectors["GATE_SU_DS"] = new Connector(nodes["SU"].Bottom, nodes["DS"].Top);
             connectors["GATE_SU_HI"] = new Connector(nodes["HI"].Bottom, nodes["SU"].Top);
@@ -163,13 +250,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static string ActualStartRegion
-        {
-            get
-            {
-                return Plugin.RandoManager.customStartDen.Split('_')[0];
-            }
-        }
+        public static string ActualStartRegion => Plugin.RandoManager.customStartDen.Split('_')[0];
 
         /// <summary>
         /// Determine whether a particular gate is usable in either direction.
@@ -179,19 +260,53 @@ namespace RainWorldRandomizer
         /// Note that which region is A and which is B is dependent only on the gate name, not on the physical position of the regions.</returns>
         public static bool[] CanUseGate(string key)
         {
+            if (key.StartsWith("GATE_") || key.StartsWith("Warp-")) key = key.Substring(5);
+
+            // (Most) Daemon warps are one way entering Daemon
+            if (key.Contains("WRSA") && !key.Contains("WORA") && !key.Contains("WARA"))
+            {
+                string[] split = key.Split('-');
+                if (split[1] == "WRSA") return [false, true];
+                else return [true, false];
+            }
+
             return key switch
             {
-                "GATE_LF_SB" => Scug is "Saint" ? [true, true] : [true, false],
-                "GATE_SL_MS" => [false, true],
-                "GATE_OE_SU" => [true, false],
-                "GATE_UW_SL" => Scug is "Artificer" or "Spear" ? [true, true] : [false, false],
-                "GATE_SL_VS" => Scug is "Artificer" ? [false, false] : [true, true],
+                "LF_SB" => Scug is "Saint" ? [true, true] : [true, false],
+                "SL_MS" => [false, true],
+                "OE_SU" => [true, false],
+                "UW_SL" => Scug is "Artificer" or "Spear" ? [true, true] : [false, false],
+                "SL_VS" => Scug is "Artificer" ? [false, false] : [true, true],
+
+                "WRFB-WTDB" => [false, true],
+                "WARE-WRFB" => [false, true],
+                "WARE-WSKC" => [true, false],
+                "WARD-WVWB" => [false, true],
+                "WBLA-WVWB" => [true, false],
+                "WBLA-WTDA" => [false, true],
+                "WARF-WTDA" => [true, false],
+                "WPTA-WSKC" => [false, true],
+                "WARA-WPTA" => [false, true],
+                "WARC-WVWA" => [false, true],
+                "WARA-WARC" => [false, true],
+                "WARA-WARB" => [false, true],
+                "WARA-WAUA" => [true, false],
+
+                //"WBLA-WSSR" => [true, false],
+                "WARD-WSSR" => [true, false],
+                "WORA-WSSR" => [false, true],
+                //"WORA-WSUR" => [false, true],
+                //"WGWR-WORA" => [true, false],
+                //"WHIR-WORA" => [true, false],
+                //"WDSR-WORA" => [true, false],
+                "WARA-WRSA" => [false, true],
+
                 _ => [true, true],
             };
         }
 
         /// <summary>
-        /// Given a list of currently held gate keys, determinine which region nodes are accessible.
+        /// Given a list of currently held keys, determinine which region nodes are accessible.
         /// </summary>
         public static IEnumerable<string> GetAccessibleNodes(IEnumerable<string> keys)
         {
@@ -203,12 +318,17 @@ namespace RainWorldRandomizer
                 updated = false;
                 foreach (var pair in keyDict)
                 {
-                    string[] split = pair.Key.Split('_');
-                    string left = GetNodeName(split[1]);
-                    string right = GetNodeName(split[2]);
+                    List<string> names = [.. pair.Key.Replace("_", "-").Split('-').Skip(1).Select(GetNodeName)];
                     bool[] usable = pair.Value;
-                    if (usable[0] && ret.Contains(left) && !ret.Contains(right)) { ret.Add(right); updated = true; }
-                    else if (usable[1] && !ret.Contains(left) && ret.Contains(right)) { ret.Add(left); updated = true; }
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        string here = names[i]; string there = names[1 - i];
+                        if (usable[i] && ((ret.Contains(here) && !ret.Contains(there)) || (ret.Contains($"{here}*") && !ret.Contains($"{there}*"))))
+                        {
+                            ret.Add(there); ret.Add($"{there}*"); updated = true;
+                        }
+                    }
                 }
             }
             return ret;
@@ -281,6 +401,19 @@ namespace RainWorldRandomizer
             public Vector2 BottomRight => pos + new Vector2(size.x - 4f, 4f) + (owner as GateMapDisplay).pos;
             public Vector2 TopRight => pos + new Vector2(size.x - 4f, size.y - 4f) + (owner as GateMapDisplay).pos;
             public Vector2 TopLeft => pos + new Vector2(4f, size.y - 4f) + (owner as GateMapDisplay).pos;
+
+            public Vector2 FetchDirection(int dir) => dir switch
+            {
+                0 => Right,
+                1 => TopRight,
+                2 => Top,
+                3 => TopLeft,
+                4 => Left,
+                5 => BottomLeft,
+                6 => Bottom,
+                7 => BottomRight,
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             public bool Accessible
             {
@@ -399,9 +532,24 @@ namespace RainWorldRandomizer
                 return new Connector(segments);
             }
 
+            /// <summary>
+            /// Create a one-way Connector from a list of vector vertices. The first given vertex will be considered the "start" of the connection.
+            /// </summary>
+            public static Connector OneWay(params Vector2[] vertices)
+            {
+                Connector c = new Connector(vertices);
+                Vector2 dotPos = Vector2.MoveTowards(vertices[0], vertices[1], 4);
+                c.AddChild(new Dot(dotPos));
+                return c;
+            }
+
             public Color Color
             {
-                set { foreach (Segment segment in _childNodes.OfType<Segment>()) segment.color = value; }
+                set 
+                {
+                    foreach (Segment segment in _childNodes.OfType<Segment>()) segment.color = value;
+                    foreach (Dot dot in _childNodes.OfType<Dot>()) dot.color = value;
+                }
                 get => _childNodes.OfType<Segment>().FirstOrDefault()?.color ?? COLOR_INACCESSIBLE;
             }
 
@@ -420,6 +568,17 @@ namespace RainWorldRandomizer
                         rotation = Custom.AimFromOneVectorToAnother(start, end);
                         width = 1; height = displacement.magnitude;
                     }
+                }
+            }
+
+            public class Dot : FSprite
+            {
+                public Dot(Vector2 pos) : base("Circle20")
+                {
+                    SetPosition(pos);
+                    color = COLOR_INACCESSIBLE;
+                    width = 7f;
+                    height = 7f;
                 }
             }
         }
@@ -444,6 +603,7 @@ namespace RainWorldRandomizer
         {
             //if (Plugin.RandoManager is not ManagerArchipelago) return;
             if (!nodes.TryGetValue(GetNodeName(region), out Node node)) return;
+            if (Scug is "Watcher" && region.EndsWith("*")) region = region.Substring(0, 4);
 
             if (highlightedNode != null) highlightedNode.current = false;
             highlightedNode = node;
@@ -475,24 +635,37 @@ namespace RainWorldRandomizer
 
             public void Refresh()
             {
-                Vector2 pos = new(20f, 280f);
+                Vector2 pos = new(20f, Scug is "Watcher" ? 350f : 280f);
                 foreach (CheckIcon sprite in _childNodes.OfType<CheckIcon>())
                 {
                     sprite.SetPosition(pos + sprite.Adjustment);
-                    pos += new Vector2(sprite.width + 5f, 0f);
-                    if (pos.x > 300f) pos = new Vector2(20f, pos.y - 35f);
+                    pos += new Vector2(sprite.width + 5f + sprite.Padding, 0f);
+                    if (pos.x > (Scug is "Watcher" ? 420f : 300f)) pos = new Vector2(20f, pos.y - 35f);
                 }
             }
 
             public class CheckIcon(string element, LocationKind kind) : FSprite(element)
             {
-                public Vector2 Adjustment
+                public Vector2 Adjustment => kind switch
                 {
-                    get
-                    {
-                        return kind == LocationKind.Pearl ? new Vector2(-6f, 0f) : default;
-                    }
-                }
+                    LocationKind.Pearl => new(-6f, 0f),
+                    LocationKind.FixedWarp => new(10f, 0f),
+                    LocationKind.ThroneWarp => new(8f, 0f),
+                    LocationKind.SpreadRot => new(4f, 0f),
+                    LocationKind.Prince => new(6f, 0f),
+                    _ => default
+                };
+
+                public float Padding => kind switch
+                {
+                    LocationKind.FixedWarp => -15f,
+                    LocationKind.Prince => -10f,
+                    LocationKind.ThroneWarp => -10f,
+                    LocationKind.Echo => -7f,
+                    LocationKind.SpinningTop => -7f,
+                    _ => default
+                };
+
                 public LocationKind kind = kind;
 
                 public static CheckIcon New(LocationInfo check)
@@ -509,5 +682,4 @@ namespace RainWorldRandomizer
             }
         }
     }
-
 }
