@@ -1,7 +1,7 @@
 {
     "id": "salty_syrup.check_randomizer",
     "name": "Randomizer (+ Archipelago)",
-    "version": "1.4.1",
+    "version": "1.5.0",
     "target_game_version": "v1.11.6",
     "authors": "SaltySyrup, alphappy",
     "description": "Randomizer game mode, locking progression behind collecting checks",
