@@ -249,11 +249,20 @@ namespace RainWorldRandomizer
 
         public static string Reconnect()
         {
+            try
+            {
             Disconnect(false);
             return Connect(RandoOptions.archipelagoHostName.Value,
                 RandoOptions.archipelagoPort.Value,
                 RandoOptions.archipelagoSlotName.Value,
                 RandoOptions.archipelagoPassword.Value);
+        }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Encountered an exception whilst attemping to reconnect to server");
+                Plugin.Log.LogError(e);
+                return "";
+            }
         }
 
         /// <summary>
