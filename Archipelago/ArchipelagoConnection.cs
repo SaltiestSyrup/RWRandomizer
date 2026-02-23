@@ -14,7 +14,7 @@ namespace RainWorldRandomizer
 {
     public class ArchipelagoConnection : MonoBehaviour
     {
-        private const string AP_VERSION = "0.6.1";
+        private const string AP_VERSION = "0.6.6";
         public const string GAME_NAME = "Rain World";
         private static readonly string[] REQUIRED_SLOT_DATA =
         [
@@ -251,12 +251,12 @@ namespace RainWorldRandomizer
         {
             try
             {
-            Disconnect(false);
-            return Connect(RandoOptions.archipelagoHostName.Value,
-                RandoOptions.archipelagoPort.Value,
-                RandoOptions.archipelagoSlotName.Value,
-                RandoOptions.archipelagoPassword.Value);
-        }
+                Disconnect(false);
+                return Connect(RandoOptions.archipelagoHostName.Value,
+                    RandoOptions.archipelagoPort.Value,
+                    RandoOptions.archipelagoSlotName.Value,
+                    RandoOptions.archipelagoPassword.Value);
+            }
             catch (Exception e)
             {
                 Plugin.Log.LogError("Encountered an exception whilst attemping to reconnect to server");
