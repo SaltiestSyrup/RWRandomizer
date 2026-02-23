@@ -657,9 +657,10 @@ namespace RainWorldRandomizer
                 x => x.MatchBlt(out _)
                 );
             c.GotoPrev(MoveType.Before,
+                x => x.MatchLdloc(out localForIterationVar),
                 x => x.MatchLdcI4(1),
                 x => x.MatchAdd(),
-                x => x.MatchStloc(out localForIterationVar)
+                x => x.MatchStloc(localForIterationVar)
                 );
             continueJump = c.MarkLabel();
 
