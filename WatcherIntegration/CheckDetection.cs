@@ -132,7 +132,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                         && crit.realizedCreature is Creature player
                         && Vector2.Distance(self.pos, player.mainBodyChunk.pos) < WARP_DETECTION_RADIUS)
                     {
-                        Plugin.RandoManager.GiveLocation($"Warp-{self.room.abstractRoom.name}");
+                        Plugin.RandoManager.GiveLocation($"Warp-{self.room.abstractRoom.name.ToUpperInvariant()}");
                     }
                 }
             }
