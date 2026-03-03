@@ -45,7 +45,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     if (name.Contains("WAUA") && name != "WARA-WAUA") return false;  // leading out of Ancient Urban
                     if (name == "WARA-WRSA") return false;  // leading out of Daemon
                     if (name.Contains("WSUR") || name.Contains("WHIR") || name.Contains("WGWR") || name.Contains("WDSR")) return false;  // rot
-                    if (name == "NULL-WSSR") return false;
+                    if (name == "WORA-WSSR") return false;
                     if (name == "WORA-WORA") return false;
 
                     return true;

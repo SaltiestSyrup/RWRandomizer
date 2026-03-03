@@ -125,8 +125,9 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static void WarpPoint_Update(On.Watcher.WarpPoint.orig_Update orig, WarpPoint self, bool eu)
             {
                 orig(self, eu);
+                if (self?.room?.game?.Players is null) return;
 
-                foreach (var crit in self.room?.game?.Players)
+                foreach (var crit in self.room.game.Players)
                 {
                     if (crit.Room.name == self.room.abstractRoom.name
                         && crit.realizedCreature is Creature player
