@@ -664,7 +664,9 @@ namespace RainWorldRandomizer
         /// <returns>True if a dynamic warp target was found, otherwise False.</returns>
         public static bool TryMovePlayersToDynamicWarpTarget(this RainWorldGame game)
         {
-            foreach (PlacedObject po in game.FirstAlivePlayer.Room.realizedRoom?.roomSettings.placedObjects)
+            if (game.FirstAlivePlayer?.Room?.realizedRoom?.roomSettings?.placedObjects is not List<PlacedObject> placedObjects) return false;
+
+            foreach (PlacedObject po in placedObjects)
             {
                 if (po.type != PlacedObject.Type.DynamicWarpTarget) continue;
 
