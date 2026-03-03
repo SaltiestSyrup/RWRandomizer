@@ -109,6 +109,7 @@ namespace RainWorldRandomizer
             }
 
             bool anySleepScreen = ID == ProcessManager.ProcessID.SleepScreen
+                || ID == ProcessManager.ProcessID.Dream
                 || ID == ProcessManager.ProcessID.GhostScreen
                 || ID == ProcessManager.ProcessID.KarmaToMaxScreen
                 || (ModManager.MSC && ID == MoreSlugcatsEnums.ProcessID.VengeanceGhostScreen);
