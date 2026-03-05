@@ -68,7 +68,11 @@ namespace RainWorldRandomizer
                     .Except(
                     [
                         "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS",
-                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS"
+                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS",
+                        "WVWA", "WVWB", "WRRA", "WPGA", "WARA", "WARB", "WARC", "WARD",
+                        "WARE", "WARF",  "WARG", "WMPA", "WAUA", "WBLA", "WPTA", "WRFA",
+                        "WRFB", "WRSA", "WSKA", "WSKB", "WSKC", "WSKD", "WTDA", "WTDB",
+                        "WORA", "WDSR", "WGWR", "WHIR", "WSSR", "WSUR",
                     ])
                     .Any();
             }
