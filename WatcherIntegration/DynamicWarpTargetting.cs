@@ -149,7 +149,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 //        regionCandidates.Add(Regex.Split(Regex.Split(saveState.regionLoadStrings[i], "<rgA>")[0], "<rgB>")[1].ToLowerInvariant());
                 //}
 
-                List<string> rottedRegions = ["WSUR", "WHIR", "WGWR", "WDSR", "WORA"];
+                List<string> rottedRegions = ["wsur", "whir", "wgwr", "wdsr", "wora", "wssr"];
 
                 // If bad warping is difficult, make rotted regions possible dynamic targets
                 // TODO: Adjust this when karmaless warping item is added
@@ -157,6 +157,10 @@ namespace RainWorldRandomizer.WatcherIntegration
                 {
                     spreadingRot = false;
                     regionCandidates.AddRange(rottedRegions.Where(r => Plugin.RandoManager.PercentOfRegionComplete(r) >= 0 && Plugin.RandoManager.PercentOfRegionComplete(r) < 1));
+                }
+                else
+                {
+                    regionCandidates.RemoveAll(rottedRegions.Contains);
                 }
 
                 // Always respect target region parameter

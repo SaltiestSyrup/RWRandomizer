@@ -1,0 +1,3 @@
+[MERGE]
+PlacedObjects: DynamicWarpTarget><247.7528><289.4938><0~0~1~false~false, 
+[ENDMERGE]
