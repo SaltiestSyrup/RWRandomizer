@@ -1006,6 +1006,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 AccessRule accessRule = new();
+                AccessRule survivorRule = new KarmaAccessRule(5);
                 switch (passage)
                 {
                     case "Martyr":
@@ -1028,7 +1029,7 @@ namespace RainWorldRandomizer.Generation
                             CompoundAccessRule.CompoundOperation.All);
                         break;
                     case "Survivor":
-                        accessRule = new KarmaAccessRule(5);
+                        accessRule = survivorRule;
                         break;
                     case "DragonSlayer":
                         accessRule = new CompoundAccessRule(AccessRuleConstants.Lizards,
@@ -1051,12 +1052,22 @@ namespace RainWorldRandomizer.Generation
                         // Hunter passage for carnivores is easy pretty much anywhere,
                         // check for a single food object to ensure we aren't in SS or some similar region
                         int foodCount = AccessRuleConstants.strictCarnivores.Contains(slugcat) ? 1 : 3;
-                        accessRule = new CompoundAccessRule(AccessRuleConstants.HunterFoods,
-                            CompoundAccessRule.CompoundOperation.AtLeast, foodCount);
+                        accessRule = new CompoundAccessRule(
+                            [
+                                survivorRule,
+                                new CompoundAccessRule(AccessRuleConstants.HunterFoods,
+                                    CompoundAccessRule.CompoundOperation.AtLeast, foodCount)
+                            ],
+                            CompoundAccessRule.CompoundOperation.All);
                         break;
                     case "Monk":
-                        accessRule = new CompoundAccessRule(AccessRuleConstants.MonkFoods,
-                            CompoundAccessRule.CompoundOperation.AtLeast, 3);
+                        accessRule = new CompoundAccessRule(
+                            [
+                                survivorRule, 
+                                new CompoundAccessRule(AccessRuleConstants.MonkFoods,
+                                    CompoundAccessRule.CompoundOperation.AtLeast, 3)
+                            ], 
+                            CompoundAccessRule.CompoundOperation.All);
                         break;
                     case "Nomad":
                         accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
@@ -1065,18 +1076,29 @@ namespace RainWorldRandomizer.Generation
                     case "Outlaw":
                         // Outlaw creatures aren't filtered exceptionally well,
                         // so the requirements are higher to compensate
-                        accessRule = new CompoundAccessRule(AccessRuleConstants.OutlawCrits,
-                            CompoundAccessRule.CompoundOperation.AtLeast, 8);
+                        accessRule = new CompoundAccessRule(
+                            [
+                                survivorRule,
+                                new CompoundAccessRule(AccessRuleConstants.OutlawCrits,
+                                    CompoundAccessRule.CompoundOperation.AtLeast, 8)
+                            ],
+                            CompoundAccessRule.CompoundOperation.All);
                         break;
                     case "Saint":
                         // Use same rule as Monk because they're fairly similar.
                         // Realistically the passage is easier than this
-                        accessRule = new CompoundAccessRule(AccessRuleConstants.MonkFoods,
-                            CompoundAccessRule.CompoundOperation.AtLeast, 3);
+                        accessRule = new CompoundAccessRule(
+                            [
+                                survivorRule,
+                                new CompoundAccessRule(AccessRuleConstants.MonkFoods,
+                                    CompoundAccessRule.CompoundOperation.AtLeast, 3)
+                            ],
+                            CompoundAccessRule.CompoundOperation.All);
                         break;
                     case "Scholar":
                         List<AccessRule> rules =
                         [
+                            survivorRule,
                             new AccessRule("The_Mark"),
                             new CompoundAccessRule(AccessRuleConstants.Regions,
                                 CompoundAccessRule.CompoundOperation.AtLeast, 4)

@@ -523,7 +523,7 @@ namespace RainWorldRandomizer
                 {
                     return ArchipelagoConnection.PPwS != ArchipelagoConnection.PPwSBehavior.Disabled;
                 }
-                return config;
+                return true;
             });
 
             // Conditionally remove the hardcoded Survivor checks on other passages
