@@ -329,36 +329,37 @@ namespace RainWorldRandomizer
                         poisonHue = UnityEngine.Random.value
                     };
                 }
-                // Lillypuck is a consumable, but still needs its own constructor
                 if (ModManager.DLCShared && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
                 {
                     return new LillyPuck.AbstractLillyPuck(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
                 }
-                // Same with Bubble Fruits
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.WaterNut)
                 {
                     return new WaterNut.AbstractWaterNut(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false);
                 }
-                // Blue fruit too with 1.10...
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DangleFruit)
                 {
                     return new DangleFruit.AbstractDangleFruit(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, item.id == "RotFruit", null);
+                }
+                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.SporePlant)
+                {
+                    return new SporePlant.AbstractSporePlant(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false, true);
                 }
                 if (ModManager.Watcher && itemObjectType == AbstractPhysicalObject.AbstractObjectType.GraffitiBomb)
                 {
                     return new GraffitiBomb.AbstractGraffitiBomb(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
                 }
-                // Handles all "Consumables"
+                // Handles all generic consumables
                 if (AbstractConsumable.IsTypeConsumable(itemObjectType))
                 {
                     return new AbstractConsumable(world, itemObjectType, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
                 }
-                // Special object cases that need their own constructor
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.VultureMask)
                 {
                     EntityID newID = world.game.GetNewID();
