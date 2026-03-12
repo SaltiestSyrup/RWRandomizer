@@ -110,7 +110,7 @@ namespace RainWorldRandomizer
                 null, null, 1200)
             },
             { "SpitterSpider", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider, 4); },
+                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider, 2); },
                 game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.SpitterSpider); },
                 null, null, 1200)
             },
