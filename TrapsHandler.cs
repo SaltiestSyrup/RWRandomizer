@@ -99,11 +99,31 @@ namespace RainWorldRandomizer
             //{ "KillSquad", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             { "Alarm", new TrapDefinition(TrapAlarmActivate, TrapAlarmDeactivate, null, null, 2400) },
 
-            { "RedLizard", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); }) },
-            { "RedCentipede", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedCentipede); }) },
-            { "SpitterSpider", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider, 4); }) },
-            { "BrotherLongLegs", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.BrotherLongLegs, 2); }) },
-            { "DaddyLongLegs", new TrapDefinition(game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.DaddyLongLegs); }) },
+            { "RedLizard", new TrapDefinition(
+                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); }, 
+                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.RedLizard); }, 
+                null, null, 1200)
+            },
+            { "RedCentipede", new TrapDefinition(
+                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedCentipede); },
+                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.RedCentipede); },
+                null, null, 1200)
+            },
+            { "SpitterSpider", new TrapDefinition(
+                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider, 4); },
+                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.SpitterSpider); },
+                null, null, 1200)
+            },
+            { "BrotherLongLegs", new TrapDefinition(
+                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.BrotherLongLegs, 2); },
+                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.BrotherLongLegs); },
+                null, null, 1200)
+            },
+            { "DaddyLongLegs", new TrapDefinition(
+                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.DaddyLongLegs); },
+                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.DaddyLongLegs); },
+                null, null, 1200)
+            },
         };
 
         private static int currentCooldown = 0;
@@ -121,6 +141,7 @@ namespace RainWorldRandomizer
             try
             {
                 IL.GlobalRain.Update += ILGlobalRainUpdate;
+                IL.AbstractCreatureAI.AbstractBehavior += AbstractCreatureAI_AbstractBehavior;
 
                 _ = new ILHook(typeof(RainCycle).GetProperty(nameof(RainCycle.preCycleRain_Intensity)).GetGetMethod(), ILGetPreCycleRainIntensity);
 
@@ -141,6 +162,7 @@ namespace RainWorldRandomizer
             On.Player.NewRoom -= OnPlayerNewRoom;
 
             IL.GlobalRain.Update -= ILGlobalRainUpdate;
+            IL.AbstractCreatureAI.AbstractBehavior -= AbstractCreatureAI_AbstractBehavior;
         }
 
         public static void EnqueueTrap(string itemId)
@@ -269,7 +291,12 @@ namespace RainWorldRandomizer
         private static void TrapSpawnCreatureNearbyDeactivate(this RainWorldGame game, CreatureTemplate.Type template)
         {
             // Clear elements that are of the template type of this trap, as well as elements that have been dereferenced
-            huntingCreatures = huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template);
+            Plugin.Log.LogDebug($"All {template.value} forget tracking");
+            huntingCreatures = (List<WeakReference<AbstractCreature>>)huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template);
+            foreach (var h in huntingCreatures)
+            {
+                Plugin.Log.LogDebug(h.TryGetTarget(out var t) ? t : "null");
+            }
         }
 
         private static bool alarmTrapActive = false;
@@ -294,10 +321,11 @@ namespace RainWorldRandomizer
 
         private static void TrapAlarmDeactivate(this RainWorldGame game)
         {
+            Plugin.Log.LogDebug("Deactivate Alarm");
             alarmTrapActive = false;
         }
 
-        private static void ILAbstractCreatureAI(ILContext il)
+        private static void AbstractCreatureAI_AbstractBehavior(ILContext il)
         {
             ILCursor c = new(il);
 
