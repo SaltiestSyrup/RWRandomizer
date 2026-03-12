@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using Watcher;
 
 namespace RainWorldRandomizer
 {
@@ -229,8 +230,11 @@ namespace RainWorldRandomizer
         }
         public static void CreatePassageHomeButton(this SleepAndDeathScreen self)
         {
+            float yPos = ModManager.Watcher && self.saveState.saveStateNumber == WatcherEnums.SlugcatStatsName.Watcher
+                ? 110f : 60f;
+
             SimpleButton button = new(self, self.pages[0], self.Translate("RETURN HOME"), "RETURN_HOME",
-                new Vector2(self.LeftHandButtonsPosXAdd, 60f), new Vector2(110f, 30f));
+                new Vector2(self.LeftHandButtonsPosXAdd, yPos), new Vector2(110f, 30f));
             passageHomeButton.Add(self, button);
             self.pages[0].subObjects.Add(button);
             button.lastPos = button.pos;
@@ -378,10 +382,23 @@ namespace RainWorldRandomizer
             c.Index--;
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldc_I4, 0);
+
+            // --- Change Y position of UI if Watcher
+            // Mathf.Max call at 05F0
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(Mathf).GetMethod(nameof(Mathf.Max), [typeof(float), typeof(float)])));
+            
+            c.Emit(OpCodes.Ldarg_0); // this is a SleepAndDeathScreen
+            c.EmitDelegate(ModifyYPos);
+            
+            static float ModifyYPos(float old, SleepAndDeathScreen self)
+            {
+                bool isWatcher = ModManager.Watcher && self.saveState.saveStateNumber == WatcherEnums.SlugcatStatsName.Watcher;
+                return isWatcher ? old + 50f : old;
+            } 
         }
 
         /// <summary>
-        /// Extra override to allow Hunter to use passages
+        /// Extra override to allow all slugcats to use passages
         /// </summary>
         private static void SleepAndDeathScreenGetDataFromGameIL(ILContext il)
         {
@@ -400,6 +417,18 @@ namespace RainWorldRandomizer
             c.GotoNext(x => x.MatchBrtrue(out _));
             c.GotoNext(MoveType.After, x => x.MatchBrtrue(out _));
             c.MarkLabel(yesEndgamesJump);
+
+            // --- Change Y position of UI if Watcher
+            // Mathf.Max call at 05F0
+            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(Mathf).GetMethod(nameof(Mathf.Max), [typeof(float), typeof(float)])));
+            
+            c.Emit(OpCodes.Ldloc, 3); // flag3 = current slugcat is Watcher
+            c.EmitDelegate(ModifyYPos);
+            
+            static float ModifyYPos(float old, bool isWatcher)
+            {
+                return isWatcher ? old + 50f : old;
+            }
         }
 
         /// <summary>

@@ -14,6 +14,9 @@ namespace RainWorldRandomizer
         /// </summary>
         public static readonly Dictionary<SlugcatStats.Name, bool[]> SlugcatFoodQuestAccessibility = [];
 
+        public static WinState.GourmandTrackerData[] GourmandPassageTrackerOrig = [];
+        public static WinState.GourmandTrackerData[] GourmandPassageTrackerExpanded = [];
+
         // -- Cheat sheet for food quest access definitions --
         // SlimeMold, DangleFruit, BatFly, Mushroom, BlackLizard, WaterNut, JellyFish, JetFish, GlowWeed, Salamander, Snail,
         // Hazer, EggBug, LillyPuck, YellowLizard, GrappleWorm, Neuron, Centiwing, DandelionPeach, CyanLizard, GooieDuck, RedCenti
@@ -24,6 +27,8 @@ namespace RainWorldRandomizer
         // Vulture, KingVulture, MirosVulture,
         // LanternMouse, CicadaA, Yeek, DropBug, MirosBird, Scavenger, DaddyLongLegs,
         // PoleMimic, TentaclePlant, BigEel, Inspector
+
+        // Frog, Tardigrade, SandGrub, Rat, FireSpriteLarva, Pomegranate, Barnacle
 
         /// <summary>
         /// The fallback starting den for each slugcat. 
@@ -151,6 +156,13 @@ namespace RainWorldRandomizer
             { "DeadHazer", "Hazer" },
             { "DeadVultureGrub", "VultureGrub" },
             { "SeedCob", "Popcorn Plant" },
+            { "Frog", "Frog" },
+            { "Tardigrade", "Tardigrade" },
+            { "SandGrub", "Sand Grub" },
+            { "Rat", "Rat" },
+            { "FireSpriteLarva", "Fire Sprite Larva" },
+            { "Pomegranate", "Pomegranate" },
+            { "Barnacle", "Barnacle" },
         };
 
         public static void InitializeConstants()
@@ -179,6 +191,7 @@ namespace RainWorldRandomizer
                     false, false, false,
                     false, false, false, false, false, false, false,
                     false, false, false, false,
+                    false, false, false, false, false, false, false,
                 ]},
                 { SlugcatStats.Name.Yellow,
                 [
@@ -189,7 +202,8 @@ namespace RainWorldRandomizer
                     false, false, false,
                     false, false, false,
                     false, false, false, false, false, false, false,
-                    false, false, false, false
+                    false, false, false, false,
+                    false, false, false, false, false, false, false,
                 ]},
                 { SlugcatStats.Name.Red,
                 [
@@ -201,6 +215,7 @@ namespace RainWorldRandomizer
                     true, true, true,
                     true, true, true, true, true, true, true,
                     false, false, false, false,
+                    false, false, false, false, false, false, false,
                 ]},
             });
 
@@ -235,6 +250,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true, true, true, true, true,
                         false, false, false, false,
+                        false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Artificer,
                     [
@@ -246,6 +262,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true, true, true, true, true,
                         false, false, false, false,
+                        false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Spear,
                     [
@@ -257,6 +274,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true, true, true, true, true,
                         true, true, true, true,
+                        false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
                     [
@@ -268,6 +286,7 @@ namespace RainWorldRandomizer
                         false, false, false,
                         false, false, false, false, false, false, false,
                         false, false, false, false,
+                        false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Saint,
                     [
@@ -280,8 +299,61 @@ namespace RainWorldRandomizer
                         false, false, false,
                         false, false, false, false, false, false, false,
                         false, false, false, false,
+                        false, false, false, false, false, false, false,
                     ]}
                 });
+
+                // Order must match APWorld.
+                WinState.GourmandTrackerData[] gourmTrackerData =
+                [
+                    new(AbstractPhysicalObject.AbstractObjectType.SeedCob, null),
+                    new(null, [CreatureTemplate.Type.Centipede, CreatureTemplate.Type.SmallCentipede]),
+                    new(null, [CreatureTemplate.Type.VultureGrub]),
+                    new(null, [CreatureTemplate.Type.SmallNeedleWorm, CreatureTemplate.Type.BigNeedleWorm]),
+                    new(null, [CreatureTemplate.Type.GreenLizard]),
+                    new(null, [CreatureTemplate.Type.BlueLizard]),
+                    new(null, [CreatureTemplate.Type.PinkLizard]),
+                    new(null, [CreatureTemplate.Type.WhiteLizard]),
+                    new(null, [CreatureTemplate.Type.RedLizard]),
+                    new(null, [DLCSharedEnums.CreatureTemplateType.SpitLizard]),
+                    new(null, [DLCSharedEnums.CreatureTemplateType.ZoopLizard]),
+                    new(null, [MoreSlugcatsEnums.CreatureTemplateType.TrainLizard]),
+                    new(null, [CreatureTemplate.Type.BigSpider]),
+                    new(null, [CreatureTemplate.Type.SpitterSpider]),
+                    new(null, [DLCSharedEnums.CreatureTemplateType.MotherSpider]),
+                    new(null, [CreatureTemplate.Type.Vulture]),
+                    new(null, [CreatureTemplate.Type.KingVulture]),
+                    new(null, [DLCSharedEnums.CreatureTemplateType.MirosVulture]),
+                    new(null, [CreatureTemplate.Type.LanternMouse]),
+                    new(null, [CreatureTemplate.Type.CicadaA, CreatureTemplate.Type.CicadaB]),
+                    new(null, [DLCSharedEnums.CreatureTemplateType.Yeek]),
+                    new(null, [CreatureTemplate.Type.DropBug]),
+                    new(null, [CreatureTemplate.Type.MirosBird]),
+                    new(null, [CreatureTemplate.Type.Scavenger, DLCSharedEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing]),
+                    new(null, [CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, DLCSharedEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy]),
+                    new(null, [CreatureTemplate.Type.PoleMimic]),
+                    new(null, [CreatureTemplate.Type.TentaclePlant]),
+                    new(null, [CreatureTemplate.Type.BigEel]),
+                    new(null, [DLCSharedEnums.CreatureTemplateType.Inspector]),
+                ];
+
+                if (ModManager.Watcher)
+                {
+                    gourmTrackerData =
+                    [
+                        ..gourmTrackerData,
+                        new(null, [WatcherEnums.CreatureTemplateType.Frog]),
+                        new(null, [WatcherEnums.CreatureTemplateType.Tardigrade]),
+                        new(null, [WatcherEnums.CreatureTemplateType.SandGrub]),
+                        new(null, [WatcherEnums.CreatureTemplateType.Rat]),
+                        new(WatcherEnums.AbstractObjectType.FireSpriteLarva, null),
+                        new(AbstractPhysicalObject.AbstractObjectType.Pomegranate, null),
+                        new(null, [WatcherEnums.CreatureTemplateType.Barnacle])
+                    ];
+                }
+
+                GourmandPassageTrackerOrig = [.. WinState.GourmandPassageTracker];
+                GourmandPassageTrackerExpanded = [.. GourmandPassageTrackerOrig, .. gourmTrackerData];
 
                 SlugcatDefaultStartingDen.AddRange(new Dictionary<SlugcatStats.Name, string>()
                 {
@@ -296,6 +368,19 @@ namespace RainWorldRandomizer
             // Add Constant entries that require Watcher
             if (ModManager.Watcher)
             {
+                SlugcatFoodQuestAccessibility.Add(WatcherEnums.SlugcatStatsName.Watcher,
+                [
+                    true, true, true, true, false, true, true, false, true, false, false,
+                    true, false, true, false, false, true, false, true, false, true, true,
+                    true, true, true, true,
+                    false, false, false, false, false, false, false, false,
+                    false, false, false,
+                    false, false, false,
+                    false, false, false, false, false, false, false,
+                    false, false, false, false,
+                    true, true, true, true, true, true, true,
+                ]);
+
                 SlugcatDefaultStartingDen.Add(WatcherEnums.SlugcatStatsName.Watcher, "HI_WS01");
             }
 

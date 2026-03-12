@@ -17,7 +17,7 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Randomizer";
-        public const string PLUGIN_VERSION = "1.4.0";
+        public const string PLUGIN_VERSION = "1.5.2";
 
         internal static LogUtils.Logger Log;
         /// <summary>
@@ -68,7 +68,11 @@ namespace RainWorldRandomizer
                     .Except(
                     [
                         "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS",
-                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS"
+                        "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS",
+                        "WVWA", "WVWB", "WRRA", "WPGA", "WARA", "WARB", "WARC", "WARD",
+                        "WARE", "WARF",  "WARG", "WMPA", "WAUA", "WBLA", "WPTA", "WRFA",
+                        "WRFB", "WRSA", "WSKA", "WSKB", "WSKC", "WSKD", "WTDA", "WTDB",
+                        "WORA", "WDSR", "WGWR", "WHIR", "WSSR", "WSUR",
                     ])
                     .Any();
             }
@@ -142,6 +146,8 @@ namespace RainWorldRandomizer
                 {
                     ImprovedCollectibleTrackerCompat.ApplyHooks();
                 }
+
+                WatcherIntegration.EntryPoint.ApplyHooks();
             }
             catch (Exception e)
             {
@@ -180,6 +186,8 @@ namespace RainWorldRandomizer
                 On.StaticWorld.InitStaticWorld -= OnInitStaticWorld;
                 On.RainWorld.LoadModResources -= LoadResources;
                 On.RainWorld.UnloadResources -= UnloadResources;
+
+                WatcherIntegration.EntryPoint.RemoveHooks();
             }
             catch (Exception e)
             {
@@ -250,6 +258,13 @@ namespace RainWorldRandomizer
         {
             orig(self);
             Futile.atlasManager.LoadAtlas("Atlases/randomizer");
+
+            // If you try to load an already loaded AssetBundle,
+            // a message gets logged to exceptionLog.txt but no exception is actually thrown.
+            if (AssetBundle.GetAllLoadedAssetBundles().Any(a => a.name == "rando")) return;
+
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("AssetBundles/rando"));
+            self.Shaders.Add("Rando.WarpTear", FShader.CreateShader("Rando.WarpTear", assetBundle.LoadAsset<Shader>("Assets/Shaders/RandoWarpTear.shader")));
         }
 
         public void UnloadResources(On.RainWorld.orig_UnloadResources orig, RainWorld self)
@@ -260,9 +275,9 @@ namespace RainWorldRandomizer
 
         public static void AddLogicAddon(LogicAddon addon) => logicAddons.Add(addon);
 
-        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom, int data = 0)
+        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom)
         {
-            AbstractPhysicalObject output = ItemToAbstractObject(item, spawnRoom.game.world, spawnRoom.abstractRoom, data);
+            AbstractPhysicalObject output = ItemToAbstractObject(item, spawnRoom.game.world, spawnRoom.abstractRoom);
 
             if (output == null)
             {
@@ -272,7 +287,7 @@ namespace RainWorldRandomizer
             return output;
         }
 
-        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, World world, AbstractRoom spawnRoom, int data = 0)
+        public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, World world, AbstractRoom spawnRoom)
         {
             if (item.name == "" || spawnRoom == null || world.game == null)
             {
@@ -308,33 +323,43 @@ namespace RainWorldRandomizer
                 {
                     return new AbstractSpear(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
-                        item.id is "FireSpear" or "ExplosiveSpear", item.id == "ElectricSpear");
+                        item.id is "FireSpear" or "ExplosiveSpear", item.id == "ElectricSpear")
+                    {
+                        poison = item.id == "PoisonSpear" ? 1 : 0,
+                        poisonHue = UnityEngine.Random.value
+                    };
                 }
-                // Lillypuck is a consumable, but still needs its own constructor
-                if (ModManager.MSC && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
+                if (ModManager.DLCShared && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
                 {
                     return new LillyPuck.AbstractLillyPuck(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
                 }
-                // Same with Bubble Fruits
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.WaterNut)
                 {
                     return new WaterNut.AbstractWaterNut(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false);
                 }
-                // Blue fruit too with 1.10...
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DangleFruit)
                 {
                     return new DangleFruit.AbstractDangleFruit(world, null,
-                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, false, null);
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, item.id == "RotFruit", null);
                 }
-                // Handles all "Consumables"
+                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.SporePlant)
+                {
+                    return new SporePlant.AbstractSporePlant(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false, true);
+                }
+                if (ModManager.Watcher && itemObjectType == AbstractPhysicalObject.AbstractObjectType.GraffitiBomb)
+                {
+                    return new GraffitiBomb.AbstractGraffitiBomb(world, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
+                }
+                // Handles all generic consumables
                 if (AbstractConsumable.IsTypeConsumable(itemObjectType))
                 {
                     return new AbstractConsumable(world, itemObjectType, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
                 }
-                // Special object cases that need their own constructor
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.VultureMask)
                 {
                     EntityID newID = world.game.GetNewID();
@@ -389,8 +414,10 @@ namespace RainWorldRandomizer
             RegionGate.GateRequirement[] origRequirements = (RegionGate.GateRequirement[])newRequirements.Clone();
 
             // Change default Metropolis gate karma
-            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis)
+            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis 
+                && RandoManager.currentSlugcat != MoreSlugcatsEnums.SlugcatStatsName.Artificer)
             {
+                origRequirements[0] = RegionGate.GateRequirement.FiveKarma;
                 newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
             }
 
@@ -456,11 +483,6 @@ namespace RainWorldRandomizer
                 if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[0] = origRequirements[0];
                 if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[1] = origRequirements[1];
             }
-
-            //if (gateName.Equals("GATE_UW_LC") && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
-            //{
-            //    newRequirements[0] = MoreSlugcatsEnums.GateRequirement.RoboLock;
-            //}
 
             return newRequirements;
         }

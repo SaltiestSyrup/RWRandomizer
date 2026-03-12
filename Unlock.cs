@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace RainWorldRandomizer
 {
@@ -66,12 +64,6 @@ namespace RainWorldRandomizer
             public static readonly UnlockType IdDrone = new("IdDrone", true);
             public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
             public static readonly UnlockType RewriteSpearPearl = new("RewriteSpearPearl", true);
-
-            [Obsolete("Only here for backwards compatability with SaveManager integer parsing")]
-            public static UnlockType[] typeOrder =
-            [
-                Gate, Token, Karma, Glow, Mark, Item, ItemPearl, HunterCycles, IdDrone, DisconnectFP, RewriteSpearPearl
-            ];
         }
 
         public Unlock(UnlockType type, string ID, bool isGiven = false)
@@ -206,7 +198,7 @@ namespace RainWorldRandomizer
                 "Trap" => ID.Substring(5),
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
                 "ExpeditionPerk" => readableItemNames.TryGetValue(ID, out string val) ? val : ID,
-                "DamageUpgrade" => "+20% Damage",
+                "DamageUpgrade" => "+10% Damage",
                 "IdDrone" => "Citizen ID Drone",
                 "DisconnectFP" => "Disconnect Pebbles",
                 _ => ID
@@ -227,6 +219,10 @@ namespace RainWorldRandomizer
                 return new Item("Explosive Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
             if (id is "ElectricSpear")
                 return new Item("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
+            if (id is "PoisonSpear")
+                return new Item("Poison Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
+            if (id is "RotFruit")
+                return new Item("Rot Fruit", id, AbstractPhysicalObject.AbstractObjectType.DangleFruit);
 
             return new Item(IDToString(id), new AbstractPhysicalObject.AbstractObjectType(id));
         }
