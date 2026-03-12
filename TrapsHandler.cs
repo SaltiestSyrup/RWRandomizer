@@ -142,6 +142,9 @@ namespace RainWorldRandomizer
             {
                 IL.GlobalRain.Update += ILGlobalRainUpdate;
                 IL.AbstractCreatureAI.AbstractBehavior += AbstractCreatureAI_AbstractBehavior;
+                IL.ArtificialIntelligence.Update += ArtificialIntelligence_Update;
+                IL.AbstractCreatureAI.FindPath += AbstractCreatureAI_FindPath;
+                IL.AbstractSpacePathFinder.Path += AbstractSpacePathFinder_Path;
 
                 _ = new ILHook(typeof(RainCycle).GetProperty(nameof(RainCycle.preCycleRain_Intensity)).GetGetMethod(), ILGetPreCycleRainIntensity);
 
@@ -163,6 +166,9 @@ namespace RainWorldRandomizer
 
             IL.GlobalRain.Update -= ILGlobalRainUpdate;
             IL.AbstractCreatureAI.AbstractBehavior -= AbstractCreatureAI_AbstractBehavior;
+            IL.ArtificialIntelligence.Update -= ArtificialIntelligence_Update;
+            IL.AbstractCreatureAI.FindPath -= AbstractCreatureAI_FindPath;
+            IL.AbstractSpacePathFinder.Path -= AbstractSpacePathFinder_Path;
         }
 
         public static void EnqueueTrap(string itemId)
@@ -292,7 +298,7 @@ namespace RainWorldRandomizer
         {
             // Clear elements that are of the template type of this trap, as well as elements that have been dereferenced
             Plugin.Log.LogDebug($"All {template.value} forget tracking");
-            huntingCreatures = (List<WeakReference<AbstractCreature>>)huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template);
+            huntingCreatures = [..huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template)];
             foreach (var h in huntingCreatures)
             {
                 Plugin.Log.LogDebug(h.TryGetTarget(out var t) ? t : "null");
@@ -336,7 +342,6 @@ namespace RainWorldRandomizer
 
             // Check if an alarm trap is active, or this creature was spawned by a trap and should still be locked on to the player
             c.Emit(OpCodes.Ldarg_0);
-            c.Emit(OpCodes.Ldfld, typeof(AbstractCreatureAI).GetField(nameof(AbstractCreatureAI.parent)));
             c.EmitDelegate(CreatureHuntPlayer);
             // Jump past the expedition check
             c.Emit(OpCodes.Brtrue, jump);
@@ -344,7 +349,37 @@ namespace RainWorldRandomizer
             c.GotoNext(x => x.MatchLdcI4(0));
             c.MarkLabel(jump);
 
-            static bool CreatureHuntPlayer(AbstractCreature crit) => alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && crit == crit2);
+            static bool CreatureHuntPlayer(AbstractCreatureAI self)
+            {
+                bool shouldTrack = alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && self.parent == crit2);
+                return shouldTrack && self.parent.world.game.Players is not null;
+            }
+            Plugin.Log.LogDebug(il);
+        }
+
+        private static void ArtificialIntelligence_Update(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            ILLabel jump = c.DefineLabel();
+
+            // Expedition check at 0136
+            c.GotoNext(MoveType.AfterLabel, x => x.MatchLdsfld(typeof(ModManager).GetField(nameof(ModManager.Expedition))));
+
+            // Check if an alarm trap is active, or this creature was spawned by a trap and should still be locked on to the player
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(CreatureHuntPlayer);
+            // Jump past the expedition check
+            c.Emit(OpCodes.Brtrue, jump);
+
+            c.GotoNext(x => x.MatchLdcI4(0));
+            c.MarkLabel(jump);
+
+            static bool CreatureHuntPlayer(ArtificialIntelligence self)
+            {
+                bool shouldTrack = alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && self.creature == crit2);
+                return shouldTrack && self.tracker is not null && self.creature.world.game.Players is not null;
+            }
         }
 
         /// <summary>
@@ -488,5 +523,44 @@ namespace RainWorldRandomizer
         }
 
         #endregion
+
+        /// <summary>
+        /// Mute failed pathing logs for performance when alarm trap active
+        /// </summary>
+        private static void AbstractSpacePathFinder_Path(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            c.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(RainWorld).GetProperty(nameof(RainWorld.ShowLogs)).GetGetMethod()),
+                x => x.MatchBrfalse(out _)
+                );
+
+            ILLabel label = c.MarkLabel();
+
+            c.EmitDelegate(AlarmTrapActive);
+            c.Emit(OpCodes.Brfalse, label);
+            c.Emit(OpCodes.Ldnull);
+            c.Emit(OpCodes.Ret);
+
+            static bool AlarmTrapActive() => alarmTrapActive;
+        }
+
+        /// <summary>
+        /// Mute failed pathing logs for performance when alarm trap active
+        /// </summary>
+        private static void AbstractCreatureAI_FindPath(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            c.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(RainWorld).GetProperty(nameof(RainWorld.ShowLogs)).GetGetMethod())
+                );
+
+            c.Emit(OpCodes.Pop);
+            c.EmitDelegate(AlarmTrapInactive);
+
+            static bool AlarmTrapInactive() => !alarmTrapActive;
+        }
     }
 }
