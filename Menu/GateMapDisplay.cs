@@ -23,6 +23,7 @@ namespace RainWorldRandomizer
 
         public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
         {
+            bool warpMenu = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("LeeMoriya.Warp");
             size = Scug is "Watcher" ? new(540f, 380f) : new(320f, 310f);
             fillAlpha = 1f;
 
@@ -30,7 +31,17 @@ namespace RainWorldRandomizer
             CreateNodes();
             CreateConnectors();
             ParseLocationStatus();
-            foreach (Connector connector in connectors.Values) Container.AddChild(connector);
+            foreach (Connector connector in connectors.Values)
+            {
+                Container.AddChild(connector);
+                // For some reason, nested containers get this screen size offset applied from somewhere.
+                // This doesn't happen when Warp Menu is enabled, I guess because it fixes the bug?
+                // So correct for the ghost offset only if Warp Menu isn't present.
+                if (!warpMenu)
+                {
+                    connector.SetPosition(connector.GetPosition() - new Vector2((1366 - Custom.rainWorld.screenSize.x) / 2, 0f));
+                }
+            }
             subObjects.AddRange(nodes.Values);
 
             IEnumerable<string> gates =
@@ -49,7 +60,7 @@ namespace RainWorldRandomizer
 
             checkIconContainer = new CheckIconContainer();
             Container.AddChild(checkIconContainer);
-            checkIconContainer.SetPosition(pos);
+            checkIconContainer.SetPosition(pos - new Vector2(warpMenu ? 0f : ((1366 - Custom.rainWorld.screenSize.x) / 2), 0f));
 
             UpdateTrackerForRegion(CurrentRegion);
         }
