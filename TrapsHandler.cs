@@ -297,7 +297,6 @@ namespace RainWorldRandomizer
         private static void TrapSpawnCreatureNearbyDeactivate(this RainWorldGame game, CreatureTemplate.Type template)
         {
             // Clear elements that are of the template type of this trap, as well as elements that have been dereferenced
-            Plugin.Log.LogDebug($"All {template.value} forget tracking");
             huntingCreatures = [..huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template)];
             foreach (var h in huntingCreatures)
             {
@@ -323,12 +322,13 @@ namespace RainWorldRandomizer
                     creature.abstractAI?.RealAI?.tracker?.SeeCreature(player.abstractCreature);
                 }
             }
-        }
+            }
 
         private static void TrapAlarmDeactivate(this RainWorldGame game)
         {
             Plugin.Log.LogDebug("Deactivate Alarm");
             alarmTrapActive = false;
+            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Alarm trap has faded"));
         }
 
         private static void AbstractCreatureAI_AbstractBehavior(ILContext il)
@@ -354,7 +354,6 @@ namespace RainWorldRandomizer
                 bool shouldTrack = alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && self.parent == crit2);
                 return shouldTrack && self.parent.world.game.Players is not null;
             }
-            Plugin.Log.LogDebug(il);
         }
 
         private static void ArtificialIntelligence_Update(ILContext il)
