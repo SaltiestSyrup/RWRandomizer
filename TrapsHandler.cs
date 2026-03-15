@@ -101,8 +101,8 @@ namespace RainWorldRandomizer
             { "RippleSpawn", new TrapDefinition(TrapRippleSpawnActivate) },
 
             { "RedLizard", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); }, 
-                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.RedLizard); }, 
+                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); },
+                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.RedLizard); },
                 null, null, 1200)
             },
             { "RedCentipede", new TrapDefinition(
@@ -309,7 +309,7 @@ namespace RainWorldRandomizer
         {
             // Clear elements that are of the template type of this trap, as well as elements that have been dereferenced
             huntingCreatures = [..huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template)];
-            }
+        }
 
         private static bool alarmTrapActive = false;
 
@@ -565,12 +565,15 @@ namespace RainWorldRandomizer
                 x => x.MatchBrfalse(out _)
                 );
 
-            ILLabel label = c.MarkLabel();
+            ILLabel label = c.DefineLabel();
 
+            c.MoveAfterLabels();
             c.EmitDelegate(AlarmTrapActive);
             c.Emit(OpCodes.Brfalse, label);
             c.Emit(OpCodes.Ldnull);
             c.Emit(OpCodes.Ret);
+
+            c.MarkLabel(label);
 
             static bool AlarmTrapActive() => alarmTrapActive;
         }
