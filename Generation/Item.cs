@@ -74,6 +74,9 @@ namespace RainWorldRandomizer.Generation
             { "Trap-BrotherLongLegs", 3 },
             { "Trap-DaddyLongLegs", 1 },
             { "Trap-Gravity", 1 },
+            { "Trap-Responsibility", 2 },
+            { "Trap-RippleSpawn", 2 },
+            { "Trap-BlizzardLizard", 1 },
         };
 
         public static Item RandomJunkItem(ref Random random)
