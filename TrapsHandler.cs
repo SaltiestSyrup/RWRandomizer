@@ -98,6 +98,7 @@ namespace RainWorldRandomizer
             //{ "Fog", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             //{ "KillSquad", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             { "Alarm", new TrapDefinition(TrapAlarmActivate, TrapAlarmDeactivate, null, null, 2400) },
+            { "RippleSpawn", new TrapDefinition(TrapRippleSpawnActivate) },
 
             { "RedLizard", new TrapDefinition(
                 game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); }, 
@@ -122,6 +123,16 @@ namespace RainWorldRandomizer
             { "DaddyLongLegs", new TrapDefinition(
                 game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.DaddyLongLegs); },
                 game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.DaddyLongLegs); },
+                null, null, 1200)
+            },
+            { "Responsibility", new TrapDefinition(
+                game => { TrapSpawnCreatureNearby(game, MoreSlugcats.MoreSlugcatsEnums.CreatureTemplateType.SlugNPC); },
+                game => { TrapSpawnCreatureNearbyDeactivate(game, MoreSlugcats.MoreSlugcatsEnums.CreatureTemplateType.SlugNPC); },
+                null, null, 1200)
+            },
+            { "BlizzardLizard", new TrapDefinition(
+                game => { TrapSpawnCreatureNearby(game, Watcher.WatcherEnums.CreatureTemplateType.BlizzardLizard); },
+                game => { TrapSpawnCreatureNearbyDeactivate(game, Watcher.WatcherEnums.CreatureTemplateType.BlizzardLizard); },
                 null, null, 1200)
             },
         };
@@ -298,11 +309,7 @@ namespace RainWorldRandomizer
         {
             // Clear elements that are of the template type of this trap, as well as elements that have been dereferenced
             huntingCreatures = [..huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template)];
-            foreach (var h in huntingCreatures)
-            {
-                Plugin.Log.LogDebug(h.TryGetTarget(out var t) ? t : "null");
             }
-        }
 
         private static bool alarmTrapActive = false;
 
@@ -326,18 +333,20 @@ namespace RainWorldRandomizer
 
         private static void TrapAlarmDeactivate(this RainWorldGame game)
         {
-            Plugin.Log.LogDebug("Deactivate Alarm");
             alarmTrapActive = false;
             Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Alarm trap has faded"));
         }
 
+        /// <summary>
+        /// Make relevant abstract creatures hunt the player
+        /// </summary>
         private static void AbstractCreatureAI_AbstractBehavior(ILContext il)
         {
             ILCursor c = new(il);
 
             ILLabel jump = c.DefineLabel();
 
-            // Expedition check at 0136
+            // Expedition check
             c.GotoNext(MoveType.AfterLabel, x => x.MatchLdsfld(typeof(ModManager).GetField(nameof(ModManager.Expedition))));
 
             // Check if an alarm trap is active, or this creature was spawned by a trap and should still be locked on to the player
@@ -356,13 +365,16 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Make relevant realized creatures hunt the player
+        /// </summary>
         private static void ArtificialIntelligence_Update(ILContext il)
         {
             ILCursor c = new(il);
 
             ILLabel jump = c.DefineLabel();
 
-            // Expedition check at 0136
+            // Expedition check
             c.GotoNext(MoveType.AfterLabel, x => x.MatchLdsfld(typeof(ModManager).GetField(nameof(ModManager.Expedition))));
 
             // Check if an alarm trap is active, or this creature was spawned by a trap and should still be locked on to the player
@@ -519,6 +531,24 @@ namespace RainWorldRandomizer
                 if (maxPreTimer > 0f) return maxPreTimer;
                 return rainTrapActive ? 1 : 0;
             });
+        }
+
+        private static void TrapRippleSpawnActivate(this RainWorldGame game)
+        {
+            Room room = (game.FirstAlivePlayer?.realizedCreature as Player).room;
+
+            for (int i = 0; i < 10; i++)
+            {
+                VoidSpawn rippleSpawn = new VoidSpawn(
+                    new AbstractPhysicalObject(room.world, Watcher.WatcherEnums.AbstractObjectType.RippleSpawn, null, room.GetWorldCoordinate(room.RandomPos()), game.GetNewID()),
+                    room.roomSettings.GetEffectAmount(RoomSettings.RoomEffect.Type.VoidMelt),
+                    VoidSpawnKeeper.DayLightMode(room),
+                    VoidSpawn.SpawnType.RippleAmoeba);
+                rippleSpawn.behavior = new VoidSpawn.ChasePlayer(rippleSpawn, room);
+                rippleSpawn.PlaceInRoom(room);
+                rippleSpawn.timeUntilFadeout = UnityEngine.Random.Range(2400, 3600);
+                rippleSpawn.ChangeRippleLayer(0, false);
+            }
         }
 
         #endregion
