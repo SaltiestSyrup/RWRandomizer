@@ -7,7 +7,7 @@
     "description": "Randomizer game mode, locking progression behind collecting checks",
     "requirements": [],
     "requirements_names": [],
-    "priorities": ["regionkit"],
+    "priorities": ["regionkit", "shrub.watcherregionart"],
     "tags": ["Game Mechanics", "Game Modes", "Base", "Downpour", "Watcher"],
     "checksum_override_version": false
 }
