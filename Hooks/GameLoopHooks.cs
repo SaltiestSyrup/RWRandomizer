@@ -34,7 +34,6 @@ namespace RainWorldRandomizer
             {
                 IL.RainWorldGame.ctor += RainWorldGameCtorIL;
                 IL.WinState.CycleCompleted += ILCycleCompleted;
-                IL.Menu.SlideShow.ctor += SlideShow_ctor;
             }
             catch (Exception e)
             {
@@ -58,7 +57,6 @@ namespace RainWorldRandomizer
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update -= OnSpearEndingUpdate;
             IL.RainWorldGame.ctor -= RainWorldGameCtorIL;
             IL.WinState.CycleCompleted -= ILCycleCompleted;
-            IL.Menu.SlideShow.ctor -= SlideShow_ctor;
         }
 
         /// <summary>
@@ -117,6 +115,14 @@ namespace RainWorldRandomizer
             {
                 // Check for any new passages
                 SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
+                
+                // Safety return
+                if (saveState is null)
+                {
+                    orig(self, ID);
+                    return;
+                }
+                
                 foreach (string check in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
                 {
                     WinState.EndgameID id = new(check, false);
@@ -539,34 +545,6 @@ namespace RainWorldRandomizer
                 static bool BypassHardcodedSurvivorRequirement(bool prev) =>
                     prev || (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.PPwS == ArchipelagoConnection.PPwSBehavior.Bypassed);
                 c.EmitDelegate(BypassHardcodedSurvivorRequirement);
-            }
-        }
-
-        private static void SlideShow_ctor(ILContext il)
-        {
-            ILCursor c = new(il);
-
-            FieldInfo[] relevantSlideShowIDs = [.. new string[]
-            {
-                "DreamSpinningTop",
-                "DreamRot",
-                "DreamVoidWeaver",
-                "DreamTerrace",
-                "EndingVoidBath"
-            }.Select(s => typeof(Watcher.WatcherEnums.SlideShowID).GetField(s))];
-
-            foreach (FieldInfo f in relevantSlideShowIDs)
-            {
-                c.GotoNext(x => x.MatchLdsfld(f));
-                c.GotoNext(MoveType.After, x => x.MatchStfld(typeof(Menu.SlideShow).GetField(nameof(Menu.SlideShow.processAfterSlideShow))));
-
-                c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate(SetStartGameCondition);
-            }
-
-            static void SetStartGameCondition(Menu.SlideShow self)
-            {
-                self.manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.Load;
             }
         }
 
