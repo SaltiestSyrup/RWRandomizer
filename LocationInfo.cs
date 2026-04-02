@@ -459,6 +459,42 @@ namespace RainWorldRandomizer
                 case LocationKind.SpreadRot:
                     spriteName = "Kill_Daddy";
                     break;
+                case LocationKind.Other:
+                    switch (internalDesc)
+                    {
+                        case "Eat_Neuron":
+                        case "Gift_Neuron":
+                            spriteName = "GuidanceNeuron";
+                            //spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
+                            //spriteColor = ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
+                            break;
+                        case "Kill_FP":
+                            spriteName = "GuidanceEnergyCell";
+                            break;
+                        case "Meet_FP":
+                        case "Ascend_FP":
+                            spriteName = "GuidancePebbles";
+                            break;
+                        case "Meet_LttM":
+                        case "Meet_LttM_Spear": 
+                        case "Ascend_LttM":
+                            spriteName = "GuidanceMoon";
+                            break;
+                        case "Save_LttM":
+                            spriteName = "GuidanceNeuron";
+                            spriteColor = CollectToken.GreenColor.rgb;
+                            break;
+                        case "Meet_Ripple_Elder":
+                            spriteName = "Symbol_RippleAmoeba";
+                            spriteColor = RainWorld.RippleColor;
+                            break;
+                        default:
+                            spriteName = "EndGameCircle";
+                            spriteScale = 0.5f;
+                            break;
+                    }
+                    break;
+                case LocationKind.WandererPip:
                 default:
                     spriteName = "EndGameCircle";
                     spriteScale = 0.5f;
