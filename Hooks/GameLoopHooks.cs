@@ -460,7 +460,16 @@ namespace RainWorldRandomizer
 
             if (Plugin.RandoManager?.isRandomizerActive is true)
             {
-                Plugin.RandoManager.SaveGame(saveCurrentState);
+                try
+                {
+                    Plugin.RandoManager.SaveGame(saveCurrentState);
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError("Failed to write randomizer save to file.");
+                    Plugin.Log.LogError(e);
+                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Randomizer failed to save game information to file.", UnityEngine.Color.red));
+                }
             }
 
             return origSuccess;

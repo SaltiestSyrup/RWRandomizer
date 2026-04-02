@@ -56,7 +56,11 @@ namespace RainWorldRandomizer
                 if (SaveManager.IsThereAnAPSave(saveId)) LoadSave(saveId);
                 else CreateNewSave(saveId);
             }
-            catch (Exception e) { Plugin.Log.LogError(e); }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError(e);
+                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Archipelago failed to load or create save game. Some features may not function properly.", UnityEngine.Color.red));
+            }
 
             // Ask for fresh items list if there isn't one waiting
             if (!ArchipelagoConnection.waitingItemPackets.Any(p => p.Index == 0))
@@ -78,7 +82,7 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Soft reset, clears all items in preperation for a new inventory
+        /// Soft reset, clears all items in preparation for a new inventory
         /// </summary>
         public void ResetStateForSync()
         {
