@@ -13,7 +13,8 @@ namespace RainWorldRandomizer.WatcherIntegration
             switch (roomName)
             {
                 case "HI_W13":
-                    room.AddObject(new WatcherRandomizedSpawn(room));
+                    if (room.game.GetStorySession.saveState.cycleNumber == 0)
+                        room.AddObject(new WatcherRandomizedSpawn(room));
                     break;
             }
         }
@@ -35,6 +36,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 base.Update(eu);
                 Player player = room.PlayersInRoom.FirstOrDefault();
                 if (player is null) return;
+                
 
                 room.game.GetStorySession.saveState.deathPersistentSaveData.rippleLevel = 1f;
                 player.StartPendingForcedWarp(Plugin.RandoManager.customStartDen, default, 400);
