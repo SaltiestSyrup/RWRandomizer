@@ -26,7 +26,7 @@ namespace RainWorldRandomizer
         // BigSpider, SpitterSpider, MotherSpider,
         // Vulture, KingVulture, MirosVulture,
         // LanternMouse, CicadaA, Yeek, DropBug, MirosBird, Scavenger, DaddyLongLegs,
-        // PoleMimic, TentaclePlant, BigEel, Inspector
+        // PoleMimic, TentaclePlant, BigEel, Inspector, FireEgg
 
         // Frog, Tardigrade, SandGrub, Rat, FireSpriteLarva, Pomegranate, Barnacle
 
@@ -156,6 +156,7 @@ namespace RainWorldRandomizer
             { "DeadHazer", "Hazer" },
             { "DeadVultureGrub", "VultureGrub" },
             { "SeedCob", "Popcorn Plant" },
+            { "FireEgg", "Fire Egg" },
             { "Frog", "Frog" },
             { "Tardigrade", "Tardigrade" },
             { "SandGrub", "Sand Grub" },
@@ -190,7 +191,7 @@ namespace RainWorldRandomizer
                     false, false, false,
                     false, false, false,
                     false, false, false, false, false, false, false,
-                    false, false, false, false,
+                    false, false, false, false, false,
                     false, false, false, false, false, false, false,
                 ]},
                 { SlugcatStats.Name.Yellow,
@@ -202,7 +203,7 @@ namespace RainWorldRandomizer
                     false, false, false,
                     false, false, false,
                     false, false, false, false, false, false, false,
-                    false, false, false, false,
+                    false, false, false, false, false,
                     false, false, false, false, false, false, false,
                 ]},
                 { SlugcatStats.Name.Red,
@@ -214,7 +215,7 @@ namespace RainWorldRandomizer
                     true, true, true,
                     true, true, true,
                     true, true, true, true, true, true, true,
-                    false, false, false, false,
+                    false, false, false, false, false,
                     false, false, false, false, false, false, false,
                 ]},
             });
@@ -249,7 +250,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true,
                         true, true, true, true, true, true, true,
-                        false, false, false, false,
+                        false, false, false, false, false,
                         false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Artificer,
@@ -261,7 +262,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true,
                         true, true, true, true, true, true, true,
-                        false, false, false, false,
+                        false, false, false, false, false,
                         false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Spear,
@@ -273,7 +274,7 @@ namespace RainWorldRandomizer
                         true, true, true,
                         true, true, true,
                         true, true, true, true, true, true, true,
-                        true, true, true, true,
+                        true, true, true, true, false,
                         false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
@@ -285,7 +286,7 @@ namespace RainWorldRandomizer
                         false, false, false,
                         false, false, false,
                         false, false, false, false, false, false, false,
-                        false, false, false, false,
+                        false, false, false, false, false,
                         false, false, false, false, false, false, false,
                     ]},
                     { MoreSlugcatsEnums.SlugcatStatsName.Saint,
@@ -298,7 +299,7 @@ namespace RainWorldRandomizer
                         false, false, false,
                         false, false, false,
                         false, false, false, false, false, false, false,
-                        false, false, false, false,
+                        false, false, false, false, true,
                         false, false, false, false, false, false, false,
                     ]}
                 });
@@ -335,6 +336,7 @@ namespace RainWorldRandomizer
                     new(null, [CreatureTemplate.Type.TentaclePlant]),
                     new(null, [CreatureTemplate.Type.BigEel]),
                     new(null, [DLCSharedEnums.CreatureTemplateType.Inspector]),
+                    new(MoreSlugcatsEnums.AbstractObjectType.FireEgg, null)
                 ];
 
                 if (ModManager.Watcher)
@@ -377,7 +379,7 @@ namespace RainWorldRandomizer
                     false, false, false,
                     false, false, false,
                     false, false, false, false, false, false, false,
-                    false, false, false, false,
+                    false, false, false, false, false,
                     true, true, true, true, true, true, true,
                 ]);
 
