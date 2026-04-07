@@ -17,7 +17,7 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
         public const string PLUGIN_NAME = "Randomizer";
-        public const string PLUGIN_VERSION = "1.5.3";
+        public const string PLUGIN_VERSION = "1.5.4";
 
         internal static LogUtils.Logger Log;
         /// <summary>
