@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -30,7 +31,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Tried to start AP campaign without first connecting to server");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Archipelago failed to start: Not connected to a server", UnityEngine.Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText("Archipelago failed to start: Not connected to a server", UnityEngine.Color.red));
             }
 
             base.StartNewGameSession(storyGameCharacter, continueSaved);
@@ -43,7 +44,7 @@ namespace RainWorldRandomizer
                     $"\n Chosen campaign: {storyGameCharacter}" +
                     $"\n Chosen AP option: {ArchipelagoConnection.Slugcat}");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Archipelago failed to start: Selected campaign does not match archipelago options.", UnityEngine.Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText("Archipelago failed to start: Selected campaign does not match archipelago options.", UnityEngine.Color.red));
                 return;
             }
 
@@ -59,7 +60,7 @@ namespace RainWorldRandomizer
             catch (Exception e)
             {
                 Plugin.Log.LogError(e);
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Archipelago failed to load or create save game. Some features may not function properly.", UnityEngine.Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText("Archipelago failed to load or create save game. Some features may not function properly.", UnityEngine.Color.red));
             }
 
             // Ask for fresh items list if there isn't one waiting
@@ -73,7 +74,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Failed to initialize randomizer.");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Randomizer failed to initialize. Check logs for details.", UnityEngine.Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Randomizer failed to initialize. Check logs for details.", UnityEngine.Color.red));
                 return;
             }
 
@@ -143,7 +144,7 @@ namespace RainWorldRandomizer
             if (locations.Count == 0)
             {
                 Plugin.Log.LogError("Failed to create Archipelago save, no locations were written");
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
                     $"Failed to create new Archipelago save", UnityEngine.Color.red));
                 return;
             }
@@ -344,7 +345,7 @@ namespace RainWorldRandomizer
             if (!ArchipelagoConnection.SocketConnected)
             {
                 Plugin.Log.LogInfo($"Found location while offline: {location}");
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
                     $"Checked \"{loc.displayName}\""));
                 return;
             }
@@ -364,7 +365,7 @@ namespace RainWorldRandomizer
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();
             Plugin.Log.LogInfo("Game Complete!");
-            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Game Complete!", UnityEngine.Color.green));
+            Plugin.Singleton.notifQueue.Enqueue(new MessageText("Game Complete!", UnityEngine.Color.green));
         }
 
         public override void SaveGame(bool saveCurrentState)

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -92,7 +93,7 @@ namespace RainWorldRandomizer
                     }
                     catch (Exception e)
                     {
-                        Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Failed to start randomizer game. More details found in BepInEx/LogOutput.log", UnityEngine.Color.red));
+                        Plugin.Singleton.notifQueue.Enqueue(new MessageText("Failed to start randomizer game. More details found in BepInEx/LogOutput.log", UnityEngine.Color.red));
                         Plugin.Log.LogError("Encountered exception while starting game session");
                         Plugin.Log.LogError(e);
                     }
@@ -367,9 +368,9 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Singleton.DisplayLegacyNotification();
                 }
-                else if (HudExtension.CurrentChatLog is not null)
+                else if (MenuHooks.CurrentChatLog is not null)
                 {
-                    HudExtension.CurrentChatLog.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
+                    MenuHooks.CurrentChatLog.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
                 }
             }
 
@@ -437,12 +438,12 @@ namespace RainWorldRandomizer
             orig(self);
 
             // Remove and spawn items selected while paused
-            if ((MenuExtension.PendingItemsDisplay?.selectedIndices.Count ?? 0) > 0)
+            if ((MenuHooks.PendingItemsDisplay?.selectedIndices.Count ?? 0) > 0)
             {
                 List<Unlock.Item> items = [.. Plugin.RandoManager.itemDeliveryQueue];
-                MenuExtension.PendingItemsDisplay.selectedIndices.Sort();
-                MenuExtension.PendingItemsDisplay.selectedIndices.Reverse();
-                foreach (int index in MenuExtension.PendingItemsDisplay.selectedIndices)
+                MenuHooks.PendingItemsDisplay.selectedIndices.Sort();
+                MenuHooks.PendingItemsDisplay.selectedIndices.Reverse();
+                foreach (int index in MenuHooks.PendingItemsDisplay.selectedIndices)
                 {
                     // Try to spawn the item, and remove from queue if successful
                     if (self.TryGivePlayerItem(items[index])) items.RemoveAt(index);
@@ -468,7 +469,7 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Log.LogError("Failed to write randomizer save to file.");
                     Plugin.Log.LogError(e);
-                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("Randomizer failed to save game information to file.", UnityEngine.Color.red));
+                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("Randomizer failed to save game information to file.", UnityEngine.Color.red));
                 }
             }
 

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Menu;
 
 namespace RainWorldRandomizer
 {
@@ -82,9 +83,9 @@ namespace RainWorldRandomizer
             static bool CancelDeleteFile(string filePath) => File.Exists(filePath);
         }
 
-        private static void OnInitializationScreenUpdate(On.Menu.InitializationScreen.orig_Update orig, Menu.InitializationScreen self)
+        private static void OnInitializationScreenUpdate(On.Menu.InitializationScreen.orig_Update orig, InitializationScreen self)
         {
-            if (self.currentStep == Menu.InitializationScreen.InitializationStep.VALIDATE_MODS)
+            if (self.currentStep == InitializationScreen.InitializationStep.VALIDATE_MODS)
             {
                 string path = AssetManager.ResolveFilePath(string.Join("",
                 [

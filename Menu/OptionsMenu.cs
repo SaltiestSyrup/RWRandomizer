@@ -1,4 +1,5 @@
 using BepInEx;
+using Menu;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI.ValueTypes;
@@ -7,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace RainWorldRandomizer
+namespace RainWorldRandomizer.Menu
 {
     public class OptionsMenu : OptionInterface
     {
@@ -710,7 +711,7 @@ namespace RainWorldRandomizer
                 }
             }
 
-            private Color _color = Menu.MenuColorEffect.rgbMediumGrey;
+            private Color _color = MenuColorEffect.rgbMediumGrey;
             public Color Color
             {
                 get { return _color; }

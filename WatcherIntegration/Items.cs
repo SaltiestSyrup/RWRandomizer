@@ -104,7 +104,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static List<string> GetAllAccessibleRegions()
         {
             List<string> ret = [Plugin.RandoManager.customStartDen.Split('_')[0]];
-            Dictionary<string, bool[]> keyDict = GetAllOpenWarps().ToDictionary(x => x, GateMapDisplay.CanUseGate);
+            Dictionary<string, bool[]> keyDict = GetAllOpenWarps().ToDictionary(x => x, Menu.GateMapDisplay.CanUseGate);
             bool updated = true;
             while (updated)
             {

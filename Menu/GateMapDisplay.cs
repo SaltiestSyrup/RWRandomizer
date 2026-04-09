@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using LocationKind = RainWorldRandomizer.LocationInfo.LocationKind;
+using RWMenu = Menu.Menu;
 
-namespace RainWorldRandomizer
+namespace RainWorldRandomizer.Menu
 {
     public class GateMapDisplay : RoundedRect
     {
@@ -21,7 +22,7 @@ namespace RainWorldRandomizer
         public static Color COLOR_INACCESSIBLE = new(0.2f, 0.2f, 0.2f);
         public static Dictionary<string, string> regionCodeLookup = Plugin.RegionNamesMap.ToDictionary(x => x.Value, x => x.Key);
 
-        public GateMapDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
+        public GateMapDisplay(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
         {
             bool warpMenu = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("LeeMoriya.Warp");
             size = Scug is "Watcher" ? new(540f, 380f) : new(320f, 310f);
@@ -385,7 +386,7 @@ namespace RainWorldRandomizer
             public float completion;
             public bool current;
 
-            public Node(Menu.Menu menu, MenuObject owner, Vector2 pos, string text, float completion = 0f)
+            public Node(RWMenu menu, MenuObject owner, Vector2 pos, string text, float completion = 0f)
                 : base(menu, owner, pos, SIZE, true)
             {
                 fillAlpha = 1f;

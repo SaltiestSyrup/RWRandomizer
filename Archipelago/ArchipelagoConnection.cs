@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using UnityEngine;
+using RWMenu = Menu.Menu;
+using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -69,10 +71,10 @@ namespace RainWorldRandomizer
         /// </summary>
         public static Palette<Color> palette =
             new(
-                Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
+                RWMenu.MenuRGB(RWMenu.MenuColors.White),
                 new Dictionary<PaletteColor, Color>()
                 {
-                    { PaletteColor.Black, Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black) },
+                    { PaletteColor.Black, RWMenu.MenuRGB(RWMenu.MenuColors.Black) },
                     { PaletteColor.Blue, new Color(0f, 0f, 1f) },
                     { PaletteColor.Cyan, new Color(0f, 1f, 1f) },
                     { PaletteColor.Green, new Color(0, 0.5f, 0f) },
@@ -483,7 +485,7 @@ namespace RainWorldRandomizer
                 && !itemMessage.IsRelatedToActivePlayer)
                 return;
 
-            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(message));
+            Plugin.Singleton.notifQueue.Enqueue(new MessageText(message));
         }
 
         private static void ErrorReceived(Exception e, string msg)
@@ -494,7 +496,7 @@ namespace RainWorldRandomizer
             {
                 Disconnect(false);
                 Plugin.Log.LogError("Disconnected Socket due to WebSocketException");
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText("You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
             }
         }
 

@@ -10,6 +10,8 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using Watcher;
+using RainWorldRandomizer.Menu;
+using RWMenu = Menu.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -242,7 +244,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Replace normal passage token list with custom one that contains tokens collected from items rather than tokens from completed passages.
         /// </summary>
-        private static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, EndgameTokens self, Menu.Menu menu, MenuObject owner, Vector2 pos, FContainer container, KarmaLadder ladder)
+        private static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, EndgameTokens self, RWMenu menu, MenuObject owner, Vector2 pos, FContainer container, KarmaLadder ladder)
         {
             orig(self, menu, owner, pos, container, ladder);
             if (!RandoOptions.GivePassageItems) return;
@@ -500,7 +502,7 @@ namespace RainWorldRandomizer
         /// Tell karma ladder not to showcase a karma increase when meeting an echo
         /// </summary>
         private static void OnKarmaLadderCtor(On.Menu.KarmaLadder.orig_ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool orig,
-            KarmaLadder self, Menu.Menu menu, MenuObject owner, Vector2 pos, HUD.HUD hud, IntVector2 displayKarma, bool reinforced)
+            KarmaLadder self, RWMenu menu, MenuObject owner, Vector2 pos, HUD.HUD hud, IntVector2 displayKarma, bool reinforced)
         {
             (menu as KarmaLadderScreen).preGhostEncounterKarmaCap = Plugin.RandoManager.CurrentMaxKarma;
             orig(self, menu, owner, pos, hud, displayKarma, reinforced);

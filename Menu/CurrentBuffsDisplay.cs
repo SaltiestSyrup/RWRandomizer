@@ -2,8 +2,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using RWMenu = Menu.Menu;
 
-namespace RainWorldRandomizer
+namespace RainWorldRandomizer.Menu
 {
     public class CurrentBuffsDisplay : RectangularMenuObject
     {
@@ -20,7 +21,7 @@ namespace RainWorldRandomizer
         public RoundedRect roundedRect;
         public MenuLabel[] menuLabels;
 
-        public CurrentBuffsDisplay(Menu.Menu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
+        public CurrentBuffsDisplay(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default)
         {
             List<string> obtainedBuffs = [];
             if (Plugin.RandoManager.NumDamageUpgrades > 0)
@@ -43,7 +44,7 @@ namespace RainWorldRandomizer
             subObjects.Add(roundedRect);
 
             menuLabels[0] = new MenuLabel(menu, this, "Current Buffs:", new Vector2(10.01f, -13.01f), default, false, null);
-            menuLabels[0].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White);
+            menuLabels[0].label.color = RWMenu.MenuRGB(RWMenu.MenuColors.White);
             menuLabels[0].label.alignment = FLabelAlignment.Left;
             subObjects.Add(menuLabels[0]);
 
@@ -51,7 +52,7 @@ namespace RainWorldRandomizer
             {
                 menuLabels[i] = new MenuLabel(menu, this, obtainedBuffs[i - 1],
                     new Vector2(10.01f, -15.01f - (15f * i)), default, false, null);
-                menuLabels[i].label.color = Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey);
+                menuLabels[i].label.color = RWMenu.MenuRGB(RWMenu.MenuColors.MediumGrey);
                 menuLabels[i].label.alignment = FLabelAlignment.Left;
                 subObjects.Add(menuLabels[i]);
             }

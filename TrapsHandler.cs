@@ -4,6 +4,7 @@ using MonoMod.RuntimeDetour;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -31,7 +32,7 @@ namespace RainWorldRandomizer
             public void Activate(RainWorldGame game)
             {
                 Plugin.Log.LogInfo($"Trap Triggered! ({id})");
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Trap Triggered! ({id})",
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Trap Triggered! ({id})",
                     ArchipelagoConnection.palette[Archipelago.MultiClient.Net.Colors.PaletteColor.Red]));
                 definition.onTrigger(game);
                 timer = definition.duration;
@@ -329,12 +330,12 @@ namespace RainWorldRandomizer
                     creature.abstractAI?.RealAI?.tracker?.SeeCreature(player.abstractCreature);
                 }
             }
-            }
+        }
 
         private static void TrapAlarmDeactivate(this RainWorldGame game)
         {
             alarmTrapActive = false;
-            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText($"Alarm trap has faded"));
+            Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Alarm trap has faded"));
         }
 
         /// <summary>

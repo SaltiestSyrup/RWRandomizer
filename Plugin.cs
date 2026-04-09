@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -51,7 +52,7 @@ namespace RainWorldRandomizer
         }
 
         // Queue of pending notifications to be sent to the player in-game
-        public Queue<ChatLog.MessageText> notifQueue = new();
+        public Queue<MessageText> notifQueue = new();
 
         // A map of every region to it's display name
         public static Dictionary<string, string> RegionNamesMap = [];
@@ -114,8 +115,7 @@ namespace RainWorldRandomizer
             try
             {
                 collectTokenHandler.ApplyHooks();
-                MenuExtension.ApplyHooks();
-                HudExtension.ApplyHooks();
+                MenuHooks.ApplyHooks();
                 TokenCachePatcher.ApplyHooks();
 
                 GameLoopHooks.ApplyHooks();
@@ -164,8 +164,7 @@ namespace RainWorldRandomizer
             try
             {
                 collectTokenHandler.RemoveHooks();
-                MenuExtension.RemoveHooks();
-                HudExtension.RemoveHooks();
+                MenuHooks.RemoveHooks();
                 TokenCachePatcher.RemoveHooks();
 
                 GameLoopHooks.RemoveHooks();

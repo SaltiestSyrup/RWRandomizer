@@ -5,10 +5,10 @@ using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
+using RWMenu = Menu.Menu;
 
-namespace RainWorldRandomizer
+namespace RainWorldRandomizer.Menu
 {
     /// <summary>
     /// Base class for various implementations of a pause screen menu. This is really just a big scroll box
@@ -49,7 +49,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public RandomizerStatusMenu(Menu.Menu menu, MenuObject owner) :
+        public RandomizerStatusMenu(RWMenu menu, MenuObject owner) :
             base(menu, owner, new Vector2(menu.manager.rainWorld.screenSize.x * 0.35f, menu.manager.rainWorld.screenSize.y * 0.125f + 60f), default)
         {
             menu.manager.menuMic = new MenuMicrophone(menu.manager, menu.manager.soundLoader);
@@ -191,7 +191,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public abstract class Entry(Menu.Menu menu, MenuObject owner, Vector2 pos, Vector2 size) : RectangularMenuObject(menu, owner, pos, size)
+        public abstract class Entry(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size) : RectangularMenuObject(menu, owner, pos, size)
         {
             public RoundedRect roundedRect;
 
@@ -210,7 +210,7 @@ namespace RainWorldRandomizer
             {
                 roundedRect = new RoundedRect(menu, this, default, size, false)
                 {
-                    borderColor = Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey)
+                    borderColor = RWMenu.MenuColor(RWMenu.MenuColors.MediumGrey)
                 };
                 subObjects.Add(roundedRect);
             }
@@ -352,14 +352,14 @@ namespace RainWorldRandomizer
             };
         }
 
-        public SpoilerMenu(Menu.Menu menu, MenuObject owner) : base(menu, owner)
+        public SpoilerMenu(RWMenu menu, MenuObject owner) : base(menu, owner)
         {
             // Filter Menu
             filterSelectRect = new RoundedRect(menu, this, new Vector2(0.01f, -98.01f), new Vector2(size.x, 70f), true)
             { fillAlpha = 0.9f };
             subObjects.Add(filterSelectRect);
 
-            float margin = 10f;
+            const float margin = 10f;
             Vector2 buttonSize = new((filterSelectRect.size.x - (6f * margin)) / 3f, filterSelectRect.size.y - 20f);
 
             // Filter / Sort toggles
@@ -384,7 +384,7 @@ namespace RainWorldRandomizer
                 description = "Reveal spoilers for all items",
                 colorEdge = new Color(0.85f, 0.35f, 0.4f)
             };
-            showSpoilersHoldButton.OnPressDone += (trigger) => fullSpoilerMode = true;
+            showSpoilersHoldButton.OnPressDone += (_) => fullSpoilerMode = true;
             holdButtonWrapper = new UIelementWrapper(tabWrapper, showSpoilersHoldButton);
 
             FilterEntries((int)EntryFilterType.Given);
@@ -409,17 +409,9 @@ namespace RainWorldRandomizer
         {
             Func<SpoilerEntry, bool> predicate = (EntryFilterType)filter switch
             {
-                EntryFilterType.Given => (e) =>
-                {
-                    return e.location.Collected;
-                }
-                ,
-                EntryFilterType.NotGiven => (e) =>
-                {
-                    return !e.location.Collected;
-                }
-                ,
-                _ => (e) => { return true; }
+                EntryFilterType.Given => (e) => e.location.Collected,
+                EntryFilterType.NotGiven => (e) => !e.location.Collected,
+                _ => (e) => true
             };
             filteredEntries = [.. entries.Cast<SpoilerEntry>().Where(predicate)];
             SortEntries(currentSorting);
@@ -501,7 +493,7 @@ namespace RainWorldRandomizer
 
         public override void SetCurrentlySelectedOfSeries(string series, int to)
         {
-            if (series is not null and "FILTER")
+            if (series is "FILTER")
             {
                 currentFilter = (EntryFilterType)to;
                 FilterEntries((int)currentFilter);
@@ -532,9 +524,12 @@ namespace RainWorldRandomizer
             private bool displayComplete;
             public bool forceShowItem;
 
-            public bool ShowItem => displayComplete || forceShowItem;
+            public bool ShowItem
+            {
+                get { return displayComplete || forceShowItem; }
+            }
 
-            public SpoilerEntry(Menu.Menu menu, MenuObject owner, Vector2 pos, Vector2 size, LocationInfo location) : base(menu, owner, pos, size)
+            public SpoilerEntry(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, LocationInfo location) : base(menu, owner, pos, size)
             {
                 this.location = location;
                 item = Plugin.RandoManager.GetUnlockAtLocation(location.internalName);
@@ -588,13 +583,13 @@ namespace RainWorldRandomizer
             public override void Update()
             {
                 base.Update();
-                SpoilerMenu spoilerMenu = owner as SpoilerMenu;
+                SpoilerMenu spoilerMenu = (SpoilerMenu)owner;
                 displayComplete = location.Collected;
                 forceShowItem |= spoilerMenu.fullSpoilerMode;
 
                 roundedRect.borderColor = displayComplete
                     ? CollectToken.GreenColor
-                    : Menu.Menu.MenuColor(Menu.Menu.MenuColors.MediumGrey);
+                    : RWMenu.MenuColor(RWMenu.MenuColors.MediumGrey);
                 cheatHoldButton.greyedOut = !forceShowItem || displayComplete;
                 revealHoldButton.greyedOut = ShowItem;
 
@@ -650,12 +645,12 @@ namespace RainWorldRandomizer
                 }
             }
 
-            public void OnPressDone(UIfocusable trigger)
+            private void OnPressDone(UIfocusable trigger)
             {
                 Plugin.RandoManager.GiveLocation(location.internalName);
             }
 
-            public static FSprite UnlockToFSprite(Unlock unlock)
+            private static FSprite UnlockToFSprite(Unlock unlock)
             {
                 string spriteName = "Futile_White";
                 float spriteScale = 1f;
