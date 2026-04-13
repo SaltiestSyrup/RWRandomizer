@@ -30,8 +30,9 @@ namespace RainWorldRandomizer.WatcherIntegration
             public WarpPoint self = self;
             // Changing the locked status requires access to the SpriteLeaser,
             // so we store the flag in a bool to be checked in the WarpTear's DrawSprites
-            public bool cancelLockedStatus = false;
-            public bool alreadyResetShader = false;
+            public bool cancelLockedStatus;
+            public bool alreadySwitchedToLocked;
+            public bool alreadySwitchedToSealed;
         }
 
         /// <summary>
@@ -82,8 +83,8 @@ namespace RainWorldRandomizer.WatcherIntegration
             internal static void ApplyHooks()
             {
                 On.Watcher.WarpPoint.Update += WarpPoint_Update;
-                On.Watcher.WarpTear.InitiateSprites += WarpTear_InitiateSprites;
                 On.Watcher.WarpTear.DrawSprites += WarpTear_DrawSprites;
+                On.Watcher.SpinningTop.WarpAnimationUpdate += SpinningTopOnWarpAnimationUpdate;
                 On.Watcher.WarpPoint.ExpireWarpByWeaver += WarpPoint_ExpireWarpByWeaver;
 
                 try
@@ -99,8 +100,8 @@ namespace RainWorldRandomizer.WatcherIntegration
             internal static void RemoveHooks()
             {
                 On.Watcher.WarpPoint.Update -= WarpPoint_Update;
-                On.Watcher.WarpTear.InitiateSprites -= WarpTear_InitiateSprites;
                 On.Watcher.WarpTear.DrawSprites -= WarpTear_DrawSprites;
+                On.Watcher.SpinningTop.WarpAnimationUpdate -= SpinningTopOnWarpAnimationUpdate;
                 On.Watcher.WarpPoint.ExpireWarpByWeaver -= WarpPoint_ExpireWarpByWeaver;
                 IL.Player.CamoUpdate -= Player_CamoUpdate;
             }
@@ -122,28 +123,40 @@ namespace RainWorldRandomizer.WatcherIntegration
             }
 
             /// <summary>
-            /// Apply custom shader to locked warps to make them red
+            /// Apply custom shader to locked warps to make them red, and remove the shader if the warp becomes sealed
             /// </summary>
-            private static void WarpTear_InitiateSprites(On.Watcher.WarpTear.orig_InitiateSprites orig, WarpTear self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
-            {
-                orig(self, sLeaser, rCam);
-
-                if (ActiveLockedWarps.TryGetValue(self, out _))
-                    sLeaser.sprites[0].shader = Custom.rainWorld.Shaders["Rando.WarpTear"];
-            }
-
             private static void WarpTear_DrawSprites(On.Watcher.WarpTear.orig_DrawSprites orig, WarpTear self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
             {
                 orig(self, sLeaser, rCam, timeStacker, camPos);
 
-                if (ActiveLockedWarps.TryGetValue(self, out LockedWarpData data)
-                    && data.cancelLockedStatus
-                    && !data.alreadyResetShader)
+                if (ActiveLockedWarps.TryGetValue(self, out LockedWarpData data))
                 {
-                    sLeaser.sprites[0].shader = Custom.rainWorld.Shaders[self.shaderOverride ?? (self.isRippleSide ? "WarpTearRippleSide" : "WarpTear")];
-                    data.alreadyResetShader = true;
-                    Plugin.Log.LogDebug($"Switched shader for now sealed warp");
+                    if (data.cancelLockedStatus && !data.alreadySwitchedToSealed)
+                    {
+                        sLeaser.sprites[0].shader = Custom.rainWorld.Shaders[self.shaderOverride ?? (self.isRippleSide ? "WarpTearRippleSide" : "WarpTear")];
+                        data.alreadySwitchedToSealed = true;
+                        Plugin.Log.LogDebug($"Switched shader for now sealed warp");
+                    }
+                    else if (!data.alreadySwitchedToLocked)
+                    {
+                        sLeaser.sprites[0].shader = Custom.rainWorld.Shaders["Rando.WarpTear"];
+                        data.alreadySwitchedToLocked = true;
+                    }
                 }
+            }
+            
+            /// <summary>
+            /// Make Spinning Top finish the despawn animation even if warp is locked
+            /// </summary>
+            private static void SpinningTopOnWarpAnimationUpdate(On.Watcher.SpinningTop.orig_WarpAnimationUpdate orig, SpinningTop self)
+            {
+                if (ActiveLockedWarps.TryGetValue(self.spawnedWarp.warpTear, out _))
+                {
+                    self.lastWarpAnim = self.warpAnim;
+                    self.warpAnim++;
+                }
+
+                orig(self);
             }
 
             /// <summary>
