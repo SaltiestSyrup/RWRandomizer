@@ -290,7 +290,11 @@ namespace RainWorldRandomizer
         {
             ILCursor c = new(il);
 
-            c.GotoNext(
+            // Jump towards end of function
+            c.GotoNext(x => x.MatchLdstr("Ghost in region"));
+            
+            // Right after spawning logic, before checking safari
+            c.GotoPrev(
                 MoveType.Before,
                 x => x.MatchCallOrCallvirt(typeof(World).GetProperty(nameof(World.game)).GetGetMethod()),
                 x => x.MatchLdfld(typeof(RainWorldGame).GetField(nameof(RainWorldGame.rainWorld))),
@@ -303,7 +307,8 @@ namespace RainWorldRandomizer
             c.EmitDelegate(CustomEchoLogic);
             c.Emit(OpCodes.Stloc_2);
 
-            c.Emit(OpCodes.Ldarg_0); // We interuppted after a ldarg_0, so put that back before we leave
+            c.Emit(OpCodes.Ldarg_0); // We interrupted after a ldarg_0, so put that back before we leave
+            return;
 
             static bool CustomEchoLogic(World self, GhostWorldPresence.GhostID ghostID, bool spawnEcho)
             {
@@ -333,8 +338,7 @@ namespace RainWorldRandomizer
                 int karma = self.game.GetStorySession.saveState.deathPersistentSaveData.karma;
                 int cap = self.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap;
                 bool reinforced = self.game.GetStorySession.saveState.deathPersistentSaveData.reinforcedKarma;
-                int encounterIndex = self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo.ContainsKey(ghostID) ?
-                    self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo[ghostID] : 0;
+                int encounterIndex = self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo.TryGetValue(ghostID, out var v) ? v : 0;
                 bool isArtificer = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer;
                 bool isSaint = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Saint;
 
