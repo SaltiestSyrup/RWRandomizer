@@ -277,8 +277,8 @@ namespace RainWorldRandomizer
             if (key.Contains("WRSA") && !key.Contains("WORA") && !key.Contains("WARA"))
             {
                 string[] split = key.Split('-');
-                if (split[1] == "WRSA") return [false, true];
-                else return [true, false];
+                if (split[0] == "WRSA") return [false, true];
+                return [true, false];
             }
 
             return key switch
