@@ -677,9 +677,15 @@ namespace RainWorldRandomizer.Menu
                     LocationKind.FixedWarp => -15f,
                     LocationKind.Prince => -10f,
                     LocationKind.ThroneWarp => -10f,
-                    LocationKind.Echo => -7f,
-                    LocationKind.SpinningTop => -7f,
-                    _ => default
+                    LocationKind.Echo => -3f,
+                    LocationKind.SpinningTop => -3f,
+                    LocationKind.Shelter => 3f,
+                    LocationKind.Pearl => 3f,
+                    _ => element.name switch
+                    {
+                        "Symbol_Neuron" => 7f,
+                        _ => 0
+                    }
                 };
 
                 public LocationKind kind = kind;

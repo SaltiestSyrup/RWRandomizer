@@ -464,9 +464,8 @@ namespace RainWorldRandomizer
                     {
                         case "Eat_Neuron":
                         case "Gift_Neuron":
-                            spriteName = "GuidanceNeuron";
-                            //spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
-                            //spriteColor = ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
+                            spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
+                            spriteColor = ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
                             break;
                         case "Kill_FP":
                             spriteName = "GuidanceEnergyCell";
