@@ -52,7 +52,7 @@ namespace RainWorldRandomizer.Menu
             On.HUD.HUD.InitSinglePlayerHud -= OnInitSinglePlayerHud;
         }
 
-        public static void OnMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
+        private static void OnMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
         {
             orig(self, manager, game);
             if (!Plugin.RandoManager.isRandomizerActive) return;
@@ -99,13 +99,13 @@ namespace RainWorldRandomizer.Menu
             }
         }
 
-        public static void OnMenuShutdownProcess(On.Menu.PauseMenu.orig_ShutDownProcess orig, PauseMenu self)
+        private static void OnMenuShutdownProcess(On.Menu.PauseMenu.orig_ShutDownProcess orig, PauseMenu self)
         {
             displaySpoilerMenu = false;
             orig(self);
         }
 
-        public static void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
+        private static void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
         {
             orig(self);
             if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
@@ -119,7 +119,7 @@ namespace RainWorldRandomizer.Menu
             SpoilerButton.nextSelectable[3] = SpoilerButton;
         }
 
-        public static void OnSpawnConfirmButtons(On.Menu.PauseMenu.orig_SpawnConfirmButtons orig, PauseMenu self)
+        private static void OnSpawnConfirmButtons(On.Menu.PauseMenu.orig_SpawnConfirmButtons orig, PauseMenu self)
         {
             orig(self);
             if (SpoilerButton != null)
@@ -130,7 +130,7 @@ namespace RainWorldRandomizer.Menu
             SpoilerButton = null;
         }
 
-        public static void OnMenuSignal(On.Menu.PauseMenu.orig_Singal orig, PauseMenu self, MenuObject sender, string message)
+        private static void OnMenuSignal(On.Menu.PauseMenu.orig_Singal orig, PauseMenu self, MenuObject sender, string message)
         {
             orig(self, sender, message);
             if (!Plugin.RandoManager.isRandomizerActive) return;
@@ -150,7 +150,7 @@ namespace RainWorldRandomizer.Menu
             self.AddPart(CurrentChatLog);
         }
 
-        public static void ToggleSpoilerMenu(PauseMenu self)
+        private static void ToggleSpoilerMenu(PauseMenu self)
         {
             displaySpoilerMenu = !displaySpoilerMenu;
             if (displaySpoilerMenu)

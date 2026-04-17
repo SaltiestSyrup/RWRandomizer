@@ -126,7 +126,7 @@
     <Compile Include="Menu\CurrentBuffsDisplay.cs" />
     <Compile Include="Menu\GateMapDisplay.cs" />
     <Compile Include="Menu\GatesDisplay.cs" />
-    <Compile Include="Menu\MessageText.cs" />
+    <Compile Include="Menu\MenuHelpers.cs" />
     <Compile Include="Menu\PendingItemsDisplay.cs" />
     <Compile Include="Menu\SpoilerMenu.cs" />
     <Compile Include="TokenCachePatcher.cs" />

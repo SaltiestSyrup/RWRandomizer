@@ -13,10 +13,10 @@ namespace RainWorldRandomizer.Menu;
 public class ChatLog : HudPart
 {
     private const int MAX_MESSAGES = 10;
-    protected const float MSG_SIZE_X = 300;
-    protected const float MSG_SIZE_Y = 15f;
-    protected const float MSG_MARGIN = 10f;
-    protected const float MAX_ALPHA = 0.6f;
+    private const float MSG_SIZE_X = 300;
+    private const float MSG_SIZE_Y = 15f;
+    private const float MSG_MARGIN = 10f;
+    private const float MAX_ALPHA = 0.6f;
 
     public bool forceDisplay = false;
     private bool GamePaused
@@ -75,7 +75,7 @@ public class ChatLog : HudPart
         {
             Plugin.Log.LogWarning($"Chatlog tried to print invalid message: \"{string.Join("", message.strings)}\"");
         }
-        EnqueueMessage(new ChatMessage(this, message.strings, message.colors));
+        EnqueueMessage(new ChatMessage(this, message));
     }
 
     private void EnqueueMessage(ChatMessage message)
@@ -159,102 +159,23 @@ public class ChatLog : HudPart
         FLabel[] messageLabels;
         IconSymbol[] iconSymbols;
 
-        public ChatMessage(ChatLog chatlog, string[] strings, Color[] colors)
+        public ChatMessage(ChatLog chatlog, MessageText message)
         {
             owner = chatlog;
             font = Futile.atlasManager.GetFontWithName(Custom.GetFont());
             yPos = -MSG_SIZE_Y;
-            text = string.Join("", strings);
-            wrapIndices = [];
+            text = string.Join("", message.strings);
 
-            #region String parsing / part list creation
-            List<string> capturedIDs = [];
-            int[] baseColorIndices = new int[strings.Length];
-            List<int> iconIndices = [];
-
-            int charIndex = 0;
-            for (int i = 0; i < strings.Length; i++)
-            {
-                baseColorIndices[i] = charIndex;
-
-                strings[i] = Regex.Replace(strings[i], "_icon\\d{1,2}_", ""); // Already present icon output pattern is invalid
-                strings[i] = Regex.Replace(strings[i], Environment.NewLine, " "); // Newline is invalid
-                // If there is an icon present
-                if (Regex.IsMatch(strings[i], "Icon{(\\S*)}"))
-                {
-                    // Seperate each icon for parsing
-                    string[] split = Regex.Split(strings[i], "(Icon{\\S*})");
-                    for (int j = 0; j < split.Length; j++)
-                    {
-                        if (j % 2 == 1)
-                        {
-                            iconIndices.Add(charIndex);
-                            // Capture the icon ID for use later
-                            capturedIDs.Add(Regex.Match(split[j], "Icon{(\\S*)}").Groups[1].Value);
-                            // Store back as new pattern with consistent length
-                            split[j] = $"_icon{iconIndices.Count / 2}_";
-                            iconIndices.Add(charIndex + split[j].Length);
-                        }
-                        charIndex += split[j].Length;
-                    }
-                    strings[i] = string.Join("", split);
-                }
-                else
-                {
-                    charIndex += strings[i].Length;
-                }
-            }
-
-            // Apply text wrapping
-            string fullText = string.Join("", strings);
-            string wrappedText = fullText.WrapText(false, MSG_SIZE_X);
-
-            List<int> wrapTextIndices = [];
-
-            // Trim line breaks and index them
-            string[] splitByLine = Regex.Split(wrappedText, Environment.NewLine);
-            int wrapCharIndex = 0;
-            foreach (string line in splitByLine)
-            {
-                wrapTextIndices.Add(wrapCharIndex);
-                wrapCharIndex += line.Length;
-            }
-            wrappedText = string.Join("", splitByLine);
-
-            // Split message apart one more time, at each important split index
-            List<int> unionIndices = baseColorIndices.Union(iconIndices).Union(wrapTextIndices).ToList();
-            Queue<Color> colorQueue = new(colors);
-            List<StringBuilder> finalTextList = [new StringBuilder(wrappedText[0].ToString())];
-            List<Color> finalColorList = [colorQueue.Peek()];
-            int partIndex = 0;
-            for (int i = 1; i < wrappedText.Length; i++)
-            {
-                // If a new color starts here, pop the old one
-                if (baseColorIndices.Contains(i)) colorQueue.Dequeue();
-                // Begin the next segment
-                if (unionIndices.Contains(i))
-                {
-                    partIndex++;
-                    finalTextList.Add(new StringBuilder());
-                    finalColorList.Add(colorQueue.Peek());
-                }
-                // If text wrapped here, mark it
-                if (wrapTextIndices.Contains(i))
-                {
-                    wrapIndices.Add(partIndex);
-                }
-                finalTextList[partIndex].Append(wrappedText[i]);
-            }
-            #endregion
-
-            messageLabels = new FLabel[finalTextList.Count];
-            iconSymbols = new IconSymbol[finalTextList.Count];
+            FormattedMessage formattedMessage = new FormattedMessage(message, MSG_SIZE_X, true);
+            wrapIndices = formattedMessage.wrapIndices;
+            messageLabels = new FLabel[formattedMessage.textList.Count];
+            iconSymbols = new IconSymbol[formattedMessage.textList.Count];
             height = wrapIndices.Count + 1;
 
             CreateBackgroundSprite();
 
             bool lastWasSprite = false;
-            for (int i = 0; i < finalTextList.Count; i++)
+            for (int i = 0; i < formattedMessage.textList.Count; i++)
             {
                 // Running offset to position labels in a line
                 float curOffset;
@@ -272,16 +193,16 @@ public class ChatLog : HudPart
                 }
 
                 // Create an Icon
-                Match iconMatch = Regex.Match(finalTextList[i].ToString(), "_icon(\\d{1,2})_");
+                Match iconMatch = Regex.Match(formattedMessage.textList[i], "_icon(\\d{1,2})_");
                 if (iconMatch.Success)
                 {
-                    iconSymbols[i] = CreateIcon(capturedIDs[int.Parse(iconMatch.Groups[1].Value)], curOffset);
+                    iconSymbols[i] = CreateIcon(formattedMessage.capturedIds[int.Parse(iconMatch.Groups[1].Value)], curOffset);
                     lastWasSprite = true;
                     continue;
                 }
 
                 // Create a text label
-                messageLabels[i] = CreateLabel(finalTextList[i].ToString(), curOffset, finalColorList[i]);
+                messageLabels[i] = CreateLabel(formattedMessage.textList[i], curOffset, formattedMessage.colorList[i]);
                 lastWasSprite = false;
             }
         }
