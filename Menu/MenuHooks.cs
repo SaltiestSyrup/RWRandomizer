@@ -6,7 +6,7 @@ namespace RainWorldRandomizer.Menu
 {
     public static class MenuHooks
     {
-        public static bool displaySpoilerMenu;
+        private static bool displayScrollMenu;
         private static WeakReference<SimpleButton> _spoilerButton = new(null);
         public static SimpleButton SpoilerButton
         {
@@ -18,6 +18,12 @@ namespace RainWorldRandomizer.Menu
         {
             get { return _spoilerMenu.TryGetTarget(out SpoilerMenu menu) ? menu : null; }
             set { _spoilerMenu.SetTarget(value); }
+        }
+        private static WeakReference<TextClientMenu> _textClientMenu = new(null);
+        public static TextClientMenu TextClientMenu
+        {
+            get { return _textClientMenu.TryGetTarget(out TextClientMenu menu) ? menu : null; }
+            set { _textClientMenu.SetTarget(value); }
         }
         private static WeakReference<PendingItemsDisplay> _pendingItemsDisplay = new(null);
         public static PendingItemsDisplay PendingItemsDisplay
@@ -101,14 +107,14 @@ namespace RainWorldRandomizer.Menu
 
         private static void OnMenuShutdownProcess(On.Menu.PauseMenu.orig_ShutDownProcess orig, PauseMenu self)
         {
-            displaySpoilerMenu = false;
+            displayScrollMenu = false;
             orig(self);
         }
 
         private static void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
         {
             orig(self);
-            if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
+            if (!Plugin.RandoManager.isRandomizerActive) return;
 
             SpoilerButton = new SimpleButton(self, self.pages[0], self.Translate("RANDOMIZER"), "SHOW_SPOILERS",
                 new Vector2(self.ContinueAndExitButtonsXPos - 460.2f - self.moveLeft, 15f),
@@ -152,14 +158,27 @@ namespace RainWorldRandomizer.Menu
 
         private static void ToggleSpoilerMenu(PauseMenu self)
         {
-            displaySpoilerMenu = !displaySpoilerMenu;
-            if (displaySpoilerMenu)
+            displayScrollMenu = !displayScrollMenu;
+            if (displayScrollMenu)
             {
-                SpoilerMenu = new SpoilerMenu(self, self.pages[0]);
-                self.pages[0].subObjects.Add(SpoilerMenu);
+                if (Plugin.RandoManager is ManagerArchipelago)
+                {
+                    TextClientMenu = new TextClientMenu(self, self.pages[0]);
+                    self.pages[0].subObjects.Add(TextClientMenu);
+                }
+                else
+                {
+                    SpoilerMenu = new SpoilerMenu(self, self.pages[0]);
+                    self.pages[0].subObjects.Add(SpoilerMenu);
+                }
             }
             else
             {
+                if (TextClientMenu != null)
+                {
+                    TextClientMenu.RemoveSprites();
+                    self.pages[0].RemoveSubObject(TextClientMenu);
+                }
                 if (SpoilerMenu != null)
                 {
                     SpoilerMenu.RemoveSprites();

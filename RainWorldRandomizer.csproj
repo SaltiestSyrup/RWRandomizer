@@ -129,6 +129,7 @@
     <Compile Include="Menu\MenuHelpers.cs" />
     <Compile Include="Menu\PendingItemsDisplay.cs" />
     <Compile Include="Menu\SpoilerMenu.cs" />
+    <Compile Include="Menu\TextClientMenu.cs" />
     <Compile Include="TokenCachePatcher.cs" />
     <Compile Include="Generation\Item.cs" />
     <Compile Include="Generation\Location.cs" />

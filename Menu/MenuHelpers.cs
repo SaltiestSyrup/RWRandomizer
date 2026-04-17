@@ -51,7 +51,7 @@ public class FormattedMessage
     public List<string> textList;
     public List<Color> colorList;
     public List<int> wrapIndices;
-    public List<string> capturedIds;
+    public List<string> capturedIconIds;
 
     public FormattedMessage(MessageText message, float lineWidth, bool parseIcons = false)
     {
@@ -60,6 +60,7 @@ public class FormattedMessage
 
         int[] baseColorIndices;
         int[] iconIndices = [];
+        capturedIconIds = [];
         if (parseIcons)
         {
             (baseColorIndices, iconIndices) = CaptureIcons(strings);
@@ -67,7 +68,7 @@ public class FormattedMessage
         else
         {
             // Find where in the sum string the colors change
-            baseColorIndices = new int[strings.Length];;
+            baseColorIndices = new int[strings.Length];
             int charIndex = 0;
             for (int i = 0; i < strings.Length; i++)
             {
@@ -121,9 +122,53 @@ public class FormattedMessage
         textList = [..finalTextList.Select(t => t.ToString())];
     }
 
+    private FormattedMessage(List<string> textList, List<Color> colorList, List<int> wrapIndices, List<string> capturedIconIds)
+    {
+        this.textList = textList;
+        this.colorList = colorList;
+        this.wrapIndices = wrapIndices;
+        this.capturedIconIds = capturedIconIds;
+    }
+    
+    /// <summary>
+    /// Splits a <see cref="FormattedMessage"/> into parts based on where line wraps occur, and returns it as an array.
+    /// </summary>
+    public FormattedMessage[] SplitByLine()
+    {
+        FormattedMessage[] split = new FormattedMessage[wrapIndices.Count + 1];
+
+        Queue<string> capturedIconIdsQueue = new();
+        foreach (string id in capturedIconIds)
+            capturedIconIdsQueue.Enqueue(id);
+        
+        List<string> lineTextList = [];
+        List<Color> lineColorList = [];
+        List<string> lineCapturedIconIds = [];
+        for (int i = 0; i < textList.Count; i++)
+        {
+            if (wrapIndices.Contains(i))
+            {
+                split[wrapIndices.IndexOf(i)] =
+                    new FormattedMessage(lineTextList, lineColorList, [], lineCapturedIconIds);
+                lineTextList = [];
+                lineColorList = [];
+                lineCapturedIconIds = [];
+            }
+            
+            lineTextList.Add(textList[i]);
+            lineColorList.Add(colorList[i]);
+            
+            if (Regex.IsMatch(textList[i], "_icon(\\d{1,2})_"))
+                lineCapturedIconIds.Add(capturedIconIdsQueue.Dequeue());
+        }
+        
+        split[split.Length - 1] =
+            new FormattedMessage(lineTextList, lineColorList, [], lineCapturedIconIds);
+        return split;
+    }
+
     private (int[], int[]) CaptureIcons(string[] strings)
     {
-        capturedIds = [];
         int[] baseColorIndices = new int[strings.Length];
         List<int> iconIndices = [];
         
@@ -145,7 +190,7 @@ public class FormattedMessage
                     {
                         iconIndices.Add(charIndex);
                         // Capture the icon ID for use later
-                        capturedIds.Add(Regex.Match(split[j], "Icon{(\\S*)}").Groups[1].Value);
+                        capturedIconIds.Add(Regex.Match(split[j], "Icon{(\\S*)}").Groups[1].Value);
                         // Store back as new pattern with consistent length
                         split[j] = $"_icon{iconIndices.Count / 2}_";
                         iconIndices.Add(charIndex + split[j].Length);

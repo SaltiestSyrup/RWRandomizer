@@ -16,8 +16,8 @@ namespace RainWorldRandomizer.Menu
     // This could be abstracted even more to make a generic scroll box menu object, all it really needs is resizing capabilities. Might be useful to do down the line.
     public abstract class RandomizerStatusMenu : RectangularMenuObject, Slider.ISliderOwner, SelectOneButton.SelectOneButtonOwner
     {
-        protected readonly float entryWidth = 0.9f;
-        protected readonly float entryHeight = 0.05f;
+        protected float entryWidth = 0.9f;
+        protected float entryHeight = 0.05f;
 
         public RoundedRect roundedRect;
         public LevelSelector.ScrollButton scrollUpButton;
@@ -276,10 +276,9 @@ namespace RainWorldRandomizer.Menu
                 if (fade == 0f && lastFade == 0f)
                 {
                     sleep = true;
-                    for (int i = 0; i < roundedRect.sprites.Length; i++)
-                    {
-                        roundedRect.sprites[i].isVisible = false;
-                    }
+                    if (roundedRect != null)
+                        foreach (FSprite sprite in roundedRect.sprites)
+                            sprite.isVisible = false;
                 }
             }
 
@@ -290,12 +289,12 @@ namespace RainWorldRandomizer.Menu
                 base.GrafUpdate(timeStacker);
                 float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
 
-                if (smoothedFade > 0f)
+                if (smoothedFade > 0f && roundedRect != null)
                 {
-                    for (int i = 0; i < roundedRect.sprites.Length; i++)
+                    foreach (var sprite in roundedRect.sprites)
                     {
-                        roundedRect.sprites[i].alpha = smoothedFade;
-                        roundedRect.sprites[i].isVisible = true;
+                        sprite.alpha = smoothedFade;
+                        sprite.isVisible = true;
                     }
                 }
             }
@@ -457,7 +456,7 @@ namespace RainWorldRandomizer.Menu
             // Is there a better way to do this? Probably.
             List<SpoilerEntry> sorted = [.. filteredEntries.Cast<SpoilerEntry>()];
             sorted.Sort(comparison);
-            filteredEntries = [.. sorted.Cast<Entry>()];
+            filteredEntries = [.. sorted];
         }
 
         public override void Singal(MenuObject sender, string message)

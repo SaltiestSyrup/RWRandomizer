@@ -196,7 +196,7 @@ public class ChatLog : HudPart
                 Match iconMatch = Regex.Match(formattedMessage.textList[i], "_icon(\\d{1,2})_");
                 if (iconMatch.Success)
                 {
-                    iconSymbols[i] = CreateIcon(formattedMessage.capturedIds[int.Parse(iconMatch.Groups[1].Value)], curOffset);
+                    iconSymbols[i] = CreateIcon(formattedMessage.capturedIconIds[int.Parse(iconMatch.Groups[1].Value)], curOffset);
                     lastWasSprite = true;
                     continue;
                 }
