@@ -15,7 +15,9 @@ public class TextClientMenu : RandomizerStatusMenu
     
     public TextClientMenu(RWMenu menu, MenuObject owner) : base(menu, owner)
     {
-        entryHeight = 0.03f * size.y;
+        entryHeight = 0.02f * size.y;
+        ScrollPos = LastPossibleScroll;
+        floatScrollPos = ScrollPos;
     }
 
     protected override void PopulateEntries()
