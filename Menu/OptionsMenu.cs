@@ -243,6 +243,8 @@ namespace RainWorldRandomizer.Menu
             RandoOptions.filterPlayerChatLogs = config.Bind<bool>("FilterPlayerChatLogs", false,
                 new ConfigurableInfo("Stop player sent chat messages from showing up in game", null, "",
                     ["Don't Notify Chat Messages"]));
+
+            RandoOptions.textClientCosmeticConfig = config.Bind<string>("_TextClient", " ");
         }
 
         public override void Initialize()

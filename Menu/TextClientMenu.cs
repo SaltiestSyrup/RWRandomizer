@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Menu;
+using Menu.Remix;
+using Menu.Remix.MixedUI;
 using RWCustom;
 using UnityEngine;
 using RWMenu = Menu.Menu;
@@ -12,12 +14,25 @@ public class TextClientMenu : RandomizerStatusMenu
     // static list of all stored text lines
     // ^ give this an upper bound for size
     private static Queue<MessageText> StoredMessages = new(MAX_MESSAGES);
+
+    private OpTextBox textBox;
+    private MenuTabWrapper tabWrapper;
+    private UIelementWrapper textBoxWrapper;
     
     public TextClientMenu(RWMenu menu, MenuObject owner) : base(menu, owner)
     {
         entryHeight = 0.02f * size.y;
         ScrollPos = LastPossibleScroll;
         floatScrollPos = ScrollPos;
+
+        tabWrapper = new MenuTabWrapper(menu, this);
+        subObjects.Add(tabWrapper);
+        
+        textBox = new OpTextBox(RandoOptions.textClientCosmeticConfig,
+            new Vector2(0.01f, -30f),
+            size.x);
+        textBox.value = "";
+        textBoxWrapper = new UIelementWrapper(tabWrapper, textBox);
     }
 
     protected override void PopulateEntries()

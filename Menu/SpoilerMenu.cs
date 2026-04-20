@@ -144,28 +144,23 @@ namespace RainWorldRandomizer.Menu
             sliderPulled = true;
         }
 
-        public float StepsDownOfItem(int index)
+        private float StepsDownOfItem(int index)
         {
-            float val = Mathf.Min(index, filteredEntries.Count - 1) + 1;
-            for (int i = 0; i <= Mathf.Min(index, filteredEntries.Count - 1); i++)
-            {
-                val += 1f;
-            }
             return Mathf.Min(index, filteredEntries.Count - 1) + 1;
         }
 
-        public float IdealYPosForItem(int index)
+        protected float IdealYPosForItem(int index)
         {
             return size.y - ((entryHeight + 10f) * (StepsDownOfItem(index) - floatScrollPos)) - 7f;
         }
 
-        public void AddScroll(int scrollDir)
+        private void AddScroll(int scrollDir)
         {
             ScrollPos += scrollDir;
             ConstrainScroll();
         }
 
-        public void ConstrainScroll()
+        private void ConstrainScroll()
         {
             if (ScrollPos > LastPossibleScroll)
             {
