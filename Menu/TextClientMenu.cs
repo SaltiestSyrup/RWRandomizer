@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Menu;
 using Menu.Remix;
@@ -14,6 +15,8 @@ public class TextClientMenu : RandomizerStatusMenu
     // static list of all stored text lines
     // ^ give this an upper bound for size
     private static Queue<MessageText> StoredMessages = new(MAX_MESSAGES);
+    private static Action<MessageText> OnMessageReceived = s => { };
+    private static bool pausedDevToolsInput;
 
     private OpTextBox textBox;
     private MenuTabWrapper tabWrapper;
@@ -32,7 +35,12 @@ public class TextClientMenu : RandomizerStatusMenu
             new Vector2(0.01f, -30f),
             size.x);
         textBox.allowSpace = true;
+        textBox.OnKeyDown += TextBoxKeyDown;
+        textBox.OnUpdate += TextBoxUpdate;
+        
         textBoxWrapper = new UIelementWrapper(tabWrapper, textBox);
+
+        OnMessageReceived += LiveAddMessage;
     }
 
     protected override void PopulateEntries()
@@ -49,6 +57,7 @@ public class TextClientMenu : RandomizerStatusMenu
                 messages[i]));
             subObjects.Add(entries[i]);
         }
+        
         filteredEntries = entries;
     }
 
@@ -61,10 +70,65 @@ public class TextClientMenu : RandomizerStatusMenu
 
     public override void SetCurrentlySelectedOfSeries(string series, int to) { }
 
+    /// <summary>
+    /// Detect enter inputs and send chat messages
+    /// </summary>
+    private void TextBoxKeyDown(char c)
+    {
+        if (c is '\n' or '\r')
+        {
+            Plugin.Log.LogDebug(textBox.value);
+            ArchipelagoConnection.SendChatMessage(textBox.value);
+            textBox.value = "";
+        }
+    }
+
+    /// <summary>
+    /// Pause Dev tools keybinds while typing messages
+    /// </summary>
+    private void TextBoxUpdate()
+    {
+        if (textBox._KeyboardOn && Plugin.Singleton.Game?.devToolsActive is true)
+        {
+            pausedDevToolsInput = true;
+            Plugin.Singleton.Game.devToolsActive = false;
+        }
+        else if (!textBox._KeyboardOn && pausedDevToolsInput && Plugin.Singleton.Game is not null)
+        {
+            pausedDevToolsInput = false;
+            Plugin.Singleton.Game.devToolsActive = true;
+        }
+    }
+
+    private void LiveAddMessage(MessageText message)
+    {
+        FormattedMessage[] lines = new FormattedMessage(message, entryWidth).SplitByLine();
+
+        int prevEntryCount = entries.Count;
+        for (int i = prevEntryCount; i < prevEntryCount + lines.Length; i++)
+        {
+            entries.Add(new TextClientEntry(menu, this, 
+                new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(i)),
+                new Vector2(entryWidth, entryHeight),
+                lines[i - prevEntryCount]));
+            subObjects.Add(entries[i]);
+        }
+
+        filteredEntries = entries;
+        ScrollPos = LastPossibleScroll;
+    }
+
+    public void Remove()
+    {
+        RemoveSprites();
+        OnMessageReceived -= LiveAddMessage;
+    }
+    
     public static void StoreMessage(MessageText message)
     {
         while (StoredMessages.Count > MAX_MESSAGES - 1) StoredMessages.Dequeue();
         StoredMessages.Enqueue(message);
+        OnMessageReceived(message);
     }
 
     public static void ClearStoredMessages()
@@ -83,14 +147,11 @@ public class TextClientMenu : RandomizerStatusMenu
         
         public TextClientEntry(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, FormattedMessage message) : base(menu, owner, pos, size)
         {
-            Plugin.Log.LogDebug(message.textList.Count);
             labels = new MenuLabel[message.textList.Count];
             float curOffset = 0f;
             for (int i = 0; i < message.textList.Count; i++)
             {
                 if (i > 0) curOffset += labels[i - 1].label.textRect.width + 1f;
-                
-                if (i > 0) Plugin.Log.LogDebug($"{labels[i - 1].label.x} + {labels[i - 1].label.textRect.width}");
                 
                 labels[i] = new MenuLabel(menu, this, message.textList[i], 
                     new Vector2(curOffset + 5.01f, 0.01f), 

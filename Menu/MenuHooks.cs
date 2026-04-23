@@ -176,15 +176,16 @@ namespace RainWorldRandomizer.Menu
             {
                 if (TextClientMenu != null)
                 {
-                    TextClientMenu.RemoveSprites();
+                    TextClientMenu.Remove();
                     self.pages[0].RemoveSubObject(TextClientMenu);
+                    TextClientMenu = null;
                 }
                 if (SpoilerMenu != null)
                 {
                     SpoilerMenu.RemoveSprites();
                     self.pages[0].RemoveSubObject(SpoilerMenu);
+                    SpoilerMenu = null;
                 }
-                SpoilerMenu = null;
             }
         }
     }

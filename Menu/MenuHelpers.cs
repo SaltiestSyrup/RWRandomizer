@@ -94,7 +94,7 @@ public class FormattedMessage
         wrappedText = string.Join("", splitByLine);
         
         // Split message apart one more time, at each important split index
-        List<int> unionIndices = [..baseColorIndices.Union(iconIndices).Union(wrapTextIndices)];
+        int[] unionIndices = [..baseColorIndices.Union(iconIndices).Union(wrapTextIndices)];
         Queue<Color> colorQueue = new(colors);
         List<StringBuilder> finalTextList = [new(wrappedText[0].ToString())];
         colorList = [colorQueue.Peek()];
@@ -157,8 +157,7 @@ public class FormattedMessage
             
             lineTextList.Add(textList[i]);
             lineColorList.Add(colorList[i]);
-            
-            if (Regex.IsMatch(textList[i], "_icon(\\d{1,2})_"))
+            if (capturedIconIdsQueue.Count > 0 && Regex.IsMatch(textList[i], "_icon(\\d{1,2})_"))
                 lineCapturedIconIds.Add(capturedIconIdsQueue.Dequeue());
         }
         

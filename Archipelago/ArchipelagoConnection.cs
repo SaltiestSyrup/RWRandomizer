@@ -497,6 +497,11 @@ namespace RainWorldRandomizer
             }
         }
 
+        public static void SendChatMessage(string message)
+        {
+            Session?.Socket.SendPacketAsync(new SayPacket() {Text = message});
+        }
+
         private static void ErrorReceived(Exception e, string msg)
         {
             Plugin.Log.LogError(e);
