@@ -31,7 +31,7 @@ public class TextClientMenu : RandomizerStatusMenu
         textBox = new OpTextBox(RandoOptions.textClientCosmeticConfig,
             new Vector2(0.01f, -30f),
             size.x);
-        textBox.value = "";
+        textBox.allowSpace = true;
         textBoxWrapper = new UIelementWrapper(tabWrapper, textBox);
     }
 
