@@ -379,11 +379,12 @@ namespace RainWorldRandomizer
             c.Index--;
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate(IsNotWatcher);
+            c.EmitDelegate(IsWatcher);
+            return;
 
             // Why rewrite your hook when you could just re-add part of the original condition in a delegate :)
             // If using Watcher passages, the mod that enables that will remove the Watcher check itself
-            static bool IsNotWatcher(SleepAndDeathScreen self) => self.saveState?.saveStateNumber != WatcherEnums.SlugcatStatsName.Watcher;
+            static bool IsWatcher(SleepAndDeathScreen self) => self.saveState?.saveStateNumber == WatcherEnums.SlugcatStatsName.Watcher;
         }
 
         /// <summary>
