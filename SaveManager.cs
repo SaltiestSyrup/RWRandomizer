@@ -162,8 +162,8 @@ namespace RainWorldRandomizer
 
         #region Archipelago save data
 
-        const string SCOUTED_LOCS_KEY = "RANDOMIZER_SCOUTED_LOCS";
-        private static Dictionary<string, ItemFlags> _scoutedLocations = null;
+        private const string SCOUTED_LOCS_KEY = "RANDOMIZER_SCOUTED_LOCS";
+        private static Dictionary<string, ItemFlags> _scoutedLocations;
         public static Dictionary<string, ItemFlags> ScoutedLocations
         {
             get
@@ -204,6 +204,11 @@ namespace RainWorldRandomizer
             // Write to DeathPersistentSaveData
             if (savedData is null) dpsd.unrecognizedSaveStrings.Add(newData);
             else dpsd.unrecognizedSaveStrings[index] = newData;
+        }
+
+        public static void ClearScoutedLocationCache()
+        {
+            _scoutedLocations = null;
         }
 
         public struct APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
