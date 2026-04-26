@@ -11,7 +11,7 @@ namespace RainWorldRandomizer.Menu;
 /// </summary>
 public class PendingItemsDisplay : RectangularMenuObject
 {
-    private const int BASE_ELEMENTS_PER_ROW = 15;
+    private const int BASE_ELEMENTS_PER_ROW = 10;
     private const int MAXIMUM_ROWS = 9;
     public readonly int elementsPerRow = BASE_ELEMENTS_PER_ROW;
 

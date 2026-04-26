@@ -15,14 +15,21 @@ public class TextClientMenu : RandomizerStatusMenu
     // static list of all stored text lines
     // ^ give this an upper bound for size
     private static Queue<MessageText> StoredMessages = new(MAX_MESSAGES);
-    private static Action<MessageText> OnMessageReceived = s => { };
+    private static Action<MessageText> OnMessageReceived = _ => { };
     private static bool pausedDevToolsInput;
 
     private OpTextBox textBox;
     private MenuTabWrapper tabWrapper;
     private UIelementWrapper textBoxWrapper;
     
-    public TextClientMenu(RWMenu menu, MenuObject owner) : base(menu, owner)
+    // TODO
+    // Make pending items use "pages"
+    // Set text input background alpha
+    // load menu contents on separate thread
+    // Limit max entries in live update
+    // Polling system for live updates instead of instant response??
+    
+    public TextClientMenu(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
     {
         entryHeight = 0.02f * size.y;
         ScrollPos = LastPossibleScroll;
@@ -41,6 +48,10 @@ public class TextClientMenu : RandomizerStatusMenu
         textBoxWrapper = new UIelementWrapper(tabWrapper, textBox);
 
         OnMessageReceived += LiveAddMessage;
+        
+        // Remove unneeded elements
+        scrollDownButton.RemoveSprites();
+        scrollUpButton.RemoveSprites();
     }
 
     protected override void PopulateEntries()

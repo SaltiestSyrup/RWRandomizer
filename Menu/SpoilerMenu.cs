@@ -49,8 +49,8 @@ namespace RainWorldRandomizer.Menu
             }
         }
 
-        public RandomizerStatusMenu(RWMenu menu, MenuObject owner) :
-            base(menu, owner, new Vector2(menu.manager.rainWorld.screenSize.x * 0.35f, menu.manager.rainWorld.screenSize.y * 0.125f + 60f), default)
+        public RandomizerStatusMenu(RWMenu menu, MenuObject owner, Vector2 pos) :
+            base(menu, owner, pos, default)
         {
             menu.manager.menuMic = new MenuMicrophone(menu.manager, menu.manager.soundLoader);
 
@@ -63,7 +63,7 @@ namespace RainWorldRandomizer.Menu
 
             // Bounding box
             roundedRect = new RoundedRect(menu, this, default, size, true)
-            { fillAlpha = 0.9f };
+            { fillAlpha = 1f };
             subObjects.Add(roundedRect);
 
             // Entries
@@ -346,7 +346,7 @@ namespace RainWorldRandomizer.Menu
             };
         }
 
-        public SpoilerMenu(RWMenu menu, MenuObject owner) : base(menu, owner)
+        public SpoilerMenu(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
         {
             // Filter Menu
             filterSelectRect = new RoundedRect(menu, this, new Vector2(0.01f, -98.01f), new Vector2(size.x, 70f), true)

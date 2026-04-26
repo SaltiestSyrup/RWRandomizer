@@ -285,6 +285,7 @@ namespace RainWorldRandomizer
             HasConnected = false;
             CurrentlyConnecting = false;
             ReceivedSlotData = false;
+            TextClientMenu.ClearStoredMessages();
 
             if (resetManager)
             {
