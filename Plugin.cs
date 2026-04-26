@@ -544,8 +544,8 @@ namespace RainWorldRandomizer
 
             string properAcro1 = ProperRegionMap.ContainsKey(gateSplit[1]) ? ProperRegionMap[gateSplit[1]] : "";
             string properAcro2 = ProperRegionMap.ContainsKey(gateSplit[2]) ? ProperRegionMap[gateSplit[2]] : "";
-            string name1 = RegionNamesMap.ContainsKey(properAcro1) ? RegionNamesMap[properAcro1] : "nullRegion";
-            string name2 = RegionNamesMap.ContainsKey(properAcro2) ? RegionNamesMap[properAcro2] : "nullRegion";
+            string name1 = RegionNamesMap.TryGetValue(properAcro1, out var reg1) ? reg1 : "nullRegion";
+            string name2 = RegionNamesMap.TryGetValue(properAcro2, out var reg2) ? reg2 : "nullRegion";
             string output = gate switch
             {
                 "GATE_SS_UW" => "Five Pebbles <-> The Wall",
@@ -566,9 +566,8 @@ namespace RainWorldRandomizer
         {
             string[] gateSplit = Regex.Split(gate, "_");
             if (gateSplit.Length < 3) return gate;
-            string output;
 
-            output = $"{gateSplit[1]} <-> {gateSplit[2]}";
+            string output = $"{gateSplit[1]} <-> {gateSplit[2]}";
 
             if (Constants.OneWayGates.ContainsKey(gate))
             {

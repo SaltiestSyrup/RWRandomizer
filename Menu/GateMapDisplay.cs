@@ -44,9 +44,13 @@ namespace RainWorldRandomizer
             }
             subObjects.AddRange(nodes.Values);
 
-            IEnumerable<string> gates =
-                Plugin.RandoManager.GetGatesStatus().Where(x => x.Value).Select(x => x.Key)
-                .Union(Items.GetAllOpenWarps().Select(x => $"Warp-{x}"));
+            List<string> gates =
+                Plugin.RandoManager.GetGatesStatus()
+                    .Where(x => x.Value)
+                    .Select(x => x.Key)
+                    .Union(Items.GetAllOpenWarps().Select(x => $"Warp-{x}"))
+                    .Union(Constants.ForceOpenGates)
+                    .ToList();
 
             foreach (string gate in gates)
             {
@@ -241,6 +245,9 @@ namespace RainWorldRandomizer
                 if (Scug is not "Artificer" and not "Spear")
                 {
                     connectors["GATE_MS_SL"] = new Connector(nodes["SL"].TopRight, nodes["MS"].Bottom);
+                }
+                if (Scug is "Rivulet" or "Saint")
+                {
                     connectors["GATE_SL_MS"] = new Connector(nodes["SL"].Top, nodes["MS"].BottomLeft);
                 }
                 if (Scug is "Saint")
