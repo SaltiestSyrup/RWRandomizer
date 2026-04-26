@@ -48,6 +48,8 @@ namespace RainWorldRandomizer
             }
 
             // Load save file
+            SaveManager.ClearScoutedLocationCache();
+            
             string saveId = $"{ArchipelagoConnection.generationSeed}_{ArchipelagoConnection.playerName}";
             try
             {
