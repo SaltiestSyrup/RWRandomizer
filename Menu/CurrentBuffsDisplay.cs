@@ -26,7 +26,7 @@ namespace RainWorldRandomizer.Menu
             List<string> obtainedBuffs = [];
             if (Plugin.RandoManager.NumDamageUpgrades > 0)
             {
-                obtainedBuffs.Add($"Spear Damage +{(Plugin.RandoManager.SpearDamageMultiplier - 1) * 100}%");
+                obtainedBuffs.Add($"Spear Damage +{(int)((Plugin.RandoManager.SpearDamageMultiplier - 1) * 100)}%");
             }
             foreach (int p in Enum.GetValues(typeof(ManagerBase.ExpeditionPerks)))
             {

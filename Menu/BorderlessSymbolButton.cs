@@ -11,6 +11,7 @@ public class BorderlessSymbolButton : ButtonTemplate
     private readonly Color baseColor;
     private readonly Color greyColor;
     private readonly float baseScale;
+    private bool disabled;
 
     public BorderlessSymbolButton(RWMenu menu, MenuObject owner, string symbolName, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
     {
@@ -32,6 +33,24 @@ public class BorderlessSymbolButton : ButtonTemplate
         greyColor = RWMenu.MenuRGB(RWMenu.MenuColors.VeryDarkGrey);
         baseScale = sprite.scale;
         Container.AddChild(symbolSprite);
+    }
+
+    public void Disable()
+    {
+        disabled = true;
+        buttonBehav.greyedOut = true;
+    }
+
+    public void Hide()
+    {
+        buttonBehav.greyedOut = true;
+        symbolSprite.alpha = 0f;
+    }
+
+    public void Show()
+    {
+        buttonBehav.greyedOut = disabled;
+        symbolSprite.alpha = 1f;
     }
 
     public override void Update()

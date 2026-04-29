@@ -23,7 +23,6 @@ public class TextClientMenu : RandomizerStatusMenu
     private UIelementWrapper textBoxWrapper;
     
     // TODO
-    // Make pending items use "pages"
     // Set text input background alpha
     // load menu contents on separate thread
     // Limit max entries in live update
