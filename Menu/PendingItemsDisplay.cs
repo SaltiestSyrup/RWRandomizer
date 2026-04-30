@@ -55,7 +55,6 @@ public class PendingItemsDisplay : RectangularMenuObject
         for (int i = 0; i < pendingItems.Length; i++)
         {
             int j = i % elementsPerPage;
-            Plugin.Log.LogDebug(j);
             buttons[i] = new BorderlessSymbolButton(menu, this, ItemToFSprite(pendingItems[i]), $"OBJ_{i}",
                 new Vector2(30f * (j % dimensions.x) + 5f, -(30f * Mathf.FloorToInt(j / dimensions.x)) - 55f));
             subObjects.Add(buttons[i]);

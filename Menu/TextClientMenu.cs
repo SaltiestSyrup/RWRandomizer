@@ -11,9 +11,8 @@ namespace RainWorldRandomizer.Menu;
 
 public class TextClientMenu : RandomizerStatusMenu
 {
-    private const int MAX_MESSAGES = 200;
-    // static list of all stored text lines
-    // ^ give this an upper bound for size
+    private const int MAX_MESSAGES = 100;
+    
     private static Queue<MessageText> StoredMessages = new(MAX_MESSAGES);
     private static Action<MessageText> OnMessageReceived = _ => { };
     private static bool pausedDevToolsInput;
@@ -25,8 +24,7 @@ public class TextClientMenu : RandomizerStatusMenu
     // TODO
     // Set text input background alpha
     // load menu contents on separate thread
-    // Limit max entries in live update
-    // Polling system for live updates instead of instant response??
+    // make entries render based on if they're currently in view rather than if they should be
     
     public TextClientMenu(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
     {
@@ -87,9 +85,9 @@ public class TextClientMenu : RandomizerStatusMenu
     {
         if (c is '\n' or '\r')
         {
-            Plugin.Log.LogDebug(textBox.value);
             ArchipelagoConnection.SendChatMessage(textBox.value);
             textBox.value = "";
+            textBox._KeyboardOn = true;
         }
     }
 
@@ -124,8 +122,22 @@ public class TextClientMenu : RandomizerStatusMenu
             subObjects.Add(entries[i]);
         }
 
+        int entriesOverMax = entries.Count - (int)(MAX_MESSAGES * 2f);
+        if (entriesOverMax > 0)
+        {
+            List<Entry> toRemove = entries.GetRange(0, entriesOverMax);
+            toRemove.ForEach(e =>
+            {
+                e.RemoveSprites();
+                RemoveSubObject(e);
+            });
+            entries.RemoveRange(0, entriesOverMax);
+            floatScrollPos -= entriesOverMax;
+        }
+
+        bool wasScrolledNearBottom = LastPossibleScroll - ScrollPos < 5;
         filteredEntries = entries;
-        ScrollPos = LastPossibleScroll;
+        if (wasScrolledNearBottom) ScrollPos = LastPossibleScroll;
     }
 
     public void Remove()
@@ -136,7 +148,7 @@ public class TextClientMenu : RandomizerStatusMenu
     
     public static void StoreMessage(MessageText message)
     {
-        while (StoredMessages.Count > MAX_MESSAGES - 1) StoredMessages.Dequeue();
+        while (StoredMessages.Count >= MAX_MESSAGES) StoredMessages.Dequeue();
         StoredMessages.Enqueue(message);
         OnMessageReceived(message);
     }
