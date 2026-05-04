@@ -125,7 +125,7 @@ namespace RainWorldRandomizer.Menu
         private static void OnMenuShutdownProcess(On.Menu.PauseMenu.orig_ShutDownProcess orig, PauseMenu self)
         {
             displayScrollMenu = false;
-            TextClientMenu.Remove();
+            TextClientMenu?.Remove();
             orig(self);
         }
 
