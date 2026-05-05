@@ -4,7 +4,6 @@ using MoreSlugcats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace RainWorldRandomizer
@@ -29,6 +28,7 @@ namespace RainWorldRandomizer
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update += OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update += OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update += OnSpearEndingUpdate;
+            On.MoreSlugcats.Love.Reboot += OnLoveReboot;
 
             try
             {
@@ -55,6 +55,8 @@ namespace RainWorldRandomizer
             On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.Update -= OnOEEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update -= OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update -= OnSpearEndingUpdate;
+            On.MoreSlugcats.Love.Reboot -= OnLoveReboot;
+            
             IL.RainWorldGame.ctor -= RainWorldGameCtorIL;
             IL.WinState.CycleCompleted -= ILCycleCompleted;
         }
@@ -605,6 +607,17 @@ namespace RainWorldRandomizer
             {
                 (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
             }
+        }
+        
+        /// <summary>
+        /// Detect Saint secret FEZ ending trigger. Acts as a failsafe to make sure player still goals if they get fancy with it
+        /// </summary>
+        private static void OnLoveReboot(On.MoreSlugcats.Love.orig_Reboot orig, Love self)
+        {
+            orig(self);
+            if (self.animator is null) return;
+            
+            (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
         }
 
         public static bool TryGivePlayerItem(this RainWorldGame game, Unlock.Item item)
