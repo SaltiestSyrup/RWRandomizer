@@ -480,7 +480,7 @@ namespace RainWorldRandomizer
                             spriteName = "GuidanceMoon";
                             break;
                         case "Save_LttM":
-                            spriteName = "GuidanceNeuron";
+                            spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
                             spriteColor = CollectToken.GreenColor.rgb;
                             break;
                         case "Meet_Ripple_Elder":
