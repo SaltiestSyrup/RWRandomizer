@@ -94,10 +94,10 @@ namespace RainWorldRandomizer.WatcherIntegration
             RippleIncrements = 0;
         }
 
-        internal static List<string> GetAllOpenWarps()
+        internal static HashSet<string> GetAllOpenWarps()
         {
-            List<string> ret = [.. CollectedStaticKeys, .. unkeyableWarps];
-            if (!Settings.spinningTopKeys) ret.AddRange(spinningTopWarps);
+            HashSet<string> ret = [.. CollectedStaticKeys, .. unkeyableWarps];
+            if (!Settings.spinningTopKeys) ret.UnionWith(spinningTopWarps);
             return ret;
         }
 
