@@ -241,9 +241,9 @@ namespace RainWorldRandomizer.Menu
                     }
                 }
 
-                active = myindex >= statusMenu.ScrollPos
-                    && myindex < statusMenu.ScrollPos + statusMenu.MaxVisibleItems;
-
+                active = myindex >= statusMenu.floatScrollPos
+                    && myindex < statusMenu.floatScrollPos + statusMenu.MaxVisibleItems;
+                
                 if (sleep)
                 {
                     if (!active)
@@ -253,7 +253,7 @@ namespace RainWorldRandomizer.Menu
                     sleep = false;
                 }
 
-                float value = (statusMenu.StepsDownOfItem(myindex) - 1f);
+                float value = statusMenu.StepsDownOfItem(myindex) - 1f;
                 float fadeTowards = 1f;
                 if (myindex < statusMenu.floatScrollPos)
                 {
@@ -265,8 +265,8 @@ namespace RainWorldRandomizer.Menu
                     fadeTowards = Mathf.InverseLerp(sum, sum - 1, value);
                 }
 
-                fade = Custom.LerpAndTick(fade, fadeTowards, 0.08f, 0.1f);
-                fade = Mathf.Lerp(fade, fadeTowards, Mathf.InverseLerp(0.5f, 0.45f, 0.5f));
+                fade = Custom.LerpAndTick(fade, fadeTowards, 0.12f, 0.1f);
+                // fade = Mathf.Lerp(fade, fadeTowards, Mathf.InverseLerp(0.5f, 0.45f, 0.5f));
 
                 if (fade == 0f && lastFade == 0f)
                 {

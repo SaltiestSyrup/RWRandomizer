@@ -16,7 +16,9 @@ public class TextClientMenu : RandomizerStatusMenu
     // Holds the last [MAX_MESSAGES] messages, which are rendered on pause.
     // We do not remember the whole history. Because memory.
     private static Queue<MessageText> StoredMessages = new(MAX_MESSAGES);
-    private static Action<MessageText> OnMessageReceived = _ => { };
+    // Holds messages to be added while the client is open.
+    // Appended to on message receive, cleared on 
+    private static Queue<MessageText> LiveUpdateQueue = new();
     private static bool pausedDevToolsInput;
 
     private RoundedRect textBoxBackground;
@@ -24,14 +26,12 @@ public class TextClientMenu : RandomizerStatusMenu
     private MenuTabWrapper tabWrapper;
     private UIelementWrapper textBoxWrapper;
     
-    // TODO
-    // make entries render based on if they're currently in view rather than if they should be
-    
     public TextClientMenu(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
     {
         entryHeight = 0.02f * size.y;
         ScrollPos = LastPossibleScroll;
         floatScrollPos = ScrollPos;
+        LiveUpdateQueue.Clear();
 
         // Hack to give the text box a solid black background
         textBoxBackground = new RoundedRect(menu, this,
@@ -58,8 +58,6 @@ public class TextClientMenu : RandomizerStatusMenu
         textBox.OnUpdate += TextBoxUpdate;
         
         textBoxWrapper = new UIelementWrapper(tabWrapper, textBox);
-
-        OnMessageReceived += LiveAddMessage;
         
         // Remove unneeded elements
         scrollDownButton.RemoveSprites();
@@ -94,6 +92,16 @@ public class TextClientMenu : RandomizerStatusMenu
     }
 
     public override void SetCurrentlySelectedOfSeries(string series, int to) { }
+
+    public override void Update()
+    {
+        base.Update();
+
+        if (LiveUpdateQueue.Count > 0)
+        {
+            LiveAddMessage(LiveUpdateQueue.Dequeue());
+        }
+    }
 
     /// <summary>
     /// Detect enter inputs and send chat messages
@@ -168,14 +176,13 @@ public class TextClientMenu : RandomizerStatusMenu
     public void Remove()
     {
         RemoveSprites();
-        OnMessageReceived -= LiveAddMessage;
     }
     
     public static void StoreMessage(MessageText message)
     {
         while (StoredMessages.Count >= MAX_MESSAGES) StoredMessages.Dequeue();
         StoredMessages.Enqueue(message);
-        OnMessageReceived(message);
+        LiveUpdateQueue.Enqueue(message);
     }
 
     public static void ClearStoredMessages()
