@@ -13,17 +13,18 @@ public class TextClientMenu : RandomizerStatusMenu
 {
     private const int MAX_MESSAGES = 100;
     
+    // Holds the last [MAX_MESSAGES] messages, which are rendered on pause.
+    // We do not remember the whole history. Because memory.
     private static Queue<MessageText> StoredMessages = new(MAX_MESSAGES);
     private static Action<MessageText> OnMessageReceived = _ => { };
     private static bool pausedDevToolsInput;
 
+    private RoundedRect textBoxBackground;
     private OpTextBox textBox;
     private MenuTabWrapper tabWrapper;
     private UIelementWrapper textBoxWrapper;
     
     // TODO
-    // Set text input background alpha
-    // load menu contents on separate thread
     // make entries render based on if they're currently in view rather than if they should be
     
     public TextClientMenu(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
@@ -32,13 +33,27 @@ public class TextClientMenu : RandomizerStatusMenu
         ScrollPos = LastPossibleScroll;
         floatScrollPos = ScrollPos;
 
+        // Hack to give the text box a solid black background
+        textBoxBackground = new RoundedRect(menu, this,
+            new Vector2(0.01f, -30f),
+            new Vector2(size.x, 24f),
+            true)
+        {
+            fillAlpha = 1f
+        };
+        subObjects.Add(textBoxBackground);
+        
+        // Text box wrapper
         tabWrapper = new MenuTabWrapper(menu, this);
         subObjects.Add(tabWrapper);
-        
+
+        // Text box
         textBox = new OpTextBox(RandoOptions.textClientCosmeticConfig,
             new Vector2(0.01f, -30f),
-            size.x);
-        textBox.allowSpace = true;
+            size.x)
+        {
+            allowSpace = true
+        };
         textBox.OnKeyDown += TextBoxKeyDown;
         textBox.OnUpdate += TextBoxUpdate;
         
@@ -53,10 +68,12 @@ public class TextClientMenu : RandomizerStatusMenu
 
     protected override void PopulateEntries()
     {
+        // Create formatted text lines from raw messages
         List<FormattedMessage> messages = [];
         foreach (MessageText storedMessage in StoredMessages) 
             messages.AddRange(new FormattedMessage(storedMessage, entryWidth).SplitByLine());
         
+        // Add entries. Each line of text is an entry
         for (int i = 0; i < messages.Count; i++)
         {
             entries.Add(new TextClientEntry(menu, this, 
@@ -110,8 +127,10 @@ public class TextClientMenu : RandomizerStatusMenu
 
     private void LiveAddMessage(MessageText message)
     {
+        // Split new message into lines
         FormattedMessage[] lines = new FormattedMessage(message, entryWidth).SplitByLine();
 
+        // Add new lines to feed
         int prevEntryCount = entries.Count;
         for (int i = prevEntryCount; i < prevEntryCount + lines.Length; i++)
         {
@@ -122,6 +141,10 @@ public class TextClientMenu : RandomizerStatusMenu
             subObjects.Add(entries[i]);
         }
 
+        // If we've surpassed a certain limit, remove older entries to save resources.
+        // This acts on the total lines of text instead of the message count,
+        // so it isn't completely accurate to normal size constraints.
+        // It does well enough, no one will notice the difference
         int entriesOverMax = entries.Count - (int)(MAX_MESSAGES * 2f);
         if (entriesOverMax > 0)
         {
@@ -132,9 +155,11 @@ public class TextClientMenu : RandomizerStatusMenu
                 RemoveSubObject(e);
             });
             entries.RemoveRange(0, entriesOverMax);
-            floatScrollPos -= entriesOverMax;
+            floatScrollPos -= entriesOverMax; // Move scroll position to stay on the correct message index
         }
 
+        // Only auto-scroll for new messages if we're already at the bottom.
+        // Allows reading older messages without disturbance.
         bool wasScrolledNearBottom = LastPossibleScroll - ScrollPos < 5;
         filteredEntries = entries;
         if (wasScrolledNearBottom) ScrollPos = LastPossibleScroll;
@@ -160,15 +185,11 @@ public class TextClientMenu : RandomizerStatusMenu
 
     private class TextClientEntry : Entry
     {
-        
-        // array of text elements
-        
-        // array of colors matching to elements
-
         private MenuLabel[] labels;
         
         public TextClientEntry(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, FormattedMessage message) : base(menu, owner, pos, size)
         {
+            // Holds multiple labels to allow multiple colors in a line
             labels = new MenuLabel[message.textList.Count];
             float curOffset = 0f;
             for (int i = 0; i < message.textList.Count; i++)
@@ -194,10 +215,5 @@ public class TextClientMenu : RandomizerStatusMenu
             foreach (MenuLabel label in labels)
                 label.label.alpha = alpha;
         }
-    }
-
-    private class TextClientSeperator(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size) : Entry(menu, owner, pos, size)
-    {
-        
     }
 }
