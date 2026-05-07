@@ -1,8 +1,9 @@
 ﻿using Menu;
 using RWCustom;
 using UnityEngine;
+using RWMenu = Menu.Menu;
 
-namespace RainWorldRandomizer
+namespace RainWorldRandomizer.Menu
 {
     /// <summary>
     /// Mostly copies functionality of EndgameTokens, but allows for full control over their behavior
@@ -30,7 +31,7 @@ namespace RainWorldRandomizer
         private float superGlow;
         private bool activated;
 
-        public FakeEndgameToken(Menu.Menu menu, MenuObject owner, Vector2 pos, WinState.EndgameID id, FContainer container, int index) : base(menu, owner, pos)
+        public FakeEndgameToken(RWMenu menu, MenuObject owner, Vector2 pos, WinState.EndgameID id, FContainer container, int index) : base(menu, owner, pos)
         {
             this.id = id;
             this.index = index;
@@ -85,10 +86,10 @@ namespace RainWorldRandomizer
             float num = Mathf.Lerp(lastFade, fade, timeStacker);
             float num2 = Mathf.Lerp(0f, 1f, superGlow);
             Color color = Color.Lerp(
-                Menu.Menu.MenuRGB(Menu.Menu.MenuColors.DarkGrey),
+                RWMenu.MenuRGB(RWMenu.MenuColors.DarkGrey),
                 Color.Lerp(
-                    Menu.Menu.MenuRGB(Menu.Menu.MenuColors.MediumGrey),
-                    Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
+                    RWMenu.MenuRGB(RWMenu.MenuColors.MediumGrey),
+                    RWMenu.MenuRGB(RWMenu.MenuColors.White),
                     superGlow),
                 num2);
             symbolSprite.x = vector.x;

@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using UnityEngine;
+using RWMenu = Menu.Menu;
+using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -69,10 +71,10 @@ namespace RainWorldRandomizer
         /// </summary>
         public static Palette<Color> palette =
             new(
-                Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White),
+                RWMenu.MenuRGB(RWMenu.MenuColors.White),
                 new Dictionary<PaletteColor, Color>()
                 {
-                    { PaletteColor.Black, Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black) },
+                    { PaletteColor.Black, RWMenu.MenuRGB(RWMenu.MenuColors.Black) },
                     { PaletteColor.Blue, new Color(0f, 0f, 1f) },
                     { PaletteColor.Cyan, new Color(0f, 1f, 1f) },
                     { PaletteColor.Green, new Color(0, 0.5f, 0f) },
@@ -283,6 +285,7 @@ namespace RainWorldRandomizer
             HasConnected = false;
             CurrentlyConnecting = false;
             ReceivedSlotData = false;
+            TextClientMenu.ClearStoredMessages();
 
             if (resetManager)
             {
@@ -466,24 +469,38 @@ namespace RainWorldRandomizer
         {
             Plugin.ServerLog.Log(message);
 
-            if ((message is not PlayerSpecificLogMessage && message is not ItemSendLogMessage)
-                || message is JoinLogMessage // Filter out join logs
-                || message is LeaveLogMessage // Filter out leave logs
-                || message is TagsChangedLogMessage) // Filter out tag change logs
+            MessageText messageText = new MessageText(message);
+            TextClientMenu.StoreMessage(messageText);
+
+            if (message is not PlayerSpecificLogMessage && message is not ItemSendLogMessage)
                 return;
 
-            // Filter out chats if option chosen, and always filter chat commands
-            if (message is ChatLogMessage chatMessage
-                && (chatMessage.Message.StartsWith("!") || RandoOptions.filterPlayerChatLogs.Value))
-                return;
+            switch (message)
+            {
+                // Filter out join logs
+                case JoinLogMessage:
+                // Filter out leave logs
+                case LeaveLogMessage: 
+                // Filter out tag change logs
+                case TagsChangedLogMessage:
+                // Filter out chats if option chosen, and always filter chat commands
+                case ChatLogMessage chatMessage
+                    when chatMessage.Message.StartsWith("!") 
+                          || RandoOptions.filterPlayerChatLogs.Value:
+                // If option chosen, filter out logs not related to this slot
+                case ItemSendLogMessage itemMessage
+                    when RandoOptions.filterRelevantItemLogs.Value
+                         && !itemMessage.IsRelatedToActivePlayer:
+                    return;
+                default:
+                    Plugin.Singleton.notifQueue.Enqueue(messageText);
+                    break;
+            }
+        }
 
-            // If option chosen, filter out logs not related to this slot
-            if (message is ItemSendLogMessage itemMessage
-                && RandoOptions.filterRelevantItemLogs.Value
-                && !itemMessage.IsRelatedToActivePlayer)
-                return;
-
-            Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(message));
+        public static void SendChatMessage(string message)
+        {
+            Session?.Socket.SendPacketAsync(new SayPacket() {Text = message});
         }
 
         private static void ErrorReceived(Exception e, string msg)
@@ -494,7 +511,7 @@ namespace RainWorldRandomizer
             {
                 Disconnect(false);
                 Plugin.Log.LogError("Disconnected Socket due to WebSocketException");
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText("You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
             }
         }
 

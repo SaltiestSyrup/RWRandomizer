@@ -59,6 +59,8 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> filterRelevantItemLogs;
         internal static Configurable<bool> filterPlayerChatLogs;
 
+        internal static Configurable<string> textClientCosmeticConfig;
+
         // Base
         public static bool UseSetSeed => useSeed.Value;
         public static int SetSeed => UseSetSeed ? seed.Value : 0;

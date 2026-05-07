@@ -5,6 +5,7 @@ using MoreSlugcats;
 using System;
 using System.Linq;
 using UnityEngine;
+using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -80,7 +81,7 @@ namespace RainWorldRandomizer
                 || Plugin.Singleton.rainWorld.processManager.currentMainLoop is RainWorldGame)
             {
                 string deathMessage = deathLink.Cause ?? $"{deathLink.Source} has died!";
-                Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText(deathMessage));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText(deathMessage));
                 Plugin.ServerLog.Log(deathMessage);
                 receiveDeathCooldown = 40; // 1 second
                 deathPending = true;

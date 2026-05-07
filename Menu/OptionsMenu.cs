@@ -1,4 +1,5 @@
 using BepInEx;
+using Menu;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI.ValueTypes;
@@ -7,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace RainWorldRandomizer
+namespace RainWorldRandomizer.Menu
 {
     public class OptionsMenu : OptionInterface
     {
@@ -201,11 +202,11 @@ namespace RainWorldRandomizer
                     ["Port"]));
 
             // Default value must contain a space to allow spaces in the field
-            RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", " ",
+            RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
                 new ConfigurableInfo("Your slot name for server connection", null, "",
                     ["Slot Name"]));
 
-            RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", " ",
+            RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
                 new ConfigurableInfo("Password for server connection (Optional)", null, "",
                     ["Password"]));
 
@@ -242,6 +243,8 @@ namespace RainWorldRandomizer
             RandoOptions.filterPlayerChatLogs = config.Bind<bool>("FilterPlayerChatLogs", false,
                 new ConfigurableInfo("Stop player sent chat messages from showing up in game", null, "",
                     ["Don't Notify Chat Messages"]));
+
+            RandoOptions.textClientCosmeticConfig = config.Bind<string>("_TextClient", "");
         }
 
         public override void Initialize()
@@ -472,8 +475,10 @@ namespace RainWorldRandomizer
             OpTextBox portTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPort, new(LEFT_OPTION_X, runningY), 55f);
             runningY -= NEWLINE_DECREMENT;
             OpTextBox slotNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoSlotName, new(LEFT_OPTION_X, runningY), 200f);
+            slotNameTextBox.allowSpace = true;
             runningY -= NEWLINE_DECREMENT;
             OpTextBox passwordTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f);
+            passwordTextBox.allowSpace = true;
             runningY -= NEWLINE_DECREMENT;
 
             // Force infinite length on important information fields
@@ -710,7 +715,7 @@ namespace RainWorldRandomizer
                 }
             }
 
-            private Color _color = Menu.MenuColorEffect.rgbMediumGrey;
+            private Color _color = MenuColorEffect.rgbMediumGrey;
             public Color Color
             {
                 get { return _color; }

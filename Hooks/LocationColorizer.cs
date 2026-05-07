@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using Menu;
 
 namespace RainWorldRandomizer
 {
@@ -185,7 +186,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Overrides the color of a passage meter with its item classification color
         /// </summary>
-        private static void EndgameMeter_GrafUpdate(On.Menu.EndgameMeter.orig_GrafUpdate orig, Menu.EndgameMeter self, float timeStacker)
+        private static void EndgameMeter_GrafUpdate(On.Menu.EndgameMeter.orig_GrafUpdate orig, EndgameMeter self, float timeStacker)
         {
             orig(self, timeStacker);
             if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;

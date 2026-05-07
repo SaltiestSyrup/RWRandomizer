@@ -7,7 +7,7 @@ using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
-using Watcher;
+using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
@@ -152,7 +152,7 @@ namespace RainWorldRandomizer
                 if (Plugin.RandoManager.customStartDen.Equals(""))
                 {
                     Plugin.Log.LogError("Tried to set starting den while custom den unset");
-                    Plugin.Singleton.notifQueue.Enqueue(new ChatLog.MessageText("ERROR: Failed to set correct starting den", Color.red));
+                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("ERROR: Failed to set correct starting den", Color.red));
                     return;
                 }
                 self.denPosition = Plugin.RandoManager.customStartDen;
