@@ -209,7 +209,7 @@ namespace RainWorldRandomizer.Menu
             connectors["GATE_HI_CC"] = new Connector(nodes["CC"].Bottom, nodes["HI"].Top);
             connectors["GATE_HI_GW"] = new Connector(nodes["HI"].BottomRight, nodes["GW"].TopLeft);
             connectors["GATE_HI_SH"] = new Connector(nodes["HI"].Right, nodes["SH"].Left);
-            connectors["GATE_LF_SB"] = new Connector(nodes["LF"].Bottom, nodes["SB"].Top);
+            connectors["GATE_LF_SB"] = Connector.OneWay(nodes["LF"].Bottom, nodes["SB"].Top);
             connectors["GATE_SB_SL"] = new Connector(true, nodes["SB"].Bottom, -10, 180, 90);
             connectors["GATE_SI_CC"] = new Connector(nodes["SI"].Right, nodes["CC"].Left);
 
@@ -249,7 +249,7 @@ namespace RainWorldRandomizer.Menu
                 }
                 if (Scug is "Rivulet" or "Saint")
                 {
-                    connectors["GATE_SL_MS"] = new Connector(nodes["SL"].Top, nodes["MS"].BottomLeft);
+                    connectors["GATE_SL_MS"] = Connector.OneWay(nodes["MS"].BottomLeft, nodes["SL"].Top);
                 }
                 if (Scug is "Saint")
                 {
@@ -262,8 +262,10 @@ namespace RainWorldRandomizer.Menu
                 }
                 if (Scug is "White" or "Yellow" or "Gourmand")
                 {
-                    connectors["GATE_OE_SU"] = new Connector(true, nodes["SU"].Bottom + new Vector2(-5f, 0f), -10, -10);
-                    connectors["GATE_SB_OE"] = new Connector(true, nodes["SB"].Top + new Vector2(5f, 0f), 10, 10);
+                    connectors["GATE_OE_SU"] = Connector.OneWay(nodes["OE"].Right, nodes["SU"].Bottom);
+                    connectors["GATE_SB_OE"] = new Connector(nodes["SB"].Top, nodes["OE"].Left);
+                    // connectors["GATE_OE_SU"] = new Connector(true, nodes["SU"].Bottom + new Vector2(-5f, 0f), -10, -10);
+                    // connectors["GATE_SB_OE"] = new Connector(true, nodes["SB"].Top + new Vector2(5f, 0f), 10, 10);
                 }
             }
             else
