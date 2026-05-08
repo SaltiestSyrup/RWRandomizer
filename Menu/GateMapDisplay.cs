@@ -647,12 +647,28 @@ namespace RainWorldRandomizer.Menu
 
         public class CheckIconContainer : FContainer
         {
+            private readonly Vector2 watcherOffset = new Vector2(220f, 70f);
+            private readonly Vector2 offset;
+            
             public FLabel regionLabel;
+            private FSprite background;
 
             public CheckIconContainer()
             {
-                regionLabel = new FLabel(Custom.GetFont(), "") { x = 150.01f, y = 30.01f, alignment = FLabelAlignment.Center };
+                offset = Scug is "Watcher" ? watcherOffset : Vector2.zero;
+                regionLabel = new FLabel(Custom.GetFont(), "") { x = (310.01f + offset.x) / 2, y = 20.01f, alignment = FLabelAlignment.Center };
                 AddChild(regionLabel);
+                
+                background = new FSprite("Futile_White")
+                {
+                    alpha = 0.7f, 
+                    color = Color.black, 
+                    anchorX = 0f,
+                    anchorY = 1f,
+                    width = 310f + offset.x
+                };
+                background.SetPosition(new Vector2(5f, 300f + offset.y));
+                AddChild(background);
             }
 
             public void AddIcon(LocationInfo info)
@@ -662,39 +678,44 @@ namespace RainWorldRandomizer.Menu
 
             public void Refresh()
             {
-                Vector2 pos = new(20f, Scug is "Watcher" ? 350f : 280f);
-                foreach (CheckIcon sprite in _childNodes.OfType<CheckIcon>())
+                CheckIcon[] icons = [.._childNodes.OfType<CheckIcon>()];
+                
+                Vector2 pos = new(20f, 280f + offset.y);
+                foreach (var icon in icons)
                 {
-                    sprite.SetPosition(pos + sprite.Adjustment);
-                    pos += new Vector2(sprite.width + 5f + sprite.Padding, 0f);
-                    if (pos.x > (Scug is "Watcher" ? 420f : 300f)) pos = new Vector2(20f, pos.y - 35f);
+                    icon.anchorX = 0f;
+                    icon.SetPosition(pos + icon.Adjustment);
+                    pos += new Vector2(icon.width + 5f + icon.Padding, 0f);
+                    if (pos.x > 290f + offset.x) pos = new Vector2(20f, pos.y - 35f);
                 }
+
+                background.height = 315f + offset.y - pos.y;
             }
 
             public class CheckIcon(string element, LocationKind kind) : FSprite(element)
             {
                 public Vector2 Adjustment => kind switch
                 {
-                    LocationKind.Pearl => new(-6f, 0f),
-                    LocationKind.FixedWarp => new(10f, 0f),
-                    LocationKind.ThroneWarp => new(8f, 0f),
-                    LocationKind.SpreadRot => new(4f, 0f),
-                    LocationKind.Prince => new(6f, 0f),
+                    // LocationKind.Pearl => new(-6f, 0f),
+                    LocationKind.FixedWarp => new(-10f, 0f),
+                    // LocationKind.ThroneWarp => new(8f, 0f),
+                    // LocationKind.SpreadRot => new(4f, 0f),
+                    // LocationKind.Prince => new(6f, 0f),
                     _ => default
                 };
 
                 public float Padding => kind switch
                 {
                     LocationKind.FixedWarp => -15f,
-                    LocationKind.Prince => -10f,
-                    LocationKind.ThroneWarp => -10f,
-                    LocationKind.Echo => -3f,
-                    LocationKind.SpinningTop => -3f,
-                    LocationKind.Shelter => 3f,
-                    LocationKind.Pearl => 3f,
+                    // LocationKind.Prince => -10f,
+                    // LocationKind.ThroneWarp => -10f,
+                    // LocationKind.Echo => -3f,
+                    // LocationKind.SpinningTop => -3f,
+                    // LocationKind.Shelter => 3f,
+                    // LocationKind.Pearl => 3f,
                     _ => element.name switch
                     {
-                        "Symbol_Neuron" => 7f,
+                        // "Symbol_Neuron" => 7f,
                         _ => 0
                     }
                 };
