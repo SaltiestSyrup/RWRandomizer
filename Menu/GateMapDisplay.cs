@@ -453,11 +453,12 @@ namespace RainWorldRandomizer.Menu
                 get
                 {
                     string text = label.label.text;
+                    if (Scug is "Watcher") text = $"W{text}";
                     if (Plugin.RegionNamesMap.TryGetValue(text, out string s)) return s;
                     return label.label.text switch
                     {
-                        "<FQ>" => "Food Quest",
-                        "<P>" => "Passages",
+                        "FQ" => "Food Quest",
+                        "P" => "Passages",
                         _ => "Unknown region",
                     };
                 }
@@ -612,8 +613,7 @@ namespace RainWorldRandomizer.Menu
         {
             base.Update();
             if (MouseOver
-                && nodes.FirstOrDefault(x => x.Value.MouseOver) is KeyValuePair<string, Node> pair
-                && pair.Key is string region && pair.Value is Node node
+                && nodes.FirstOrDefault(x => x.Value.MouseOver) is { Key: string region, Value: Node node }
                 && region != displayedRegion)
             {
                 UpdateTrackerForRegion(GetActualRegion(region));
@@ -635,7 +635,9 @@ namespace RainWorldRandomizer.Menu
             highlightedNode.current = true;
             displayedRegion = region;
 
-            checkIconContainer.RemoveAllChildren();
+            // checkIconContainer.RemoveAllChildren();
+            foreach (CheckIconContainer.CheckIcon icon in checkIconContainer._childNodes.OfType<CheckIconContainer.CheckIcon>().ToArray())
+                checkIconContainer.RemoveChild(icon);
             foreach (LocationInfo info in locationInfos.Where(x => x.region == region))
                 checkIconContainer.AddIcon(info);
             checkIconContainer.Refresh();
