@@ -68,8 +68,11 @@ public class TextClientMenu : RandomizerStatusMenu
     {
         // Create formatted text lines from raw messages
         List<FormattedMessage> messages = [];
-        foreach (MessageText storedMessage in StoredMessages) 
-            messages.AddRange(new FormattedMessage(storedMessage, entryWidth).SplitByLine());
+        lock (StoredMessages)
+        {
+            foreach (MessageText storedMessage in StoredMessages) 
+                messages.AddRange(new FormattedMessage(storedMessage, entryWidth).SplitByLine());
+        }
         
         // Add entries. Each line of text is an entry
         for (int i = 0; i < messages.Count; i++)
