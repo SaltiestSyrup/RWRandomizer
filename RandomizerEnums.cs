@@ -17,6 +17,7 @@ namespace RainWorldRandomizer
             SliderId.RegisterValues();
             AbstractObjectType.RegisterValues();
             DataPearlType.RegisterValues();
+            Tutorial.RegisterValues();
             LogID.RegisterValues();
         }
 
@@ -25,6 +26,7 @@ namespace RainWorldRandomizer
             SliderId.UnregisterValues();
             AbstractObjectType.UnregisterValues();
             DataPearlType.UnregisterValues();
+            Tutorial.UnregisterValues();
             LogID.UnregisterValues();
         }
 
@@ -76,6 +78,22 @@ namespace RainWorldRandomizer
             public static DataPearl.AbstractDataPearl.DataPearlType SpearmasterpearlFake;
         }
 
+        public class Tutorial
+        {
+            internal static void RegisterValues()
+            {
+                WatcherSealLockedWarp = new DeathPersistentSaveData.Tutorial("WatcherSealLockedWarp", true);
+            }
+
+            internal static void UnregisterValues()
+            {
+                WatcherSealLockedWarp?.Unregister();
+                WatcherSealLockedWarp = null;
+            }
+
+            public static DeathPersistentSaveData.Tutorial WatcherSealLockedWarp;
+        }
+        
         public class LogID
         {
             internal static void RegisterValues()

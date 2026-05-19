@@ -3,6 +3,7 @@ using MonoMod.Cil;
 using RWCustom;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -119,6 +120,15 @@ namespace RainWorldRandomizer.WatcherIntegration
                         self.Rando_LockWarp(false);
                     if (self.warpTear is not null && !ActiveLockedWarps.TryGetValue(self.warpTear, out _))
                         ActiveLockedWarps.Add(self.warpTear, new LockedWarpData(self));
+                    
+                    SaveState saveState = self.room?.game.GetStorySession?.saveState;
+                    if (self.room?.updateList.Any(u => u is Player) is true
+                        && saveState?.miscWorldSaveData.hasVoidWeaverAbility is true
+                        && !saveState.deathPersistentSaveData.SeenWatcherSealLockedWarpTutorial())
+                    {
+                        self.room.game.cameras[0].hud?.textPrompt?.AddMessage("Holding UP and SPECIAL will seal a locked warp point", 120, 160, false, true);
+                        saveState.deathPersistentSaveData.SetWatcherSealLockedWarpTutorial(true);
+                    }
                 }
             }
 
@@ -183,7 +193,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 foreach (string warpRoom in roomsWithWarpsRemaining)
                 {
 
-                    string destRoom = FindDestRoom(regionToSeal.ToLowerInvariant(), warpRoom).ToLowerInvariant();
+                    string destRoom = FindDestRoom(regionToSeal.ToLowerInvariant(), warpRoom)?.ToLowerInvariant();
                     if (destRoom is null)
                     {
                         Plugin.Log.LogDebug($"Could not find destination room to seal warp in room: {warpRoom}");
@@ -197,6 +207,8 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                     Plugin.Log.LogDebug($"Added {warpRoom} & {destRoom} to roomsSealedByVoidWeaver");
                 }
+
+                return;
 
                 // Attempts to find the specified warp and return the room the warp leads to
                 string FindDestRoom(string regionLower, string warpRoom)

@@ -10,6 +10,16 @@ namespace RainWorldRandomizer
 {
     public static class SaveManager
     {
+        public static bool SeenWatcherSealLockedWarpTutorial(this DeathPersistentSaveData dpsd)
+        {
+            return dpsd.tutorialMessages.Contains(RandomizerEnums.Tutorial.WatcherSealLockedWarp);
+        }
+
+        public static void SetWatcherSealLockedWarpTutorial(this DeathPersistentSaveData dpsd, bool value)
+        {
+            dpsd.SetTutorialValue(RandomizerEnums.Tutorial.WatcherSealLockedWarp, value);
+        }
+        
         public static bool IsThereASavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
             return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
