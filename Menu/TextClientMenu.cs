@@ -113,7 +113,8 @@ public class TextClientMenu : RandomizerStatusMenu
     {
         if (c is '\n' or '\r')
         {
-            ArchipelagoConnection.SendChatMessage(textBox.value);
+            if (textBox.value.Trim() != "") // Don't send empty messages
+                ArchipelagoConnection.SendChatMessage(textBox.value);
             textBox.value = "";
             textBox._KeyboardOn = true;
         }
