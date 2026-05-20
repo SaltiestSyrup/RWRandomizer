@@ -613,7 +613,7 @@ namespace RainWorldRandomizer
             return itemType.value switch
             {
                 "SeedCob" => new Color(0.4117f, 0.1608f, 0.2275f),
-                "KarmaFlower" => new Color(0.9059f, 0.8745f, 0.5647f),
+                "KarmaFlower" => RainWorld.SaturatedGold,
                 "Spear" => intdata == 4 ? new Color(0f, 1f, 1f) : orig(itemType, intdata),
                 _ => orig(itemType, intdata)
             };
