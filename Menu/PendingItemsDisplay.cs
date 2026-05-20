@@ -114,6 +114,9 @@ public class PendingItemsDisplay : RectangularMenuObject
             case "PoisonSpear":
                 iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 4);
                 break;
+            case "HellSpear":
+                iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 3);
+                break;
             default:
             {
                 if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(item.type.value))

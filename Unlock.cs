@@ -215,16 +215,16 @@ namespace RainWorldRandomizer
             if (isPearl)
                 return new Item(IDToString(id), new DataPearl.AbstractDataPearl.DataPearlType(id));
 
-            if (id is "FireSpear" or "ExplosiveSpear")
-                return new Item("Explosive Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
-            if (id is "ElectricSpear")
-                return new Item("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
-            if (id is "PoisonSpear")
-                return new Item("Poison Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear);
-            if (id is "RotFruit")
-                return new Item("Rot Fruit", id, AbstractPhysicalObject.AbstractObjectType.DangleFruit);
-
-            return new Item(IDToString(id), new AbstractPhysicalObject.AbstractObjectType(id));
+            return id switch
+            {
+                "FireSpear" or "ExplosiveSpear" => new Item("Explosive Spear", id,
+                    AbstractPhysicalObject.AbstractObjectType.Spear),
+                "ElectricSpear" => new Item("Electric Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear),
+                "PoisonSpear" => new Item("Poison Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear),
+                "HellSpear" => new Item("Hell Spear", id, AbstractPhysicalObject.AbstractObjectType.Spear),
+                "RotFruit" => new Item("Rot Fruit", id, AbstractPhysicalObject.AbstractObjectType.DangleFruit),
+                _ => new Item(IDToString(id), new AbstractPhysicalObject.AbstractObjectType(id))
+            };
         }
 
         public static string ItemToEncodedIcon(Item item)

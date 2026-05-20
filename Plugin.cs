@@ -324,8 +324,10 @@ namespace RainWorldRandomizer
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
                         item.id is "FireSpear" or "ExplosiveSpear", item.id == "ElectricSpear")
                     {
-                        poison = item.id == "PoisonSpear" ? 1 : 0,
-                        poisonHue = UnityEngine.Random.value
+                        poison = item.id is "PoisonSpear" ? 1 : 0,
+                        poisonHue = UnityEngine.Random.value,
+                        // Whether the spear is a hell spear is solely determined by whether it has a hue assigned
+                        hue = item.id is "HellSpear" ? Mathf.Lerp(0.35f, 0.6f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)) : 0f
                     };
                 }
                 if (ModManager.DLCShared && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
