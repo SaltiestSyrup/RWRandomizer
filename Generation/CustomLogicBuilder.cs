@@ -362,15 +362,15 @@ namespace RainWorldRandomizer.Generation
 
             // Cannot climb SB Ravine
             AddSubregion(new SubregionBlueprint("SB", "SBRavine",
-                    ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0", "Shelter-SB_S09"],
+                    ["Echo-SB", "Pearl-SB_ravine-SB", "Broadcast-Chatlog_SB0-SB", "Shelter-SB_S09"],
                     ["GATE_LF_SB"],
                     ["SB_S09"],
                     (new(AccessRule.IMPOSSIBLE_ID), new())));
 
             // The Exterior is split in half at UW_C02 during Rivulet's time, they have a hard time crossing it
             AddSubregion(new SubregionBlueprint("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard",
-                        "Broadcast-Chatlog_Broadcast0", "Shelter-UW_S01", "Shelter-UW_S03",
+                    ["Pearl-UW-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard-UW",
+                        "Broadcast-Chatlog_Broadcast0-UW", "Shelter-UW_S01", "Shelter-UW_S03",
                         "Shelter-UW_S04", "DevToken-UW_H01", "DevToken_UW_F01"],
                     ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
                     ["UW_S01", "UW_S03", "UW_S04"],
@@ -378,7 +378,7 @@ namespace RainWorldRandomizer.Generation
 
             // Only Saint is considered able to climb up into Outskirts filtration
             AddSubregion(new SubregionBlueprint("SU", "SU_Filt",
-                    ["Pearl-SU_filt", "Shelter-SU_S05", "DevToken-SU_CAVE01", "DevToken-SU_PMPSTATION01"],
+                    ["Pearl-SU_filt-SU", "Shelter-SU_S05", "DevToken-SU_CAVE01", "DevToken-SU_PMPSTATION01"],
                     ["GATE_OE_SU"],
                     ["SU_S05"],
                     (new(AccessRule.IMPOSSIBLE_ID), new())),
@@ -393,7 +393,7 @@ namespace RainWorldRandomizer.Generation
                     (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID))));
 
             SubregionBlueprint bitterAerie = new("MS", "MSBitterAerie",
-                ["Token-S-MS", "Token-MirosVulture", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10",
+                ["Token-S-MS", "Token-MirosVulture-MS", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10",
                     "Shelter-MS_BITTERSHELTER", "DevToken-MS_SEWERBRIDGE", "DevToken-MS_X02", "DevToken-MS_BITTEREDGE"],
                 ["GATE_SL_MS"],
                 ["MS_S07", "MS_S10", "MS_BITTERSHELTER"],
