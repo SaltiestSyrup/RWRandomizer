@@ -277,6 +277,7 @@ namespace RainWorldRandomizer
 
             Plugin.Log.LogInfo("Disconnecting from server...");
             Plugin.ServerLog.Log("--- Ending Session ---");
+            DeathLinkHandler.Reset();
             Session.Socket.PacketReceived -= PacketReceived;
             Session.MessageLog.OnMessageReceived -= MessageReceived;
             Session.Socket.ErrorReceived -= ErrorReceived;

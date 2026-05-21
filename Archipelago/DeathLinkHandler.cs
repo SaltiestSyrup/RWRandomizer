@@ -61,6 +61,13 @@ namespace RainWorldRandomizer
             service.OnDeathLinkReceived += OnReceiveDeath;
         }
 
+        public static void Reset()
+        {
+            if (service is null) return;
+            service.OnDeathLinkReceived -= OnReceiveDeath;
+            service = null;
+        }
+
         private static void Kill(Creature player)
         {
             // This is the same effect played when Pebbles kills the player
