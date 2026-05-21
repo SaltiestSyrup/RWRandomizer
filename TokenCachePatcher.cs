@@ -120,30 +120,12 @@ namespace RainWorldRandomizer
 
             ILCursor c = new(il);
             #region Alternate room fix
-            Instruction else1Jump = null; // 02EC
-            ILLabel finishJump = null; // 042D
-            c.GotoNext(
-                x => x.MatchLdloc(12), // 031B
-                x => x.MatchLdloc(15),
-                x => x.MatchLdcI4(0),
-                x => x.MatchNewobj(out _),
-                x => x.MatchCallOrCallvirt(typeof(List<SlugcatStats.Name>).GetMethod(nameof(List<SlugcatStats.Name>.Add))),
-                x => x.MatchBr(out finishJump)
-                );
-
-            c.GotoPrev(
-                MoveType.After,
-                x => x.MatchStloc(12), // 02D9
-                x => x.MatchLdloc(4),
-                x => x.MatchLdloc(3),
-                x => x.MatchLdloc(11),
-                x => x.MatchCallOrCallvirt(typeof(List<string>).GetMethod("get_Item")),
-                x => x.MatchCallOrCallvirt(typeof(List<string>).GetMethod(nameof(List<string>.Contains)))
-                //x => x.MatchBrfalse(out else2Jump)
-                );
+            // First assign of list3
+            c.GotoNext(x => x.MatchStloc(12));
+            c.GotoNext(MoveType.Before, x => x.MatchBrfalse(out _));
 
             // Set the code to branch correctly if the previous if check succeeded 
-            else1Jump = c.Next.Next;
+            Instruction else1Jump = c.Next.Next;
             c.Emit(OpCodes.Brtrue, else1Jump);
 
             // Do our if check, original branch statement calls if this fails
@@ -223,51 +205,61 @@ namespace RainWorldRandomizer
 
             #region Room accessibility fix
             FieldReference regionNameField = null;
+            // Second load of regionDataPearlsAccessibility
             c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility))),
+                x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionDataPearlsAccessibility))),
                 x => x.MatchLdloc(0),
-                x => x.MatchLdfld(out regionNameField),
-                x => x.MatchCallOrCallvirt(out _),
-                x => x.MatchLdarg(0),
-                x => x.MatchLdloc(29),
-                x => x.MatchLdfld(typeof(PlacedObject).GetField(nameof(PlacedObject.data))),
-                x => x.MatchIsinst(typeof(CollectToken.CollectTokenData)),
-                x => x.MatchLdfld(typeof(CollectToken.CollectTokenData).GetField(nameof(CollectToken.CollectTokenData.availableToPlayers))),
-                x => x.MatchLdloc(28),
-                x => x.MatchLdloc(12)
+                x => x.MatchLdfld(out regionNameField)
                 );
-
-            c.Emit(OpCodes.Ldloc_0);
-            c.Emit(OpCodes.Ldfld, regionNameField);
-
-            c.Emit(OpCodes.Ldloc_3); // list
-            c.Emit(OpCodes.Ldloc, 11); // j
-            c.Emit(OpCodes.Callvirt, typeof(List<string>).GetMethod("get_Item")); // list[j]
-
-            c.EmitDelegate(IntersectClearance);
-
-            // Third load of regionBlueTokensAccessibility at 0A53
+            // Before call to FilterTokenClearance
             c.GotoNext(
-                x => x.MatchLdfld(typeof(CollectToken.CollectTokenData).GetField(nameof(CollectToken.CollectTokenData.availableToPlayers))),
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility)))
+                MoveType.Before,
+                x => x.MatchCallOrCallvirt(typeof(RainWorld).GetMethod(nameof(RainWorld.FilterTokenClearance)))
                 );
-            // Before call to FilterTokenClearance at 0A6C
+            
+            EmitIntersectClearance();
+            
+            // Third load of regionDataPearlsAccessibility
+            c.GotoNext(x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionDataPearlsAccessibility))));
+            // Before call to FilterTokenClearance
+            c.GotoNext(
+                MoveType.Before,
+                x => x.MatchCallOrCallvirt(typeof(RainWorld).GetMethod(nameof(RainWorld.FilterTokenClearance)))
+                );
+            
+            EmitIntersectClearance();
+            
+            // --------
+            
+            // Second load of regionBlueTokensAccessibility
+            c.GotoNext(x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility))));
+            // Before call to FilterTokenClearance
             c.GotoNext(
                 MoveType.Before,
                 x => x.MatchCallOrCallvirt(typeof(RainWorld).GetMethod(nameof(RainWorld.FilterTokenClearance)))
                 );
 
-            c.Emit(OpCodes.Ldloc_0);
-            c.Emit(OpCodes.Ldfld, regionNameField);
+            EmitIntersectClearance();
 
-            c.Emit(OpCodes.Ldloc_3); // list
-            c.Emit(OpCodes.Ldloc, 11); // j
-            c.Emit(OpCodes.Callvirt, typeof(List<string>).GetMethod("get_Item")); // []
+            // Third load of regionBlueTokensAccessibility
+            c.GotoNext(x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.regionBlueTokensAccessibility))));
+            // Before call to FilterTokenClearance
+            c.GotoNext(
+                MoveType.Before,
+                x => x.MatchCallOrCallvirt(typeof(RainWorld).GetMethod(nameof(RainWorld.FilterTokenClearance)))
+                );
 
-            c.EmitDelegate(IntersectClearance);
+            EmitIntersectClearance();
+
+            void EmitIntersectClearance()
+            {
+                c.Emit(OpCodes.Ldloc_0);
+                c.Emit(OpCodes.Ldfld, regionNameField);
+                c.Emit(OpCodes.Ldloc_3); // list
+                c.Emit(OpCodes.Ldloc, 11); // j
+                c.Emit(OpCodes.Callvirt, typeof(List<string>).GetMethod("get_Item")); // list[j]
+                c.EmitDelegate(IntersectClearance);
+            }
             #endregion
 
             #region Extra caching
