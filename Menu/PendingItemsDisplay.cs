@@ -124,6 +124,10 @@ public class PendingItemsDisplay : RectangularMenuObject
                     iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(item.type.value), 0);
                     if (item.id is "RotFruit") iconData.intData = 1;
                 }
+                else if (ExtEnumBase.GetNames(typeof(DataPearl.AbstractDataPearl.DataPearlType)).Contains(item.type.value))
+                {
+                    iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.DataPearl, 0);
+                }
                 else
                 {
                     return new FSprite("Futile_White", true);

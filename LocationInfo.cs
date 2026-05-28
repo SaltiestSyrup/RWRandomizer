@@ -472,7 +472,7 @@ namespace RainWorldRandomizer
                             break;
                         case "Meet_FP":
                         case "Ascend_FP":
-                            spriteName = "GuidancePebbles";
+                            spriteName = ModManager.MSC ? "GuidancePebbles" : "GuidanceMoon";
                             break;
                         case "Meet_LttM":
                         case "Meet_LttM_Spear": 
