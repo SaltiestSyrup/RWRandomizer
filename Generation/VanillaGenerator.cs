@@ -166,7 +166,8 @@ namespace RainWorldRandomizer.Generation
                 {
                     for (int i = 0; i < Plugin.Singleton.rainWorld.regionDataPearls[regionLower].Count; i++)
                     {
-                        if (Plugin.Singleton.rainWorld.regionDataPearlsAccessibility[regionLower][i].Contains(slugcat))
+                        if (Plugin.Singleton.rainWorld.regionDataPearlsAccessibility[regionLower][i].Contains(slugcat)
+                            && Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value != "")
                         {
                             regionLocations.Add(new($"Pearl-{Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value}-{regionShort}",
                                 Location.Type.Pearl, new()));
