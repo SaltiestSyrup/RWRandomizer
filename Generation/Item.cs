@@ -56,7 +56,7 @@ namespace RainWorldRandomizer.Generation
             { "Object-KarmaFlower", 5 },
             { "Object-VultureMask", 3 },
         };
-        public static readonly Dictionary<string, int> junkItemWeightsDLCShared = new()
+        public static readonly Dictionary<string, int> dlcSharedJunkItemWeights = new()
         {
             { "Object-ElectricSpear", 3 },
             { "Object-SingularityBomb", 1 },
@@ -74,7 +74,14 @@ namespace RainWorldRandomizer.Generation
             { "Trap-BrotherLongLegs", 3 },
             { "Trap-DaddyLongLegs", 1 },
             { "Trap-Gravity", 1 },
+            
+        };
+        public static readonly Dictionary<string, int> mscTrapWeights = new()
+        {
             { "Trap-Responsibility", 2 },
+        };
+        public static readonly Dictionary<string, int> watcherTrapWeights = new()
+        {
             { "Trap-RippleSpawn", 2 },
             { "Trap-BlizzardLizard", 1 },
         };
@@ -86,8 +93,8 @@ namespace RainWorldRandomizer.Generation
 
             if (ModManager.DLCShared)
             {
-                items.AddRange(junkItemWeightsDLCShared.Keys);
-                weights.AddRange(junkItemWeightsDLCShared.Values);
+                items.AddRange(dlcSharedJunkItemWeights.Keys);
+                weights.AddRange(dlcSharedJunkItemWeights.Values);
             }
 
             int sum = weights.Sum();
@@ -110,6 +117,17 @@ namespace RainWorldRandomizer.Generation
         {
             List<string> items = [.. trapWeights.Keys];
             List<int> weights = [.. trapWeights.Values];
+            
+            if (ModManager.MSC)
+            {
+                items.AddRange(mscTrapWeights.Keys);
+                weights.AddRange(mscTrapWeights.Values);
+            }
+            if (ModManager.Watcher)
+            {
+                items.AddRange(watcherTrapWeights.Keys);
+                weights.AddRange(watcherTrapWeights.Values);
+            }
 
             int sum = weights.Sum();
             int randomValue = random.Next(sum + 1);
