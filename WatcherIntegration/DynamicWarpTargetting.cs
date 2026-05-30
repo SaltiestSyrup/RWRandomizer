@@ -1,9 +1,8 @@
-﻿using Mono.Cecil.Cil;
+﻿using System;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
-using RegionKit.Extras;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 using Watcher;
 using static RainWorldRandomizer.WatcherIntegration.Settings;
@@ -38,13 +37,21 @@ namespace RainWorldRandomizer.WatcherIntegration
         {
             internal static void ApplyHooks()
             {
-                IL.Player.SpawnDynamicWarpPoint += SpawnDynamicWarpPointIL;
                 On.Watcher.WarpPoint.NewWorldLoaded_Room += OnNewWorldLoaded;
-
                 //IL.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += WaiveRippleReq;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += GetAvailableDynamicWarpTargets;
                 On.Watcher.WarpPoint.GetAvailableBadWarpTargets_World_string += GetAvailableBadWarpTargets;
-                IL.Player.FailToSpawnWarpPoint += CustomFailureMessage;
+                
+                try
+                {
+                    IL.Player.SpawnDynamicWarpPoint += SpawnDynamicWarpPointIL;
+                    IL.Player.FailToSpawnWarpPoint += CustomFailureMessage;
+                    IL.OverWorld.InitiateSpecialWarp_WarpPoint += OverWorldOnInitiateSpecialWarp_WarpPointIL;
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError(e);
+                }
             }
 
             internal static void RemoveHooks()
@@ -56,6 +63,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= GetAvailableDynamicWarpTargets;
                 On.Watcher.WarpPoint.GetAvailableBadWarpTargets_World_string -= GetAvailableBadWarpTargets;
                 IL.Player.FailToSpawnWarpPoint -= CustomFailureMessage;
+                IL.OverWorld.InitiateSpecialWarp_WarpPoint -= OverWorldOnInitiateSpecialWarp_WarpPointIL;
             }
 
             // (This can be modified to make other single use warps if ever needed)
@@ -278,6 +286,36 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 if (badWeightedCandidates.Any()) return badWeightedCandidates;
                 else return origRet;
+            }
+            
+            /// <summary>
+            /// Makes it possible to reach WORA city when there are no waiting Prince encounters
+            /// </summary>
+            private static void OverWorldOnInitiateSpecialWarp_WarpPointIL(ILContext il)
+            {
+                ILCursor c = new(il);
+
+                c.GotoNext(x =>
+                    x.MatchLdfld(
+                        typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.maximumRippleLevel))));
+                c.GotoPrev(MoveType.Before, x => x.MatchLdarg(0));
+                c.Emit(OpCodes.Ldarg_2);
+                c.EmitDelegate(ToOuterRimIfNeeded);
+                
+                return;
+
+                static void ToOuterRimIfNeeded(WarpPoint.WarpPointData warpData)
+                {
+                    if (Plugin.RandoManager is null) return;
+
+                    float percentWORA = Mathf.Abs(Plugin.RandoManager.PercentOfRegionComplete("WORA"));
+                    // Average completion of all rotted regions (If region not found, it is considered complete)
+                    float percentRotRegions = new[] {"WSUR", "WHIR", "WGWR", "WDSR"}
+                        .Sum(r => Mathf.Abs(Plugin.RandoManager.PercentOfRegionComplete(r))) / 4;
+
+                    // If more has been completed from rotted regions than WORA, guarantee sending player to WORA
+                    if (percentRotRegions > percentWORA) warpData.RegionString = "WORA";
+                }
             }
 
             /// <summary>Intercept the list of normal dynamic warp targets.</summary>
