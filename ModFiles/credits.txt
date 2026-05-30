@@ -12,3 +12,22 @@ Symbol_RippleAmoeba.png is sourced from the Rain World Wiki and created by Axye
 This sprite is licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 This sprite has been modified to make it greyscale
 https://rainworld.miraheze.org/wiki/File:Ripple_Amoeba_icon.png
+
+---------------
+
+Custom logo used in thumbnail.png and thumbnail-steam.png is a derivative of the Archipelago logo, created in collaboration with multiple artists:
+Artificer/Hunter: Amy
+    [ https://www.instagram.com/a.wendesign ]
+Rivulet/Watcher: Kali
+    [ https://twitter.com/Kalidoesart, https://bsky.app/profile/kalidoesart.bsky.social ]
+Gourmand: ken (fat boy genius)
+    [ https://www.tumblr.com/netdraws, https://x.com/glamnet_ ]
+Monk/Survivor: Papaya
+    [ ]
+Spearmaster: 𝚁𝚒𝚟𝚎𝚛 𝚃𝚑𝚎 𝙶𝚛𝚎𝚖𝚕𝚒𝚗
+    [ https://bsky.app/profile/riverthegremlin.bsky.social, https://riverthegremlin.tumblr.com/ ]
+Saint: speoyt
+    [ https://www.instagram.com/cafecarrrr ]
+
+Original Archipelago logo is created by Krista Corkos and Christopher Wilson
+The logo is licensed under Attribution-NonCommercial 4.0 International (https://creativecommons.org/licenses/by-nc/4.0/)
