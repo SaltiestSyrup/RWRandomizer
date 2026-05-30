@@ -700,14 +700,14 @@ namespace RainWorldRandomizer.Menu
                     LocationKind.FixedWarp => new(-10f, 0f),
                     // LocationKind.ThroneWarp => new(8f, 0f),
                     // LocationKind.SpreadRot => new(4f, 0f),
-                    // LocationKind.Prince => new(6f, 0f),
+                    LocationKind.Prince => new(-6f, 0f),
                     _ => default
                 };
 
                 public float Padding => kind switch
                 {
                     LocationKind.FixedWarp => -15f,
-                    // LocationKind.Prince => -10f,
+                    LocationKind.Prince => -9f,
                     // LocationKind.ThroneWarp => -10f,
                     // LocationKind.Echo => -3f,
                     // LocationKind.SpinningTop => -3f,
