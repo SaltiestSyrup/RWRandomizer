@@ -64,7 +64,6 @@ namespace RainWorldRandomizer.Menu
             // Bounding box
             roundedRect = new RoundedRect(menu, this, default, size, true)
             { fillAlpha = 1f };
-            subObjects.Add(roundedRect);
 
             // Entries
             floatScrollPos = ScrollPos;
@@ -73,11 +72,13 @@ namespace RainWorldRandomizer.Menu
             // Scroll Buttons
             scrollUpButton = new LevelSelector.ScrollButton(menu, this, "UP", new Vector2(size.x / 2f - 12f, size.y + 2f), 0);
             scrollDownButton = new LevelSelector.ScrollButton(menu, this, "DOWN", new Vector2(size.x / 2f - 12f, -26f), 2);
-            subObjects.Add(scrollUpButton);
-            subObjects.Add(scrollDownButton);
-
+            
             // Slider
             scrollSlider = new VerticalSlider(menu, this, "Slider", new Vector2(-30f, 0f), new Vector2(30f, size.y - 20f), RandomizerEnums.SliderId.SpoilerMenu, true);
+            
+            subObjects.Add(roundedRect);
+            subObjects.Add(scrollUpButton);
+            subObjects.Add(scrollDownButton);
             subObjects.Add(scrollSlider);
         }
 

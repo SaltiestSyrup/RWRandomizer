@@ -41,12 +41,10 @@ public class TextClientMenu : RandomizerStatusMenu
         {
             fillAlpha = 1f
         };
-        subObjects.Add(textBoxBackground);
         
         // Text box wrapper
         tabWrapper = new MenuTabWrapper(menu, this);
-        subObjects.Add(tabWrapper);
-
+        
         // Text box
         textBox = new OpTextBox(RandoOptions.textClientCosmeticConfig,
             new Vector2(0.01f, -30f),
@@ -59,6 +57,9 @@ public class TextClientMenu : RandomizerStatusMenu
         
         textBoxWrapper = new UIelementWrapper(tabWrapper, textBox);
         
+        subObjects.Add(textBoxBackground);
+        subObjects.Add(tabWrapper);
+        
         // Remove unneeded elements
         scrollDownButton.RemoveSprites();
         scrollUpButton.RemoveSprites();
@@ -70,7 +71,7 @@ public class TextClientMenu : RandomizerStatusMenu
         List<FormattedMessage> messages = [];
         lock (StoredMessages)
         {
-            foreach (MessageText storedMessage in StoredMessages) 
+            foreach (MessageText storedMessage in StoredMessages)
                 messages.AddRange(new FormattedMessage(storedMessage, entryWidth).SplitByLine());
         }
         
@@ -184,9 +185,12 @@ public class TextClientMenu : RandomizerStatusMenu
     
     public static void StoreMessage(MessageText message)
     {
-        while (StoredMessages.Count >= MAX_MESSAGES) StoredMessages.Dequeue();
-        StoredMessages.Enqueue(message);
-        LiveUpdateQueue.Enqueue(message);
+        lock (StoredMessages)
+        {
+            while (StoredMessages.Count >= MAX_MESSAGES) StoredMessages.Dequeue();
+            StoredMessages.Enqueue(message);
+            LiveUpdateQueue.Enqueue(message);
+        }
     }
 
     public static void ClearStoredMessages()

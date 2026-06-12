@@ -81,10 +81,18 @@ namespace RainWorldRandomizer.Menu
                 self.pages[0].subObjects.Add(connectStatusDisplay);
                 
                 // Text Client
-                TextClientMenu = new TextClientMenu(self, self.pages[0],
-                    new Vector2(xOffset, screenSize.y - (screenSize.y * 0.75f) - 70f));
-                self.pages[0].subObjects.Add(TextClientMenu);
-                xOffset += TextClientMenu.size.x + 10f;
+                try
+                {
+                    TextClientMenu = new TextClientMenu(self, self.pages[0],
+                        new Vector2(xOffset, screenSize.y - (screenSize.y * 0.75f) - 70f));
+                    self.pages[0].subObjects.Add(TextClientMenu);
+                    xOffset += TextClientMenu.size.x + 10f;
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError("Failed to initialize text client");
+                    Plugin.Log.LogError(e);
+                }
             }
             
             // Gate Summary Menu
