@@ -253,22 +253,22 @@ namespace RainWorldRandomizer
             game.world.rainCycle.timer += seconds * 40;
         }
 
-        /// <summary>Doubles the time scale of the player</summary>
+        /// <summary>Doubles the timescale of the player</summary>
         private static void TrapZoomiesPlayer(this RainWorldGame game)
         {
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
-            player.room.updateList.Add(player);
+            player?.room?.updateList.Add(player);
         }
 
         private static void TrapDisableZoomies(this RainWorldGame game)
         {
             Player player = game.FirstAlivePlayer?.realizedCreature as Player;
-            int sumUpdates = player.room.updateList.Count((c) => c == player);
+            int sumUpdates = player?.room?.updateList.Count(c => c == player) ?? 0;
 
             // Safety check to ensure we never completely remove player from updateList
             if (sumUpdates > 1)
             {
-                player.room.updateList.Remove(player);
+                player?.room?.updateList.Remove(player);
             }
         }
 

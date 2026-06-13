@@ -180,6 +180,8 @@ public class TextClientMenu : RandomizerStatusMenu
 
     public void Remove()
     {
+        textBox.OnKeyDown -= TextBoxKeyDown;
+        tabWrapper.RemoveSprites();
         RemoveSprites();
     }
     
