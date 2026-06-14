@@ -2,6 +2,7 @@
 using MonoMod.Cil;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using Watcher;
 using WPOT = Watcher.WatcherEnums.PlacedObjectType;
@@ -51,15 +52,26 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 ILCursor c = new(il);
 
-                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(HUD.HUD).GetMethod(nameof(HUD.HUD.ResetMap))));  // 042c
-                c.MoveBeforeLabels();  // keep cursor inside the conditional
+                // After setting unlockedHallConnection to true
+                c.GotoNext(MoveType.After,
+                    x => x.MatchLdcI4(1),
+                    x => x.MatchStfld(typeof(WatcherRoomSpecificScript.WORA_KarmaSigils)
+                        .GetField(nameof(WatcherRoomSpecificScript.WORA_KarmaSigils.unlockedHallConnection), 
+                            BindingFlags.Instance | BindingFlags.NonPublic))
+                    );
                 c.Emit(OpCodes.Ldarg_0);  // WORA_KarmaSigils this
+                c.EmitDelegate(Delegate);
+                return;
+                
                 static void Delegate(WatcherRoomSpecificScript.WORA_KarmaSigils self)
                 {
-                    if (self.room.game.GetStorySession?.saveState.miscWorldSaveData.numberOfPrinceEncounters is int nope)
-                        EntryPoint.TryGiveLocation($"Prince-{nope + 1}");
+                    if (self.room.game.GetStorySession?.saveState.miscWorldSaveData.numberOfPrinceEncounters is not int encounters)
+                        return;
+                    
+                    // Try to give all previous encounters for safety
+                    for (int i = 0; i <= encounters; i++)
+                        EntryPoint.TryGiveLocation($"Prince-{i + 1}");
                 }
-                c.EmitDelegate(Delegate);
             }
 
             /// <summary>Detect when a Throne dynamic warp is successfully created.</summary>
