@@ -20,7 +20,13 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// </summary>
         private static bool MissingKey(this WarpPoint self) =>
             self.Data.nonDynamicWarpPoint
-            && Items.StaticKey.IsMissing(self.room.world.region.name, self.Data.RegionString ?? (self.room.world.region.name == "WARA" ? "WAUA" : "WRSA"));
+            && Items.StaticKey.IsMissing(self.room.world.region.name, 
+                self.Data.RegionString ??
+                (self.Data.rippleWarp
+                    ? (self.room.world.region.name == "WARA"
+                        ? "WAUA"
+                        : "WRSA")
+                    : "UNDEFINED"));
 
         /// <summary>
         /// Keeps track of warp tear graphics that should be displaying as locked
@@ -32,7 +38,6 @@ namespace RainWorldRandomizer.WatcherIntegration
             // Changing the locked status requires access to the SpriteLeaser,
             // so we store the flag in a bool to be checked in the WarpTear's DrawSprites
             public bool cancelLockedStatus;
-            public bool alreadySwitchedToLocked;
             public bool alreadySwitchedToSealed;
         }
 
@@ -63,12 +68,12 @@ namespace RainWorldRandomizer.WatcherIntegration
             for (int i = 0; i < branches; i++)
             {
                 float angle = 180f / branches * i + Random.Range(-20, 20);
-                Vector2 vector = RWCustom.Custom.DegToVec(angle) * (minRadius + Random.Range(-20, 20));
-                Vector2 vector2 = RWCustom.Custom.DegToVec(angle + 180f) * (minRadius + Random.Range(-20, 20));
+                Vector2 vector = Custom.DegToVec(angle) * (minRadius + Random.Range(-20, 20));
+                Vector2 vector2 = Custom.DegToVec(angle + 180f) * (minRadius + Random.Range(-20, 20));
                 bool even = i % 2 == 0;
                 self.weaverAnimationsStarts.Add(even ? vector : vector2);
                 self.weaverAnimationsEnds.Add(even ? vector2 : vector);
-                self.weaverThreadAbsPos.Add(self.placedObject.pos + RWCustom.Custom.RNV() * 40f);
+                self.weaverThreadAbsPos.Add(self.placedObject.pos + Custom.RNV() * 40f);
             }
 
             self.warpTear?.GetThreadAnimation(self.weaverAnimationsStarts, self.weaverAnimationsEnds, self.weaverThreadAbsPos);
@@ -145,12 +150,11 @@ namespace RainWorldRandomizer.WatcherIntegration
                     {
                         sLeaser.sprites[0].shader = Custom.rainWorld.Shaders[self.shaderOverride ?? (self.isRippleSide ? "WarpTearRippleSide" : "WarpTear")];
                         data.alreadySwitchedToSealed = true;
-                        Plugin.Log.LogDebug($"Switched shader for now sealed warp");
+                        Plugin.Log.LogDebug("Switched shader for now sealed warp");
                     }
-                    else if (!data.alreadySwitchedToLocked)
+                    else
                     {
                         sLeaser.sprites[0].shader = Custom.rainWorld.Shaders["Rando.WarpTear"];
-                        data.alreadySwitchedToLocked = true;
                     }
                 }
             }
