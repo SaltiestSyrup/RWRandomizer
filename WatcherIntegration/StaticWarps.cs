@@ -38,7 +38,6 @@ namespace RainWorldRandomizer.WatcherIntegration
             // Changing the locked status requires access to the SpriteLeaser,
             // so we store the flag in a bool to be checked in the WarpTear's DrawSprites
             public bool cancelLockedStatus;
-            public bool alreadySwitchedToSealed;
         }
 
         /// <summary>
@@ -96,6 +95,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 try
                 {
                     IL.Player.CamoUpdate += Player_CamoUpdate;
+                    IL.Watcher.WarpPoint.CheckClosedOrSealed += ILWarpPointOnCheckClosedOrSealed;
                 }
                 catch (Exception e)
                 {
@@ -110,6 +110,27 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.Watcher.SpinningTop.WarpAnimationUpdate -= SpinningTopOnWarpAnimationUpdate;
                 On.Watcher.WarpPoint.ExpireWarpByWeaver -= WarpPoint_ExpireWarpByWeaver;
                 IL.Player.CamoUpdate -= Player_CamoUpdate;
+                IL.Watcher.WarpPoint.CheckClosedOrSealed -= ILWarpPointOnCheckClosedOrSealed;
+            }
+            
+            /// <summary>
+            /// Prevent sealed warps from vanishing entirely
+            /// </summary>
+            private static void ILWarpPointOnCheckClosedOrSealed(ILContext il)
+            {
+                ILCursor c = new(il);
+
+                // Second load of State.Closed
+                c.GotoNext(x => x.MatchLdsfld(typeof(WarpPoint.State).GetField(nameof(WarpPoint.State.Closed))));
+                c.GotoNext(MoveType.After,
+                    x => x.MatchLdsfld(typeof(WarpPoint.State).GetField(nameof(WarpPoint.State.Closed))));
+                c.EmitDelegate(ChangeStatus);
+                return;
+
+                static WarpPoint.State ChangeStatus(WarpPoint.State state)
+                {
+                    return WarpPoint.State.Sealed;
+                }
             }
 
             /// <summary>
@@ -146,10 +167,9 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 if (ActiveLockedWarps.TryGetValue(self, out LockedWarpData data))
                 {
-                    if (data.cancelLockedStatus && !data.alreadySwitchedToSealed)
+                    if (data.cancelLockedStatus)
                     {
                         sLeaser.sprites[0].shader = Custom.rainWorld.Shaders[self.shaderOverride ?? (self.isRippleSide ? "WarpTearRippleSide" : "WarpTear")];
-                        data.alreadySwitchedToSealed = true;
                         Plugin.Log.LogDebug("Switched shader for now sealed warp");
                     }
                     else
