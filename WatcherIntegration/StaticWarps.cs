@@ -167,15 +167,9 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 if (ActiveLockedWarps.TryGetValue(self, out LockedWarpData data))
                 {
-                    if (data.cancelLockedStatus)
-                    {
-                        sLeaser.sprites[0].shader = Custom.rainWorld.Shaders[self.shaderOverride ?? (self.isRippleSide ? "WarpTearRippleSide" : "WarpTear")];
-                        Plugin.Log.LogDebug("Switched shader for now sealed warp");
-                    }
-                    else
-                    {
-                        sLeaser.sprites[0].shader = Custom.rainWorld.Shaders["Rando.WarpTear"];
-                    }
+                    sLeaser.sprites[0].shader = data.cancelLockedStatus
+                        ? Custom.rainWorld.Shaders[self.shaderOverride ?? (self.isRippleSide ? "WarpTearRippleSide" : "WarpTear")]
+                        : Custom.rainWorld.Shaders["Rando.WarpTear"];
                 }
             }
             

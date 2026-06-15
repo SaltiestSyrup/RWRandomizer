@@ -193,10 +193,11 @@ namespace RainWorldRandomizer.WatcherIntegration
                 Dictionary<string, List<string>> candidatesByRegion = [];
 
                 List<string> normalWeightedCandidates = [];
+                List<string> fallbackCandidates = [];
 
                 world.game.rainWorld.levelDynamicWarpTargets.TryGetValue(999f, out List<string> noRippleTargets);
-                string fallbackWarp = null;
-                foreach (var regionWarpsPair in world.game.rainWorld.regionDynamicWarpTargets) // REGION LOOP
+                string finalFallbackWarp = null;
+                foreach (KeyValuePair<string, List<string>> regionWarpsPair in world.game.rainWorld.regionDynamicWarpTargets) // REGION LOOP
                 {
                     if (!regionCandidates.Contains(regionWarpsPair.Key)) continue;
 
@@ -237,10 +238,10 @@ namespace RainWorldRandomizer.WatcherIntegration
                         if (targetRegion is null && noRippleTargets.Contains(targetRoom)) continue;
 
                         // The fallback warp can be in the current region or a room with a warp in it if need be
-                        fallbackWarp = targetRoom;
+                        finalFallbackWarp = targetRoom;
 
                         // Don't warp to the region we're currently in
-                        if (targetRegion is null && regionWarpsPair.Key.Equals(world.name, System.StringComparison.InvariantCultureIgnoreCase)) continue;
+                        if (targetRegion is null && regionWarpsPair.Key.Equals(world.name, StringComparison.InvariantCultureIgnoreCase)) continue;
 
                         // Don't warp to rooms with a warp in them already
                         if (saveState.miscWorldSaveData.discoveredWarpPoints.Any(w => WarpPoint.RoomFromIdentifyingString(w.Key) == targetRoom)) continue;
@@ -253,12 +254,20 @@ namespace RainWorldRandomizer.WatcherIntegration
                             continue;
                         }
 
-                        Plugin.Log.LogDebug($"Adding warp \"{targetRoom}\" to list with weight of {weight}");
-                        for (int i = 0; i < weight; i++) normalWeightedCandidates.Add(targetRoom);
+                        Plugin.Log.LogDebug($"Adding target room \"{targetRoom}\" to dynamic warp list with weight of {Mathf.CeilToInt((float)weight / regionWarpsPair.Value.Count)}");
+                        for (int i = 0; i < Mathf.CeilToInt((float)weight / regionWarpsPair.Value.Count); i++)
+                            normalWeightedCandidates.Add(targetRoom);
+                        fallbackCandidates.Add(targetRoom);
                     }
                 }
 
-                if (normalWeightedCandidates.Count == 0 && fallbackWarp is not null) normalWeightedCandidates.Add(fallbackWarp);
+                // If normal candidate list is empty because of 0 weights, use fallback list with 1 weight for each valid room.
+                // If normal candidate list is empty for some other reason, use final fallback target.
+                if (normalWeightedCandidates.Count == 0)
+                {
+                    Plugin.Log.LogInfo("No weighted targets for dynamic warp, using fallback");
+                    return fallbackCandidates.Count > 0 ? fallbackCandidates : [finalFallbackWarp];
+                }
                 return normalWeightedCandidates;
             }
 
