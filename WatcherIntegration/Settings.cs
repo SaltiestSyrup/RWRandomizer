@@ -20,6 +20,13 @@ namespace RainWorldRandomizer.WatcherIntegration
         internal static bool spinningTopKeys;
         internal static bool daemonKeys;
         internal static long rottedRegionTarget;
+        internal static bool spreadRotChecks;
+
+        public static bool WeaverRequired()
+        {
+            return ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.Weaver
+                   || ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.TrueEnding;
+        }
 
         //internal static bool Predetermined(this DynWarpMode mode) => mode == DynWarpMode.StaticPredetermined || mode == DynWarpMode.UnlockablePredetermined;
         //internal static bool Unlockable(this DynWarpMode mode) => mode == DynWarpMode.UnlockablePool || mode == DynWarpMode.UnlockablePredetermined;
@@ -60,14 +67,15 @@ namespace RainWorldRandomizer.WatcherIntegration
                     (RippleReqMode)data.GetSimple("dynamic_warp_ripple_req", 0L),
                     data.GetSimple("spinning_top_keys", 0L) == 1L,
                     data.GetSimple("daemon_keys", 0L) == 1L,
-                    data.GetSimple("rotted_region_target", 21L)
+                    data.GetSimple("rotted_region_target", 21L),
+                    data.GetSimple("checks_spread_rot", 0L)
                     );
             }
             catch (Exception e) { Plugin.Log.LogError(e); }
         }
 
         internal static void ReceiveSettings(DynWarpMode modeNormal, DynWarpMode modeThrone, IEnumerable<string> pool, IDictionary<string, string> predetermination, 
-            RippleReqMode rippleReq, bool spinningTopKeys, bool daemonKeys, long rottedRegionTarget)
+            RippleReqMode rippleReq, bool spinningTopKeys, bool daemonKeys, long rottedRegionTarget, long spreadRotChecks)
         {
             Settings.modeNormal = DynWarpMode.Visited; // modeNormal;
             Settings.modeThrone = DynWarpMode.Visited; // modeThrone;
@@ -77,6 +85,10 @@ namespace RainWorldRandomizer.WatcherIntegration
             Settings.spinningTopKeys = spinningTopKeys;
             Settings.daemonKeys = daemonKeys;
             Settings.rottedRegionTarget = rottedRegionTarget;
+            Settings.spreadRotChecks = 
+                !WeaverRequired() 
+                && ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot 
+                    ? spreadRotChecks >= 1 : spreadRotChecks == 2;
             Items.ResetItems();
         }
     }

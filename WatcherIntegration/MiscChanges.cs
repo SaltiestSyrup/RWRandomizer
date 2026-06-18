@@ -35,7 +35,8 @@ namespace RainWorldRandomizer.WatcherIntegration
         private static bool World_InitiateWeaverPresence(On.World.orig_InitiateWeaverPresence orig, World self, AbstractRoom triggerRoom)
         {
             if (Plugin.RandoManager is ManagerArchipelago
-                && ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot)
+                && (ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot 
+                    || Settings.spreadRotChecks))
             {
                 return false;
             }
