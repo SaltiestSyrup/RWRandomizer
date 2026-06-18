@@ -29,6 +29,44 @@ namespace RainWorldRandomizer.WatcherIntegration
                     : "UNDEFINED"));
 
         /// <summary>
+        /// Given two region acronyms, determine if there is a sealed warp connecting them.
+        /// </summary>
+        public static bool WarpIsSealed(this SaveState saveState, string region1, string region2)
+        {
+            // Find all warps in both regions
+            Custom.rainWorld.regionWarpRooms.TryGetValue(region1.ToLowerInvariant(), out List<string> reg1Warps);
+            Custom.rainWorld.regionWarpRooms.TryGetValue(region2.ToLowerInvariant(), out List<string> reg2Warps);
+            Custom.rainWorld.regionSpinningTopRooms.TryGetValue(region1.ToLowerInvariant(), out List<string> reg1TopWarps);
+            Custom.rainWorld.regionSpinningTopRooms.TryGetValue(region2.ToLowerInvariant(), out List<string> reg2TopWarps);
+            reg1Warps ??= [];
+            reg2Warps ??= [];
+            reg1TopWarps ??= [];
+            reg2TopWarps ??= [];
+            
+            // Find all warp rooms that connect both regions
+            // Done in both directions to catch one-ways
+            HashSet<string> relevantRooms = [];
+            foreach (var split in ((List<string>)[..reg1Warps, ..reg1TopWarps])
+                     .Select(warp => warp.Split(':'))
+                         .Where(split => split.Last().StartsWith(region2, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                relevantRooms.UnionWith([split[0], split.Last()]);
+            }
+            foreach (var split in ((List<string>)[..reg2Warps, ..reg2TopWarps])
+                     .Select(warp => warp.Split(':'))
+                         .Where(split => split.Last().StartsWith(region1, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                relevantRooms.UnionWith([split[0], split.Last()]);
+            }
+            
+            // Check if any of the relevant rooms are in either roomsSealedByWeaverAbility or roomsSealedByVoidWeaver
+            if (relevantRooms.Intersect(saveState.miscWorldSaveData.roomsSealedByVoidWeaver).Any()) return true;
+            if (relevantRooms.Intersect(saveState.miscWorldSaveData.roomsSealedByWeaverAbility).Any()) return true;
+            
+            return false;
+        }
+
+        /// <summary>
         /// Keeps track of warp tear graphics that should be displaying as locked
         /// </summary>
         private static ConditionalWeakTable<WarpTear, LockedWarpData> ActiveLockedWarps = new();

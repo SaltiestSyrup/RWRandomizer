@@ -10,7 +10,7 @@ using RWMenu = Menu.Menu;
 
 namespace RainWorldRandomizer.Menu
 {
-    public class GateMapDisplay : RoundedRect
+    public sealed class GateMapDisplay : RoundedRect
     {
         public Dictionary<string, Node> nodes = [];
         public Dictionary<string, Connector> connectors = [];
@@ -55,7 +55,7 @@ namespace RainWorldRandomizer.Menu
 
             foreach (string gate in gates)
             {
-                if (connectors.TryGetValue(gate, out Connector connector)) connector.Color = COLOR_ACCESSIBLE;
+                if (connectors.TryGetValue(gate, out Connector connector)) connector.SetAccessible(true);
             }
 
             foreach (string nodeName in GetAccessibleNodes(gates))
@@ -107,6 +107,16 @@ namespace RainWorldRandomizer.Menu
                             _ => nodeName.Substring(1, 3)
                         };
                         nodes[nodeName] = new(menu, this, pos, displayName);
+
+                        // Change color if Sentient Rot present
+                        if (Plugin.Singleton.Game.GetStorySession?.saveState.miscWorldSaveData
+                                .regionsInfectedBySentientRot.Contains($"w{displayName.ToLowerInvariant()}") is true
+                            || Region.IsSentientRotRegion($"w{displayName.ToLowerInvariant()}"))
+                        {
+                            nodes[nodeName].colorAccessible = RainWorld.RippleColor;
+                            nodes[nodeName].colorInaccessible = RainWorld.RippleColor * 0.6f;
+                            nodes[nodeName].Accessible = false; // Refresh color
+                        }
                     }
                     pos += pos.x < 460f ? new Vector2(60f, 0f) : new Vector2(-420f, 40f);
                 }
@@ -172,7 +182,7 @@ namespace RainWorldRandomizer.Menu
                     {
                         string leftName = watcherNodeOrder[num];
                         string rightName = watcherNodeOrder[num + directive.Item1];
-                        string keyName = string.Join("-", (new string[] { leftName.Substring(0, 4), rightName.Substring(0, 4) }).OrderBy(x => x));
+                        string keyName = string.Join("-", (new string[] { leftName.TrimEnd('*'), rightName.TrimEnd('*') }).OrderBy(x => x));
 
                         // One-ways
                         if (CanUseGate(keyName)[0] ^ CanUseGate(keyName)[1])
@@ -183,16 +193,25 @@ namespace RainWorldRandomizer.Menu
                                 nodes[rightName].FetchDirection(directive.Item3)
                             ];
                             // Invert direction if ST is on the other side of the warp string XOR the nodes were swapped when making the warp string
-                            if (!CanUseGate(keyName)[0] ^ leftName.CompareTo(rightName) > 0) vertices = [vertices[1], vertices[0]];
+                            if (!CanUseGate(keyName)[0] ^ string.Compare(leftName, rightName, StringComparison.InvariantCulture) > 0)
+                                vertices = [vertices[1], vertices[0]];
 
                             connectors[$"Warp-{keyName}"] = Connector.OneWay(vertices);
-                            continue;
+                        }
+                        else
+                        {
+                            connectors[$"Warp-{keyName}"] = new(
+                                nodes[leftName].FetchDirection(directive.Item2),
+                                nodes[rightName].FetchDirection(directive.Item3));
                         }
 
-                        connectors[$"Warp-{keyName}"] = new(
-                            nodes[leftName].FetchDirection(directive.Item2),
-                            nodes[rightName].FetchDirection(directive.Item3)
-                            );
+                        if ((Plugin.Singleton.Game.GetStorySession?.saveState)
+                            .WarpIsSealed(leftName.TrimEnd('*'), rightName.TrimEnd('*')))
+                        {
+                            connectors[$"Warp-{keyName}"].colorAccessible = RainWorld.GoldRGB * 2.3f;// new Color(1f, 199f / 255f, 124 / 255f);
+                            connectors[$"Warp-{keyName}"].colorInaccessible = RainWorld.GoldRGB * 1.1f;// new Color(129f / 255f, 86f / 255f, 29f / 255f);
+                            connectors[$"Warp-{keyName}"].SetAccessible(false); // Refresh color
+                        }
                     }
                 }
 
@@ -290,6 +309,7 @@ namespace RainWorldRandomizer.Menu
             // (Most) Daemon warps are one way entering Daemon
             if (key.Contains("WRSA") && !key.Contains("WORA") && !key.Contains("WARA"))
             {
+                if (Items.Ripple.y < 5f) return [false, false]; // No access unless at Ripple 9
                 string[] split = key.Split('-');
                 if (split[0] == "WRSA") return [false, true];
                 return [true, false];
@@ -333,8 +353,11 @@ namespace RainWorldRandomizer.Menu
         /// <summary>
         /// Given a list of currently held keys, determinine which region nodes are accessible.
         /// </summary>
-        public static IEnumerable<string> GetAccessibleNodes(IEnumerable<string> keys)
+        public static IEnumerable<string> GetAccessibleNodes(List<string> keys)
         {
+            // Add Daemon warp key from starting region if they weren't randomized
+            if (Scug == "Watcher" && !Settings.daemonKeys) keys.Add($"Warp-{string.Join("-", new[] { ActualStartRegion, "WRSA" }.OrderBy(x => x))}");
+            
             List<string> ret = [GetNodeName(ActualStartRegion), "<FQ>", "<P>"];
             Dictionary<string, bool[]> keyDict = keys.ToDictionary(x => x, CanUseGate);
             bool updated = true;
@@ -398,6 +421,9 @@ namespace RainWorldRandomizer.Menu
             public static Vector2 SIZE = new(30f, 20f);
             public float completion;
             public bool current;
+            
+            public Color colorAccessible = COLOR_ACCESSIBLE;
+            public Color colorInaccessible = COLOR_INACCESSIBLE;
 
             public Node(RWMenu menu, MenuObject owner, Vector2 pos, string text, float completion = 0f)
                 : base(menu, owner, pos, SIZE, true)
@@ -418,14 +444,14 @@ namespace RainWorldRandomizer.Menu
                 borderColor = new HSLColor(c.x, c.y, c.z);
             }
 
-            public Vector2 Bottom => pos + new Vector2(size.x / 2, 1f) + (owner as GateMapDisplay).pos;
-            public Vector2 Top => pos + new Vector2(size.x / 2, size.y + 1f) + (owner as GateMapDisplay).pos;
-            public Vector2 Left => pos + new Vector2(1f, size.y / 2) + (owner as GateMapDisplay).pos;
-            public Vector2 Right => pos + new Vector2(size.x, size.y / 2) + (owner as GateMapDisplay).pos;
-            public Vector2 BottomLeft => pos + new Vector2(4f, 4f) + (owner as GateMapDisplay).pos;
-            public Vector2 BottomRight => pos + new Vector2(size.x - 4f, 4f) + (owner as GateMapDisplay).pos;
-            public Vector2 TopRight => pos + new Vector2(size.x - 4f, size.y - 4f) + (owner as GateMapDisplay).pos;
-            public Vector2 TopLeft => pos + new Vector2(4f, size.y - 4f) + (owner as GateMapDisplay).pos;
+            public Vector2 Bottom => pos + new Vector2(size.x / 2, 1f) + ((GateMapDisplay)owner).pos;
+            public Vector2 Top => pos + new Vector2(size.x / 2, size.y + 1f) + ((GateMapDisplay)owner).pos;
+            public Vector2 Left => pos + new Vector2(1f, size.y / 2) + ((GateMapDisplay)owner).pos;
+            public Vector2 Right => pos + new Vector2(size.x, size.y / 2) + ((GateMapDisplay)owner).pos;
+            public Vector2 BottomLeft => pos + new Vector2(4f, 4f) + ((GateMapDisplay)owner).pos;
+            public Vector2 BottomRight => pos + new Vector2(size.x - 4f, 4f) + ((GateMapDisplay)owner).pos;
+            public Vector2 TopRight => pos + new Vector2(size.x - 4f, size.y - 4f) + ((GateMapDisplay)owner).pos;
+            public Vector2 TopLeft => pos + new Vector2(4f, size.y - 4f) + ((GateMapDisplay)owner).pos;
 
             public Vector2 FetchDirection(int dir) => dir switch
             {
@@ -444,7 +470,7 @@ namespace RainWorldRandomizer.Menu
             {
                 set
                 {
-                    label.label.color = value ? COLOR_ACCESSIBLE : COLOR_INACCESSIBLE;
+                    label.label.color = value ? colorAccessible : colorInaccessible;
                 }
             }
 
@@ -480,6 +506,9 @@ namespace RainWorldRandomizer.Menu
 
         public class Connector : FContainer
         {
+            public Color colorAccessible = COLOR_ACCESSIBLE;
+            public Color colorInaccessible = COLOR_INACCESSIBLE;
+            
             /// <summary>
             /// Create a Connector from a list of vector vertices.
             /// </summary>
@@ -569,35 +598,46 @@ namespace RainWorldRandomizer.Menu
                 return c;
             }
 
+            /// <summary>
+            /// Set whether this connector should use the accessible or inaccessible color.
+            /// </summary>
+            public void SetAccessible(bool val = true)
+            {
+                Color = val ? colorAccessible : colorInaccessible;
+            }
+            
             public Color Color
             {
-                set 
+                get
+                {
+                    return _childNodes.OfType<Segment>().FirstOrDefault()?.color ?? colorInaccessible;
+                }
+                private set 
                 {
                     foreach (Segment segment in _childNodes.OfType<Segment>()) segment.color = value;
                     foreach (Dot dot in _childNodes.OfType<Dot>()) dot.color = value;
                 }
-                get => _childNodes.OfType<Segment>().FirstOrDefault()?.color ?? COLOR_INACCESSIBLE;
             }
 
-            public class Segment : FSprite
+            public sealed class Segment : FSprite
             {
                 public Segment(Vector2 start, Vector2 end) : base("pixel")
                 {
                     Vector2 midpoint = (start + end) / 2;
-                    SetPosition(midpoint);
+                    SetPosition(midpoint + Vector2.one * 0.01f);
                     var displacement = end - start;
                     color = COLOR_INACCESSIBLE;
-                    if (displacement.x == 0) { width = 1; height = displacement.y; }
-                    else if (displacement.y == 0) { width = displacement.x; height = 1; }
+                    if (displacement.x == 0) { width = 2f; height = displacement.y; }
+                    else if (displacement.y == 0) { width = displacement.x; height = 2f; }
                     else
                     {
                         rotation = Custom.AimFromOneVectorToAnother(start, end);
-                        width = 1; height = displacement.magnitude;
+                        width = 2f; height = displacement.magnitude;
                     }
                 }
             }
 
-            public class Dot : FSprite
+            public sealed class Dot : FSprite
             {
                 public Dot(Vector2 pos) : base("Circle20")
                 {
