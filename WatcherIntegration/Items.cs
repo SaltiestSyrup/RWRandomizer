@@ -66,6 +66,11 @@ namespace RainWorldRandomizer.WatcherIntegration
             }
         }
 
+        public static bool CanDynamicWarp()
+        {
+            return Ripple.y >= 2 || Plugin.RandoManager.GivenRippleEggWarp;
+        }
+
         internal static void ReceiveItem(string item)
         {
             string[] split = item.Split(['-'], 2);

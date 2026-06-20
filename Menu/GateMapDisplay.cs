@@ -351,12 +351,17 @@ namespace RainWorldRandomizer.Menu
         }
 
         /// <summary>
-        /// Given a list of currently held keys, determinine which region nodes are accessible.
+        /// Given a list of currently held keys, determine which region nodes are accessible.
         /// </summary>
         public static IEnumerable<string> GetAccessibleNodes(List<string> keys)
         {
-            // Add Daemon warp key from starting region if they weren't randomized
-            if (Scug == "Watcher" && !Settings.daemonKeys) keys.Add($"Warp-{string.Join("-", new[] { ActualStartRegion, "WRSA" }.OrderBy(x => x))}");
+            if (Scug == "Watcher")
+            {
+                if (!Settings.daemonKeys) // Warp to Daemon from anywhere
+                    keys.Add($"Warp-{string.Join("-", new[] { ActualStartRegion, "WRSA" }.OrderBy(x => x))}");
+                if (Items.CanDynamicWarp()) // Warp to Outer Rim from anywhere
+                    keys.Add($"Warp-{string.Join("-", new[] { ActualStartRegion, "WORA" }.OrderBy(x => x))}");
+            }
             
             List<string> ret = [GetNodeName(ActualStartRegion), "<FQ>", "<P>"];
             Dictionary<string, bool[]> keyDict = keys.ToDictionary(x => x, CanUseGate);
@@ -487,6 +492,19 @@ namespace RainWorldRandomizer.Menu
                         "P" => "Passages",
                         _ => "Unknown region",
                     };
+                }
+            }
+
+            public Color BackgroundColor
+            {
+                set
+                {
+                    sprites[MainFillSprite].color = value;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        sprites[FillSideSprite(i)].color = value;
+                        sprites[FillCornerSprite(i)].color = value;
+                    }
                 }
             }
 
