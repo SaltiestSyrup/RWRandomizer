@@ -190,7 +190,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                         && saveState?.miscWorldSaveData.hasVoidWeaverAbility is true
                         && !saveState.deathPersistentSaveData.SeenWatcherSealLockedWarpTutorial())
                     {
-                        self.room.game.cameras[0].hud?.textPrompt?.AddMessage("Holding UP and SPECIAL will seal a locked warp point", 120, 160, false, true);
+                        self.room.game.cameras[0].hud?.textPrompt?.AddMessage("Holding UP and SPECIAL will seal a locked warp point", 120, 160, true, true);
                         saveState.deathPersistentSaveData.SetWatcherSealLockedWarpTutorial(true);
                     }
                 }
