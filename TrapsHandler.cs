@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RainWorldRandomizer.Menu;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -247,10 +248,15 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>Removes time from the current cycle</summary>
-        /// <param name="seconds">How much time the player should lose</param>
-        private static void TrapCycleTimer(this RainWorldGame game, int seconds = 120)
+        /// <param name="game"></param>
+        /// <param name="scaleFactor">Multiplier used to determine how harsh the time reduction should be.
+        /// Choose a value between 0 and 1, where 0 does nothing and 1 ends the cycle instantly.</param>
+        private static void TrapCycleTimer(this RainWorldGame game, float scaleFactor = 0.5f)
         {
-            game.world.rainCycle.timer += seconds * 40;
+            int elapsed = game.world.rainCycle.timer;
+            int totalTime = game.world.rainCycle.cycleLength;
+            game.world.rainCycle.timer +=
+                elapsed < totalTime ? Mathf.FloorToInt(scaleFactor * (totalTime - elapsed)) : 0;
         }
 
         /// <summary>Doubles the timescale of the player</summary>
