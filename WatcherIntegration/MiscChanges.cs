@@ -1,4 +1,5 @@
 ﻿using System;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
 
 namespace RainWorldRandomizer.WatcherIntegration
@@ -7,10 +8,9 @@ namespace RainWorldRandomizer.WatcherIntegration
     {
         public static void ApplyHooks()
         {
-            On.World.InitiateWeaverPresence += World_InitiateWeaverPresence;
-            
             try
             {
+                IL.Watcher.WarpPoint.ActivateWeaver += WarpPointOnActivateWeaver;
                 IL.Player.WatcherUpdate += FixDialWarpAbilityHardcode;
                 IL.Watcher.WatcherRoomSpecificScript.AddRoomSpecificScript += FixDialWarpAbilityHardcode;
                 IL.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.Update += FixDialWarpAbilityHardcode;
@@ -20,27 +20,53 @@ namespace RainWorldRandomizer.WatcherIntegration
                 Plugin.Log.LogError(e);
             }
         }
-        
+
+
         public static void RemoveHooks()
         {
-            On.World.InitiateWeaverPresence -= World_InitiateWeaverPresence;
+            IL.Watcher.WarpPoint.ActivateWeaver += WarpPointOnActivateWeaver;
             IL.Player.WatcherUpdate -= FixDialWarpAbilityHardcode;
             IL.Watcher.WatcherRoomSpecificScript.AddRoomSpecificScript -= FixDialWarpAbilityHardcode;
             IL.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.Update -= FixDialWarpAbilityHardcode;
         }
-
+        
         /// <summary>
-        /// Prevent Weaver from spawning if the player needs to complete the Sentient Rot ending
+        /// Prevent Weaver from spawning if the player needs to complete the Sentient Rot ending / has Rot spread checks
         /// </summary>
-        private static bool World_InitiateWeaverPresence(On.World.orig_InitiateWeaverPresence orig, World self, AbstractRoom triggerRoom)
+        private static void WarpPointOnActivateWeaver(ILContext il)
         {
-            if (Plugin.RandoManager is ManagerArchipelago
-                && (ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot 
-                    || Settings.spreadRotChecks))
+            ILCursor c = new(il);
+
+            // Fetch label for after call to InitiateWeaverPresence
+            c.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(World).GetMethod(nameof(World.InitiateWeaverPresence))),
+                x => x.MatchBrfalse(out _));
+
+            ILLabel jump = c.MarkLabel();
+            
+            // Move back before InitiateWeaverPresence is called
+            c.GotoPrev(x => x.MatchLdarg(0));
+            c.GotoPrev(MoveType.AfterLabel, x => x.MatchLdarg(0));
+            
+            // Skip past Weaver spawn
+            c.EmitDelegate(DontSkipWeaver);
+            c.Emit(OpCodes.Brfalse, jump);
+
+            // Skip music trigger
+            // RainCycle.MusicAllowed check near end of method
+            c.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(RainCycle).GetProperty(nameof(RainCycle.MusicAllowed))!.GetGetMethod()));
+            
+            c.Emit(OpCodes.Pop);
+            c.EmitDelegate(DontSkipWeaver);
+            return;
+
+            static bool DontSkipWeaver()
             {
-                return false;
+                return !(Plugin.RandoManager is ManagerArchipelago
+                       && (ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot
+                           || Settings.spreadRotChecks));
             }
-            return orig(self, triggerRoom);
         }
         
         /// <summary>

@@ -87,8 +87,8 @@ namespace RainWorldRandomizer.WatcherIntegration
             Settings.rottedRegionTarget = rottedRegionTarget;
             Settings.spreadRotChecks = 
                 !WeaverRequired() 
-                && ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot 
-                    ? spreadRotChecks >= 1 : spreadRotChecks == 2;
+                && (ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot 
+                    ? spreadRotChecks >= 1 : spreadRotChecks == 2);
             Items.ResetItems();
         }
     }
