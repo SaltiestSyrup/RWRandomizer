@@ -130,12 +130,12 @@ namespace RainWorldRandomizer
                 TrapsHandler.ApplyHooks();
                 DeathLinkHandler.ApplyHooks();
 
+                On.RainWorld.UnloadResources += UnloadResources;
+                On.RainWorld.LoadModResources += LoadResources;
                 On.RainWorld.OnModsInit += OnModsInit;
                 On.RainWorld.PostModsInit += PostModsInit;
                 On.ExtEnumInitializer.InitTypes += OnInitExtEnumTypes;
                 On.StaticWorld.InitStaticWorld += OnInitStaticWorld;
-                On.RainWorld.LoadModResources += LoadResources;
-                On.RainWorld.UnloadResources += UnloadResources;
 
                 if (ExtCollectibleTrackerComptability.Enabled)
                 {
@@ -179,12 +179,12 @@ namespace RainWorldRandomizer
                 TrapsHandler.RemoveHooks();
                 DeathLinkHandler.RemoveHooks();
 
+                On.RainWorld.UnloadResources -= UnloadResources;
+                On.RainWorld.LoadModResources -= LoadResources;
                 On.RainWorld.OnModsInit -= OnModsInit;
                 On.RainWorld.PostModsInit -= PostModsInit;
                 On.ExtEnumInitializer.InitTypes -= OnInitExtEnumTypes;
                 On.StaticWorld.InitStaticWorld -= OnInitStaticWorld;
-                On.RainWorld.LoadModResources -= LoadResources;
-                On.RainWorld.UnloadResources -= UnloadResources;
 
                 WatcherIntegration.EntryPoint.RemoveHooks();
             }
@@ -192,6 +192,25 @@ namespace RainWorldRandomizer
             {
                 Log.LogError(e);
             }
+        }
+        
+        public void UnloadResources(On.RainWorld.orig_UnloadResources orig, RainWorld self)
+        {
+            orig(self);
+            Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
+        }
+        
+        public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
+        {
+            orig(self);
+            Futile.atlasManager.LoadAtlas("Atlases/randomizer");
+
+            // If you try to load an already loaded AssetBundle,
+            // a message gets logged to exceptionLog.txt but no exception is actually thrown.
+            if (AssetBundle.GetAllLoadedAssetBundles().Any(a => a.name == "rando")) return;
+
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("AssetBundles/rando"));
+            self.Shaders.Add("Rando.WarpTear", FShader.CreateShader("Rando.WarpTear", assetBundle.LoadAsset<Shader>("Assets/Shaders/RandoWarpTear.shader")));
         }
 
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -251,25 +270,6 @@ namespace RainWorldRandomizer
             // Make the logic time
             CustomLogicBuilder.DefineLogic();
             foreach (LogicAddon addon in logicAddons) addon.DefineLogic();
-        }
-
-        public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
-        {
-            orig(self);
-            Futile.atlasManager.LoadAtlas("Atlases/randomizer");
-
-            // If you try to load an already loaded AssetBundle,
-            // a message gets logged to exceptionLog.txt but no exception is actually thrown.
-            if (AssetBundle.GetAllLoadedAssetBundles().Any(a => a.name == "rando")) return;
-
-            AssetBundle assetBundle = AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("AssetBundles/rando"));
-            self.Shaders.Add("Rando.WarpTear", FShader.CreateShader("Rando.WarpTear", assetBundle.LoadAsset<Shader>("Assets/Shaders/RandoWarpTear.shader")));
-        }
-
-        public void UnloadResources(On.RainWorld.orig_UnloadResources orig, RainWorld self)
-        {
-            orig(self);
-            Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
         }
 
         public static void AddLogicAddon(LogicAddon addon) => logicAddons.Add(addon);

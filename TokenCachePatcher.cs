@@ -33,6 +33,7 @@ namespace RainWorldRandomizer
         {
             On.RainWorld.ReadTokenCache += OnReadTokenCache;
             On.Menu.InitializationScreen.Update += OnInitializationScreenUpdate;
+            On.ProcessManager.Update += ProcessManagerOnUpdate;
 
             try
             {
@@ -49,8 +50,33 @@ namespace RainWorldRandomizer
         {
             On.RainWorld.ReadTokenCache -= OnReadTokenCache;
             On.Menu.InitializationScreen.Update -= OnInitializationScreenUpdate;
+            On.ProcessManager.Update += ProcessManagerOnUpdate;
             IL.ProcessManager.Update -= ILProcessManagerUpdate;
             IL.RainWorld.BuildTokenCache -= ILBuildTokenCache;
+        }
+        
+        /// <summary>
+        /// Hardcoded edge cases that aren't accounted for in the automated fetching
+        /// </summary>
+        private static void FinalTokenCacheHardcode(RainWorld rainWorld)
+        {
+            // SB_ravine pearl is removed for Arty and Spear with a filter, which is not accounted for by anything
+            rainWorld.regionDataPearls.TryGetValue("sb", out List<DataPearl.AbstractDataPearl.DataPearlType> sbPearls);
+            int i = sbPearls?.IndexOf(DataPearl.AbstractDataPearl.DataPearlType.SB_ravine) ?? -1;
+            if (i >= 0 && ModManager.MSC)
+            {
+                rainWorld.regionDataPearlsAccessibility["sb"][i].Remove(MoreSlugcatsEnums.SlugcatStatsName.Artificer);
+                rainWorld.regionDataPearlsAccessibility["sb"][i].Remove(MoreSlugcatsEnums.SlugcatStatsName.Spear);
+            }
+            
+            // I don't know why there's an empty pearl ID in SI for non-MSC but get rid of it
+            rainWorld.regionDataPearls.TryGetValue("si", out List<DataPearl.AbstractDataPearl.DataPearlType> siPearls);
+            int j = siPearls?.IndexOf(new DataPearl.AbstractDataPearl.DataPearlType("")) ?? -1;
+            if (j >= 0)
+            {
+                rainWorld.regionDataPearls["si"].RemoveAt(j);
+                rainWorld.regionDataPearlsAccessibility["si"].RemoveAt(j);
+            }
         }
 
         private static void ILProcessManagerUpdate(ILContext il)
@@ -83,6 +109,16 @@ namespace RainWorldRandomizer
             static bool CancelDeleteFile(string filePath) => File.Exists(filePath);
         }
 
+        private static void ProcessManagerOnUpdate(On.ProcessManager.orig_Update orig, ProcessManager self, float deltaTime)
+        {
+            orig(self, deltaTime);
+
+            if (self.finalizeModsStep == 4 && !self.modFinalizationDone)
+            {
+                FinalTokenCacheHardcode(self.rainWorld);
+            }
+        }
+        
         private static void OnInitializationScreenUpdate(On.Menu.InitializationScreen.orig_Update orig, InitializationScreen self)
         {
             if (self.currentStep == InitializationScreen.InitializationStep.VALIDATE_MODS)
@@ -99,7 +135,14 @@ namespace RainWorldRandomizer
 
                 self.filesInBadState = !File.Exists(path);
             }
+
+            // We want to act *after* the frame where this is true
+            bool wrappedUp = self.currentStep == InitializationScreen.InitializationStep.WRAP_UP;
+            
             orig(self);
+            
+            // Hardcoded post-setup changes
+            if (wrappedUp) FinalTokenCacheHardcode(self.manager.rainWorld);
         }
 
         /// <summary>
