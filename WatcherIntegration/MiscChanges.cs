@@ -1,6 +1,7 @@
 ﻿using System;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MonoMod.RuntimeDetour;
 
 namespace RainWorldRandomizer.WatcherIntegration
 {
@@ -10,6 +11,9 @@ namespace RainWorldRandomizer.WatcherIntegration
         {
             try
             {
+                Hook _ = new Hook(typeof(PlacedObject).GetProperty(nameof(PlacedObject.deactivattable))!.GetGetMethod(),
+                    PlacedObjectDeactivattableOnGet);
+                
                 IL.Watcher.WarpPoint.ActivateWeaver += WarpPointOnActivateWeaver;
                 IL.Player.WatcherUpdate += FixDialWarpAbilityHardcode;
                 IL.Watcher.WatcherRoomSpecificScript.AddRoomSpecificScript += FixDialWarpAbilityHardcode;
@@ -28,6 +32,11 @@ namespace RainWorldRandomizer.WatcherIntegration
             IL.Player.WatcherUpdate -= FixDialWarpAbilityHardcode;
             IL.Watcher.WatcherRoomSpecificScript.AddRoomSpecificScript -= FixDialWarpAbilityHardcode;
             IL.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.Update -= FixDialWarpAbilityHardcode;
+        }
+        
+        private static bool PlacedObjectDeactivattableOnGet(Func<PlacedObject, bool> orig, PlacedObject self)
+        {
+            return orig(self) && self.type != PlacedObject.Type.KarmaFlower;
         }
         
         /// <summary>
