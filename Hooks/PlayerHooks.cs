@@ -311,11 +311,19 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Add back spear slot if player has <see cref="Perks.BackSpear"/>
+        /// Stop Artificer from getting karma locked if story ending completed.
+        /// Add back spear slot if player has <see cref="Perks.BackSpear"/>.
         /// </summary>
         private static void PlayerCtorIL(ILContext il)
         {
             ILCursor c = new(il);
+
+            // Just after checking for Arty alt ending
+            c.GotoNext(MoveType.After,
+                x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.altEnding))));
+            c.EmitDelegate(DontLockArtyKarma);
+            
+            // ----
 
             c.GotoNext(x => x.MatchLdstr("unl-backspear")); // 0A72
             c.GotoPrev(MoveType.AfterLabel,
@@ -329,7 +337,9 @@ namespace RainWorldRandomizer
 
             c.GotoNext(x => x.MatchLdarg(0)); // 0A7E
             c.MarkLabel(jump);
+            return;
 
+            static bool DontLockArtyKarma(bool origVal) => Plugin.RandoManager is null && origVal;
             static bool HasBackSpearPerk() => Plugin.RandoManager?.HasExpeditionPerk(Perks.BackSpear) is true;
         }
 
