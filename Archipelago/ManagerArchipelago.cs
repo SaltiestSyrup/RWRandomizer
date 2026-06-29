@@ -20,10 +20,8 @@ namespace RainWorldRandomizer
 
         // Mapping AP item names to the string IDs the mod uses for items
         public static Dictionary<string, string> ClientNameToAPItem = [];
-        public static Dictionary<string, string> APItemToClientName = [];
-        // Mapping numerical AP location IDs to the string IDs the mod uses for locations
-        //public static Dictionary<string, long> LocationToID = [];
-        //public static Dictionary<long, string> IDToLocation = [];
+        // Have name comparisons ignore case for backwards compat with 1.5 
+        public static Dictionary<string, string> APItemToClientName = new(StringComparer.InvariantCultureIgnoreCase);
 
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
