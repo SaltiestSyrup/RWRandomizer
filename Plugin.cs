@@ -483,6 +483,13 @@ namespace RainWorldRandomizer
             {
                 if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[0] = origRequirements[0];
                 if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[1] = origRequirements[1];
+                if (gateName == "GATE_SB_OE" 
+                    && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand 
+                    && !RandoManager.GivenMark)
+                {
+                    newRequirements[0] = MoreSlugcatsEnums.GateRequirement.OELock;
+                    newRequirements[1] = MoreSlugcatsEnums.GateRequirement.OELock;
+                }
             }
 
             return newRequirements;
