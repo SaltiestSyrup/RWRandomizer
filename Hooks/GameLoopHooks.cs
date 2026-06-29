@@ -35,6 +35,8 @@ namespace RainWorldRandomizer
             {
                 IL.RainWorldGame.ctor += RainWorldGameCtorIL;
                 IL.WinState.CycleCompleted += ILCycleCompleted;
+                IL.RainCycle.ctor += ReplacePebblesOffCheck;
+                IL.RainCycle.GetDesiredCycleLength += ReplacePebblesOffCheck;
             }
             catch (Exception e)
             {
@@ -60,6 +62,8 @@ namespace RainWorldRandomizer
             
             IL.RainWorldGame.ctor -= RainWorldGameCtorIL;
             IL.WinState.CycleCompleted -= ILCycleCompleted;
+            IL.RainCycle.ctor -= ReplacePebblesOffCheck;
+            IL.RainCycle.GetDesiredCycleLength -= ReplacePebblesOffCheck;
         }
 
         /// <summary>
@@ -607,6 +611,26 @@ namespace RainWorldRandomizer
             if (self.SMEndingPhase == MSCRoomSpecificScript.SpearmasterEnding.SMEndingState.PEARLDATA)
             {
                 (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
+            }
+        }
+        
+        /// <summary>
+        /// Replace <see cref="MiscWorldSaveData.pebblesEnergyTaken"/> flag with check for longer cycles item
+        /// in cases concerning the cycle length.
+        /// </summary>
+        private static void ReplacePebblesOffCheck(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            c.GotoNext(MoveType.After,
+                x => x.MatchLdfld(typeof(MiscWorldSaveData).GetField(nameof(MiscWorldSaveData.pebblesEnergyTaken))));
+            c.EmitDelegate(ShouldCycleBeLong);
+            
+            return;
+
+            static bool ShouldCycleBeLong(bool origVal)
+            {
+                return Plugin.RandoManager?.GivenLongerCycles ?? origVal;
             }
         }
         

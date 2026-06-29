@@ -93,6 +93,7 @@ namespace RainWorldRandomizer
             _givenNeuronGlow = false;
             _givenMark = false;
             _givenRobo = false;
+            _givenLongerCycles = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
 
@@ -287,7 +288,16 @@ namespace RainWorldRandomizer
                         if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                             Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
                         break;
-                    case "Disconnect_FP":
+                    case "Disconnect_FP": // Backwards compat 1.5
+                        _givenLongerCycles = true;
+                        _givenPebblesOff = true;
+                        if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                            Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
+                        break;
+                    case "Longer_Cycles":
+                        _givenLongerCycles = true;
+                        break;
+                    case "Disable_Pebbles":
                         _givenPebblesOff = true;
                         if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                             Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;

@@ -44,6 +44,7 @@ namespace RainWorldRandomizer
             _givenNeuronGlow = false;
             _givenMark = false;
             _givenRobo = false;
+            _givenLongerCycles = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
             customStartDen = "";
@@ -244,7 +245,11 @@ namespace RainWorldRandomizer
                         if (item.IsGiven) _givenRobo = true;
                         break;
                     case "DisconnectFP":
-                        if (item.IsGiven) _givenPebblesOff = true;
+                        if (item.IsGiven)
+                        {
+                            _givenLongerCycles = true;
+                            _givenPebblesOff = true;
+                        }
                         break;
                     case "RewriteSpearPearl":
                         if (item.IsGiven) _givenSpearPearlRewrite = true;
