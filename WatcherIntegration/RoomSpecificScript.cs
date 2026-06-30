@@ -3,7 +3,7 @@ using Watcher;
 
 namespace RainWorldRandomizer.WatcherIntegration
 {
-    public class RoomSpecificScript
+    public static class RoomSpecificScript
     {
         public static void AddRoomSpecificScript(Room room)
         {

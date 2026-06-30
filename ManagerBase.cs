@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -18,6 +19,12 @@ namespace RainWorldRandomizer
         /// Gate strings match pattern "GATE_[Region1]_[Region2]"
         /// </summary>
         protected Dictionary<string, bool> gatesStatus = [];
+        protected List<string> collectedStaticKeys = [];
+        public List<string> CollectedStaticKeys
+        {
+            get { return collectedStaticKeys; }
+        }
+
         protected Dictionary<WinState.EndgameID, bool> passageTokensStatus = [];
         // Queue of items that the player has recieved and not claimed
         public Queue<Unlock.Item> itemDeliveryQueue = new();
@@ -32,6 +39,16 @@ namespace RainWorldRandomizer
             get { return _currentMaxKarma; }
             set { _currentMaxKarma = value; }
         }
+        /// <summary>What the minimum and maximum Ripple should be, based on <see cref="_rippleIncrements"/>.</summary>
+        public Vector2 Ripple
+        {
+            get
+            {
+                return new Vector2(Mathf.Clamp(-1f + _rippleIncrements / 2f, 1f, 5f),
+                    Mathf.Clamp(1f + _rippleIncrements / 2f, 1f, 5f));
+            }
+        }
+
         public virtual int HunterBonusCyclesGiven
         {
             get { return _hunterBonusCyclesGiven; }
@@ -83,6 +100,8 @@ namespace RainWorldRandomizer
         }
 
         protected int _currentMaxKarma = 4;
+        /// <summary>The number of Ripple items collected.</summary>
+        protected int _rippleIncrements;
         protected int _hunterBonusCyclesGiven;
         protected int _numDamageUpgrades;
         protected bool _givenNeuronGlow;
@@ -122,7 +141,6 @@ namespace RainWorldRandomizer
         public virtual void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
             currentSlugcat = storyGameCharacter;
-            WatcherIntegration.Items.ResetItems();
         }
 
         /// <summary>
@@ -222,7 +240,13 @@ namespace RainWorldRandomizer
             gatesStatus[gate] = true;
             return true;
         }
-
+        
+        public HashSet<string> GetAllOpenWarps()
+        {
+            HashSet<string> ret = [.. CollectedStaticKeys, .. Constants.UnkeyableWarps];
+            if (!ArchipelagoConnection.spinningTopKeys) ret.UnionWith(Constants.SpinningTopWarps);
+            return ret;
+        }
 
         /// <summary>
         /// Used to find all passage tokens in the current seed and their status
@@ -281,8 +305,18 @@ namespace RainWorldRandomizer
                 CurrentMaxKarma++;
             }
 
-            try { Plugin.Singleton.Game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = CurrentMaxKarma; }
-            catch { }
+            if (Plugin.Singleton.Game?.GetStorySession?.saveState.deathPersistentSaveData is DeathPersistentSaveData dpsd)
+                dpsd.karmaCap = CurrentMaxKarma;
+        }
+        
+        /// <summary>Updates the Ripple levels of the currently loaded <see cref="DeathPersistentSaveData"/>.</summary>
+        public void UpdateRipple()
+        {
+            if (Plugin.Singleton.Game?.GetStorySession?.saveState.deathPersistentSaveData is DeathPersistentSaveData dpsd)
+            {
+                dpsd.minimumRippleLevel = Ripple.x;
+                dpsd.maximumRippleLevel = Ripple.y;
+            }
         }
 
         public void GrantExpeditionPerk(string perk)
@@ -305,5 +339,10 @@ namespace RainWorldRandomizer
         }
 
         public bool HasAnyExpeditionPerks() => ModManager.MSC && _givenExpeditionPerks.Any(p => p);
+        
+        public bool CanDynamicWarp()
+        {
+            return Ripple.y >= 2 || Plugin.RandoManager.GivenRippleEggWarp;
+        }
     }
 }

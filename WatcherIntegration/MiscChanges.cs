@@ -74,7 +74,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 return !(Plugin.RandoManager is ManagerArchipelago
                        && (ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot
-                           || Settings.spreadRotChecks));
+                           || ArchipelagoConnection.spreadRotChecks));
             }
         }
         

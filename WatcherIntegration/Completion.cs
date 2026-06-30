@@ -29,7 +29,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
             /// <summary>Reduce the number of regions needed for the Sentient Rot ending to match <see cref="Settings.rottedRegionTarget"/>.</summary>
             internal static int ApplyRottedRegionTarget(Func<MWSD, int> orig, MWSD self)
-                => Mathf.Max(orig(self) - 21 + (int)Settings.rottedRegionTarget, 0);
+                => Mathf.Max(orig(self) - 21 + (int)ArchipelagoConnection.rottedRegionTarget, 0);
 
             /// <summary>Detect completion conditions when switching to the ending slideshows.</summary>
             private static void DetectCompletion(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID orig, ProcessManager self, ProcessManager.ProcessID ID)

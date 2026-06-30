@@ -70,7 +70,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     
                     // Try to give all previous encounters for safety
                     for (int i = 0; i <= encounters; i++)
-                        EntryPoint.TryGiveLocation($"Prince-{i + 1}");
+                        Plugin.RandoManager.GiveLocation($"Prince-{i + 1}");
                 }
             }
 
@@ -78,9 +78,9 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static void DetectThroneWarpCreation(On.Watcher.WarpSpawningRipple.orig_Success orig, WarpSpawningRipple self, float duration, bool bad, bool weird, bool strong)
             {
                 orig(self, duration, bad, weird, strong);
-                if (DynamicWarpTargetting.GetWarpSourceKind(self.room.abstractRoom.name) == DynamicWarpTargetting.WarpSourceKind.Throne)
+                if (DynamicWarpTargeting.GetWarpSourceKind(self.room.abstractRoom.name) == DynamicWarpTargeting.WarpSourceKind.Throne)
                 {
-                    EntryPoint.TryGiveLocation($"ThroneWarp-{self.room.abstractRoom.name.Substring(11)}");
+                    Plugin.RandoManager.GiveLocation($"ThroneWarp-{self.room.abstractRoom.name.Substring(11)}");
                 }
             }
 
@@ -121,14 +121,14 @@ namespace RainWorldRandomizer.WatcherIntegration
             internal static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, SpinningTop self)
             {
                 orig(self);
-                EntryPoint.TryGiveLocation($"SpinningTop-{self.room.abstractRoom.name.Region()}");
+                Plugin.RandoManager.GiveLocation($"SpinningTop-{self.room.abstractRoom.name.Region()}");
             }
 
             /// <summary>Detect, at cycle end, what regions have been infected.</summary>
             internal static void DetectFixedWarpPointAndRotSpread(SaveState saveState)
             {
                 for (int i = 1; i <= saveState.miscWorldSaveData.regionsInfectedBySentientRotSpread.Count; i++)
-                    EntryPoint.TryGiveLocation($"SpreadRot-{i}");
+                    Plugin.RandoManager.GiveLocation($"SpreadRot-{i}");
             }
 
             /// <summary>
@@ -162,7 +162,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     return;
                 }
 
-                EntryPoint.TryGiveLocation("Meet_Ripple_Elder");
+                Plugin.RandoManager.GiveLocation("Meet_Ripple_Elder");
                 self.Destroy();
             }
         }

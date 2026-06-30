@@ -6,6 +6,7 @@ using Archipelago.MultiClient.Net.Packets;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -14,7 +15,7 @@ using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
 {
-    public class ArchipelagoConnection : MonoBehaviour
+    public static class ArchipelagoConnection
     {
         private const string AP_VERSION = "0.6.6";
         public const string GAME_NAME = "Rain World";
@@ -24,15 +25,11 @@ namespace RainWorldRandomizer
             "which_game_version",
             "is_msc_enabled",
             "is_watcher_enabled",
-            "passage_progress_without_survivor",
             "which_victory_condition",
-            "checks_foodquest",
             "which_gate_behavior",
             "starting_room",
             "difficulty_echo_low_karma",
-            //"checks_sheltersanity",
-            //"checks_flowersanity",
-            //"checks_devtokens",
+            "checks_foodquest",
             "checks_foodquest_accessibility",
         ];
 
@@ -58,6 +55,11 @@ namespace RainWorldRandomizer
         public static bool sheltersanity;
         public static bool flowersanity;
         public static bool devTokenChecks;
+        
+        public static bool spinningTopKeys;
+        public static bool daemonKeys;
+        public static long rottedRegionTarget;
+        public static bool spreadRotChecks;
 
         public static ArchipelagoSession Session;
         public static Queue<ReceivedItemsPacket> waitingItemPackets = [];
@@ -113,6 +115,18 @@ namespace RainWorldRandomizer
             Impossible, WithFlower, MaxKarma, Vanilla
         }
 
+        /// <summary>Get a primitive key from a JObject.</summary>
+        internal static T GetSimple<T>(this Dictionary<string, object> self, string key, T defaultValue = default) 
+            => self.TryGetValue(key, out object value) ? (T)value : defaultValue;
+
+        /// <summary>Get an array from a JObject.</summary>
+        internal static IEnumerable<T> GetArray<T>(this Dictionary<string, object> self, string key, IEnumerable<T> defaultValue = default)
+            => self.TryGetValue(key, out object value) ? ((JArray)value).Values<T>() : defaultValue;
+
+        /// <summary>Get a mapping from a JObject.</summary>
+        internal static Dictionary<string, JToken> GetDict(this Dictionary<string, object> self, string key)
+            => self.TryGetValue(key, out object value) ? ((JObject)value).Properties().ToDictionary(x => x.Name, x => x.Value) : null;
+        
         private static void CreateSession(string hostName, int port)
         {
             Session = ArchipelagoSessionFactory.CreateSession(hostName, port);
@@ -336,51 +350,22 @@ namespace RainWorldRandomizer
         private static SlotDataResult ParseSlotData(Dictionary<string, object> slotData)
         {
             // If any required slot data is missing, connection is invalid
-            foreach (string key in REQUIRED_SLOT_DATA)
+            if (REQUIRED_SLOT_DATA.Any(key => !slotData.ContainsKey(key)))
             {
-                if (!slotData.ContainsKey(key)) return SlotDataResult.MissingData;
+                return SlotDataResult.MissingData;
             }
-
-            long desiredGameVersion = (long)slotData["which_game_version"];
-            long shouldHaveMSC = (long)slotData["is_msc_enabled"];
-            long shouldHaveWatcher = (long)slotData["is_watcher_enabled"];
-            string campaignString = (string)slotData["which_campaign"];
-
-            long PPwS = (long)slotData["passage_progress_without_survivor"];
-            long completionType = (long)slotData["which_victory_condition"];
-            long foodQuestAccess = (long)slotData["checks_foodquest"];
-            long desiredGateBehavior = (long)slotData["which_gate_behavior"];
-            string startingShelter = (string)slotData["starting_room"];
-            long echoDifficulty = (long)slotData["difficulty_echo_low_karma"];
-            long foodQuestAccessibility = (long)slotData["checks_foodquest_accessibility"];
-            // These values will assume a setting if not received
-            long deathLink = slotData.TryGetValue("death_link", out object v5) ? (long)v5 : -1;
-            long sheltersanity = slotData.TryGetValue("checks_sheltersanity", out object v6) ? (long)v6 : -1;
-            long flowersanity = slotData.TryGetValue("checks_flowersanity", out object v7) ? (long)v7 : -1;
-            long devTokenChecks = slotData.TryGetValue("checks_devtokens", out object v8) ? (long)v8 : -1;
-
-            // Check game version
-            // Only a warning for now until there's some actual logic difference between versions
-            // This version of the mod won't even load properly for 1.9
-            bool doGameVersionWarning = false;
-            if (desiredGameVersion < 1100000L)
-            {
-                doGameVersionWarning = true;
-            }
-            if (doGameVersionWarning)
-            {
-                Plugin.Log.LogWarning($"Loaded YAML with incorrect game version: {RainWorld.GAME_VERSION_STRING}. Should be {desiredGameVersion}");
-            }
-
+            
             // Check DLC state
-            IsMSC = shouldHaveMSC > 0;
-            IsWatcher = shouldHaveWatcher > 0;
+            IsMSC = slotData.GetSimple<long>("is_msc_enabled") > 0;
+            IsWatcher = slotData.GetSimple<long>("is_watcher_enabled") > 0;
             if (ModManager.MSC != IsMSC || ModManager.Watcher != IsWatcher)
             {
                 return SlotDataResult.InvalidDLC;
             }
 
             // Choose campaign and ending
+            string campaignString = slotData.GetSimple<string>("which_campaign");
+            long completionType = slotData.GetSimple<long>("which_victory_condition");
             Slugcat = new SlugcatStats.Name(campaignString);
             if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
             else if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
@@ -394,49 +379,61 @@ namespace RainWorldRandomizer
                     0 or _ => CompletionCondition.SpinningTop,
                 };
             }
+            else if (completionType == 0)
+            {
+                completionCondition = campaignString == "Saint"
+                    ? CompletionCondition.Rubicon
+                    : CompletionCondition.Ascension;
+            }
             else
             {
                 completionCondition = campaignString switch
                 {
-                    "Yellow" or "White" or "Gourmand" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SlugTree,
-                    "Red" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.HelpingHand,
-                    "Artificer" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.ScavKing,
-                    "Rivulet" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.SaveMoon,
-                    "Spear" => completionType == 0 ? CompletionCondition.Ascension : CompletionCondition.Messenger,
+                    "Yellow" or "White" or "Gourmand" => CompletionCondition.SlugTree,
+                    "Red" => CompletionCondition.HelpingHand,
+                    "Artificer" => CompletionCondition.ScavKing,
+                    "Rivulet" => CompletionCondition.SaveMoon,
+                    "Spear" => CompletionCondition.Messenger,
                     "Saint" => CompletionCondition.Rubicon,
                     "Sofanthiel" or _ => CompletionCondition.Ascension
                 };
             }
 
             // Choose starting den
-            if (!startingShelter.Equals(""))
+            if (slotData.GetSimple<string>("starting_room") is string startShelter)
             {
                 useRandomStart = true;
-                desiredStartDen = startingShelter;
+                desiredStartDen = startShelter;
             }
 
             // Set gate behavior
-            gateBehavior = (Plugin.GateBehavior)desiredGateBehavior;
+            gateBehavior = (Plugin.GateBehavior)slotData.GetSimple<long>("which_gate_behavior");
 
-            ArchipelagoConnection.PPwS = (PPwSBehavior)PPwS;
-            ArchipelagoConnection.sheltersanity = sheltersanity != 0; // Assumed true if undefined (-1)
-            ArchipelagoConnection.flowersanity = flowersanity != 0; // Assumed true if undefined (-1)
-            ArchipelagoConnection.devTokenChecks = devTokenChecks != 0; // Assumed true if undefined (-1)
-            ArchipelagoConnection.echoDifficulty = (EchoLowKarmaDifficulty)echoDifficulty;
+            PPwS = (PPwSBehavior)slotData.GetSimple("passage_progress_without_survivor", 2L);
+            sheltersanity = slotData.GetSimple("checks_sheltersanity", 1L) == 1L;
+            flowersanity = slotData.GetSimple("checks_flowersanity", 1L) == 1L;
+            devTokenChecks = slotData.GetSimple("checks_devtokens", 1L) == 1L;
+            echoDifficulty = (EchoLowKarmaDifficulty)slotData.GetSimple("difficulty_echo_low_karma", 3L);
 
-            DeathLinkHandler.Active = deathLink > 0;
+            DeathLinkHandler.Active = slotData.GetSimple("death_link", 0L) > 0L;
 
+            foodQuestAccessibility = slotData.GetSimple("checks_foodquest_accessibility", 0L);
             foodQuest = IsMSC &&
-                (Slugcat.value == "Gourmand" || foodQuestAccess == 2)
+                (Slugcat.value == "Gourmand" || slotData.GetSimple("checks_foodquest", 0L) == 2)
                 ? (foodQuestAccessibility > 0
                     ? FoodQuestBehavior.Expanded
                     : FoodQuestBehavior.Enabled)
                 : FoodQuestBehavior.Disabled;
-            ArchipelagoConnection.foodQuestAccessibility = foodQuestAccessibility;
 
             //Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
 
-            WatcherIntegration.Settings.ReceiveSlotData(slotData);
+            spinningTopKeys = slotData.GetSimple("spinning_top_keys", 1L) == 1L;
+            daemonKeys = slotData.GetSimple("daemon_keys", 0L) == 1L;
+            rottedRegionTarget = slotData.GetSimple("rotted_region_target", 21L);
+
+            long spreadRot = slotData.GetSimple("checks_spread_rot", 0L);
+            spreadRotChecks = !RandoOptions.WeaverRequired() 
+                              && (completionCondition == CompletionCondition.SentientRot ? spreadRot >= 1 : spreadRot == 2);
 
             return SlotDataResult.Success;
         }
