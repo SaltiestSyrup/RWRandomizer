@@ -95,7 +95,7 @@ namespace RainWorldRandomizer
                             self.menuSetup.startGameCondition != ProcessManager.MenuSetup.StoryGameInitCondition.New);
 
                         // Have AP manager grab the first item packet (the one with the full inventory) right away
-                        if (Plugin.RandoManager is ManagerArchipelago managerAP) managerAP.TryAquireNextItemPacket();
+                        if (Plugin.RandoManager is ManagerArchipelago managerAP) managerAP.TryAcquireNextItemPacket();
                     }
                     catch (Exception e)
                     {
@@ -211,18 +211,24 @@ namespace RainWorldRandomizer
 
             if (!Plugin.RandoManager.isRandomizerActive || !self.IsStorySession) return;
 
+            SaveState saveState = self.GetStorySession.saveState;
+            DeathPersistentSaveData dpsd = saveState.deathPersistentSaveData;
+            
             Plugin.UpdateKarmaLocks();
-            self.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
+            dpsd.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
             if (Plugin.RandoManager.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher)
-                WatcherIntegration.Items.UpdateRipple();
+            {
+                dpsd.minimumRippleLevel = Plugin.RandoManager.Ripple.x;
+                dpsd.maximumRippleLevel = Plugin.RandoManager.Ripple.y;
+            }
 
             // Ensure found state triggers are set
-            self.GetStorySession.saveState.theGlow = Plugin.RandoManager.GivenNeuronGlow;
-            self.GetStorySession.saveState.deathPersistentSaveData.theMark = Plugin.RandoManager.GivenMark;
-            self.GetStorySession.saveState.hasRobo = Plugin.RandoManager.GivenRobo;
-            self.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = Plugin.RandoManager.GivenPebblesOff;
-            self.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
-            self.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = Plugin.RandoManager.GivenRippleEggWarp;
+            saveState.theGlow = Plugin.RandoManager.GivenNeuronGlow;
+            saveState.deathPersistentSaveData.theMark = Plugin.RandoManager.GivenMark;
+            saveState.hasRobo = Plugin.RandoManager.GivenRobo;
+            saveState.miscWorldSaveData.pebblesEnergyTaken = Plugin.RandoManager.GivenPebblesOff;
+            saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
+            saveState.miscWorldSaveData.hasRippleEggWarpAbility = Plugin.RandoManager.GivenRippleEggWarp;
 
             // If we're spawning in a room with a warp target (likely from Watcher return home), set positon there
             TryMovePlayersToDynamicWarpTarget(self);
@@ -384,7 +390,7 @@ namespace RainWorldRandomizer
             if (!Plugin.RandoManager.isRandomizerActive) return;
 
             // Read and apply a single queued item packet every frame
-            if (Plugin.RandoManager is ManagerArchipelago APManager) APManager.TryAquireNextItemPacket();
+            if (Plugin.RandoManager is ManagerArchipelago APManager) APManager.TryAcquireNextItemPacket();
 
             // Applying glow effect if unlock has been given
             for (int i = 0; i < self.Players.Count; i++)

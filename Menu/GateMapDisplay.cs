@@ -49,7 +49,7 @@ namespace RainWorldRandomizer.Menu
                 Plugin.RandoManager.GetGatesStatus()
                     .Where(x => x.Value)
                     .Select(x => x.Key)
-                    .Union(Items.GetAllOpenWarps().Select(x => $"Warp-{x}"))
+                    .Union(Plugin.RandoManager.GetAllOpenWarps().Select(x => $"Warp-{x}"))
                     .Union(Constants.ForceOpenGates)
                     .ToList();
 
@@ -311,7 +311,7 @@ namespace RainWorldRandomizer.Menu
             // (Most) Daemon warps are one way entering Daemon
             if (key.Contains("WRSA") && !key.Contains("WORA") && !key.Contains("WARA"))
             {
-                if (Items.Ripple.y < 5f) return [false, false]; // No access unless at Ripple 9
+                if (Plugin.RandoManager.Ripple.y < 5f) return [false, false]; // No access unless at Ripple 9
                 string[] split = key.Split('-');
                 if (split[0] == "WRSA") return [false, true];
                 return [true, false];
@@ -359,9 +359,9 @@ namespace RainWorldRandomizer.Menu
         {
             if (Scug == "Watcher")
             {
-                if (!Settings.daemonKeys) // Warp to Daemon from anywhere
+                if (!ArchipelagoConnection.daemonKeys) // Warp to Daemon from anywhere
                     keys.Add($"Warp-{string.Join("-", new[] { ActualStartRegion, "WRSA" }.OrderBy(x => x))}");
-                if (Items.CanDynamicWarp()) // Warp to Outer Rim from anywhere
+                if (Plugin.RandoManager.CanDynamicWarp()) // Warp to Outer Rim from anywhere
                     keys.Add($"Warp-{string.Join("-", new[] { ActualStartRegion, "WORA" }.OrderBy(x => x))}");
             }
             

@@ -28,7 +28,6 @@ namespace RainWorldRandomizer
         internal static LogUtils.Logger ServerLog;
 
         public static Plugin Singleton = null;
-        public static ArchipelagoConnection APConnection = new();
         public static ManagerBase RandoManager = null;
         private static List<LogicAddon> logicAddons = [];
 
@@ -244,7 +243,7 @@ namespace RainWorldRandomizer
             }
 
             // Don't even need to save this, it's stored in the addon list
-            if (ModManager.MSC) new InvCompat();
+            if (ModManager.MSC) _ = new InvCompat();
         }
 
         /// <summary>

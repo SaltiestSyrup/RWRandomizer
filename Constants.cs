@@ -54,6 +54,17 @@ namespace RainWorldRandomizer
         [
             "GATE_OE_SU", "GATE_SL_MS"
         ];
+        
+        public static List<string> UnkeyableWarps =
+        [
+            "WORA-WSSR", "WORA-WSUR", "WGWR-WORA", "WHIR-WORA", "WDSR-WORA", "WARA-WRSA"
+        ];
+
+        public static string[] SpinningTopWarps =
+        [
+            "WARF-WTDA", "WBLA-WVWB", "WRFB-WTDB", "WARA-WARC", "WARD-WVWB", "WARE-WSKC", "WARA-WARB",
+            "WARA-WPTA", "WPTA-WSKC", "WBLA-WTDA", "WARE-WRFB", "WARC-WVWA", "WARA-WAUA"
+        ];
 
         /// <summary>
         /// Dict of readable names for various creatures / items

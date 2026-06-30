@@ -154,5 +154,11 @@ namespace RainWorldRandomizer
 
         public static bool ColorPickupsWithHints => archipelago.Value && colorPickupsWithHints.Value;
         public static bool[] ExpeditionPerks => [..expeditionPerks.Select(p => p.Value)];
+        
+        public static bool WeaverRequired()
+        {
+            return ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.Weaver
+                   || ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.TrueEnding;
+        }
     }
 }

@@ -20,7 +20,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// </summary>
         private static bool MissingKey(this WarpPoint self) =>
             self.Data.nonDynamicWarpPoint
-            && Items.StaticKey.IsMissing(self.room.world.region.name, 
+            && StaticKey.IsMissing(self.room.world.region.name, 
                 self.Data.RegionString ??
                 (self.Data.rippleWarp
                     ? (self.room.world.region.name == "WARA"

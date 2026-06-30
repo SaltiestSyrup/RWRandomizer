@@ -88,6 +88,7 @@ namespace RainWorldRandomizer
         public void ResetStateForSync()
         {
             _currentMaxKarma = 0;
+            _rippleIncrements = 0;
             _hunterBonusCyclesGiven = 0;
             _numDamageUpgrades = 0;
             _givenNeuronGlow = false;
@@ -98,6 +99,7 @@ namespace RainWorldRandomizer
             _givenSpearPearlRewrite = false;
 
             gatesStatus.Clear();
+            CollectedStaticKeys.Clear();
             passageTokensStatus.Clear();
         }
 
@@ -174,7 +176,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public void TryAquireNextItemPacket()
+        public void TryAcquireNextItemPacket()
         {
             if (ArchipelagoConnection.waitingItemPackets.Count == 0) return;
 
@@ -214,7 +216,7 @@ namespace RainWorldRandomizer
                 }
 
                 // If item packet index is 0, items before our stored last index are not new
-                AquireItem(clientName, !isNewInventory || i >= ArchipelagoConnection.lastItemIndex);
+                AcquireItem(clientName, !isNewInventory || i >= ArchipelagoConnection.lastItemIndex);
             }
 
             ArchipelagoConnection.lastItemIndex = itemPacket.Index + itemPacket.Items.Length;
@@ -225,7 +227,7 @@ namespace RainWorldRandomizer
         /// </summary>
         /// <param name="item">Client name of item</param>
         /// <param name="isNew">If false, if the item is a consumable it will be ignored</param>
-        public void AquireItem(string item, bool isNew)
+        public void AcquireItem(string item, bool isNew)
         {
             if (item.StartsWith("GATE_"))
             {
@@ -233,6 +235,10 @@ namespace RainWorldRandomizer
                 {
                     gatesStatus.Add(item, true);
                 }
+            }
+            else if (item.StartsWith("Warp-"))
+            {
+                CollectedStaticKeys.Add(item.Substring(5));
             }
             else if (item.StartsWith("Passage-"))
             {
@@ -269,6 +275,10 @@ namespace RainWorldRandomizer
                 {
                     case "Karma":
                         IncreaseKarma();
+                        break;
+                    case "Ripple":
+                        _rippleIncrements++;
+                        UpdateRipple();
                         break;
                     case "Upgrade-SpearDamage":
                         _numDamageUpgrades++;
@@ -307,8 +317,10 @@ namespace RainWorldRandomizer
                         if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                             Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
                         break;
-                    default:
-                        WatcherIntegration.Items.ReceiveItem(item);
+                    case "Dial_Warp":
+                        Plugin.RandoManager.GivenRippleEggWarp = true;
+                        if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                            Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = true;
                         break;
                 }
             }
