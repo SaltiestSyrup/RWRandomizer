@@ -95,7 +95,7 @@ namespace RainWorldRandomizer
                             self.menuSetup.startGameCondition != ProcessManager.MenuSetup.StoryGameInitCondition.New);
 
                         // Have AP manager grab the first item packet (the one with the full inventory) right away
-                        if (Plugin.RandoManager is ManagerArchipelago managerAP) managerAP.TryAquireNextItemPacket();
+                        if (Plugin.RandoManager is ManagerArchipelago managerAP) managerAP.TryAcquireNextItemPacket();
                     }
                     catch (Exception e)
                     {
@@ -390,7 +390,7 @@ namespace RainWorldRandomizer
             if (!Plugin.RandoManager.isRandomizerActive) return;
 
             // Read and apply a single queued item packet every frame
-            if (Plugin.RandoManager is ManagerArchipelago APManager) APManager.TryAquireNextItemPacket();
+            if (Plugin.RandoManager is ManagerArchipelago APManager) APManager.TryAcquireNextItemPacket();
 
             // Applying glow effect if unlock has been given
             for (int i = 0; i < self.Players.Count; i++)

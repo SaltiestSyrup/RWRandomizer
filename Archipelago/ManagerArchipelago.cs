@@ -176,7 +176,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public void TryAquireNextItemPacket()
+        public void TryAcquireNextItemPacket()
         {
             if (ArchipelagoConnection.waitingItemPackets.Count == 0) return;
 
