@@ -12,12 +12,6 @@ namespace RainWorldRandomizer
         public bool locationsLoaded = false;
         public bool gameCompleted = false;
 
-        /// <summary>
-        /// Locations (by internal name) that are currently scouted and the classification of the item they each contain.
-        /// This only ever contains the token and pearl locations in the current region.
-        /// </summary>
-        public Dictionary<string, Archipelago.MultiClient.Net.Enums.ItemFlags> scoutedLocations = [];
-
         // Mapping AP item names to the string IDs the mod uses for items
         public static Dictionary<string, string> ClientNameToAPItem = [];
         // Have name comparisons ignore case for backwards compat with 1.5 

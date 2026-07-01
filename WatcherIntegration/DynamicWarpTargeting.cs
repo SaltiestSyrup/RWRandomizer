@@ -3,6 +3,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System.Collections.Generic;
 using System.Linq;
+using MonoMod.RuntimeDetour;
 using UnityEngine;
 using Watcher;
 
@@ -71,6 +72,9 @@ namespace RainWorldRandomizer.WatcherIntegration
                 
                 try
                 {
+                    _ = new Hook(typeof(Player).GetProperty(nameof(Player.CanSpawnDynamicWarpPoints)).GetGetMethod(),
+                        OnGetCanSpawnDynamicWarpPoints);
+                    
                     IL.Player.SpawnDynamicWarpPoint += SpawnDynamicWarpPointIL;
                     IL.OverWorld.InitiateSpecialWarp_WarpPoint += OverWorldOnInitiateSpecialWarp_WarpPointIL;
                 }
@@ -88,6 +92,14 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 IL.Player.SpawnDynamicWarpPoint -= SpawnDynamicWarpPointIL;
                 IL.OverWorld.InitiateSpecialWarp_WarpPoint -= OverWorldOnInitiateSpecialWarp_WarpPointIL;
+            }
+
+            private static bool OnGetCanSpawnDynamicWarpPoints(Func<Player, bool> orig, Player self)
+            {
+                if (!Plugin.RandoManager.isRandomizerActive) return orig(self);
+
+                return orig(self) ||
+                    (self.room?.game.GetStorySession?.saveState.miscWorldSaveData.hasVoidWeaverAbility ?? false);
             }
 
             // (This can be modified to make other single use warps if ever needed)
