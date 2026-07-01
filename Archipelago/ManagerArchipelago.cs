@@ -318,9 +318,12 @@ namespace RainWorldRandomizer
                             Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
                         break;
                     case "Dial_Warp":
-                        Plugin.RandoManager.GivenRippleEggWarp = true;
+                        _givenRippleEggWarp = true;
                         if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                             Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = true;
+                        break;
+                    case "Weaver_Increment":
+                        _weaverIncrements++;
                         break;
                 }
             }

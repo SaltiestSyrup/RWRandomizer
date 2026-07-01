@@ -39,6 +39,7 @@ namespace RainWorldRandomizer
         public static bool SocketConnected => Session?.Socket.Connected is true;
 
         // Ported settings from slot data
+        public static Version WorldVersion;
         public static bool IsMSC;
         public static bool IsWatcher;
         public static SlugcatStats.Name Slugcat;
@@ -59,7 +60,9 @@ namespace RainWorldRandomizer
         public static bool spinningTopKeys;
         public static bool daemonKeys;
         public static long rottedRegionTarget;
+        public static bool weaverRandomized;
         public static bool spreadRotChecks;
+        public static bool weaverChecks;
 
         public static ArchipelagoSession Session;
         public static Queue<ReceivedItemsPacket> waitingItemPackets = [];
@@ -354,6 +357,12 @@ namespace RainWorldRandomizer
             {
                 return SlotDataResult.MissingData;
             }
+
+            if (!Version.TryParse(slotData.GetSimple<string>("apworld_version"), out WorldVersion))
+            {
+                Plugin.Log.LogWarning("Could not determine APWorld version from slot data. The world may be of version 1.4 or older.");
+                WorldVersion = new Version();
+            }
             
             // Check DLC state
             IsMSC = slotData.GetSimple<long>("is_msc_enabled") > 0;
@@ -367,18 +376,32 @@ namespace RainWorldRandomizer
             string campaignString = slotData.GetSimple<string>("which_campaign");
             long completionType = slotData.GetSimple<long>("which_victory_condition");
             Slugcat = new SlugcatStats.Name(campaignString);
-            if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
-            else if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
+            
+            if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
             else if (campaignString == "Watcher")
             {
-                completionCondition = completionType switch
+                if (WorldVersion.CompareTo(new Version("1.6.0")) >= 0)
                 {
-                    1 => CompletionCondition.SentientRot,
-                    4 => CompletionCondition.Weaver,
-                    5 => CompletionCondition.TrueEnding,
-                    0 or _ => CompletionCondition.SpinningTop,
-                };
+                    completionCondition = completionType switch
+                    {
+                        1 => CompletionCondition.SentientRot,
+                        4 => CompletionCondition.Weaver,
+                        5 => CompletionCondition.TrueEnding,
+                        0 or _ => CompletionCondition.SpinningTop,
+                    };
+                }
+                else
+                {
+                    completionCondition = completionType switch
+                    {
+                        1 => CompletionCondition.SentientRot,
+                        2 => CompletionCondition.Weaver,
+                        4 => CompletionCondition.TrueEnding,
+                        0 or _ => CompletionCondition.SpinningTop,
+                    };
+                }
             }
+            else if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
             else if (completionType == 0)
             {
                 completionCondition = campaignString == "Saint"
@@ -430,10 +453,17 @@ namespace RainWorldRandomizer
             spinningTopKeys = slotData.GetSimple("spinning_top_keys", 1L) == 1L;
             daemonKeys = slotData.GetSimple("daemon_keys", 0L) == 1L;
             rottedRegionTarget = slotData.GetSimple("rotted_region_target", 21L);
-
+            
+            long randomWeaver = slotData.GetSimple("randomize_weaver", 0L);
+            weaverRandomized = completionCondition != CompletionCondition.SentientRot &&
+                               (RandoOptions.WeaverRequired() ? randomWeaver >= 1 : randomWeaver == 2);
+            
             long spreadRot = slotData.GetSimple("checks_spread_rot", 0L);
             spreadRotChecks = !RandoOptions.WeaverRequired() 
                               && (completionCondition == CompletionCondition.SentientRot ? spreadRot >= 1 : spreadRot == 2);
+            
+            long encounterWeaver = slotData.GetSimple("checks_weaver_encounters", 0L);
+            weaverChecks = RandoOptions.WeaverRequired() ? encounterWeaver >= 1 : encounterWeaver == 2;
 
             return SlotDataResult.Success;
         }

@@ -49,6 +49,11 @@ namespace RainWorldRandomizer
             }
         }
 
+        public int WeaverIncrements
+        {
+            get { return _weaverIncrements; }
+            set { _weaverIncrements = value; }
+        }
         public virtual int HunterBonusCyclesGiven
         {
             get { return _hunterBonusCyclesGiven; }
@@ -102,6 +107,7 @@ namespace RainWorldRandomizer
         protected int _currentMaxKarma = 4;
         /// <summary>The number of Ripple items collected.</summary>
         protected int _rippleIncrements;
+        protected int _weaverIncrements;
         protected int _hunterBonusCyclesGiven;
         protected int _numDamageUpgrades;
         protected bool _givenNeuronGlow;

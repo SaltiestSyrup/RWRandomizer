@@ -1,11 +1,9 @@
 ﻿using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using Watcher;
-using WPOT = Watcher.WatcherEnums.PlacedObjectType;
 
 namespace RainWorldRandomizer.WatcherIntegration
 {
@@ -25,12 +23,13 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.SlugcatStats.SlugcatStoryRegions += WatcherStoryRegions;
                 On.Watcher.WarpSpawningRipple.Success += DetectThroneWarpCreation;
                 On.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.PromptSpecialWarp += OnElderSpawn_PromptSpecialWarp;
+                On.Watcher.VoidWeaver.DeactivateWeaver += VoidWeaverOnDeactivateWeaver;
 
                 IL.Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils.Update += DetectPrince;
                 IL.Watcher.SpinningTop.SpawnWarpPoint += SpinningTop_SpawnWarpPoint;
                 //IL.World.SpawnGhost += NullifyPresence;
             }
-
+            
             internal static void RemoveHooks()
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered -= DetectSpinningTop;
@@ -41,10 +40,37 @@ namespace RainWorldRandomizer.WatcherIntegration
                 On.SlugcatStats.SlugcatStoryRegions -= WatcherStoryRegions;
                 On.Watcher.WarpSpawningRipple.Success -= DetectThroneWarpCreation;
                 On.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.PromptSpecialWarp -= OnElderSpawn_PromptSpecialWarp;
+                On.Watcher.VoidWeaver.DeactivateWeaver -= VoidWeaverOnDeactivateWeaver;
 
                 IL.Watcher.WatcherRoomSpecificScript.WORA_KarmaSigils.Update -= DetectPrince;
                 IL.Watcher.SpinningTop.SpawnWarpPoint -= SpinningTop_SpawnWarpPoint;
                 //IL.World.SpawnGhost -= NullifyPresence;
+            }
+            
+            private static void VoidWeaverOnDeactivateWeaver(On.Watcher.VoidWeaver.orig_DeactivateWeaver orig, VoidWeaver self)
+            {
+                if (!Plugin.RandoManager.isRandomizerActive)
+                {
+                    orig(self);
+                    return;
+                }
+                
+                if (!self.room.game.GetStorySession?.voidWeaverEncountersThisCycle
+                        .Contains(self.room.abstractRoom.name) ?? false)
+                {
+                    // Stops the orig call from incrementing the encounters
+                    self.room.game.GetStorySession.voidWeaverEncountersThisCycle.Add(self.room.abstractRoom.name);
+                    
+                    // Directly check the integers flag because we've hijacked the helper property
+                    int encounters = ++self.room.game.GetStorySession.saveState.miscWorldSaveData.integersWatcher[4];
+                    
+                    Plugin.Log.LogDebug(encounters);
+                    
+                    for (int i = 0; i < encounters; i++)
+                        Plugin.RandoManager.GiveLocation($"Weaver-{i + 1}");
+                }
+                
+                orig(self);
             }
 
             /// <summary>Detect when a new Throne room opens up after a Prince encounter.</summary>

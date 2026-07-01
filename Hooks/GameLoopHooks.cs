@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MonoMod.RuntimeDetour;
 using RainWorldRandomizer.Menu;
 
 namespace RainWorldRandomizer
@@ -33,6 +34,10 @@ namespace RainWorldRandomizer
 
             try
             {
+                _ = new Hook(typeof(MiscWorldSaveData)
+                    .GetProperty(nameof(MiscWorldSaveData.numberOfVoidWeaverEncounters)).GetGetMethod(), 
+                    OnGetNumOfVoidWeaverEncounters);
+                
                 IL.RainWorldGame.ctor += RainWorldGameCtorIL;
                 IL.WinState.CycleCompleted += ILCycleCompleted;
                 IL.RainCycle.ctor += ReplacePebblesOffCheck;
@@ -220,6 +225,15 @@ namespace RainWorldRandomizer
             {
                 dpsd.minimumRippleLevel = Plugin.RandoManager.Ripple.x;
                 dpsd.maximumRippleLevel = Plugin.RandoManager.Ripple.y;
+            }
+
+            // Safety location send for if randomized Weaver items locks the remaining encounters
+            if (Plugin.RandoManager is ManagerArchipelago 
+                && ArchipelagoConnection.weaverChecks
+                && saveState.miscWorldSaveData.numberOfVoidWeaverEncounters >= 4)
+            {
+                for (int i = 1; i <= 4; i++)
+                    Plugin.RandoManager.GiveLocation($"Weaver-{i}");
             }
 
             // Ensure found state triggers are set
@@ -464,6 +478,17 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Makes the game read the current Weaver items received instead of the save data value when Weaver is randomized.
+        /// </summary>
+        private static int OnGetNumOfVoidWeaverEncounters(Func<MiscWorldSaveData, int> orig, MiscWorldSaveData self)
+        {
+            if (Plugin.RandoManager is not ManagerArchipelago manager || !ArchipelagoConnection.weaverRandomized) 
+                return orig(self);
+
+            return Math.Min(manager.WeaverIncrements, 4);
+        }
+        
         /// <summary>
         /// Save randomizer state when game is saved
         /// </summary>

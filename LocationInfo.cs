@@ -58,6 +58,7 @@ namespace RainWorldRandomizer
             Prince,
             ThroneWarp,
             SpreadRot,
+            EncounterWeaver,
             Other
         }
 
@@ -153,6 +154,7 @@ namespace RainWorldRandomizer
                 case LocationKind.FoodQuest:
                     return "<FQ>";
                 case LocationKind.Passage:
+                case LocationKind.EncounterWeaver:
                     return "<P>";
                 default:
                     return internalName switch
@@ -193,6 +195,7 @@ namespace RainWorldRandomizer
             if (internalName.StartsWith("SpreadRot-")) return LocationKind.SpreadRot;
             if (internalName.StartsWith("ThroneWarp-")) return LocationKind.ThroneWarp;
             if (internalName.StartsWith("Prince-")) return LocationKind.Prince;
+            if (internalName.StartsWith("Weaver-")) return LocationKind.EncounterWeaver;
             return LocationKind.Other;
         }
 
@@ -225,7 +228,10 @@ namespace RainWorldRandomizer
                         "09" => "upper west",
                         _ => ""
                     }} warp",
-                LocationKind.Prince => $"Prince encounter #{split[1]}",
+                // Capitalization correction made in 1.6
+                LocationKind.Prince => ArchipelagoConnection.WorldVersion.CompareTo(new Version("1.6.0")) < 0
+                    ? $"Prince encounter #{split[1]}" : $"Prince Encounter #{split[1]}",
+                LocationKind.EncounterWeaver => $"Weaver Encounter #{split[1]}",
                 LocationKind.Other => GetSpecialDescription(internalName),
                 _ => internalName
             };
@@ -270,9 +276,13 @@ namespace RainWorldRandomizer
                 }
             }
 
-            if (split[1].StartsWith("Prince encounter"))
+            if (split[1].StartsWith("Prince Encounter", StringComparison.InvariantCultureIgnoreCase))
             {
                 return $"Prince-{split[1].Split('#')[1]}";
+            }
+            else if (split[1].StartsWith("Weaver Encounter", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return $"Weaver-{split[1].Split('#')[1]}";
             }
 
             return split[1] switch
