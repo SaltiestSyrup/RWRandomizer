@@ -20,12 +20,7 @@ namespace RainWorldRandomizer
         public const string PLUGIN_NAME = "Randomizer";
         public const string PLUGIN_VERSION = "1.5.9";
 
-        internal static LogUtils.Logger Log;
-        /// <summary>
-        /// Used for logging specifically the server messages sent to us by Archipelago,
-        /// this should not be used for any other context.
-        /// </summary>
-        internal static LogUtils.Logger ServerLog;
+        internal static BepInEx.Logging.ManualLogSource Log;
 
         public static Plugin Singleton = null;
         public static ManagerBase RandoManager = null;
@@ -90,11 +85,7 @@ namespace RainWorldRandomizer
         {
             // Register Enums
             RandomizerEnums.RegisterAllValues();
-            // Create logger. Most logs go to both LogOutput.log and a dedicated randomizerLog.log in StreamingAssets
-            Log = new LogUtils.Logger(Logger);
-            Log.LogTargets.Add(RandomizerEnums.LogID.RandomizerLog);
-            // Server logger for Archipelago
-            ServerLog = new LogUtils.Logger(RandomizerEnums.LogID.ServerLog);
+            Log = Logger;
 
             if (Singleton == null)
             {
@@ -103,7 +94,7 @@ namespace RainWorldRandomizer
             else
             {
                 // Something has gone terribly wrong
-                Log.LogFatal("Tried to initialize multiple instances of main class!", ConsoleColor.DarkRed);
+                Log.LogFatal("Tried to initialize multiple instances of main class!");
                 return;
             }
 
@@ -215,7 +206,7 @@ namespace RainWorldRandomizer
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
-            Log.LogInfo("Init Randomizer Mod", ConsoleColor.Green);
+            Log.LogInfo("Init Randomizer Mod");
 
             rainWorld = self;
 

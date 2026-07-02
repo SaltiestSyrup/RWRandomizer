@@ -253,7 +253,6 @@ namespace RainWorldRandomizer
             HasConnected = true;
             CurrentlyConnecting = false;
             Plugin.Log.LogInfo($"Successfully connected to {hostName}:{port} as {slotName}");
-            Plugin.ServerLog.Log("--- Starting Session ---");
             return $"Successfully connected to {hostName}:{port} as {slotName}!";
         }
 
@@ -293,7 +292,6 @@ namespace RainWorldRandomizer
             if (Session is null) return false;
 
             Plugin.Log.LogInfo("Disconnecting from server...");
-            Plugin.ServerLog.Log("--- Ending Session ---");
             DeathLinkHandler.Reset();
             Session.Socket.PacketReceived -= PacketReceived;
             Session.MessageLog.OnMessageReceived -= MessageReceived;
@@ -495,8 +493,6 @@ namespace RainWorldRandomizer
 
         private static void MessageReceived(LogMessage message)
         {
-            Plugin.ServerLog.Log(message);
-
             MessageText messageText = new MessageText(message);
             TextClientMenu.StoreMessage(messageText);
 

@@ -1,7 +1,4 @@
 ﻿using Menu;
-using LogUtils.Enums;
-using System.IO;
-using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -18,7 +15,6 @@ namespace RainWorldRandomizer
             AbstractObjectType.RegisterValues();
             DataPearlType.RegisterValues();
             Tutorial.RegisterValues();
-            LogID.RegisterValues();
         }
 
         internal static void UnregisterAllValues()
@@ -27,7 +23,6 @@ namespace RainWorldRandomizer
             AbstractObjectType.UnregisterValues();
             DataPearlType.UnregisterValues();
             Tutorial.UnregisterValues();
-            LogID.UnregisterValues();
         }
 
         public class SliderId
@@ -92,33 +87,6 @@ namespace RainWorldRandomizer
             }
 
             public static DeathPersistentSaveData.Tutorial WatcherSealLockedWarp;
-        }
-        
-        public class LogID
-        {
-            internal static void RegisterValues()
-            {
-                string logPath = Path.Combine(Application.streamingAssetsPath, "randomizerlogs");
-                Directory.CreateDirectory(logPath);
-
-                RandomizerLog = new LogUtils.Enums.LogID("randomizerLog", logPath, LogAccess.FullAccess, true);
-                RandomizerLog.Properties.ShowCategories.IsEnabled = true;
-                RandomizerLog.Properties.LogsFolderAware = true;
-
-                ServerLog = new LogUtils.Enums.LogID("serverLog", logPath, LogAccess.FullAccess, true);
-                ServerLog.Properties.LogsFolderAware = true;
-            }
-
-            internal static void UnregisterValues()
-            {
-                RandomizerLog?.Unregister();
-                RandomizerLog = null;
-                ServerLog.Unregister();
-                ServerLog = null;
-            }
-
-            public static LogUtils.Enums.LogID RandomizerLog;
-            public static LogUtils.Enums.LogID ServerLog;
         }
     }
 }
