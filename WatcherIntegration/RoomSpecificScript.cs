@@ -12,7 +12,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
             switch (roomName)
             {
-                case "HI_W13":
+                case "HI_W14":
                     if (room.game.GetStorySession.saveState.cycleNumber == 0)
                         room.AddObject(new WatcherRandomizedSpawn(room));
                     break;
@@ -34,10 +34,10 @@ namespace RainWorldRandomizer.WatcherIntegration
             public override void Update(bool eu)
             {
                 base.Update(eu);
-                Player player = room.PlayersInRoom.FirstOrDefault();
-                if (player is null) return;
+                // Wait until player takes a couple steps after the intro
+                if (room.PlayersInRoom.FirstOrDefault() is not Player player
+                    || player.firstChunk.pos.x < 1200f) return;
                 
-
                 room.game.GetStorySession.saveState.deathPersistentSaveData.rippleLevel = 1f;
                 player.StartPendingForcedWarp(Plugin.RandoManager.customStartDen, default, 400);
                 player.pendingForcedWarpPos = null; // null position will make it try to select dynamic warp destination positon in room
