@@ -1,9 +1,49 @@
 {
 	"frames": {
-		"Symbol_PoisonSpear.png": {
+		"Symbol_Prince.png": {
 			"frame": {
 				"x": 0,
 				"y": 0,
+				"w": 32,
+				"h": 32
+			},
+			"rotated": false,
+			"trimmed": false,
+			"sourceSize": {
+				"w": 32,
+				"h": 32
+			},
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 32,
+				"h": 32
+			}
+		},
+		"Symbol_Weaver.png": {
+			"frame": {
+				"x": 32,
+				"y": 0,
+				"w": 28,
+				"h": 34
+			},
+			"rotated": false,
+			"trimmed": false,
+			"sourceSize": {
+				"w": 28,
+				"h": 34
+			},
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 28,
+				"h": 34
+			}
+		},
+		"Symbol_PoisonSpear.png": {
+			"frame": {
+				"x": 32,
+				"y": 34,
 				"w": 20,
 				"h": 36
 			},
@@ -20,10 +60,30 @@
 				"h": 36
 			}
 		},
+		"Symbol_Echo.png": {
+			"frame": {
+				"x": 60,
+				"y": 0,
+				"w": 17,
+				"h": 39
+			},
+			"rotated": false,
+			"trimmed": false,
+			"sourceSize": {
+				"w": 17,
+				"h": 39
+			},
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 17,
+				"h": 39
+			}
+		},
 		"Symbol_KarmaFlower.png": {
 			"frame": {
-				"x": 20,
-				"y": 0,
+				"x": 0,
+				"y": 32,
 				"w": 19,
 				"h": 31
 			},
@@ -42,7 +102,7 @@
 		},
 		"Symbol_RippleAmoeba.png": {
 			"frame": {
-				"x": 39,
+				"x": 77,
 				"y": 0,
 				"w": 24,
 				"h": 24
@@ -65,8 +125,8 @@
 		"app": "https://goofybox-studios.github.io/tools/texture_packer",
 		"image": "randomizer",
 		"size": {
-			"w": 63,
-			"h": 36
+			"w": 101,
+			"h": 70
 		}
 	}
 }

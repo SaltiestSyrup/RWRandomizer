@@ -154,8 +154,9 @@ namespace RainWorldRandomizer
                 case LocationKind.FoodQuest:
                     return "<FQ>";
                 case LocationKind.Passage:
-                case LocationKind.EncounterWeaver:
                     return "<P>";
+                case LocationKind.EncounterWeaver:
+                    return "WRSA";
                 default:
                     return internalName switch
                     {
@@ -272,6 +273,8 @@ namespace RainWorldRandomizer
                     case "Eat a Neuron Fly":
                         return "Eat_Neuron";
                     default:
+                        if (split[0].StartsWith("Weaver Encounter"))
+                            return $"Weaver-{split[0].Split('#')[1]}";
                         return split[0];
                 }
             }
@@ -279,10 +282,6 @@ namespace RainWorldRandomizer
             if (split[1].StartsWith("Prince Encounter", StringComparison.InvariantCultureIgnoreCase))
             {
                 return $"Prince-{split[1].Split('#')[1]}";
-            }
-            else if (split[1].StartsWith("Weaver Encounter", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return $"Weaver-{split[1].Split('#')[1]}";
             }
 
             return split[1] switch
@@ -379,8 +378,8 @@ namespace RainWorldRandomizer
                     break;
                 case LocationKind.Echo:
                 case LocationKind.SpinningTop:
-                    spriteName = "smallKarma9-9";
-                    spriteScale = 0.5f;
+                    spriteName = "Symbol_Echo";
+                    // spriteScale = 0.5f;
                     spriteColor = RainWorld.SaturatedGold;
                     break;
                 case LocationKind.Pearl:
@@ -462,9 +461,14 @@ namespace RainWorldRandomizer
                     spriteScale = 0.6f;
                     break;
                 case LocationKind.Prince:
-                    spriteName = "PrincePetals0";
+                    spriteName = "Symbol_Prince";
                     spriteColor = RainWorld.RippleColor;
-                    spriteScale = 0.5f;
+                    // spriteScale = 0.5f;
+                    break;
+                case LocationKind.EncounterWeaver:
+                    spriteName = "Symbol_Weaver";
+                    spriteColor = RainWorld.SaturatedGold;
+                    // spriteScale = 0.5f;
                     break;
                 case LocationKind.SpreadRot:
                     spriteName = "Kill_Daddy";

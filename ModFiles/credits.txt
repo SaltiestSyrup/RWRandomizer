@@ -13,6 +13,21 @@ This sprite is licensed under Creative Commons Attribution-ShareAlike 4.0 Intern
 This sprite has been modified to make it greyscale
 https://rainworld.miraheze.org/wiki/File:Ripple_Amoeba_icon.png
 
+Symbol_Weaver.png is sourced from the Rain World Wiki and created by Alduris
+This sprite is licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+This sprite has been modified to make it greyscale
+https://rainworld.miraheze.org/wiki/File:The_Weaver_icon.png
+
+Symbol_Prince.png is sourced from the Rain World Wiki and created by Therotconsumes
+This sprite is licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+This sprite has been modified to make it greyscale
+https://rainworld.miraheze.org/wiki/File:Prince_icon.png
+
+Symbol_Echo.png is sourced from the Rain World Wiki and created by SpineEater69
+This sprite is licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+This sprite has been modified to make it greyscale
+https://rainworld.miraheze.org/wiki/File:Echo_icon.png
+
 ---------------
 
 Custom logo used in thumbnail.png and thumbnail-steam.png is a derivative of the Archipelago logo, created in collaboration with multiple artists:
@@ -30,4 +45,4 @@ Saint: speoyt
     [ https://www.instagram.com/cafecarrrr ]
 
 Original Archipelago logo is created by Krista Corkos and Christopher Wilson
-The logo is licensed under Attribution-NonCommercial 4.0 International (https://creativecommons.org/licenses/by-nc/4.0/)
+The original logo is licensed under Attribution-NonCommercial 4.0 International (https://creativecommons.org/licenses/by-nc/4.0/)
