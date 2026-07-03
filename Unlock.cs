@@ -63,6 +63,8 @@ namespace RainWorldRandomizer
             public static readonly UnlockType ExpeditionPerk = new("ExpeditionPerk", true);
             public static readonly UnlockType IdDrone = new("IdDrone", true);
             public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
+            public static readonly UnlockType Longer_Cycles = new("Longer_Cycles", true);
+            public static readonly UnlockType Disconnect_Pebbles = new("Disconnect_Pebbles", true);
             public static readonly UnlockType RewriteSpearPearl = new("RewriteSpearPearl", true);
         }
 
@@ -154,6 +156,14 @@ namespace RainWorldRandomizer
                     Plugin.RandoManager.GivenRobo = true;
                     break;
                 case "DisconnectFP":
+                    Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
+                    Plugin.RandoManager.GivenPebblesOff = true;
+                    Plugin.RandoManager.GivenLongerCycles = true;
+                    break;
+                case "Longer_Cycles":
+                    Plugin.RandoManager.GivenLongerCycles = true;
+                    break;
+                case "Disable_Pebbles":
                     Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = true;
                     Plugin.RandoManager.GivenPebblesOff = true;
                     break;

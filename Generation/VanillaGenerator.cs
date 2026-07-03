@@ -440,7 +440,8 @@ namespace RainWorldRandomizer.Generation
                     if (RandoOptions.UseEnergyCell)
                     {
                         itemsToPlace.Add(new Item("Object-EnergyCell", Item.Type.Object, Item.Importance.Progression));
-                        itemsToPlace.Add(new Item("DisconnectFP", Item.Type.Other, Item.Importance.Progression));
+                        itemsToPlace.Add(new Item("Longer_Cycles", Item.Type.Other, Item.Importance.Progression));
+                        itemsToPlace.Add(new Item("Disconnect_Pebbles", Item.Type.Other, Item.Importance.Filler));
                     }
                     break;
                 case "Spear":

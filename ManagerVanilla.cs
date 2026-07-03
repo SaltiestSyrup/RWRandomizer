@@ -251,6 +251,12 @@ namespace RainWorldRandomizer
                             _givenPebblesOff = true;
                         }
                         break;
+                    case "Longer_Cycles":
+                        if (item.IsGiven) _givenLongerCycles = true;
+                        break;
+                    case "Disconnect_Pebbles":
+                        if (item.IsGiven) _givenPebblesOff = true;
+                        break;
                     case "RewriteSpearPearl":
                         if (item.IsGiven) _givenSpearPearlRewrite = true;
                         break;
