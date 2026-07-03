@@ -182,7 +182,8 @@ namespace RainWorldRandomizer
             if (internalName.StartsWith("Token-S-")) return LocationKind.RedToken;
             if (internalName.StartsWith("Token-"))
             {
-                if (ExtEnumBase.GetNames(typeof(SlugcatStats.Name)).Contains(internalName.Split('-')[1]))
+                if (ExtEnumBase.GetNames(typeof(SlugcatStats.Name)).Contains(internalName.Split('-')[1])
+                    || internalName.Split('-')[1] == "Spearmaster")
                     return LocationKind.GreenToken;
                 return LocationKind.BlueToken;
             }
