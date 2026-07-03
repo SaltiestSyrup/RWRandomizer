@@ -196,7 +196,7 @@ namespace RainWorldRandomizer
                 { SlugcatStats.Name.White,
                 [
                     true, true, true, true, false, true, true, false, true, false, false,
-                    true, false, true, false, false, true, false, true, false, true, true,
+                    true, false, true, false, false, true, true, true, false, true, true,
                     true, true, true, true,
                     false, false, false, false, false, false, false, false,
                     false, false, false,
@@ -208,7 +208,7 @@ namespace RainWorldRandomizer
                 { SlugcatStats.Name.Yellow,
                 [
                     true, true, true, true, false, true, true, false, true, false, false,
-                    true, false, true, false, false, true, false, true, false, true, true,
+                    true, false, true, false, false, true, true, true, false, true, true,
                     true, true, true, true,
                     false, false, false, false, false, false, false, false,
                     false, false, false,
@@ -291,7 +291,7 @@ namespace RainWorldRandomizer
                     { MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
                     [
                         true, true, true, true, false, true, true, false, true, false, false,
-                        true, false, true, false, false, true, false, true, false, true, true,
+                        true, false, true, false, false, true, true, true, false, true, true,
                         true, true, true, true,
                         false, false, false, false, false, false, false, false,
                         false, false, false,
