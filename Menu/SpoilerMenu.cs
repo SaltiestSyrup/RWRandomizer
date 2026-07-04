@@ -708,6 +708,8 @@ namespace RainWorldRandomizer.Menu
                     case "Neuron_Glow":
                     case "IdDrone":
                     case "DisconnectFP":
+                    case "Disconnect_Pebbles":
+                    case "Longer_Cycles":
                     case "RewriteSpearPearl":
                         iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.NSHSwarmer, 0);
                         spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);

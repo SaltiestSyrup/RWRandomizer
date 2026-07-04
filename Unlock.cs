@@ -189,7 +189,8 @@ namespace RainWorldRandomizer
                 "ExpeditionPerk" => $"Found {(readableItemNames.TryGetValue(ID, out string val) ? val : ID)} Perk",
                 "DamageUpgrade" => "Increased Spear Damage",
                 "IdDrone" => "Found Citizen ID Drone",
-                "DisconnectFP" => "Disconnected Five Pebbles",
+                "DisconnectFP" or "Disconnect_Pebbles" => "Found Five Pebbles Disconnect",
+                "Longer_Cycles" => "Unlocked Longer Cycles",
                 "RewriteSpearPearl" => "Unlocked Broadcast Encoding",
                 _ => $"Unlocked {ID}",
             };
@@ -210,7 +211,8 @@ namespace RainWorldRandomizer
                 "ExpeditionPerk" => readableItemNames.TryGetValue(ID, out string val) ? val : ID,
                 "DamageUpgrade" => "+10% Damage",
                 "IdDrone" => "Citizen ID Drone",
-                "DisconnectFP" => "Disconnect Pebbles",
+                "DisconnectFP" or "Disconnect_Pebbles" => "Disconnect Pebbles",
+                "Longer_Cycles" => "Longer Cycles",
                 _ => ID
             };
         }
