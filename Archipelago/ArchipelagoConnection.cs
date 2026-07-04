@@ -350,6 +350,8 @@ namespace RainWorldRandomizer
         private enum SlotDataResult { Success, MissingData, InvalidDLC, InvalidGameVersion }
         private static SlotDataResult ParseSlotData(Dictionary<string, object> slotData)
         {
+            Plugin.Log.LogInfo($"Slot Data:\n\t{string.Join("\n\t", slotData.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}");
+            
             // If any required slot data is missing, connection is invalid
             if (REQUIRED_SLOT_DATA.Any(key => !slotData.ContainsKey(key)))
             {
