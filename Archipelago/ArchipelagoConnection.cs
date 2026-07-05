@@ -22,7 +22,6 @@ namespace RainWorldRandomizer
         private static readonly string[] REQUIRED_SLOT_DATA =
         [
             "which_campaign",
-            "which_game_version",
             "is_msc_enabled",
             "is_watcher_enabled",
             "which_victory_condition",
