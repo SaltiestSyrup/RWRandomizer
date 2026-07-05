@@ -26,7 +26,10 @@ namespace RainWorldRandomizer
         public static ManagerBase RandoManager = null;
         private static List<LogicAddon> logicAddons = [];
 
-        public CollectTokenHandler collectTokenHandler;
+        public static bool RandomizerActive
+        {
+            get { return RandoManager?.isRandomizerActive is true; }
+        }
 
         private OptionsMenu options;
 
@@ -39,16 +42,13 @@ namespace RainWorldRandomizer
                 if (_game.TryGetTarget(out RainWorldGame g)) return g;
                 else return null;
             }
-            set
-            {
-                _game = new WeakReference<RainWorldGame>(value);
-            }
+            set { _game = new WeakReference<RainWorldGame>(value); }
         }
 
         // Queue of pending notifications to be sent to the player in-game
         public Queue<MessageText> notifQueue = new();
 
-        // A map of every region to it's display name
+        // A map of every region to its display name
         public static Dictionary<string, string> RegionNamesMap = [];
         // A map of the 'correct' region acronyms for each region depending on current slugcat
         public static Dictionary<string, string> ProperRegionMap = [];
@@ -98,13 +98,12 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            collectTokenHandler = new CollectTokenHandler();
             options = new OptionsMenu();
 
             // Create hooks
             try
             {
-                collectTokenHandler.ApplyHooks();
+                CollectTokenHandler.ApplyHooks();
                 MenuHooks.ApplyHooks();
                 TokenCachePatcher.ApplyHooks();
 
@@ -153,7 +152,7 @@ namespace RainWorldRandomizer
             // Remove hooks
             try
             {
-                collectTokenHandler.RemoveHooks();
+                CollectTokenHandler.RemoveHooks();
                 MenuHooks.RemoveHooks();
                 TokenCachePatcher.RemoveHooks();
 

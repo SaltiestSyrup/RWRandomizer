@@ -122,11 +122,11 @@ namespace RainWorldRandomizer.Generation
             // Load Tokens
             if (RandoOptions.UseSandboxTokenChecks)
             {
-                lock (Plugin.Singleton.collectTokenHandler)
+                lock (CollectTokenHandler.availableTokens)
                 {
-                    if (Plugin.Singleton.collectTokenHandler.tokensLoadedFor != slugcat)
+                    if (CollectTokenHandler.tokensLoadedFor != slugcat)
                     {
-                        Plugin.Singleton.collectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
+                        CollectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
                     }
                 }
             }
@@ -177,9 +177,9 @@ namespace RainWorldRandomizer.Generation
 
                 // Create Token locations
                 if (RandoOptions.UseSandboxTokenChecks
-                    && Plugin.Singleton.collectTokenHandler.availableTokens.ContainsKey(regionShort))
+                    && CollectTokenHandler.availableTokens.ContainsKey(regionShort))
                 {
-                    foreach (string token in Plugin.Singleton.collectTokenHandler.availableTokens[regionShort])
+                    foreach (string token in CollectTokenHandler.availableTokens[regionShort])
                     {
                         string name = $"Token-{token}";
                         if (token.Split('-').Length == 1) name += $"-{regionShort}";
