@@ -61,7 +61,7 @@ namespace RainWorldRandomizer.Menu
         private static void OnMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
         {
             orig(self, manager, game);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             // Control scheme display is just in the way
             self.controlMap.RemoveSprites();
@@ -140,7 +140,7 @@ namespace RainWorldRandomizer.Menu
         private static void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
         {
             orig(self);
-            if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
+            if (!Plugin.RandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
 
             SpoilerButton = new SimpleButton(self, self.pages[0], self.Translate("RANDOMIZER"), "SHOW_SPOILERS",
                 new Vector2(self.ContinueAndExitButtonsXPos - 460.2f - self.moveLeft, 15f),
@@ -165,7 +165,7 @@ namespace RainWorldRandomizer.Menu
         private static void OnMenuSignal(On.Menu.PauseMenu.orig_Singal orig, PauseMenu self, MenuObject sender, string message)
         {
             orig(self, sender, message);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             if (message is "SHOW_SPOILERS")
             {
@@ -177,6 +177,7 @@ namespace RainWorldRandomizer.Menu
         private static void OnInitSinglePlayerHud(On.HUD.HUD.orig_InitSinglePlayerHud orig, HUD.HUD self, RoomCamera cam)
         {
             orig(self, cam);
+            if (!Plugin.RandomizerActive) return;
 
             CurrentChatLog = new ChatLog(self, self.fContainers[1]);
             self.AddPart(CurrentChatLog);
