@@ -379,7 +379,7 @@ namespace RainWorldRandomizer
             if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
             else if (campaignString == "Watcher")
             {
-                if (WorldVersion.CompareTo(new Version("1.6.0")) >= 0)
+                if (WorldVersion.CompareTo(new Version("1.6.0")) < 0)
                 {
                     completionCondition = completionType switch
                     {
