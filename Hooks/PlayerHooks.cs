@@ -67,15 +67,15 @@ namespace RainWorldRandomizer
         private static void OnThrownSpear(On.Player.orig_ThrownSpear orig, Player self, Spear spear)
         {
             orig(self, spear);
-            if (Plugin.RandoManager is not null) spear.spearDamageBonus *= Plugin.RandoManager.SpearDamageMultiplier;
+            spear.spearDamageBonus *= Plugin.RandoManager?.SpearDamageMultiplier ?? 1;
         }
 
         /// <summary>
         /// Swap regurgitate item for queued item if applicable
         /// </summary>
-        public static void OnRegurgitate(On.Player.orig_Regurgitate orig, Player self)
+        private static void OnRegurgitate(On.Player.orig_Regurgitate orig, Player self)
         {
-            if (!Plugin.RandoManager.isRandomizerActive
+            if (!Plugin.RandomizerActive
                 || !RandoOptions.ItemStomachDelivery
                 || Plugin.RandoManager.itemDeliveryQueue.Count == 0)
             {
@@ -90,7 +90,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Detect Void Sea ending trigger
         /// </summary>
-        public static void OnPlayerUpdate(On.Player.orig_Update orig, Player self, bool eu)
+        private static void OnPlayerUpdate(On.Player.orig_Update orig, Player self, bool eu)
         {
             orig(self, eu);
 
@@ -101,13 +101,13 @@ namespace RainWorldRandomizer
                     && self.firstChunk.pos.y < 350f)
                 {
                     if (Plugin.RandoManager?.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher)
-                        (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.TrueEnding);
-                    (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Ascension);
+                        Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.TrueEnding);
+                    Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Ascension);
                 }
                 else if (room.abstractRoom.name == "HR_FINAL"
                     && self.firstChunk.pos.y > room.PixelHeight + 500f)
                 {
-                    (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
+                    Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
                 }
             }
         }
@@ -115,23 +115,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Convince game we have an item in stomach if there is a queued item
         /// </summary>
-        public static void ILPlayerGrabUpdate(ILContext il)
+        private static void ILPlayerGrabUpdate(ILContext il)
         {
-            // Substitution function
-            static AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, Player player)
-            {
-                if (objectInstomach != null)
-                {
-                    return objectInstomach;
-                }
-                if (RandoOptions.ItemStomachDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
-                {
-                    return Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Peek(), player.room);
-                }
-
-                return null;
-            }
-
             ILCursor c = new(il);
             c.GotoNext(
                 MoveType.After,
@@ -144,7 +129,7 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Ldarg_0);
             // If we have a waiting item to be delivered, act as if there is an item in stomach
-            c.EmitDelegate(objectReplace);
+            c.EmitDelegate(ObjectReplace);
 
             c.GotoNext(
                 MoveType.After,
@@ -155,7 +140,7 @@ namespace RainWorldRandomizer
                 );
 
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate(objectReplace);
+            c.EmitDelegate(ObjectReplace);
 
             // Make item delivery spit up faster
             c.GotoNext(
@@ -166,7 +151,9 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate<Func<int, int>>((origTime) =>
             {
-                if (RandoOptions.ItemStomachDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
+                if (Plugin.RandomizerActive 
+                    && RandoOptions.ItemStomachDelivery 
+                    && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
                 {
                     // This time needs to be longer than the 90 ticks swallowing an item takes
                     return 95;
@@ -184,29 +171,32 @@ namespace RainWorldRandomizer
                 );
 
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate(objectReplace);
+            c.EmitDelegate(ObjectReplace);
+            return;
+
+            // Substitution function
+            static AbstractPhysicalObject ObjectReplace(AbstractPhysicalObject objectInStomach, Player player)
+            {
+                if (objectInStomach is not null)
+                {
+                    return objectInStomach;
+                }
+                if (Plugin.RandomizerActive 
+                    && RandoOptions.ItemStomachDelivery 
+                    && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
+                {
+                    return Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Peek(), player.room);
+                }
+
+                return null;
+            }
         }
 
         /// <summary>
         /// Convince graphics we have an item in stomach if there is a queued item
         /// </summary>
-        public static void ILPlayerGraphicsUpdate(ILContext il)
+        private static void ILPlayerGraphicsUpdate(ILContext il)
         {
-            // Substitution function
-            static AbstractPhysicalObject objectReplace(AbstractPhysicalObject objectInstomach, PlayerGraphics playerGraphics)
-            {
-                if (objectInstomach != null)
-                {
-                    return objectInstomach;
-                }
-                if (RandoOptions.ItemStomachDelivery && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
-                {
-                    return Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Peek(), playerGraphics.player.room);
-                }
-
-                return null;
-            }
-
             ILCursor c = new(il);
             c.GotoNext(
                 MoveType.After,
@@ -217,39 +207,58 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Ldarg_0);
             // If we have a waiting item to be delivered, act as if there is an item in stomach
-            c.EmitDelegate(objectReplace);
+            c.EmitDelegate(ObjectReplace);
+            return;
+
+            // Substitution function
+            static AbstractPhysicalObject ObjectReplace(AbstractPhysicalObject objectInStomach, PlayerGraphics playerGraphics)
+            {
+                if (objectInStomach is not null)
+                {
+                    return objectInStomach;
+                }
+                if (Plugin.RandomizerActive 
+                    && RandoOptions.ItemStomachDelivery 
+                    && Plugin.RandoManager.itemDeliveryQueue.Count > 0)
+                {
+                    return Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Peek(), playerGraphics.player.room);
+                }
+
+                return null;
+            }
         }
 
-        public static void OnNewRoom(On.Player.orig_NewRoom orig, Player self, Room newRoom)
+        private static void OnNewRoom(On.Player.orig_NewRoom orig, Player self, Room newRoom)
         {
             orig(self, newRoom);
-
-            ArchipelagoConnection.TrySendCurrentRoomPacket(newRoom.abstractRoom.name);
+            
+            if (Plugin.ArchipelagoActive) ArchipelagoConnection.TrySendCurrentRoomPacket(newRoom.abstractRoom.name);
         }
 
         /// <summary>
         /// Modify Hunter's remaining cycle count
         /// </summary>
-        public static int OnRedsCycles(On.RedsIllness.orig_RedsCycles orig, bool extracycles)
+        private static int OnRedsCycles(On.RedsIllness.orig_RedsCycles orig, bool extracycles)
         {
             int origResult = orig(extracycles);
 
-            if (Plugin.RandoManager is null) return int.MaxValue;
+            // TODO: Remove this when we stop loading from story menu
+            if (!Plugin.RandomizerActive) return int.MaxValue;
 
             // Remove cycle limit completely for Archipelago
-            if (Plugin.RandoManager is ManagerArchipelago)
+            if (Plugin.ArchipelagoActive)
             {
                 if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                 {
                     return Plugin.Singleton.Game.GetStorySession.saveState.cycleNumber + 1;
                 }
-                // If this is isn't in game there's not an easy way to get the cycle count
+                // If this isn't in game there's not an easy way to get the cycle count
                 // Will need to hook individual cases to fix this
                 return int.MaxValue;
             }
 
-            int bonusCycles = ModManager.MMF && MoreSlugcats.MMF.cfgHunterBonusCycles != null
-                ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : 5;
+            int bonusCycles = ModManager.MMF && MMF.cfgHunterBonusCycles != null
+                ? MMF.cfgHunterBonusCycles.Value : 5;
             int baseCycles = extracycles ? origResult - bonusCycles : origResult;
 
             // If the save hasn't been initialized, read the file to count cycles
@@ -260,7 +269,6 @@ namespace RainWorldRandomizer
             //    {
             //        return origResult;
             //    }
-
             //    return baseCycles + (countedCycles * bonusCycles);
             //}
 
@@ -270,9 +278,10 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Detect Saint ascending iterators
         /// </summary>
-        public static void OnClassMechanicsSaint(On.Player.orig_ClassMechanicsSaint orig, Player self)
+        private static void OnClassMechanicsSaint(On.Player.orig_ClassMechanicsSaint orig, Player self)
         {
             orig(self);
+            if (!Plugin.RandomizerActive) return;
 
             if (self.room.game.GetStorySession.saveState.deathPersistentSaveData.ripPebbles)
             {
@@ -296,7 +305,7 @@ namespace RainWorldRandomizer
         public static void RefreshExpeditionPerks()
         {
             RainWorldGame game = Plugin.Singleton.Game;
-            if (game is null) return;
+            if (!Plugin.RandomizerActive || game is null) return;
 
             game.session.characterStats = new SlugcatStats(game.StoryCharacter, game.session.characterStats.malnourished);
             if (ModManager.CoopAvailable) game.GetStorySession.CreateJollySlugStats(game.session.characterStats.malnourished);
@@ -304,7 +313,7 @@ namespace RainWorldRandomizer
             {
                 foreach (AbstractCreature crit in game.AlivePlayers)
                 {
-                    if (crit.realizedCreature is not Player player || player.spearOnBack is not null) continue;
+                    if (crit.realizedCreature is not Player { spearOnBack: null } player) continue;
                     player.spearOnBack = new Player.SpearOnBack(player);
                 }
             }
@@ -339,7 +348,7 @@ namespace RainWorldRandomizer
             c.MarkLabel(jump);
             return;
 
-            static bool DontLockArtyKarma(bool origVal) => Plugin.RandoManager is null && origVal;
+            static bool DontLockArtyKarma(bool origVal) => !Plugin.RandomizerActive && origVal;
             static bool HasBackSpearPerk() => Plugin.RandoManager?.HasExpeditionPerk(Perks.BackSpear) is true;
         }
 
@@ -362,6 +371,7 @@ namespace RainWorldRandomizer
 
             c.GotoNext(x => x.MatchLdcI4(1)); // 002C
             c.MarkLabel(jump);
+            return;
 
             static bool HasDualWieldingPerk() => Plugin.RandoManager?.HasExpeditionPerk(Perks.DualWielding) is true;
         }
@@ -390,6 +400,8 @@ namespace RainWorldRandomizer
                 c.Emit(OpCodes.Brtrue, jump);
             }
 
+            return;
+
             static bool HasExplosionImmunityPerk() => Plugin.RandoManager?.HasExpeditionPerk(Perks.ExplosionResistance) is true;
         }
 
@@ -412,10 +424,11 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate(HasExplosivePerk);
             c.Emit(OpCodes.Brtrue, jump);
+            return;
 
             static bool HasExplosivePerk()
             {
-                if (Plugin.RandoManager is null) return false;
+                if (!Plugin.RandomizerActive) return false;
                 return Plugin.RandoManager.HasExpeditionPerk(Perks.ExplosiveParry) || Plugin.RandoManager.HasExpeditionPerk(Perks.ExplosiveJump);
             }
         }
@@ -427,29 +440,28 @@ namespace RainWorldRandomizer
         {
             ILCursor c = new(il);
 
-            // Let Arty code run if either perk is aquired
+            // Let Arty code run if either perk is acquired
             c.GotoNext(MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(Expedition.ExpeditionGame).GetProperty(nameof(Expedition.ExpeditionGame.explosivejump)).GetGetMethod())); // 0029
             c.EmitDelegate(HasAnyExplosivePerk);
-
-
+            
             // Additionally require the perk in order to trigger jump
             c.GotoNext(MoveType.After,
                 x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.pyroJumpped)))); // 01B8
             c.EmitDelegate(DoesNotHaveExplosiveJump);
             // -> brtrue
-
-
+            
             // Additionally require the perk in order to trigger parry
             c.GotoNext(MoveType.After,
                 x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.submerged)))); // 0808
             c.EmitDelegate(DoesNotHaveExplosiveParry);
             // -> brtrue
+            return;
 
             static bool HasAnyExplosivePerk(bool origValue)
             {
                 if (origValue) return true;
-                if (Plugin.RandoManager is null) return false;
+                if (!Plugin.RandomizerActive) return false;
                 return Plugin.RandoManager.HasExpeditionPerk(Perks.ExplosiveParry)
                     || Plugin.RandoManager.HasExpeditionPerk(Perks.ExplosiveJump);
             }
@@ -481,6 +493,7 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate(HasCraftingPerk);
             c.Emit(OpCodes.Brtrue, jump);
+            return;
 
             static bool HasCraftingPerk() => Plugin.RandoManager?.HasExpeditionPerk(Perks.ItemCrafting) is true;
         }
@@ -491,7 +504,7 @@ namespace RainWorldRandomizer
         private static void OnSlugcatStatsCtor(On.SlugcatStats.orig_ctor orig, SlugcatStats self, SlugcatStats.Name slugcat, bool malnourished)
         {
             orig(self, slugcat, malnourished);
-            if (Plugin.RandoManager is null) return;
+            if (!Plugin.RandomizerActive) return;
 
             if (Plugin.RandoManager.HasExpeditionPerk(Perks.Aquatic))
             {
@@ -528,6 +541,7 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Dup);
             c.EmitDelegate(DropBackSpear);
+            return;
 
             static void DropBackSpear(Creature crit) => (crit as Player)?.spearOnBack?.DropSpear();
         }
