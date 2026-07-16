@@ -239,15 +239,15 @@ namespace RainWorldRandomizer
         private static void OnReloadLocksList(On.PlayerProgression.orig_ReloadLocksList orig, PlayerProgression self)
         {
             orig(self);
-            if (Plugin.defaultGateRequirements.Count == 0)
+            if (Plugin.DefaultGateRequirements.Count == 0)
             {
                 foreach (string gate in self.karmaLocks)
                 {
                     string[] split = Regex.Split(gate, " : ");
 
-                    if (Plugin.defaultGateRequirements.ContainsKey(split[0])) continue;
+                    if (Plugin.DefaultGateRequirements.ContainsKey(split[0])) continue;
 
-                    Plugin.defaultGateRequirements.Add(split[0],
+                    Plugin.DefaultGateRequirements.Add(split[0],
                     [
                         new RegionGate.GateRequirement(split[1]),
                         new RegionGate.GateRequirement(split[2])

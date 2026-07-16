@@ -22,14 +22,14 @@ namespace RainWorldRandomizer
 
         internal static BepInEx.Logging.ManualLogSource Log;
 
-        public static Plugin Singleton = null;
+        public static Plugin Singleton;
         public static ManagerBase RandoManager = null;
-        private static List<LogicAddon> logicAddons = [];
+        private static List<LogicAddon> _logicAddons = [];
         // A map of every region to its display name
         public static Dictionary<string, string> RegionNamesMap = [];
         // A map of the 'correct' region acronyms for each region depending on current slugcat
         public static Dictionary<string, string> ProperRegionMap = [];
-        public static Dictionary<string, RegionGate.GateRequirement[]> defaultGateRequirements = [];
+        public static Dictionary<string, RegionGate.GateRequirement[]> DefaultGateRequirements = [];
 
         public static bool RandomizerActive
         {
@@ -268,10 +268,10 @@ namespace RainWorldRandomizer
 
             // Make the logic time
             CustomLogicBuilder.DefineLogic();
-            foreach (LogicAddon addon in logicAddons) addon.DefineLogic();
+            foreach (LogicAddon addon in _logicAddons) addon.DefineLogic();
         }
 
-        public static void AddLogicAddon(LogicAddon addon) => logicAddons.Add(addon);
+        public static void AddLogicAddon(LogicAddon addon) => _logicAddons.Add(addon);
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom)
         {
@@ -408,7 +408,7 @@ namespace RainWorldRandomizer
         {
             bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
             RegionGate.GateRequirement[] newRequirements =
-                defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
+                DefaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
                 ? (RegionGate.GateRequirement[])v.Clone()
                 : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
             RegionGate.GateRequirement[] origRequirements = (RegionGate.GateRequirement[])newRequirements.Clone();
