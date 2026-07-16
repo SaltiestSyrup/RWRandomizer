@@ -187,49 +187,26 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Modify Pebbles to give the mark when he otherwise wouldn't
         /// </summary>
-        // TODO: Rewrite Pebbles meet white hook, goto is volatile
         private static void PebblesMeetWhiteUpdateIL(ILContext il)
         {
-            try
+            ILCursor c = new(il);
+
+            c.GotoNext(x =>
+                x.MatchLdsfld(typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk))));
+            c.GotoNext(MoveType.After,
+                x => x.MatchLdsfld(
+                    typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk))));
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(ForceGiveMark);
+            return;
+
+            static SSOracleBehavior.Action ForceGiveMark(SSOracleBehavior.Action origAction, SSOracleBehavior.SubBehavior self)
             {
-                ILCursor c = new(il);
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
-                    x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.deathPersistentSaveData))),
-                    x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.theMark))),
-                    x => x.MatchBrfalse(out _),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchCallOrCallvirt(out _),
-                    x => x.MatchLdcI4(40),
-                    x => x.MatchBle(out _),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner))),
-                    x => x.MatchLdsfld(typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk)))
-                    );
+                if (!Plugin.RandomizerActive) return origAction;
 
-                c.MoveAfterLabels();
-
-                // Force pebbles to 'give the mark' to the player regardless of them already having it
-                c.Emit(OpCodes.Pop);
-                //c.Emit(OpCodes.Ldarg_0);
-                //c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner)));
-                c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_GiveMark)));
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchCallOrCallvirt(typeof(SSOracleBehavior).GetMethod(nameof(SSOracleBehavior.NewAction)))
-                    );
-
-                c.Emit(OpCodes.Ldarg_0);
-                c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner)));
-                c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk)));
-                c.Emit(OpCodes.Stfld, typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)));
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for PebblesUpdateWhite");
-                Plugin.Log.LogError(e);
+                self.owner.afterGiveMarkAction = SSOracleBehavior.Action.General_MarkTalk;
+                return SSOracleBehavior.Action.General_GiveMark;
             }
         }
 
