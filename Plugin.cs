@@ -25,35 +25,32 @@ namespace RainWorldRandomizer
         public static Plugin Singleton = null;
         public static ManagerBase RandoManager = null;
         private static List<LogicAddon> logicAddons = [];
-
-        public static bool RandomizerActive
-        {
-            get { return RandoManager?.isRandomizerActive is true; }
-        }
-
-        private OptionsMenu options;
-
-        public RainWorld rainWorld;
-        public WeakReference<RainWorldGame> _game = new(null);
-        public RainWorldGame Game
-        {
-            get
-            {
-                if (_game.TryGetTarget(out RainWorldGame g)) return g;
-                else return null;
-            }
-            set { _game = new WeakReference<RainWorldGame>(value); }
-        }
-
-        // Queue of pending notifications to be sent to the player in-game
-        public Queue<MessageText> notifQueue = new();
-
         // A map of every region to its display name
         public static Dictionary<string, string> RegionNamesMap = [];
         // A map of the 'correct' region acronyms for each region depending on current slugcat
         public static Dictionary<string, string> ProperRegionMap = [];
         public static Dictionary<string, RegionGate.GateRequirement[]> defaultGateRequirements = [];
 
+        public static bool RandomizerActive
+        {
+            get { return RandoManager?.isRandomizerActive is true; }
+        }
+
+        public static bool ArchipelagoActive
+        {
+            get { return RandoManager is ManagerArchipelago; }
+        }
+
+        public static ManagerArchipelago ArchipelagoManager
+        {
+            get { return RandoManager as ManagerArchipelago; }
+        }
+        
+        public static ManagerVanilla VanillaManager
+        {
+            get { return RandoManager as ManagerVanilla; }
+        }
+        
         /// <summary>Whether there are any third-party regions.</summary>
         public static bool AnyThirdPartyRegions
         {
@@ -71,6 +68,19 @@ namespace RainWorldRandomizer
                     ])
                     .Any();
             }
+        }
+
+        private OptionsMenu options;
+        // Queue of pending notifications to be sent to the player in-game
+        public Queue<MessageText> notifQueue = new();
+        
+        public RainWorld rainWorld;
+        private WeakReference<RainWorldGame> _game = new(null);
+        
+        public RainWorldGame Game
+        {
+            get { return _game.TryGetTarget(out RainWorldGame g) ? g : null; }
+            set { _game = new WeakReference<RainWorldGame>(value); }
         }
 
         public enum GateBehavior
