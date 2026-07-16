@@ -54,7 +54,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             
             static PlacedObject DontWarpFilterFlowers(PlacedObject obj)
             {
-                if (!Plugin.RandoManager.isRandomizerActive) return obj;
+                if (!Plugin.RandomizerActive) return obj;
 
                 if (obj.deactivatedByWarpFilter && obj.type == PlacedObject.Type.KarmaFlower)
                     obj.deactivatedByWarpFilter = false;
@@ -95,7 +95,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
             static bool DontSkipWeaver()
             {
-                return !(Plugin.RandoManager is ManagerArchipelago
+                return !(Plugin.ArchipelagoActive
                        && (ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot
                            || ArchipelagoConnection.spreadRotChecks));
             }

@@ -7,13 +7,13 @@ using Watcher;
 
 namespace RainWorldRandomizer.WatcherIntegration
 {
-    internal static class CheckDetection
+    public static class CheckDetection
     {
         const float WARP_DETECTION_RADIUS = 200f;
 
-        internal static class Hooks
+        public static class Hooks
         {
-            internal static void ApplyHooks()
+            public static void ApplyHooks()
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered += DetectSpinningTop;
                 On.Watcher.WarpPoint.Update += WarpPoint_Update;
@@ -30,7 +30,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 //IL.World.SpawnGhost += NullifyPresence;
             }
             
-            internal static void RemoveHooks()
+            public static void RemoveHooks()
             {
                 On.Watcher.SpinningTop.MarkSpinningTopEncountered -= DetectSpinningTop;
                 On.Watcher.WarpPoint.Update -= WarpPoint_Update;
@@ -49,7 +49,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             
             private static void VoidWeaverOnDeactivateWeaver(On.Watcher.VoidWeaver.orig_DeactivateWeaver orig, VoidWeaver self)
             {
-                if (!Plugin.RandoManager.isRandomizerActive)
+                if (!Plugin.RandomizerActive)
                 {
                     orig(self);
                     return;
@@ -96,7 +96,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     
                     // Try to give all previous encounters for safety
                     for (int i = 0; i <= encounters; i++)
-                        Plugin.RandoManager.GiveLocation($"Prince-{i + 1}");
+                        Plugin.RandoManager?.GiveLocation($"Prince-{i + 1}");
                 }
             }
 
@@ -104,13 +104,14 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static void DetectThroneWarpCreation(On.Watcher.WarpSpawningRipple.orig_Success orig, WarpSpawningRipple self, float duration, bool bad, bool weird, bool strong)
             {
                 orig(self, duration, bad, weird, strong);
-                if (DynamicWarpTargeting.GetWarpSourceKind(self.room.abstractRoom.name) == DynamicWarpTargeting.WarpSourceKind.Throne)
+                if (Plugin.RandomizerActive
+                    && DynamicWarpTargeting.GetWarpSourceKind(self.room.abstractRoom.name) == DynamicWarpTargeting.WarpSourceKind.Throne)
                 {
                     Plugin.RandoManager.GiveLocation($"ThroneWarp-{self.room.abstractRoom.name.Substring(11)}");
                 }
             }
 
-            internal static List<string> watcherStoryRegions =
+            private static List<string> _watcherStoryRegions =
             [
                 "WARA", "WARB", "WARC", "WARD", "WARE", "WARF", "WARG", "WAUA", "WBLA",
                 "WDSR", "WGWR", "WHIR", "WORA", "WPTA", "WRFA", "WRFB", "WRRA", "WRSA",
@@ -119,15 +120,16 @@ namespace RainWorldRandomizer.WatcherIntegration
 
             /// <summary>Return a relevant list of regions for Watcher.</summary>
             private static List<string> WatcherStoryRegions(On.SlugcatStats.orig_SlugcatStoryRegions orig, SlugcatStats.Name i)
-                => i.value == "Watcher" ? watcherStoryRegions : orig(i);
+                => Plugin.RandomizerActive && i.value == "Watcher" ? _watcherStoryRegions : orig(i);
 
             /// <summary>Don't blacklist The Wanderer for Watcher.</summary>
             private static bool LetThemWander(On.WinState.orig_TrackerAllowedOnSlugcat orig, WinState.EndgameID trackerId, SlugcatStats.Name slugcat)
-                => (ModManager.Watcher && slugcat.value == "Watcher" && trackerId == WinState.EndgameID.Traveller) || orig(trackerId, slugcat);
+                => (Plugin.RandomizerActive && ModManager.Watcher && slugcat.value == "Watcher" && trackerId == WinState.EndgameID.Traveller) 
+                   || orig(trackerId, slugcat);
 
             /// <summary>Prevent Ripple from being raised automatically.
             /// This also prevents the Ripple ladder from appearing when <see cref="SpinningTop.SpawnWarpPoint"/> is called.</summary>
-            private static bool Dont(On.Watcher.SpinningTop.orig_CanRaiseRippleLevel orig, SpinningTop self) => false;
+            private static bool Dont(On.Watcher.SpinningTop.orig_CanRaiseRippleLevel orig, SpinningTop self) => !Plugin.RandomizerActive;
 
             /// <summary>
             /// Prevent the warp that Spinning Top makes from instantly triggering
@@ -139,22 +141,23 @@ namespace RainWorldRandomizer.WatcherIntegration
                 c.GotoNext(MoveType.Before, x => x.MatchStfld(typeof(WarpPoint).GetField(nameof(WarpPoint.guaranteeTrigger))));
 
                 c.EmitDelegate(PreventInstantPull);
+                return;
 
-                static bool PreventInstantPull(bool value) => false;
+                static bool PreventInstantPull(bool value) => !Plugin.RandomizerActive;
             }
 
             /// <summary>Detect the moment that a Spinning Top is marked as encountered.</summary>
-            internal static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, SpinningTop self)
+            private static void DetectSpinningTop(On.Watcher.SpinningTop.orig_MarkSpinningTopEncountered orig, SpinningTop self)
             {
                 orig(self);
-                Plugin.RandoManager.GiveLocation($"SpinningTop-{self.room.abstractRoom.name.Region()}");
+                Plugin.RandoManager?.GiveLocation($"SpinningTop-{self.room.abstractRoom.name.Region()}");
             }
 
             /// <summary>Detect, at cycle end, what regions have been infected.</summary>
             internal static void DetectFixedWarpPointAndRotSpread(SaveState saveState)
             {
                 for (int i = 1; i <= saveState.miscWorldSaveData.regionsInfectedBySentientRotSpread.Count; i++)
-                    Plugin.RandoManager.GiveLocation($"SpreadRot-{i}");
+                    Plugin.RandoManager?.GiveLocation($"SpreadRot-{i}");
             }
 
             /// <summary>
@@ -163,7 +166,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static void WarpPoint_Update(On.Watcher.WarpPoint.orig_Update orig, WarpPoint self, bool eu)
             {
                 orig(self, eu);
-                if (self?.room?.game?.Players is null) return;
+                if (!Plugin.RandomizerActive || self?.room?.game?.Players is null) return;
 
                 foreach (var crit in self.room.game.Players)
                 {
@@ -182,7 +185,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static void OnElderSpawn_PromptSpecialWarp(On.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.orig_PromptSpecialWarp orig,
                 WatcherRoomSpecificScript.WORA_ElderSpawn self, Player player)
             {
-                if (Plugin.RandoManager is null)
+                if (!Plugin.RandomizerActive)
                 {
                     orig(self, player);
                     return;

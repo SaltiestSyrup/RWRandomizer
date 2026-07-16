@@ -9,7 +9,7 @@ using Watcher;
 
 namespace RainWorldRandomizer.WatcherIntegration
 {
-    internal static class DynamicWarpTargeting
+    public static class DynamicWarpTargeting
     {
         /// <summary>The maximum multiplier on dynamic warp weighting that check completion can have</summary>
         private const int INFLUENCE_COMPLETION = 10;
@@ -21,10 +21,10 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// <summary>The multiplier on dynamic warp weighting applied when the region has warps to seal</summary>
         private const int INFLUENCE_WARPS_TO_SEAL = 16;
 
-        internal enum WarpSourceKind { Other, Normal, Throne, Permarotted, Unrottable }
+        public enum WarpSourceKind { Other, Normal, Throne, Permarotted, Unrottable }
 
         /// <summary>Get the kind of dynamic warp that would be performed from this room.</summary>
-        internal static WarpSourceKind GetWarpSourceKind(string room)
+        public static WarpSourceKind GetWarpSourceKind(string room)
         {
             if (room.ToUpperInvariant() is "WORA_THRONE10" or "WORA_THRONE09" or "WORA_THRONE07" or "WORA_THRONE05") return WarpSourceKind.Throne;
             string region = room.Split('_')[0];
@@ -62,9 +62,9 @@ namespace RainWorldRandomizer.WatcherIntegration
             return ret;
         }
 
-        internal static class Hooks
+        public static class Hooks
         {
-            internal static void ApplyHooks()
+            public static void ApplyHooks()
             {
                 On.Watcher.WarpPoint.NewWorldLoaded_Room += OnNewWorldLoaded;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool += GetAvailableDynamicWarpTargets;
@@ -84,7 +84,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 }
             }
 
-            internal static void RemoveHooks()
+            public static void RemoveHooks()
             {
                 On.Watcher.WarpPoint.NewWorldLoaded_Room -= OnNewWorldLoaded;
                 On.Watcher.WarpPoint.GetAvailableDynamicWarpTargets_World_string_string_bool -= GetAvailableDynamicWarpTargets;
@@ -96,7 +96,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
             private static bool OnGetCanSpawnDynamicWarpPoints(Func<Player, bool> orig, Player self)
             {
-                if (!Plugin.RandoManager.isRandomizerActive) return orig(self);
+                if (!Plugin.RandomizerActive) return orig(self);
 
                 return orig(self) ||
                     (self.room?.game.GetStorySession?.saveState.miscWorldSaveData.hasVoidWeaverAbility ?? false);
@@ -118,6 +118,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate(OneWayIfFirstWarp);
+                return;
 
                 static bool OneWayIfFirstWarp(bool origVal, Player player)
                 {
@@ -135,8 +136,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 if (!RoomSpecificScript.WatcherRandomizedSpawn.warpPending) return;
                 foreach (AbstractCreature crit in newRoom.game.Players)
                 {
-                    Player player = crit.realizedCreature as Player;
-                    if (player is not null)
+                    if (crit.realizedCreature is Player player)
                     {
                         player.pendingForcedWarpRoom = null;
                         player.rippleDeathIntensity = 0f;
@@ -147,12 +147,12 @@ namespace RainWorldRandomizer.WatcherIntegration
             }
 
             /// <summary>
-            /// Reimplemtation of this method, because so much has to change. Decides where a regular dynamic warp should go.
+            /// Reimplementation of this method, because so much has to change. Decides where a regular dynamic warp should go.
             /// </summary>
             private static List<string> GetAvailableDynamicWarpTargets(On.Watcher.WarpPoint.orig_GetAvailableDynamicWarpTargets_World_string_string_bool orig,
                 World world, string oldRoom, string targetRegion, bool spreadingRot)
             {
-                if (Plugin.RandoManager?.isRandomizerActive is not true) return orig(world, oldRoom, targetRegion, spreadingRot);
+                if (!Plugin.RandomizerActive) return orig(world, oldRoom, targetRegion, spreadingRot);
                 SaveState saveState = world.game.GetStorySession.saveState;
                 bool hasWeaverAbility = saveState.miscWorldSaveData.hasVoidWeaverAbility;
 
@@ -282,7 +282,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             private static List<string> GetAvailableBadWarpTargets(On.Watcher.WarpPoint.orig_GetAvailableBadWarpTargets_World_string orig, World world, string oldRoom)
             {
                 List<string> origRet = orig(world, oldRoom);
-                if (Plugin.RandoManager?.isRandomizerActive is not true) return origRet;
+                if (!Plugin.RandomizerActive) return origRet;
 
                 List<string> badWeightedCandidates = [];
                 foreach (string warpTarget in origRet)
@@ -323,7 +323,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 static void ToOuterRimIfNeeded(WarpPoint.WarpPointData warpData)
                 {
-                    if (Plugin.RandoManager is null) return;
+                    if (!Plugin.RandomizerActive) return;
 
                     float percentWORA = Mathf.Abs(Plugin.RandoManager.PercentOfRegionComplete("WORA"));
                     // Average completion of all rotted regions (If region not found, it is considered complete)
