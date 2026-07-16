@@ -116,6 +116,7 @@
     <Compile Include="Hooks\FlowerCheckHandler.cs" />
     <Compile Include="Generation\AccessRule.cs" />
     <Compile Include="Hooks\LocationColorizer.cs" />
+    <Compile Include="Hooks\TokenCachePatcher.cs" />
     <Compile Include="LocationInfo.cs" />
     <Compile Include="Menu\BorderlessSymbolButton.cs" />
     <Compile Include="Menu\ChatLog.cs" />
@@ -128,7 +129,6 @@
     <Compile Include="Menu\PendingItemsDisplay.cs" />
     <Compile Include="Menu\SpoilerMenu.cs" />
     <Compile Include="Menu\TextClientMenu.cs" />
-    <Compile Include="TokenCachePatcher.cs" />
     <Compile Include="Generation\Item.cs" />
     <Compile Include="Generation\Location.cs" />
     <Compile Include="Generation\State.cs" />
