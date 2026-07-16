@@ -75,6 +75,7 @@ namespace RainWorldRandomizer
             // Overwrite mined save data info with our own
             c.EmitDelegate<Action<CollectiblesTracker.SaveGameData>>((collectionData) =>
             {
+                if (!Plugin.RandomizerActive) return;
                 collectionData.unlockedGolds = [.. FoundTokensOfType<MultiplayerUnlocks.LevelUnlockID>().Cast<MultiplayerUnlocks.LevelUnlockID>()];
                 collectionData.unlockedBlues = [.. FoundTokensOfType<MultiplayerUnlocks.SandboxUnlockID>().Cast<MultiplayerUnlocks.SandboxUnlockID>()];
                 if (ModManager.MSC)
@@ -144,7 +145,9 @@ namespace RainWorldRandomizer
         private static void AddPearlsAndEchoesToTracker(CollectiblesTracker self, RainWorld rainWorld, int i, SlugcatStats.Name saveSlot)
         {
             // The position in IL this is placed necessitates a duplicate check for if the region has been visited
-            if (self.collectionData is null || !self.collectionData.regionsVisited.Contains(self.displayRegions[i]))
+            if (!Plugin.RandomizerActive 
+                || self.collectionData is null 
+                || !self.collectionData.regionsVisited.Contains(self.displayRegions[i]))
             {
                 return;
             }
@@ -154,13 +157,11 @@ namespace RainWorldRandomizer
             List<GhostWorldPresence.GhostID> foundEchoes = [];
             foreach (LocationInfo loc in Plugin.RandoManager.GetLocations())
             {
-                if (loc.kind == LocationInfo.LocationKind.Pearl)
+                if (loc.kind == LocationInfo.LocationKind.Pearl
+                    && ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), loc.internalDesc, false, out ExtEnumBase value)
+                    && loc.Collected)
                 {
-                    if (ExtEnumBase.TryParse(typeof(DataPearl.AbstractDataPearl.DataPearlType), loc.internalDesc, false, out ExtEnumBase value)
-                        && loc.Collected)
-                    {
-                        foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
-                    }
+                    foundPearls.Add((DataPearl.AbstractDataPearl.DataPearlType)value);
                 }
 
                 if (loc.kind == LocationInfo.LocationKind.Echo
@@ -180,14 +181,10 @@ namespace RainWorldRandomizer
                     if (rainWorld.regionDataPearlsAccessibility[self.displayRegions[i]][j].Contains(saveSlot))
                     {
                         self.spriteColors[self.displayRegions[i]].Add(Color.white);
-                        if (foundPearls.Contains(rainWorld.regionDataPearls[self.displayRegions[i]][j]))
-                        {
-                            self.sprites[self.displayRegions[i]].Add(new FSprite("ctOn", true));
-                        }
-                        else
-                        {
-                            self.sprites[self.displayRegions[i]].Add(new FSprite("ctOff", true));
-                        }
+                        self.sprites[self.displayRegions[i]]
+                            .Add(foundPearls.Contains(rainWorld.regionDataPearls[self.displayRegions[i]][j])
+                                ? new FSprite("ctOn")
+                                : new FSprite("ctOff"));
                     }
                 }
             }
@@ -197,14 +194,10 @@ namespace RainWorldRandomizer
                 && World.CheckForRegionGhost(saveSlot, self.displayRegions[i].ToUpper()))
             {
                 self.spriteColors[self.displayRegions[i]].Add(RainWorld.SaturatedGold);
-                if (foundEchoes.Contains(GhostWorldPresence.GetGhostID(self.displayRegions[i].ToUpper())))
-                {
-                    self.sprites[self.displayRegions[i]].Add(new FSprite("ctOn", true));
-                }
-                else
-                {
-                    self.sprites[self.displayRegions[i]].Add(new FSprite("ctOff", true));
-                }
+                self.sprites[self.displayRegions[i]]
+                    .Add(foundEchoes.Contains(GhostWorldPresence.GetGhostID(self.displayRegions[i].ToUpper()))
+                        ? new FSprite("ctOn")
+                        : new FSprite("ctOff"));
             }
         }
 
@@ -220,6 +213,8 @@ namespace RainWorldRandomizer
 
         private static void CreatePassageHomeButton(this SleepAndDeathScreen self)
         {
+            if (!Plugin.RandomizerActive) return;
+            
             PassageHomeButton button =
                 new PassageHomeButton(self, self.pages[0], new Vector2(self.LeftHandButtonsPosXAdd, 60f));
             _passageHomeButton.Add(self, button);
@@ -233,7 +228,7 @@ namespace RainWorldRandomizer
         private static void OnEndgameTokensCtor(On.Menu.EndgameTokens.orig_ctor orig, EndgameTokens self, RWMenu menu, MenuObject owner, Vector2 pos, FContainer container, KarmaLadder ladder)
         {
             orig(self, menu, owner, pos, container, ladder);
-            if (!RandoOptions.GivePassageItems) return;
+            if (!Plugin.RandomizerActive || !RandoOptions.GivePassageItems) return;
 
             // We won't be needing these
             foreach (EndgameTokens.Token token in self.tokens)
@@ -267,7 +262,7 @@ namespace RainWorldRandomizer
         {
             orig(self, sender, message);
 
-            if (message is not null && message.Equals("RETURN_HOME"))
+            if (message?.Equals("RETURN_HOME") ?? false)
             {
                 // Set startup condition
                 self.manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.FastTravel;
@@ -285,7 +280,7 @@ namespace RainWorldRandomizer
                 RainWorld.ShelterBeforePassage = self.manager.rainWorld.progression.ShelterOfSaveGame(self.saveState.saveStateNumber);
                 RainWorld.ShelterAfterPassage = self.manager.menuSetup.regionSelectRoom;
 
-                // Initiate proccess switch
+                // Initiate process switch
                 self.manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
                 self.PlaySound(SoundID.MENU_Passage_Button);
             }
@@ -306,9 +301,9 @@ namespace RainWorldRandomizer
 
             c.Index--;
 
-            c.EmitDelegate<Func<bool, bool>>((flag) =>
+            c.EmitDelegate<Func<bool, bool>>(flag =>
             {
-                return flag || Plugin.RandoManager.GetPassageTokensStatus().Values.Any(v => v);
+                return flag || (Plugin.RandoManager?.GetPassageTokensStatus().Values.Any(v => v) ?? false);
             });
         }
 
@@ -328,14 +323,16 @@ namespace RainWorldRandomizer
                 );
 
             c.Index--;
-            c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate(IsWatcher);
+            c.EmitDelegate(ForcePassageButton);
             return;
 
-            // Why rewrite your hook when you could just re-add part of the original condition in a delegate :)
-            // If using Watcher passages, the mod that enables that will remove the Watcher check itself
-            static bool IsWatcher(SleepAndDeathScreen self) => self.saveState?.saveStateNumber == WatcherEnums.SlugcatStatsName.Watcher;
+            // If using Watcher passages, the Watcher Region Art mod will remove the Watcher check itself
+            static bool ForcePassageButton(bool origVal, SleepAndDeathScreen self)
+            {
+                if (!Plugin.RandomizerActive) return origVal;
+                return self.saveState?.saveStateNumber == WatcherEnums.SlugcatStatsName.Watcher;
+            }
         }
 
         /// <summary>
@@ -361,12 +358,13 @@ namespace RainWorldRandomizer
             c.GotoNext(x => x.MatchBrtrue(out _));
             c.GotoNext(MoveType.After, x => x.MatchBrtrue(out _));
             c.MarkLabel(yesEndgamesJump);
+            return;
 
             static bool IsNotWatcher(SleepAndDeathScreen self)
             {
                 // Add passage to home button
                 self.CreatePassageHomeButton();
-                return self.saveState?.saveStateNumber != WatcherEnums.SlugcatStatsName.Watcher;
+                return Plugin.RandomizerActive && self.saveState?.saveStateNumber != WatcherEnums.SlugcatStatsName.Watcher;
             }
         }
 
@@ -376,7 +374,7 @@ namespace RainWorldRandomizer
         private static void DoPassage(On.Menu.EndgameTokens.orig_Passage orig, EndgameTokens self, WinState.EndgameID ID)
         {
             orig(self, ID);
-            if (!RandoOptions.GivePassageItems) return;
+            if (!Plugin.RandomizerActive || !RandoOptions.GivePassageItems) return;
 
             foreach (EndgameTokens.Token token in self.tokens)
             {
@@ -385,15 +383,7 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            List<FakeEndgameToken> fakePassageTokens = _passageTokensUI.GetOrCreateValue(self);
-            for (int i = 0; i < fakePassageTokens.Count; i++)
-            {
-                if (fakePassageTokens[i].id == ID)
-                {
-                    fakePassageTokens[i].Activate();
-                    return;
-                }
-            }
+            _passageTokensUI.GetOrCreateValue(self).FirstOrDefault(t => t.id == ID)?.Activate();
         }
 
         /// <summary>
@@ -401,16 +391,12 @@ namespace RainWorldRandomizer
         /// </summary>
         private static WinState.EndgameID NextPassageToken(On.WinState.orig_GetNextEndGame orig, WinState self)
         {
-            if (Plugin.RandoManager?.isRandomizerActive is not true || !RandoOptions.GivePassageItems) return orig(self);
+            if (!Plugin.RandomizerActive || !RandoOptions.GivePassageItems) return orig(self);
 
-            foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
-            {
-                if (passage.Value && !self.GetTracker(passage.Key, true).consumed)
-                {
-                    return passage.Key;
-                }
-            }
-            return null;
+            return Plugin.RandoManager.GetPassageTokensStatus()
+                .Where(p => p.Value && !self.GetTracker(p.Key, true).consumed)
+                .Select(p => p.Key)
+                .FirstOrDefault();
         }
 
         /// <summary>
@@ -418,7 +404,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void ConsumePassageToken(On.WinState.orig_ConsumeEndGame orig, WinState self)
         {
-            if (Plugin.RandoManager?.isRandomizerActive != true)
+            if (!Plugin.RandomizerActive)
             {
                 orig(self);
                 return;
@@ -438,14 +424,11 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            foreach (var passage in Plugin.RandoManager.GetPassageTokensStatus())
-            {
-                if (passage.Value && !self.GetTracker(passage.Key, true).consumed)
-                {
-                    self.GetTracker(passage.Key, true).consumed = true;
-                    return;
-                }
-            }
+            WinState.EndgameID id = Plugin.RandoManager.GetPassageTokensStatus()
+                .Where(p => p.Value && !self.GetTracker(p.Key, true).consumed)
+                .Select(p => p.Key)
+                .FirstOrDefault();
+            if (id is not null) self.GetTracker(id, true).consumed = true;
         }
 
         // ----- KARMA LADDER -----
@@ -456,7 +439,8 @@ namespace RainWorldRandomizer
         private static void OnKarmaLadderCtor(On.Menu.KarmaLadder.orig_ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool orig,
             KarmaLadder self, RWMenu menu, MenuObject owner, Vector2 pos, HUD.HUD hud, IntVector2 displayKarma, bool reinforced)
         {
-            (menu as KarmaLadderScreen).preGhostEncounterKarmaCap = Plugin.RandoManager.CurrentMaxKarma;
+            if (Plugin.RandomizerActive)
+                (menu as KarmaLadderScreen).preGhostEncounterKarmaCap = Plugin.RandoManager.CurrentMaxKarma;
             orig(self, menu, owner, pos, hud, displayKarma, reinforced);
         }
     }
