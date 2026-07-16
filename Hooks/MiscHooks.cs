@@ -27,30 +27,28 @@ namespace RainWorldRandomizer
             try
             {
                 // In order for used passages to always save, they need to consider their consumed status
-                Func<Func<WinState.EndgameTracker, bool>, WinState.EndgameTracker, bool> ProgressHook = (orig, tracker) =>
-                {
-                    return orig(tracker) || tracker.consumed;
-                };
+                Func<Func<WinState.EndgameTracker, bool>, WinState.EndgameTracker, bool> progressHook = 
+                    (orig, tracker) => orig(tracker) || tracker.consumed;
 
                 _ = new Hook(typeof(WinState.BoolArrayTracker)
                     .GetProperty(nameof(WinState.BoolArrayTracker.AnyProgressToSave))
                     .GetGetMethod(),
-                    ProgressHook);
+                    progressHook);
 
                 _ = new Hook(typeof(WinState.ListTracker)
                     .GetProperty(nameof(WinState.ListTracker.AnyProgressToSave))
                     .GetGetMethod(),
-                    ProgressHook);
+                    progressHook);
 
                 _ = new Hook(typeof(WinState.FloatTracker)
                     .GetProperty(nameof(WinState.FloatTracker.AnyProgressToSave))
                     .GetGetMethod(),
-                    ProgressHook);
+                    progressHook);
 
                 _ = new Hook(typeof(WinState.IntegerTracker)
                     .GetProperty(nameof(WinState.IntegerTracker.AnyProgressToSave))
                     .GetGetMethod(),
-                    ProgressHook);
+                    progressHook);
 
                 IL.Menu.MainMenu.ctor += MainMenuCtorIL;
                 IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
@@ -175,30 +173,32 @@ namespace RainWorldRandomizer
             ];
 
             // The check is the same for all 3 cases, so just loop through them
-            for (int i = 0; i < flags.Length; i++)
+            foreach (var flag in flags)
             {
                 ILLabel jump = null;
                 c.GotoNext(
                     MoveType.After,
                     x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(flags[i]),
+                    x => x.MatchLdfld(flag),
                     x => x.MatchBrfalse(out jump)
-                    );
+                );
 
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate(OverrideIsDead);
                 c.Emit(OpCodes.Brfalse, jump);
             }
 
+            return;
+
             static bool OverrideIsDead(SlugcatSelectMenu menu)
             {
                 SlugcatStats.Name slugcat = menu.slugcatPages[menu.slugcatPageIndex].slugcatNumber;
                 int saveSlot = menu.manager.rainWorld.options.saveSlot;
-                return !((Plugin.RandoManager is ManagerArchipelago) || SaveManager.IsThereASavedGame(slugcat, saveSlot));
+                return !(Plugin.ArchipelagoActive || SaveManager.IsThereASavedGame(slugcat, saveSlot));
             }
         }
 
-        // TODO: Need explanation text for when start game button is greyed out
+        // TODO: Remove this when we stop loading from story menu
         /// <summary>
         /// Disable start game button if proper conditions are not met
         /// </summary>
@@ -212,6 +212,7 @@ namespace RainWorldRandomizer
                 );
             c1.Emit(OpCodes.Ldarg_0);
             c1.EmitDelegate(CanPlaySlugcat);
+            return;
 
             static bool CanPlaySlugcat(bool orig, SlugcatSelectMenu self)
             {
@@ -228,7 +229,7 @@ namespace RainWorldRandomizer
         private static void OnGateRequirements(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
         {
             orig(self);
-            if (Plugin.RandoManager.isRandomizerActive)
+            if (Plugin.RandomizerActive)
             {
                 self.karmaRequirements = Plugin.GetGateRequirement(self.room.abstractRoom.name);
             }
@@ -250,8 +251,8 @@ namespace RainWorldRandomizer
 
                     Plugin.defaultGateRequirements.Add(split[0],
                     [
-                        new(split[1]),
-                        new(split[2])
+                        new RegionGate.GateRequirement(split[1]),
+                        new RegionGate.GateRequirement(split[2])
                     ]);
                 }
             }
@@ -274,7 +275,7 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate(() =>
             {
-                if (Plugin.RandoManager is ManagerArchipelago)
+                if (Plugin.ArchipelagoActive)
                 {
                     return ArchipelagoConnection.gateBehavior != Plugin.GateBehavior.OnlyKey;
                 }
@@ -313,8 +314,7 @@ namespace RainWorldRandomizer
             static bool CustomEchoLogic(World self, GhostWorldPresence.GhostID ghostID, bool spawnEcho)
             {
                 // Use default logic if karma cap >= 5 or we're not in a mode where this applies
-                if (!Plugin.RandoManager.isRandomizerActive
-                    || Plugin.RandoManager is not ManagerArchipelago
+                if (!Plugin.ArchipelagoActive
                     || self.game.GetStorySession?.saveState.deathPersistentSaveData.karmaCap >= 4)
                 {
                     return spawnEcho;
@@ -389,7 +389,7 @@ namespace RainWorldRandomizer
         private static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
         {
             orig(self, ghost, rainWorld);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             self.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
             self.deathPersistentSaveData.karma = self.deathPersistentSaveData.karmaCap;
@@ -430,11 +430,12 @@ namespace RainWorldRandomizer
                 );
             // Tell game this isn't cycle 0 if randomizer using random starting location
             c.EmitDelegate(SkipSaintIntro);
+            return;
 
             static int SkipSaintIntro(int cycleNumber) => RandoOptions.RandomizeSpawnLocation ? 1 : cycleNumber;
         }
 
-        private static bool hasSeenArtyStart = false;
+        private static bool _hasSeenArtyStart;
         /// <summary>
         /// Skip Artificer intro cutscene if player has already seen it
         /// </summary>
@@ -448,7 +449,7 @@ namespace RainWorldRandomizer
                 );
             // Skip cutscene if we saw it instead of if robo is present
             c.Emit(OpCodes.Pop);
-            c.EmitDelegate(() => hasSeenArtyStart);
+            c.EmitDelegate(() => _hasSeenArtyStart);
 
             // Jump further into method to dodge last call to Destroy()
             c.GotoNext(x => x.MatchLdsfld(typeof(CutsceneArtificer.Phase).GetField(nameof(CutsceneArtificer.Phase.End))));
@@ -463,7 +464,7 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate<Action<CutsceneArtificer>>(self =>
             {
-                hasSeenArtyStart = true;
+                _hasSeenArtyStart = true;
                 RainWorldGame.ForceSaveNewDenLocation(self.room.game, "GW_A24", true);
             });
         }
@@ -504,29 +505,16 @@ namespace RainWorldRandomizer
             c.GotoNext(x => x.MatchCallOrCallvirt(typeof(WinState).GetMethod(nameof(WinState.GourmandPassageRequirementAtIndex))));  // 0221
             c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(AbstractPhysicalObject).GetField(nameof(AbstractPhysicalObject.type))));  // 022c
 
-            AbstractPhysicalObject.AbstractObjectType TreatSeedsAsCobs(AbstractPhysicalObject.AbstractObjectType prev)
-            {
-                return (ModManager.MSC && prev == DLCSharedEnums.AbstractObjectType.Seed) ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
-            }
-
             c.EmitDelegate(TreatSeedsAsCobs);
+            return;
+
+            static AbstractPhysicalObject.AbstractObjectType TreatSeedsAsCobs(AbstractPhysicalObject.AbstractObjectType prev)
+            {
+                return ModManager.DLCShared && prev == DLCSharedEnums.AbstractObjectType.Seed ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
+            }
         }
 
-        [Obsolete("Not currently applied")]
-        private static void WinStateCreateTrackerIL(ILContext il)
-        {
-            ILCursor c = new(il);
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.EndgameID).GetField(nameof(MoreSlugcatsEnums.EndgameID.Gourmand))),
-                x => x.MatchCallOrCallvirt(typeof(ExtEnum<WinState.EndgameID>).GetMethod("op_Equality"))
-            );
-            c.MoveAfterLabels();
-
-            c.EmitDelegate(YesItIsMeGourmand);
-        }
-
-        private static bool YesItIsMeGourmand(bool prev) => RandoOptions.UseFoodQuest || prev;
+        private static bool YesItIsMeGourmand(bool prev) => (Plugin.RandomizerActive && RandoOptions.UseFoodQuest) || prev;
 
         /// <summary>
         /// Allow Spearmaster to eat mushrooms for the food quest, and detect spearing a neuron for Eat Neuron check
@@ -537,15 +525,6 @@ namespace RainWorldRandomizer
 
             c.GotoNext(x => x.MatchIsinst<Mushroom>());
             c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
-
-            static void Delegate(Spear self, PhysicalObject obj)
-            {
-                // Previous IL has already checked whether it's a live Spearmaster needle.
-                if (self.room?.game.GetStorySession?.playerSessionRecords is PlayerSessionRecord[] records)
-                {
-                    records[((self.thrownBy as Player).abstractCreature.state as PlayerState).playerNumber].AddEat(obj);
-                }
-            }
 
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldarg_1);
@@ -560,6 +539,17 @@ namespace RainWorldRandomizer
             {
                 IteratorHooks.EatenNeuron(self.thrownBy as Player);
             });
+            return;
+
+            static void Delegate(Spear self, PhysicalObject obj)
+            {
+                // Previous IL has already checked whether it's a live Spearmaster needle.
+                if (Plugin.RandomizerActive
+                    && self.room?.game.GetStorySession?.playerSessionRecords is PlayerSessionRecord[] records)
+                {
+                    records[((self.thrownBy as Player).abstractCreature.state as PlayerState).playerNumber].AddEat(obj);
+                }
+            }
         }
 
         /// <summary>
@@ -572,7 +562,6 @@ namespace RainWorldRandomizer
             ILLabel jump = null;
             c.GotoNext(
                 MoveType.After,
-                //x => x.MatchLdfld(typeof(GourmandMeter).GetField(nameof(GourmandMeter.CurrentProgress))),
                 x => x.MatchLdloc(2),
                 x => x.MatchCallOrCallvirt(out _),
                 x => x.MatchLdcI4(0),
@@ -582,11 +571,11 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldloc_2); // i
             c.EmitDelegate<Func<int, bool>>((i) =>
             {
-                if (Plugin.RandoManager is ManagerArchipelago && ArchipelagoConnection.foodQuest == ArchipelagoConnection.FoodQuestBehavior.Expanded)
+                if (Plugin.ArchipelagoActive && ArchipelagoConnection.foodQuest == ArchipelagoConnection.FoodQuestBehavior.Expanded)
                 {
                     return (ArchipelagoConnection.foodQuestAccessibility & (1L << i)) != 0;
                 }
-                // Returns whether or not the current slugcat can eat this food
+                // Returns whether the current slugcat can eat this food
                 return Constants.SlugcatFoodQuestAccessibility[Plugin.RandoManager.currentSlugcat][i];
             });
             c.Emit(OpCodes.Brfalse, jump);
@@ -628,7 +617,8 @@ namespace RainWorldRandomizer
             int origValue = orig(self, obj, weaponFiltered);
 
             // Items are allowed to be a part of social events
-            if (self.scavenger.room?.socialEventRecognizer.ItemOwnership(obj) is not null) return origValue;
+            if (!Plugin.RandomizerActive
+                && self.scavenger.room?.socialEventRecognizer.ItemOwnership(obj) is not null) return origValue;
 
             bool setNoValue = false;
             // Do not take unpicked flowers
@@ -652,7 +642,6 @@ namespace RainWorldRandomizer
         private static void CheckForScavengeItemsIL(ILContext il)
         {
             ILCursor c = new(il);
-            ILLabel continueJump;
             int localForIterationVar = -1;
 
             // Find for loop iteration at 0102
@@ -666,7 +655,7 @@ namespace RainWorldRandomizer
                 x => x.MatchAdd(),
                 x => x.MatchStloc(localForIterationVar)
                 );
-            continueJump = c.MarkLabel();
+            ILLabel continueJump = c.MarkLabel();
 
             // After assigning PickUpItemScore to a local at 0072
             c.GotoPrev(MoveType.After,
@@ -679,9 +668,12 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldloc, localForIterationVar);
             c.EmitDelegate(ShouldNotScavengeItem);
             c.Emit(OpCodes.Brtrue, continueJump);
+            return;
 
             static bool ShouldNotScavengeItem(ScavengerAI self, int j)
             {
+                if (!Plugin.RandomizerActive) return false;
+                
                 PhysicalObject obj = self.itemTracker.GetRep(j).representedItem.realizedObject;
                 // Do not take unpicked flowers
                 if (RandoOptions.UseKarmaFlowerChecks
