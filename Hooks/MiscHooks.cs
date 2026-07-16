@@ -58,7 +58,6 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.CutsceneArtificer.Update += CutsceneArtificerUpdateIL;
                 IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
                 IL.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
-                //IL.WinState.CreateAndAddTracker += WinStateCreateTrackerIL;
                 IL.Spear.HitSomethingWithoutStopping += SpearmasterMushroomAddEat;
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
@@ -90,7 +89,6 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.CutsceneArtificer.Update -= CutsceneArtificerUpdateIL;
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
-            //IL.WinState.CreateAndAddTracker -= WinStateCreateTrackerIL;
             IL.Spear.HitSomethingWithoutStopping -= SpearmasterMushroomAddEat;
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
