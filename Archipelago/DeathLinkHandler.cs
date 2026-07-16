@@ -11,24 +11,24 @@ namespace RainWorldRandomizer
 {
     public static class DeathLinkHandler
     {
-        private static DeathLinkService service = null;
+        private static DeathLinkService _service;
 
         /// <summary>Cooldown to ensure we don't send a packet for a received death</summary>
-        private static int receiveDeathCooldown = 0;
+        private static int _receiveDeathCooldown;
         /// <summary>When True, the mod is waiting for a proper state to kill the player</summary>
-        private static bool deathPending = false;
-        private static bool lastDeathWasLink = false;
+        private static bool _deathPending;
+        private static bool _lastDeathWasLink;
 
         public static bool Active
         {
             get
             {
-                return service is not null && ArchipelagoConnection.Session.ConnectionInfo.Tags.Contains("DeathLink");
+                return _service is not null && ArchipelagoConnection.Session.ConnectionInfo.Tags.Contains("DeathLink");
             }
             set
             {
-                if (value) service?.EnableDeathLink();
-                else service?.DisableDeathLink();
+                if (value) _service?.EnableDeathLink();
+                else _service?.DisableDeathLink();
             }
         }
 
@@ -57,15 +57,15 @@ namespace RainWorldRandomizer
 
         public static void Init(ArchipelagoSession session)
         {
-            service = session.CreateDeathLinkService();
-            service.OnDeathLinkReceived += OnReceiveDeath;
+            _service = session.CreateDeathLinkService();
+            _service.OnDeathLinkReceived += OnReceiveDeath;
         }
 
         public static void Reset()
         {
-            if (service is null) return;
-            service.OnDeathLinkReceived -= OnReceiveDeath;
-            service = null;
+            if (_service is null) return;
+            _service.OnDeathLinkReceived -= OnReceiveDeath;
+            _service = null;
         }
 
         private static void Kill(Creature player)
@@ -89,8 +89,8 @@ namespace RainWorldRandomizer
             {
                 string deathMessage = deathLink.Cause ?? $"{deathLink.Source} has died!";
                 Plugin.Singleton.notifQueue.Enqueue(new MessageText(deathMessage));
-                receiveDeathCooldown = 40; // 1 second
-                deathPending = true;
+                _receiveDeathCooldown = 40; // 1 second
+                _deathPending = true;
             }
             else
             {
@@ -101,8 +101,8 @@ namespace RainWorldRandomizer
         private static void OnPlayerDie(On.RainWorldGame.orig_GoToDeathScreen orig, RainWorldGame self)
         {
             if (!Active
-                || lastDeathWasLink
-                || receiveDeathCooldown > 0
+                || _lastDeathWasLink
+                || _receiveDeathCooldown > 0
                 || self.manager.upcomingProcess != null)
             {
                 orig(self);
@@ -111,7 +111,7 @@ namespace RainWorldRandomizer
             orig(self);
 
             Plugin.Log.LogInfo("Sending DeathLink packet...");
-            service.SendDeathLink(new DeathLink(ArchipelagoConnection.playerName));
+            _service.SendDeathLink(new DeathLink(ArchipelagoConnection.playerName));
         }
 
         private static void OnRainWorldGameUpdate(On.RainWorldGame.orig_Update orig, RainWorldGame self)
@@ -119,13 +119,13 @@ namespace RainWorldRandomizer
             orig(self);
             if (self.GamePaused || !self.processActive) return;
 
-            if (deathPending
+            if (_deathPending
                 && self.FirstAlivePlayer?.realizedCreature is Player firstPlayer // Player exists
                 && firstPlayer.room != null // Player is in a room
                 && self.manager.fadeToBlack == 0 // The screen has fully faded in
                 && firstPlayer.controller == null) // There are no external forces controlling us
             {
-                deathPending = false;
+                _deathPending = false;
 
                 // Secret chance to kill a slugpup instead
                 foreach (var creature in firstPlayer.room.abstractRoom.creatures)
@@ -139,7 +139,7 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                lastDeathWasLink = true;
+                _lastDeathWasLink = true;
                 foreach (AbstractCreature abstractPlayer in self.AlivePlayers)
                 {
                     // Make sure player is realized
@@ -152,8 +152,8 @@ namespace RainWorldRandomizer
             }
 
             // Cooldown Counter
-            if (receiveDeathCooldown > 0) receiveDeathCooldown--;
-            else if (deathPending) receiveDeathCooldown = 40;
+            if (_receiveDeathCooldown > 0) _receiveDeathCooldown--;
+            else if (_deathPending) _receiveDeathCooldown = 40;
         }
 
         // TODO: DeathLink deaths currently still display karma decreasing animation even when overwritten
@@ -171,8 +171,8 @@ namespace RainWorldRandomizer
 
             c.EmitDelegate<Func<int, int>>((orig) =>
             {
-                bool preventDeath = RandoOptions.archipelagoPreventDLKarmaLoss.Value && lastDeathWasLink;
-                lastDeathWasLink = false;
+                bool preventDeath = RandoOptions.archipelagoPreventDLKarmaLoss.Value && _lastDeathWasLink;
+                _lastDeathWasLink = false;
                 return preventDeath ? 0 : 1;
             });
         }
