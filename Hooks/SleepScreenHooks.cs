@@ -328,9 +328,9 @@ namespace RainWorldRandomizer
             return;
 
             // If using Watcher passages, the Watcher Region Art mod will remove the Watcher check itself
-            static bool ForcePassageButton(bool origVal, SleepAndDeathScreen self)
+            static bool ForcePassageButton(SaveState origVal, SleepAndDeathScreen self)
             {
-                if (!Plugin.RandomizerActive) return origVal;
+                if (!Plugin.RandomizerActive) return origVal is not null;
                 return self.saveState?.saveStateNumber == WatcherEnums.SlugcatStatsName.Watcher;
             }
         }
