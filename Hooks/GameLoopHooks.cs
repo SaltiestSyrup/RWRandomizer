@@ -76,6 +76,13 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
         {
+            if (ID == RandomizerEnums.ProcessID.RandomizerMenu)
+            {
+                self.currentMainLoop = new RandomizerMenu(self);
+                orig(self, ID);
+                return;
+            }
+            
             if (ID == ProcessManager.ProcessID.Game
                 && !Plugin.RandomizerActive)
             {

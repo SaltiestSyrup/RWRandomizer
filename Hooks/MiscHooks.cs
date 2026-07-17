@@ -50,7 +50,6 @@ namespace RainWorldRandomizer
                     .GetGetMethod(),
                     progressHook);
 
-                IL.Menu.MainMenu.ctor += MainMenuCtorIL;
                 IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
                 IL.Menu.SlugcatSelectMenu.ContinueStartedGame += SlugcatSelectOverrideDeadCheckIL;
                 IL.Menu.SlugcatSelectMenu.UpdateStartButtonText += SlugcatSelectOverrideDeadCheckIL;
@@ -81,7 +80,6 @@ namespace RainWorldRandomizer
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
             On.ScavengerAI.CollectScore_PhysicalObject_bool -= OnScavengerAICollectScore;
 
-            IL.Menu.MainMenu.ctor -= MainMenuCtorIL;
             IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
             IL.Menu.SlugcatSelectMenu.ContinueStartedGame -= SlugcatSelectOverrideDeadCheckIL;
             IL.Menu.SlugcatSelectMenu.UpdateStartButtonText -= SlugcatSelectOverrideDeadCheckIL;
@@ -97,23 +95,6 @@ namespace RainWorldRandomizer
         }
 
         /// <summary>
-        /// Change button text on main menu to indicate randomizer is active
-        /// </summary>
-        private static void MainMenuCtorIL(ILContext il)
-        {
-            ILCursor c = new(il);
-
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdstr("STORY")
-                );
-
-            c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldstr, "RANDOMIZER");
-        }
-
-        /// <summary>
         /// Cleanly disconnect any active AP connection before quitting application
         /// </summary>
         private static void OnMainMenuExitButtonPressed(On.Menu.MainMenu.orig_ExitButtonPressed orig, MainMenu self)
@@ -126,6 +107,7 @@ namespace RainWorldRandomizer
 
             ArchipelagoConnection.Session.Socket.SocketClosed += QuitAfterDisconnect;
             ArchipelagoConnection.Disconnect(true);
+            return;
 
             void QuitAfterDisconnect(string reason)
             {

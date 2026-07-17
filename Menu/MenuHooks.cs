@@ -40,25 +40,46 @@ namespace RainWorldRandomizer.Menu
 
         public static void ApplyHooks()
         {
-            On.Menu.PauseMenu.ctor += OnMenuCtor;
+            On.Menu.MainMenu.ctor += MainMenuOnCtor;
+            On.Menu.PauseMenu.ctor += OnPauseMenuCtor;
             On.Menu.PauseMenu.Singal += OnMenuSignal;
             On.Menu.PauseMenu.ShutDownProcess += OnMenuShutdownProcess;
             On.Menu.PauseMenu.SpawnExitContinueButtons += OnSpawnExitContinueButtons;
             On.Menu.PauseMenu.SpawnConfirmButtons += OnSpawnConfirmButtons;
             On.HUD.HUD.InitSinglePlayerHud += OnInitSinglePlayerHud;
         }
-
+        
         public static void RemoveHooks()
         {
-            On.Menu.PauseMenu.ctor -= OnMenuCtor;
+            On.Menu.PauseMenu.ctor -= OnPauseMenuCtor;
             On.Menu.PauseMenu.Singal -= OnMenuSignal;
             On.Menu.PauseMenu.ShutDownProcess -= OnMenuShutdownProcess;
             On.Menu.PauseMenu.SpawnExitContinueButtons -= OnSpawnExitContinueButtons;
             On.Menu.PauseMenu.SpawnConfirmButtons -= OnSpawnConfirmButtons;
             On.HUD.HUD.InitSinglePlayerHud -= OnInitSinglePlayerHud;
         }
+        
+        private static void MainMenuOnCtor(On.Menu.MainMenu.orig_ctor orig, MainMenu self, ProcessManager manager, bool showRegionSpecificBkg)
+        {
+            orig(self, manager, showRegionSpecificBkg);
+            
+            float buttonWidth = MainMenu.GetButtonWidth(self.CurrLang);
+            Vector2 pos = new Vector2(683f - buttonWidth / 2f, 0f);
+            Vector2 size = new Vector2(buttonWidth, 30f);
+            
+            self.AddMainMenuButton(new SimpleButton(self, self.pages[0], self.Translate("RANDOMIZER"), "RANDOMIZER", pos, size),
+                RandomizerButtonPressed, self.mainMenuButtons.Count - 1);
+            
+            return;
 
-        private static void OnMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
+            void RandomizerButtonPressed()
+            {
+                self.PlaySound(SoundID.MENU_Switch_Page_In);
+                self.manager.RequestMainProcessSwitch(RandomizerEnums.ProcessID.RandomizerMenu);
+            }
+        }
+
+        private static void OnPauseMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
         {
             orig(self, manager, game);
             if (!Plugin.RandomizerActive) return;
