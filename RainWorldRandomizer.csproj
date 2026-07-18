@@ -154,6 +154,8 @@
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ModCompat\RegionKitCompatibility.cs" />
+    <Compile Include="SaveData\SaveDataHooks.cs" />
+    <Compile Include="SaveData\SaveTracker.cs" />
     <Compile Include="SaveManager.cs" />
     <Compile Include="Menu\MenuHooks.cs" />
     <Compile Include="TrapsHandler.cs" />

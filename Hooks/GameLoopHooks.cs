@@ -84,6 +84,7 @@ namespace RainWorldRandomizer
             }
             
             if (ID == ProcessManager.ProcessID.Game
+                && SaveData.SaveTracker.CustomSlotActive
                 && !Plugin.RandomizerActive)
             {
                 // If AP is connected, use AP manager

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using RainWorldRandomizer.Menu;
+using RainWorldRandomizer.SaveData;
 
 namespace RainWorldRandomizer
 {
@@ -124,6 +125,7 @@ namespace RainWorldRandomizer
                 SpearmasterCutscenes.ApplyHooks();
                 SleepScreenHooks.ApplyHooks();
                 FlowerCheckHandler.ApplyHooks();
+                SaveDataHooks.ApplyHooks();
 
                 LocationColorizer.ApplyHooks();
                 TrapsHandler.ApplyHooks();
@@ -173,6 +175,7 @@ namespace RainWorldRandomizer
                 SpearmasterCutscenes.RemoveHooks();
                 SleepScreenHooks.RemoveHooks();
                 FlowerCheckHandler.RemoveHooks();
+                SaveDataHooks.RemoveHooks();
 
                 LocationColorizer.RemoveHooks();
                 TrapsHandler.RemoveHooks();
