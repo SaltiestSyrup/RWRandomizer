@@ -427,7 +427,7 @@ namespace RainWorldRandomizer
         {
             ILCursor c = new(il);
 
-            // Let Arty code run if either perk is aquired
+            // Let Arty code run if either perk is acquired
             c.GotoNext(MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(Expedition.ExpeditionGame).GetProperty(nameof(Expedition.ExpeditionGame.explosivejump)).GetGetMethod())); // 0029
             c.EmitDelegate(HasAnyExplosivePerk);
@@ -436,6 +436,7 @@ namespace RainWorldRandomizer
             // Additionally require the perk in order to trigger jump
             c.GotoNext(MoveType.After,
                 x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.pyroJumpped)))); // 01B8
+            c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(DoesNotHaveExplosiveJump);
             // -> brtrue
 
@@ -443,8 +444,10 @@ namespace RainWorldRandomizer
             // Additionally require the perk in order to trigger parry
             c.GotoNext(MoveType.After,
                 x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.submerged)))); // 0808
+            c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(DoesNotHaveExplosiveParry);
             // -> brtrue
+            return;
 
             static bool HasAnyExplosivePerk(bool origValue)
             {
@@ -453,13 +456,13 @@ namespace RainWorldRandomizer
                 return Plugin.RandoManager.HasExpeditionPerk(Perks.ExplosiveParry)
                     || Plugin.RandoManager.HasExpeditionPerk(Perks.ExplosiveJump);
             }
-            static bool DoesNotHaveExplosiveJump(bool origValue) => origValue || !ShouldHaveJump();
-            static bool DoesNotHaveExplosiveParry(bool origValue) => origValue || !ShouldHaveParry();
+            static bool DoesNotHaveExplosiveJump(bool origValue, Player player) => origValue || !ShouldHaveJump(player);
+            static bool DoesNotHaveExplosiveParry(bool origValue, Player player) => origValue || !ShouldHaveParry(player);
 
-            static bool ShouldHaveJump() => Plugin.Singleton.Game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer
+            static bool ShouldHaveJump(Player player) => player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Artificer
                 || Plugin.RandoManager?.HasExpeditionPerk(Perks.ExplosiveJump) is true;
-            static bool ShouldHaveParry() => Plugin.Singleton.Game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer
-                || Plugin.RandoManager?.HasExpeditionPerk(Perks.ExplosiveParry) is true;
+            static bool ShouldHaveParry(Player player) =>  player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Artificer
+                                                          || Plugin.RandoManager?.HasExpeditionPerk(Perks.ExplosiveParry) is true;
         }
 
         /// <summary>
