@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Menu;
+using RainWorldRandomizer.SaveData;
 using RWCustom;
 using UnityEngine;
 using RWMenu = Menu.Menu;
@@ -18,6 +19,9 @@ public class RandomizerMenu : RWMenu
     
     private SimpleButton exitButton;
     private SimpleButton startButton; // Temp for testing
+    private SlotSelector slotSelector;
+
+    private SaveTracker saveTracker = new();
     
     public RandomizerMenu(ProcessManager manager) : base(manager, RandomizerEnums.ProcessID.RandomizerMenu)
     {
@@ -33,12 +37,13 @@ public class RandomizerMenu : RWMenu
             Standalone options editor
             
         */
-
-        SaveData.SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
-        SaveData.SaveTracker.CustomSlotActive = true;
+        
+        SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
+        SaveTracker.CustomSlotActive = true;
         manager.rainWorld.options.saveSlot = 100; //temp
-        SaveData.SaveTracker.AddNewSaveSlot(100, SlugcatStats.Name.White);
-        manager.rainWorld.progression.Destroy(SaveData.SaveTracker.OrigSaveSlot);
+        // TODO: Each new slot should use offset + the lowest unused value
+        saveTracker.TryAddNewSaveSlot(100, SlugcatStats.Name.White, out _);
+        manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
         manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
 
         pages = [
@@ -58,11 +63,10 @@ public class RandomizerMenu : RWMenu
             buttonSize);
         pages[1].subObjects.Add(exitButton);
         backObject = exitButton;
-        
-        startButton = new SimpleButton(this, pages[1], Translate("START"), "START",
-            exitButton.pos + new Vector2(buttonSize.x + 30f, 0),
-            buttonSize);
-        pages[1].subObjects.Add(startButton);
+
+        slotSelector = new SlotSelector(this, pages[1], 
+            new Vector2((anchors.y - anchors.x) / 2 - 0.25f * manager.rainWorld.options.ScreenSize.x, TOP_MARGIN));
+        pages[1].subObjects.Add(slotSelector);
         
         currentPage = 1;
     }

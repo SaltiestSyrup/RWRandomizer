@@ -128,6 +128,8 @@
     <Compile Include="Menu\PassageHomeButton.cs" />
     <Compile Include="Menu\PendingItemsDisplay.cs" />
     <Compile Include="Menu\RandomizerMenu.cs" />
+    <Compile Include="Menu\ScrollingMenu.cs" />
+    <Compile Include="Menu\SlotSelector.cs" />
     <Compile Include="Menu\SpoilerMenu.cs" />
     <Compile Include="Menu\TextClientMenu.cs" />
     <Compile Include="Generation\Item.cs" />

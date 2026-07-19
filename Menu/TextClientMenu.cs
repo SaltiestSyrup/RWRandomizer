@@ -9,7 +9,7 @@ using RWMenu = Menu.Menu;
 
 namespace RainWorldRandomizer.Menu;
 
-public class TextClientMenu : RandomizerStatusMenu
+public sealed class TextClientMenu : ScrollingMenu
 {
     private const int MAX_MESSAGES = 100;
     
@@ -26,7 +26,8 @@ public class TextClientMenu : RandomizerStatusMenu
     private MenuTabWrapper tabWrapper;
     private UIelementWrapper textBoxWrapper;
     
-    public TextClientMenu(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
+    public TextClientMenu(RWMenu menu, MenuObject owner, Vector2 pos) 
+        : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.3f, 0.75f))
     {
         entryHeight = 0.02f * size.y;
         ScrollPos = LastPossibleScroll;
@@ -63,6 +64,8 @@ public class TextClientMenu : RandomizerStatusMenu
         // Remove unneeded elements
         scrollDownButton.RemoveSprites();
         scrollUpButton.RemoveSprites();
+        
+        PopulateEntries();
     }
 
     protected override void PopulateEntries()
@@ -197,10 +200,13 @@ public class TextClientMenu : RandomizerStatusMenu
 
     public static void ClearStoredMessages()
     {
-        StoredMessages.Clear();
+        lock (StoredMessages)
+        {
+            StoredMessages.Clear();
+        }
     }
 
-    private class TextClientEntry : Entry
+    private sealed class TextClientEntry : Entry
     {
         private MenuLabel[] labels;
         
