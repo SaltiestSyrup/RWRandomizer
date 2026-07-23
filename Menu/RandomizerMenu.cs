@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Menu;
+using Newtonsoft.Json;
 using RainWorldRandomizer.SaveData;
 using RWCustom;
 using UnityEngine;

@@ -53,6 +53,7 @@ public sealed class SlotSelector : ScrollingMenu
         private MenuLabel cycleText;
         private MenuLabel completionText;
         private HoldButton startButton;
+        private SymbolButton deleteButton;
         
         public int CurrentFood
         {
@@ -126,18 +127,30 @@ public sealed class SlotSelector : ScrollingMenu
                 new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 50f, 25f), default, true);
             subObjects.Add(cycleText);
 
-            completionText = new MenuLabel(menu, this, "0% Complete (0/163)", 
+            completionText = new MenuLabel(menu, this, "0% (0/163)", 
                 new Vector2(cycleText.pos.x + 250f, size.y - 20f), default, true);
             subObjects.Add(completionText);
 
             // --- Start button
-            startButton = new HoldButton(menu, this, "PLAY", "START", new Vector2(size.x - 60f, size.y / 2), 100f)
+            startButton = new HoldButton(menu, this, "PLAY", "START", 
+                new Vector2(size.x - 60f, size.y / 2), 100f)
             {
                 rad = 35f
             };
             subObjects.Add(startButton);
-            
+
             CreateBoundingBox();
+            
+            deleteButton = new SymbolButton(menu, this, "Menu_Symbol_Clear_All", "DELETE", 
+                new Vector2(2f, size.y - 26f))
+            {
+                rectColor = new HSLColor(1f, 0.80f, 0.35f), // 354 58 85
+                roundedRect =
+                {
+                    borderColor = new HSLColor(1f, 0.80f, 0.35f)
+                }
+            };
+            subObjects.Add(deleteButton);
         }
 
         public override void Update()

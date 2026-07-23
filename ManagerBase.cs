@@ -10,7 +10,7 @@ namespace RainWorldRandomizer
     /// </summary>
     public abstract class ManagerBase
     {
-        public int currentSeed;
+        public string currentSeed;
         public bool isRandomizerActive = false;
         public SlugcatStats.Name currentSlugcat;
 

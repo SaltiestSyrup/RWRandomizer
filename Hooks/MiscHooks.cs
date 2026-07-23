@@ -137,6 +137,7 @@ namespace RainWorldRandomizer
             }
         }
 
+        // TODO: This cam be removed later
         /// <summary>
         /// Stop game from going to statistics page instead of the game if there is a randomizer save.
         /// This hook is applied to both <see cref="SlugcatSelectMenu.UpdateStartButtonText"/> and <see cref="SlugcatSelectMenu.ContinueStartedGame"/>

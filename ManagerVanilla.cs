@@ -2,11 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
 using RainWorldRandomizer.Menu;
+using RainWorldRandomizer.SaveData;
 
 namespace RainWorldRandomizer
 {
@@ -76,14 +78,14 @@ namespace RainWorldRandomizer
                 }
 
                 // Load save game
-                if (SaveManager.IsThereASavedGame(storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot))
+                try
                 {
                     Plugin.Log.LogInfo("Continuing randomizer game...");
                     InitSavedGame(storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot);
                 }
-                else
+                catch (Exception e)
                 {
-                    Plugin.Log.LogError("Failed to load saved game.");
+                    Plugin.Log.LogError($"Failed to load saved game. \n{e}");
                     isRandomizerActive = false;
                     Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Randomizer failed to find valid save for current file", Color.red));
                     return;
@@ -129,8 +131,8 @@ namespace RainWorldRandomizer
                     randomizerKey = generator.GetCompletedSeed();
                     locations = [..randomizerKey.Select(kvp => new LocationInfo(kvp.Key, false, false))];
                     customStartDen = generator.customStartDen;
-                    currentSeed = generator.generationSeed;
-                    SaveManager.WriteSavedGameToFile(randomizerKey, storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot);
+                    currentSeed = generator.generationSeed.ToString();
+                    SaveManager.WriteToFile(Plugin.Singleton.rainWorld, this);
                 }
                 else
                 {
@@ -203,7 +205,15 @@ namespace RainWorldRandomizer
 
         public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
         {
-            randomizerKey = SaveManager.LoadSavedGame(slugcat, saveSlot);
+            if (!SaveManager.TryReadFromFile(saveSlot, out SaveFile file))
+            {
+                throw new FileNotFoundException();
+            }
+            
+            randomizerKey = file.locationMap.ToDictionary(kvp => kvp.Key, kvp =>
+                new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true, out ExtEnumBase t) 
+                        ? (Unlock.UnlockType)t : Unlock.UnlockType.Item, 
+                    kvp.Value.id, kvp.Value.collected));
             locations = [.. randomizerKey.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.IsGiven, false))];
 
             // Set unlocked gates and passage tokens
@@ -263,8 +273,20 @@ namespace RainWorldRandomizer
                 }
             }
 
-            (itemDeliveryQueue, pendingTrapQueue) = SaveManager.LoadItemQueue(slugcat, saveSlot);
-            lastItemDeliveryQueue = new(Plugin.RandoManager.itemDeliveryQueue);
+            itemDeliveryQueue = [];
+            foreach (Unlock.Item item in file.pendingFiller.Select(f => 
+                         Unlock.IDToItem(f.id, f.type == nameof(DataPearl.AbstractDataPearl.DataPearlType))))
+            {
+                itemDeliveryQueue.Enqueue(item);
+            }
+            
+            pendingTrapQueue = [];
+            foreach (TrapsHandler.Trap item in file.pendingTraps.Select(t => new TrapsHandler.Trap(t)))
+            {
+                pendingTrapQueue.Enqueue(item);
+            }
+            
+            lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
         }
 
         public override bool LocationExists(string location)
@@ -319,16 +341,7 @@ namespace RainWorldRandomizer
 
         public override void SaveGame(bool saveCurrentState)
         {
-            SaveManager.WriteSavedGameToFile(
-                randomizerKey,
-                currentSlugcat,
-                Plugin.Singleton.rainWorld.options.saveSlot);
-
-            SaveManager.WriteItemQueueToFile(
-                saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
-                pendingTrapQueue,
-                currentSlugcat,
-                Plugin.Singleton.rainWorld.options.saveSlot);
+            SaveManager.WriteToFile(Plugin.Singleton.rainWorld, this, saveCurrentState);
         }
     }
 }

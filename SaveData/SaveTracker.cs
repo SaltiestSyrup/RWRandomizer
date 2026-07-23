@@ -23,7 +23,7 @@ public class SaveTracker
         }
     }
 
-    private static string PersistentDataDir
+    public static string PersistentDataDir
     {
         get
         {
@@ -95,6 +95,10 @@ public class SaveTracker
 
         saveSlots = JsonConvert.DeserializeObject<List<SaveSlotIdentifier>>(File.ReadAllText(Path.Combine(path, "randomizer_saves.json")))
             .ToDictionary(id => id.slotNumber, id => new SaveSlotInfo(id.slotNumber, id.slugcatName));
+        
+        // For each slot number found, create a new progression instance
+        // mine each progression for the save data, store in struct
+        
         return saveSlots;
     }
 
