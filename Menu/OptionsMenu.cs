@@ -244,6 +244,10 @@ namespace RainWorldRandomizer.Menu
                     ["Don't Notify Chat Messages"]));
 
             RandoOptions.textClientCosmeticConfig = config.Bind<string>("_TextClient", "");
+            ConnectInfoEntry.HostNameConfig = config.Bind<string>("_HostName", "archipelago.gg");
+            ConnectInfoEntry.PortConfig = config.Bind<int>("_Port", 25565);
+            ConnectInfoEntry.SlotNameConfig = config.Bind<string>("_SlotName", "");
+            ConnectInfoEntry.PasswordConfig = config.Bind<string>("_Password", "");
         }
 
         public override void Initialize()

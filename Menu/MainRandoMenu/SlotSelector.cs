@@ -18,12 +18,17 @@ public sealed class SlotSelector : ScrollingMenu
         entryHeight = 0.20f * size.y;
         roundedRect.fillAlpha = 0.7f;
         
+        // Remove unneeded elements
+        scrollDownButton.RemoveSprites();
+        scrollUpButton.RemoveSprites();
+        
         PopulateEntries();
+        
     }
 
     protected override void PopulateEntries()
     {
-        entries.Add(new StandaloneSlot(menu, this, 
+        entries.Add(new Slot(menu, this, 
             new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(0)),
             new Vector2(entryWidth, entryHeight)));
         subObjects.Add(entries[0]);
@@ -41,7 +46,12 @@ public sealed class SlotSelector : ScrollingMenu
         
     }
 
-    private sealed class StandaloneSlot : Entry, IOwnAHUD
+    public override void RemoveSprites()
+    {
+        base.RemoveSprites();
+    }
+    
+    private class Slot : Entry, IOwnAHUD
     {
         private const float PORTRAIT_SIZE = 94f;
         private const float PORTRAIT_OFFSET = 30f;
@@ -86,15 +96,15 @@ public sealed class SlotSelector : ScrollingMenu
         }
     
         
-        public StandaloneSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size) : base(menu, owner, pos, size)
+        public Slot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size) : base(menu, owner, pos, size)
         {
             // X bounding box 
             // X Slugcat icon container
-            //   info text 1
-            //   info text 2
-            //   start button
+            // X info text 1
+            // X info text 2
+            // X start button
             //   options button
-            //   delete button
+            // X delete button
             
             // --- Portrait
             string portrait = MenuHelpers.GetSlugcatPortrait(SlugcatStats.Name.White);
@@ -144,7 +154,7 @@ public sealed class SlotSelector : ScrollingMenu
             deleteButton = new SymbolButton(menu, this, "Menu_Symbol_Clear_All", "DELETE", 
                 new Vector2(2f, size.y - 26f))
             {
-                rectColor = new HSLColor(1f, 0.80f, 0.35f), // 354 58 85
+                rectColor = new HSLColor(1f, 0.80f, 0.35f),
                 roundedRect =
                 {
                     borderColor = new HSLColor(1f, 0.80f, 0.35f)
@@ -185,5 +195,13 @@ public sealed class SlotSelector : ScrollingMenu
         }
 
         public void FoodCountDownDone() { }
+    }
+
+    private class StandaloneSlot : Slot
+    {
+        public StandaloneSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size) : base(menu, owner, pos, size)
+        {
+             
+        }
     }
 }

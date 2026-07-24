@@ -3,6 +3,7 @@ using MoreSlugcats;
 using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -206,6 +207,11 @@ namespace RainWorldRandomizer
         {
             orig(self);
             Futile.atlasManager.LoadAtlas("Atlases/randomizer");
+            Futile.atlasManager.LoadImage("illustrations/randomizerpage");
+            // Texture2D texture2D = new(0, 0);
+            // texture2D.LoadRawTextureData(File.ReadAllBytes(AssetManager.ResolveFilePath("illustrations/randomizerpage.png")));
+            // texture2D.filterMode = FilterMode.Point;
+            // Futile.atlasManager.LoadAtlasFromTexture("randomizerpage", texture2D, false);
 
             // If you try to load an already loaded AssetBundle,
             // a message gets logged to exceptionLog.txt but no exception is actually thrown.

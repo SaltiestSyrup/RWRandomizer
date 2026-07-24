@@ -277,7 +277,7 @@ namespace RainWorldRandomizer
             }
             catch (Exception e)
             {
-                Plugin.Log.LogError("Encountered an exception whilst attemping to reconnect to server");
+                Plugin.Log.LogError("Encountered an exception whilst attempting to reconnect to server");
                 Plugin.Log.LogError(e);
                 return "";
             }
