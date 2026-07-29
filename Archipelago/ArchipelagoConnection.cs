@@ -422,7 +422,7 @@ namespace RainWorldRandomizer
             }
 
             // Choose starting den
-            if (slotData.GetSimple<string>("starting_room") is string startShelter)
+            if (slotData.GetSimple<string>("starting_room") is string startShelter && startShelter != "")
             {
                 useRandomStart = true;
                 desiredStartDen = startShelter;

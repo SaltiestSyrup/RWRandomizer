@@ -274,7 +274,7 @@ namespace RainWorldRandomizer
 
                 // Find den to travel to
                 string customDen = Plugin.RandoManager.customStartDen;
-                if (!RandoOptions.RandomizeSpawnLocation || customDen.Equals("NONE"))
+                if (!RandoOptions.RandomizeSpawnLocation || customDen is "NONE" or "")
                 {
                     customDen = Constants.SlugcatDefaultStartingDen[self.saveState.saveStateNumber];
                 }
@@ -285,7 +285,7 @@ namespace RainWorldRandomizer
                 RainWorld.ShelterBeforePassage = self.manager.rainWorld.progression.ShelterOfSaveGame(self.saveState.saveStateNumber);
                 RainWorld.ShelterAfterPassage = self.manager.menuSetup.regionSelectRoom;
 
-                // Initiate proccess switch
+                // Initiate process switch
                 self.manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
                 self.PlaySound(SoundID.MENU_Passage_Button);
             }
