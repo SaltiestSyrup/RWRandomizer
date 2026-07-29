@@ -163,7 +163,6 @@ namespace RainWorldRandomizer
         //     return game.Values.Where(u => u.Type == Unlock.UnlockType.HunterCycles && u.IsGiven).Count();
         // }
 
-        #region Archipelago save data
 
         private const string SCOUTED_LOCS_KEY = "RANDOMIZER_SCOUTED_LOCS";
         private static Dictionary<string, ItemFlags> _scoutedLocations;
@@ -268,7 +267,6 @@ namespace RainWorldRandomizer
                 }
             }
         }
-        #endregion
 
         
         // TODO
@@ -282,6 +280,7 @@ namespace RainWorldRandomizer
             return File.Exists(Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}"));
         }
         
+        // Requires the correct Progression to be active
         public static void WriteToFile(RainWorld rainWorld, ManagerBase randoManager, bool saveCurrentState = true)
         {
             if (rainWorld.progression.currentSaveState is null)

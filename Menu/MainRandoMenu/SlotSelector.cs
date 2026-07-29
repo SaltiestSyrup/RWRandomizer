@@ -51,11 +51,12 @@ public sealed class SlotSelector : ScrollingMenu
         base.RemoveSprites();
     }
     
-    private class Slot : Entry, IOwnAHUD
+    public class Slot : Entry, IOwnAHUD
     {
         private const float PORTRAIT_SIZE = 94f;
         private const float PORTRAIT_OFFSET = 30f;
         
+        // Elements
         public HUD.HUD hud;
         private MenuIllustration slugcatPortrait;
         private RoundedRect portraitBorder;
@@ -64,6 +65,9 @@ public sealed class SlotSelector : ScrollingMenu
         private MenuLabel completionText;
         private HoldButton startButton;
         private SymbolButton deleteButton;
+        
+        // Vars
+        public SaveFile saveFile;
         
         public int CurrentFood
         {

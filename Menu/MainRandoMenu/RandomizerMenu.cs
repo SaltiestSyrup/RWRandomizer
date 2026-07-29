@@ -47,14 +47,6 @@ public class RandomizerMenu : RWMenu
             Standalone options editor
             
         */
-        
-        SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
-        SaveTracker.CustomSlotActive = true;
-        manager.rainWorld.options.saveSlot = 100; //temp
-        // TODO: Each new slot should use offset + the lowest unused value
-        saveTracker.TryAddNewSaveSlot(100, SlugcatStats.Name.White, out _);
-        manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
-        manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
 
         pages = [
             new Page(this, null, "SCENE", 0),
@@ -110,11 +102,20 @@ public class RandomizerMenu : RWMenu
                 break;
             case "START":
                 // TODO: Make this lead to a validation step which checks AP connections / DLC enabled
-                StartGame();
+                if (sender is SlotSelector.Slot { saveFile.slugcat: string slug })
+                {
+                    StartGame(new SlugcatStats.Name(slug));
+                }
+                else
+                {
+                    Plugin.Log.LogError("Failed to determine slot to begin game with");
+                }
                 break;
             case "NEW_GAME":
                 MovePage(false);
                 UpdatePage(2);
+                break;
+            case "START_NEW_GAME":
                 break;
         }
     }
@@ -180,9 +181,21 @@ public class RandomizerMenu : RWMenu
         
     }
 
-    private void StartGame()
+    private void CreateNewGame(SlugcatStats.Name slugcat)
     {
-        SlugcatStats.Name slugcat = SlugcatStats.Name.White;
+        SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
+        SaveTracker.CustomSlotActive = true;
+        // TODO: Each new slot should use offset + the lowest unused value
+        saveTracker.TryGetNextSaveSlot(100, out int newSlot);
+        manager.rainWorld.options.saveSlot = newSlot;
+        manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
+        manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
+        
+        StartGame(slugcat);
+    }
+    
+    private void StartGame(SlugcatStats.Name slugcat)
+    {
 
         if (ModManager.CoopAvailable)
         {

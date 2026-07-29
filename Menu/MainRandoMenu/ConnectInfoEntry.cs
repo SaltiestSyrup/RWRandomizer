@@ -6,7 +6,7 @@ using RWMenu = Menu.Menu;
 
 namespace RainWorldRandomizer.Menu;
 
-public class ConnectInfoEntry : PositionedMenuObject
+public class ConnectInfoEntry : RectangularMenuObject
 {
     // Wrappers
     private MenuTabWrapper tabWrapper;
@@ -24,23 +24,29 @@ public class ConnectInfoEntry : PositionedMenuObject
     private MenuLabel portLabel;
     private MenuLabel slotNameLabel;
     private MenuLabel passwordLabel;
-    private OpTextBox hostNameField;
-    private OpTextBox portField;
-    private OpTextBox slotNameField;
-    private OpTextBox passwordField;
+    public OpTextBox hostNameField;
+    public OpTextBox portField;
+    public OpTextBox slotNameField;
+    public OpTextBox passwordField;
 
     private RoundedRect rectBorder;
     private SimpleButton connectButton;
     
-    public ConnectInfoEntry(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
+    public ConnectInfoEntry(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, new Vector2(240f, 300f))
     {
+        this.pos -= size / 2f;
+        
         rectBorder = new RoundedRect(menu, this, 
-            new Vector2(), new Vector2(240f, 300f), true);
+            new Vector2(), new Vector2(240f, 330f), true)
+        {
+            filled = true,
+            fillAlpha = 0.6f
+        };
         subObjects.Add(rectBorder);
         
         tabWrapper = new MenuTabWrapper(menu, this);
         float centerX = 120f;
-        float runningY = 200f;
+        float runningY = 300f;
 
         // Host Name
         hostNameLabel = new MenuLabel(menu, this, "Host Name", new Vector2(centerX, runningY), default, true)
@@ -90,5 +96,16 @@ public class ConnectInfoEntry : PositionedMenuObject
         connectButton = new SimpleButton(menu, this, "CONNECT", "CONNECT",
             new Vector2(centerX - 50f, runningY), new Vector2(100f, 30f));
         subObjects.Add(connectButton);
+    }
+    
+    public override void Update()
+    {
+        base.Update();
+        connectButton.buttonBehav.greyedOut = ArchipelagoConnection.SocketConnected;
+        ((CreateNewGamePage)owner.owner).modeButtons[0].buttonBehav.greyedOut = ArchipelagoConnection.SocketConnected;
+        hostNameField.greyedOut = ArchipelagoConnection.SocketConnected;
+        portField.greyedOut = ArchipelagoConnection.SocketConnected;
+        slotNameField.greyedOut = ArchipelagoConnection.SocketConnected;
+        passwordField.greyedOut = ArchipelagoConnection.SocketConnected;
     }
 }

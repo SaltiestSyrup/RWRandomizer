@@ -13,13 +13,14 @@ public class SaveTracker
     public static int OrigSaveSlot = 0;
     public static bool CustomSlotActive;
 
-    private Dictionary<int, SaveSlotInfo> saveSlots;
+    private Dictionary<int, SaveFile> saveSlots;
 
-    public Dictionary<int, SaveSlotInfo> SaveSlots
+    public Dictionary<int, SaveFile> SaveSlots
     {
         get
         {
-            return saveSlots ?? LoadSlotsFromFile();
+            saveSlots ??= LoadSlotsFromFile();
+            return saveSlots;
         }
     }
 
@@ -40,19 +41,16 @@ public class SaveTracker
     /// Register a new randomizer save slot.
     /// </summary>
     /// <param name="fromSlot">The game's current save slot that this should be assigned to.</param>
-    /// <param name="slugcat">The slugcat to be registered to the new slot.</param>
-    /// <param name="slotRegisteredTo">The slot number that the new slot was created at.</param>
+    /// <param name="newSlot">The slot number that the new slot was created at.</param>
     /// <returns>True if the slot was successfully created.</returns>
-    public bool TryAddNewSaveSlot(int fromSlot, SlugcatStats.Name slugcat, out int slotRegisteredTo)
+    public bool TryGetNextSaveSlot(int fromSlot, out int newSlot)
     {
-        slotRegisteredTo = -1;
-        if (saveSlots is null) LoadSlotsFromFile();
-
+        newSlot = -1;
         int slotNumber = -1;
         int num = 0;
         do
         {
-            if (!saveSlots!.ContainsKey(num + SLOT_OFFSET * fromSlot))
+            if (!SaveSlots.ContainsKey(num + SLOT_OFFSET * fromSlot))
             {
                 slotNumber = num + SLOT_OFFSET * fromSlot;
             }
@@ -61,45 +59,30 @@ public class SaveTracker
             if (num >= SLOT_OFFSET)
                 return false;
         } while (slotNumber == -1);
-        
-        saveSlots![slotNumber] = new SaveSlotInfo(slotNumber, slugcat.value);
-        SaveSlotsToFile(); // TODO: Move this somewhere more responsible
-        slotRegisteredTo = slotNumber;
+
+        newSlot = slotNumber;
         return true;
     }
 
-    private void SaveSlotsToFile()
-    {
-        if (saveSlots is null)
-        {
-            Plugin.Log.LogWarning("Failed to write randomizer saves to file as they are not yet loaded.");
-            return;
-        }
-
-        string path = PersistentDataDir;
-        Directory.CreateDirectory(path); // Make sure the folder exists
-        StreamWriter file = File.CreateText(Path.Combine(path, "randomizer_saves.json"));
-        
-        file.Write(JsonConvert.SerializeObject(saveSlots.Select(kvp => new SaveSlotIdentifier(kvp.Key, kvp.Value.slugcatName))));
-        file.Close();
-    }
-
-    private Dictionary<int, SaveSlotInfo> LoadSlotsFromFile()
+    private static Dictionary<int, SaveFile> LoadSlotsFromFile()
     {
         string path = PersistentDataDir;
+        Dictionary<int, SaveFile> slots = [];
         if (!Directory.Exists(path))
         {
-            saveSlots = [];
-            return [];
+            return slots;
         }
 
-        saveSlots = JsonConvert.DeserializeObject<List<SaveSlotIdentifier>>(File.ReadAllText(Path.Combine(path, "randomizer_saves.json")))
-            .ToDictionary(id => id.slotNumber, id => new SaveSlotInfo(id.slotNumber, id.slugcatName));
+        foreach (string fileName in Directory.EnumerateFiles(path))
+        {
+            if (int.TryParse(fileName.Substring(4), out int slot)
+                && SaveManager.TryReadFromFile(slot, out SaveFile save))
+            {
+                slots[slot] = save;
+            }
+        }
         
-        // For each slot number found, create a new progression instance
-        // mine each progression for the save data, store in struct
-        
-        return saveSlots;
+        return slots;
     }
 
     private record struct SaveSlotIdentifier(int slotNumber, string slugcatName)
