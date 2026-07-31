@@ -13,6 +13,7 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
     // Vars
     private readonly Vector2 screenCenter;
     private int currentMode = 0;
+    public SlugcatStats.Name chosenSlugcat;
     
     public CreateNewGamePage(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
     {

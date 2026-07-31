@@ -124,6 +124,7 @@ namespace RainWorldRandomizer
             if (ID == ProcessManager.ProcessID.MainMenu)
             {
                 // Vanilla manager does not exist outside of the scope of gameplay. TODO: Eventually, neither will any other manager
+                ArchipelagoConnection.Disconnect(true);
                 if (Plugin.RandoManager is ManagerVanilla) Plugin.RandoManager = null;
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
             }

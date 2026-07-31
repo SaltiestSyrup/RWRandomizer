@@ -32,6 +32,7 @@ public class ConnectInfoEntry : RectangularMenuObject
     private RoundedRect rectBorder;
     private SimpleButton connectButton;
     
+    // TODO: Allow tab to select next text field
     public ConnectInfoEntry(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, new Vector2(240f, 300f))
     {
         this.pos -= size / 2f;

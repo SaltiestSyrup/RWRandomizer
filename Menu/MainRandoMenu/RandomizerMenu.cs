@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Menu;
+using Menu.Remix;
 using Newtonsoft.Json;
 using RainWorldRandomizer.SaveData;
 using RWCustom;
@@ -30,8 +33,11 @@ public class RandomizerMenu : RWMenu
 
     // Elements
     private SimpleButton exitButton;
+    private DialogBoxNotify failedStartGameDialog;
 
-    private SaveTracker saveTracker = new();
+    // Vars
+    public SaveTracker saveTracker = new();
+    private TaskCompletionSource<bool> progressionIsLoading = null;
     
     public RandomizerMenu(ProcessManager manager) : base(manager, RandomizerEnums.ProcessID.RandomizerMenu)
     {
@@ -100,11 +106,11 @@ public class RandomizerMenu : RWMenu
                         break;
                 }
                 break;
-            case "START":
+            case "CONTINUE_GAME":
                 // TODO: Make this lead to a validation step which checks AP connections / DLC enabled
-                if (sender is SlotSelector.Slot { saveFile.slugcat: string slug })
+                if (sender is SlotSelector.Slot slot)
                 {
-                    StartGame(new SlugcatStats.Name(slug));
+                    ContinueGame(slot.saveSlot, new SlugcatStats.Name(slot.saveFile.slugcat));
                 }
                 else
                 {
@@ -116,6 +122,12 @@ public class RandomizerMenu : RWMenu
                 UpdatePage(2);
                 break;
             case "START_NEW_GAME":
+                CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat);
+                break;
+            case "CONFIRM_START_GAME_FAILURE":
+                pages[currentPage].subObjects.Remove(failedStartGameDialog);
+                failedStartGameDialog.RemoveSprites();
+                failedStartGameDialog = null;
                 break;
         }
     }
@@ -123,6 +135,12 @@ public class RandomizerMenu : RWMenu
     public override void Update()
     {
         base.Update();
+        if (progressionIsLoading is not null
+            && !manager.rainWorld.progression.requestLoad
+            && !manager.rainWorld.progression.loadInProgress)
+        {
+            progressionIsLoading.TrySetResult(manager.rainWorld.progression.progressionLoaded);
+        }
         
         // Page switching animation
         if (!pagesMoving) return;
@@ -185,52 +203,81 @@ public class RandomizerMenu : RWMenu
     {
         SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
         SaveTracker.CustomSlotActive = true;
-        // TODO: Each new slot should use offset + the lowest unused value
-        saveTracker.TryGetNextSaveSlot(100, out int newSlot);
+        if (!saveTracker.TryGetNextSaveSlot(manager.rainWorld.options.saveSlot, out int newSlot))
+        {
+            Plugin.Log.LogError("Failed to find new valid save slot number");
+            return;
+        }
         manager.rainWorld.options.saveSlot = newSlot;
         manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
         manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
         
         StartGame(slugcat);
     }
-    
-    private void StartGame(SlugcatStats.Name slugcat)
+
+    private void ContinueGame(int slot, SlugcatStats.Name slugcat)
     {
+        SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
+        SaveTracker.CustomSlotActive = true;
+        manager.rainWorld.options.saveSlot = slot;
+        manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
+        manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
+        
+        StartGame(slugcat);
+    }
+    
+    private async void StartGame(SlugcatStats.Name slugcat)
+    {
+        try
+        {
+            // New progression object was just made, needs to wait until the game finishes loading it (which happens asynchronously)
+            progressionIsLoading = new TaskCompletionSource<bool>();
+            await progressionIsLoading.Task;
 
-        if (ModManager.CoopAvailable)
-        {
-            Custom.Log("JollyCoop Player Count is:", manager.rainWorld.options.JollyPlayerCount.ToString());
-            for (int i = 1; i < manager.rainWorld.options.JollyPlayerCount; i++)
-            {
-                manager.rainWorld.ActivatePlayer(i);
-            }
-            for (int j = manager.rainWorld.options.JollyPlayerCount; j < 4; j++)
-            {
-                manager.rainWorld.DeactivatePlayer(j);
-            }
-        }
-        
-        manager.rainWorld.inGameSlugCat = slugcat;
-        manager.arenaSitting = null;
-        manager.rainWorld.progression.currentSaveState = null;
-        manager.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat = slugcat;
+            if (!progressionIsLoading.Task.Result) throw new LoadDataException();
 
-        if (manager.rainWorld.progression.IsThereASavedGame(slugcat))
-        {
-            manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.Load;
-            PlaySound(SoundID.MENU_Continue_Game);
+            progressionIsLoading = null;
+        
+            if (ModManager.CoopAvailable)
+            {
+                Custom.Log("JollyCoop Player Count is:", manager.rainWorld.options.JollyPlayerCount.ToString());
+                for (int i = 1; i < manager.rainWorld.options.JollyPlayerCount; i++)
+                {
+                    manager.rainWorld.ActivatePlayer(i);
+                }
+                for (int j = manager.rainWorld.options.JollyPlayerCount; j < 4; j++)
+                {
+                    manager.rainWorld.DeactivatePlayer(j);
+                }
+            }
+        
+            manager.rainWorld.inGameSlugCat = slugcat;
+            manager.arenaSitting = null;
+            manager.rainWorld.progression.currentSaveState = null;
+            manager.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat = slugcat;
+
+            if (manager.rainWorld.progression.IsThereASavedGame(slugcat))
+            {
+                manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.Load;
+                PlaySound(SoundID.MENU_Continue_Game);
+            }
+            else
+            {
+                manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.New;
+                PlaySound(SoundID.MENU_Start_New_Game);
+            }
+        
+            manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
         }
-        else
+        catch (Exception e)
         {
-            manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.New;
-            PlaySound(SoundID.MENU_Start_New_Game);
+            Plugin.Log.LogError($"Encountered exception while attempting to start game:\n{e}");
+            failedStartGameDialog = new DialogBoxNotify(this, pages[currentPage], 
+                $"Encountered exception while attempting to start game:\n{e}", 
+                "CONFIRM_START_GAME_FAILURE",
+                new Vector2(manager.rainWorld.options.ScreenSize.x / 2 - 240f, manager.rainWorld.options.ScreenSize.y / 2 - 160f), 
+                new Vector2(480f, 320f));
+            pages[currentPage].subObjects.Add(failedStartGameDialog);
         }
-        
-        manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
-        
-        
-        // Save slot switching - ExpeditionMenu.Ctor
-        
-        
     }
 }

@@ -43,7 +43,11 @@ public class NewArchipelagoGameTab : PositionedMenuObject
                 connectResultDialog.RemoveSprites();
                 connectResultDialog = null;
                 // TODO: Allow browsing options before jumping into game
-                
+                if (ArchipelagoConnection.SocketConnected)
+                {
+                    ((CreateNewGamePage)owner).chosenSlugcat = ArchipelagoConnection.Slugcat;
+                    base.Singal(this, "START_NEW_GAME");
+                }
                 break;
         }
     }

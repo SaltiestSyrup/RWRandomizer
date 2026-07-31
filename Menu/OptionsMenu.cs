@@ -245,7 +245,7 @@ namespace RainWorldRandomizer.Menu
 
             RandoOptions.textClientCosmeticConfig = config.Bind<string>("_TextClient", "");
             ConnectInfoEntry.HostNameConfig = config.Bind<string>("_HostName", "archipelago.gg");
-            ConnectInfoEntry.PortConfig = config.Bind<int>("_Port", 25565);
+            ConnectInfoEntry.PortConfig = config.Bind<int>("_Port", 0);
             ConnectInfoEntry.SlotNameConfig = config.Bind<string>("_SlotName", "");
             ConnectInfoEntry.PasswordConfig = config.Bind<string>("_Password", "");
         }

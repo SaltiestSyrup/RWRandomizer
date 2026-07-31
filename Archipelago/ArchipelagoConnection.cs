@@ -22,7 +22,6 @@ namespace RainWorldRandomizer
         private static readonly string[] REQUIRED_SLOT_DATA =
         [
             "which_campaign",
-            "which_game_version",
             "is_msc_enabled",
             "is_watcher_enabled",
             "which_victory_condition",
@@ -37,6 +36,11 @@ namespace RainWorldRandomizer
         public static bool CurrentlyConnecting = false;
         public static bool ReceivedSlotData = false;
         public static bool SocketConnected => Session?.Socket.Connected is true;
+        // Stores the last info used to connect. Stays set after disconnection.
+        public static string ConnectedHostName;
+        public static int ConnectedPort;
+        public static string ConnectedSlotName;
+        public static string ConnectedPassword;
 
         // Ported settings from slot data
         public static Version WorldVersion;
@@ -249,6 +253,11 @@ namespace RainWorldRandomizer
 
             // If we are currently in-game, resync locations
             (Plugin.RandoManager as ManagerArchipelago)?.SyncLocations();
+
+            ConnectedHostName = hostName;
+            ConnectedPort = port;
+            ConnectedSlotName = slotName;
+            ConnectedPassword = password;
 
             HasConnected = true;
             CurrentlyConnecting = false;

@@ -50,9 +50,9 @@ public class SaveTracker
         int num = 0;
         do
         {
-            if (!SaveSlots.ContainsKey(num + SLOT_OFFSET * fromSlot))
+            if (!SaveSlots.ContainsKey(num + SLOT_OFFSET * (fromSlot + 1)))
             {
-                slotNumber = num + SLOT_OFFSET * fromSlot;
+                slotNumber = num + SLOT_OFFSET * (fromSlot + 1);
             }
 
             num++;
@@ -75,7 +75,7 @@ public class SaveTracker
 
         foreach (string fileName in Directory.EnumerateFiles(path))
         {
-            if (int.TryParse(fileName.Substring(4), out int slot)
+            if (int.TryParse(Path.GetFileNameWithoutExtension(fileName).Substring(4), out int slot)
                 && SaveManager.TryReadFromFile(slot, out SaveFile save))
             {
                 slots[slot] = save;

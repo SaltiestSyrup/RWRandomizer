@@ -104,7 +104,7 @@ namespace RainWorldRandomizer
             set { _givenRippleEggWarp = value;}
         }
 
-        protected int _currentMaxKarma = 4;
+        protected int _currentMaxKarma;
         /// <summary>The number of Ripple items collected.</summary>
         protected int _rippleIncrements;
         protected int _weaverIncrements;

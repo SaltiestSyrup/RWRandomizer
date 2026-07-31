@@ -6,7 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using MoreSlugcats;
+using RainWorldRandomizer.Menu;
 using RainWorldRandomizer.SaveData;
+using RWCustom;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -298,7 +301,7 @@ namespace RainWorldRandomizer
             string path = SaveTracker.PersistentDataDir;
             Directory.CreateDirectory(path);
 
-            StreamWriter file = File.CreateText(Path.Combine(path, $"rand{rainWorld.options.saveSlot}"));
+            StreamWriter file = File.CreateText(Path.Combine(path, $"rand{rainWorld.options.saveSlot}.json"));
             
             file.Write(JsonConvert.SerializeObject(SaveFile.Create(rainWorld.progression.currentSaveState, randoManager, saveCurrentState)));
             file.Close();
@@ -307,9 +310,13 @@ namespace RainWorldRandomizer
         public static bool TryReadFromFile(int saveSlot, out SaveFile saveFile)
         {
             saveFile = new SaveFile();
-            string filePath = Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}");
+            string filePath = Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json");
 
-            if (!File.Exists(filePath)) return false;
+            if (!File.Exists(filePath))
+            {
+                Plugin.Log.LogError($"Failed to find save file for slot {saveSlot}");
+                return false;
+            }
 
             try
             {
@@ -323,6 +330,21 @@ namespace RainWorldRandomizer
             
             return true;
         }
+
+        public static void DeleteFile(RainWorld rainWorld, int saveSlot)
+        {
+            if (SaveTracker.CustomSlotActive 
+                && (rainWorld.progression?.progressionLoaded ?? false))
+            {
+                Plugin.Log.LogError("Cannot delete save file, as there is one currently loaded");
+            }
+            
+            string filePath1 = Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json");
+            string filePath2 = Path.Combine(Application.persistentDataPath, $"sav{saveSlot + 1}");
+            
+            if (File.Exists(filePath1)) File.Delete(filePath1);
+            if (File.Exists(filePath2)) File.Delete(filePath2);
+        }
     }
 
     public struct SaveFile()
@@ -330,11 +352,16 @@ namespace RainWorldRandomizer
         // Normal stats
         public string slugcat = null;
         public int karma = 0;
+        public int maxKarma = 0;
         public float ripple = 1;
         public bool karmaReinforced = false;
         public int food = 0;
+        public IntVector2 maxFood = new(7, 4);
         public int cycle = 0;
         public double playtime = 0;
+
+        public DateTime lastPlayed;
+        // TODO: Add last played field for sorting
         
         // Randomizer stuff
         public string seed;
@@ -356,11 +383,14 @@ namespace RainWorldRandomizer
                 // TODO: Doesn't currently consider whether current state should be saved for normal save values
                 slugcat = saveState.saveStateNumber.value,
                 karma = saveState.deathPersistentSaveData.karma,
+                maxKarma = saveState.deathPersistentSaveData.karmaCap,
                 ripple = saveState.deathPersistentSaveData.rippleLevel,
                 karmaReinforced = saveState.deathPersistentSaveData.reinforcedKarma,
                 food = saveState.food,
+                maxFood = SlugcatStats.SlugcatFoodMeter(saveState.saveStateNumber),
                 cycle = saveState.cycleNumber,
                 playtime = SpeedRunTimer.GetCampaignTimeTracker(saveState.saveStateNumber).TotalFreeTime,
+                lastPlayed = DateTime.Now,
                 
                 seed = randoManager.currentSeed,
                 completedGoal = randoManager is ManagerArchipelago { gameCompleted: true },
@@ -383,12 +413,12 @@ namespace RainWorldRandomizer
                 isArchipelago = randoManager is ManagerArchipelago,
                 lastItemIndex = randoManager is ManagerArchipelago ? ArchipelagoConnection.lastItemIndex : 0,
                 connectionInfo = randoManager is ManagerArchipelago 
-                    ? new ConnectionInfo // TODO Change where is is normally stored
+                    ? new ConnectionInfo
                     {
-                        hostName = RandoOptions.archipelagoHostName.Value,
-                        port = RandoOptions.archipelagoPort.Value,
-                        slotName = RandoOptions.archipelagoSlotName.Value,
-                        password = RandoOptions.archipelagoPassword.Value,
+                        hostName = ArchipelagoConnection.ConnectedHostName,
+                        port = ArchipelagoConnection.ConnectedPort,
+                        slotName = ArchipelagoConnection.ConnectedSlotName,
+                        password = ArchipelagoConnection.ConnectedPassword,
                     } : default
             };
         }
