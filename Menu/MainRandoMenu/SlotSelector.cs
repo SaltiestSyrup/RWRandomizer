@@ -81,8 +81,8 @@ public sealed class SlotSelector : ScrollingMenu
                     () =>
                     {
                         Slot slot = (Slot)sender.owner;
-                        subObjects.Remove(slot);
                         slot.RemoveSprites();
+                        RemoveSubObject(slot);
                         entries.Remove(slot);
                         SaveManager.DeleteFile(menu.manager.rainWorld, slot.saveSlot);
                     }, () => { });
@@ -107,7 +107,7 @@ public sealed class SlotSelector : ScrollingMenu
         protected RoundedRect portraitBorder;
         protected MenuLabel cycleText;
         protected MenuLabel completionText;
-        protected HoldButton startButton;
+        public HoldButton startButton;
         protected SymbolButton deleteButton;
         
         // Vars
@@ -234,14 +234,6 @@ public sealed class SlotSelector : ScrollingMenu
             
             hud.karmaMeter.pos = ScreenPos + new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 35.01f, size.y / 2 + 0.01f);
             hud.foodMeter.pos = hud.karmaMeter.pos + new Vector2(hud.karmaMeter.Radius + 20.01f, 0f);
-            
-            if (lastFade == 0f && fade > 0f)
-            {
-                Plugin.Log.LogDebug(hud.foodMeter.fade);
-                Plugin.Log.LogDebug(hud.foodMeter.circles[0].plopped);
-                Plugin.Log.LogDebug(hud.foodMeter.circles[0].circles[0].fade);
-            }
-            
         }
 
         public override void GrafUpdate(float timeStacker)
@@ -326,7 +318,7 @@ public sealed class SlotSelector : ScrollingMenu
             base.Update();
             loadingSpinner?.Update();
             
-            if (loadingSpinner is not null) loadingSpinner.pos = ScreenPos + new Vector2(size.x + 50f, size.y / 2f);
+            if (loadingSpinner is not null) loadingSpinner.pos = ScreenPos + new Vector2(size.x + 70f, size.y / 2f);
             
             if (connectTask?.IsCompleted ?? false)
             {
@@ -347,6 +339,16 @@ public sealed class SlotSelector : ScrollingMenu
                 
                 connectTask = null;
             }
+        }
+
+        public override void GrafUpdate(float timeStacker)
+        {
+            base.GrafUpdate(timeStacker);
+            
+            float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
+            float alpha = Mathf.Pow(smoothedFade, 2f);
+
+            slotNameText.label.alpha = alpha;
         }
 
         public override void RemoveSprites()
