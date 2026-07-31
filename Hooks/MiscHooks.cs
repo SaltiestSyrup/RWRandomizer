@@ -258,7 +258,7 @@ namespace RainWorldRandomizer
             {
                 if (Plugin.ArchipelagoActive)
                 {
-                    return ArchipelagoConnection.gateBehavior != Plugin.GateBehavior.OnlyKey;
+                    return RandoOptions.CurGateBehavior != RandoOptions.GateBehavior.OnlyKey;
                 }
                 return false;
             });
@@ -324,12 +324,12 @@ namespace RainWorldRandomizer
                 bool isSaint = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Saint;
 
                 // How should we treat echoes when below 5 max karma?
-                switch (ArchipelagoConnection.echoDifficulty)
+                switch (RandoOptions.EchoDifficulty)
                 {
-                    case ArchipelagoConnection.EchoLowKarmaDifficulty.Impossible:
+                    case RandoOptions.EchoLowKarmaDifficulty.Impossible:
                         // Disable spawn entirely
                         return false;
-                    case ArchipelagoConnection.EchoLowKarmaDifficulty.WithFlower:
+                    case RandoOptions.EchoLowKarmaDifficulty.WithFlower:
                         // Require a karma flower and at karma cap
                         if (isArtificer)
                         {
@@ -342,7 +342,7 @@ namespace RainWorldRandomizer
                             return encounterIndex < 2 && karma == cap && reinforced;
                         }
                         return spawnEcho && reinforced;
-                    case ArchipelagoConnection.EchoLowKarmaDifficulty.MaxKarma:
+                    case RandoOptions.EchoLowKarmaDifficulty.MaxKarma:
                         // Just require karma cap
                         if (isArtificer)
                         {
@@ -356,7 +356,7 @@ namespace RainWorldRandomizer
                         }
                         // This is default logic for most slugcats, so just return orig
                         return spawnEcho;
-                    case ArchipelagoConnection.EchoLowKarmaDifficulty.Vanilla:
+                    case RandoOptions.EchoLowKarmaDifficulty.Vanilla:
                     default:
                         // Vanilla logic
                         return spawnEcho;
@@ -552,7 +552,7 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldloc_2); // i
             c.EmitDelegate<Func<int, bool>>((i) =>
             {
-                if (Plugin.ArchipelagoActive && ArchipelagoConnection.foodQuest == ArchipelagoConnection.FoodQuestBehavior.Expanded)
+                if (Plugin.ArchipelagoActive && RandoOptions.UseExpandedFoodQuest)
                 {
                     return (ArchipelagoConnection.foodQuestAccessibility & (1L << i)) != 0;
                 }

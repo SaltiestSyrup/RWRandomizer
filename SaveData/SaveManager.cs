@@ -350,6 +350,8 @@ namespace RainWorldRandomizer
     public struct SaveFile()
     {
         // Normal stats
+        public bool isDownpourDLC = false;
+        public bool isWatcherDLC = false;
         public string slugcat = null;
         public int karma = 0;
         public int maxKarma = 0;
@@ -359,17 +361,16 @@ namespace RainWorldRandomizer
         public IntVector2 maxFood = new(7, 4);
         public int cycle = 0;
         public double playtime = 0;
-
         public DateTime lastPlayed;
-        // TODO: Add last played field for sorting
         
         // Randomizer stuff
         public string seed;
+        public string startingDen;
         public bool completedGoal;
         public Dictionary<string, UnlockInfo> locationMap = null;
         public List<FillerItem> pendingFiller = null;
         public List<string> pendingTraps = null;
-        // TODO randomizer options
+        public OptionStruct options = new();
         
         // Archipelago stuff
         public bool isArchipelago = false;
@@ -381,6 +382,8 @@ namespace RainWorldRandomizer
             return new SaveFile
             {
                 // TODO: Doesn't currently consider whether current state should be saved for normal save values
+                isDownpourDLC = ModManager.MSC,
+                isWatcherDLC = ModManager.Watcher,
                 slugcat = saveState.saveStateNumber.value,
                 karma = saveState.deathPersistentSaveData.karma,
                 maxKarma = saveState.deathPersistentSaveData.karmaCap,
@@ -393,6 +396,7 @@ namespace RainWorldRandomizer
                 lastPlayed = DateTime.Now,
                 
                 seed = randoManager.currentSeed,
+                startingDen = randoManager.customStartDen,
                 completedGoal = randoManager is ManagerArchipelago { gameCompleted: true },
                 locationMap = randoManager.GetLocations()
                     .ToDictionary(l => l.internalName, l =>
@@ -409,6 +413,7 @@ namespace RainWorldRandomizer
                 pendingFiller = [.. (saveCurrentState ? randoManager.itemDeliveryQueue : randoManager.lastItemDeliveryQueue)
                     .Select(i => new FillerItem { type = i.type.value, id = i.id })],
                 pendingTraps = [.. randoManager.pendingTrapQueue.Select(t => t.id)],
+                options = RandoOptions.LoadedOptions,
                 
                 isArchipelago = randoManager is ManagerArchipelago,
                 lastItemIndex = randoManager is ManagerArchipelago ? ArchipelagoConnection.lastItemIndex : 0,

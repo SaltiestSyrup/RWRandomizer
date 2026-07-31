@@ -32,9 +32,9 @@ namespace RainWorldRandomizer
             "checks_foodquest_accessibility",
         ];
 
-        public static bool HasConnected = false;
-        public static bool CurrentlyConnecting = false;
-        public static bool ReceivedSlotData = false;
+        public static bool HasConnected;
+        public static bool CurrentlyConnecting;
+        public static bool ReceivedSlotData;
         public static bool SocketConnected => Session?.Socket.Connected is true;
         // Stores the last info used to connect. Stays set after disconnection.
         public static string ConnectedHostName;
@@ -43,30 +43,12 @@ namespace RainWorldRandomizer
         public static string ConnectedPassword;
 
         // Ported settings from slot data
+        public static OptionStruct ConnectedOptions = new();
         public static Version WorldVersion;
-        public static bool IsMSC;
-        public static bool IsWatcher;
         public static SlugcatStats.Name Slugcat;
-        public static bool useRandomStart;
         public static string desiredStartDen = "";
-        public static CompletionCondition completionCondition;
-        public static Plugin.GateBehavior gateBehavior;
-        public static EchoLowKarmaDifficulty echoDifficulty;
-        /// <summary> Passage Progress without Survivor </summary>
-        public static PPwSBehavior PPwS;
-        public static FoodQuestBehavior foodQuest;
         /// <summary> A bitflag indicating the accessibility of each item in <see cref="MiscHooks.expanded"/>. </summary>
         public static long foodQuestAccessibility;
-        public static bool sheltersanity;
-        public static bool flowersanity;
-        public static bool devTokenChecks;
-        
-        public static bool spinningTopKeys;
-        public static bool daemonKeys;
-        public static long rottedRegionTarget;
-        public static bool weaverRandomized;
-        public static bool spreadRotChecks;
-        public static bool weaverChecks;
 
         public static ArchipelagoSession Session;
         public static Queue<ReceivedItemsPacket> waitingItemPackets = [];
@@ -96,31 +78,6 @@ namespace RainWorldRandomizer
                     { PaletteColor.Yellow, new Color(1f, 1f, 0f) }
                 }
             );
-
-        public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
-        public enum PPwSBehavior { Disabled, Enabled, Bypassed }
-
-        public enum CompletionCondition
-        {
-            Ascension, // The basic void sea ending
-            HelpingHand, // Hunter reviving LttM with the green neuron
-            SlugTree, // Survivor, Monk, and Gourmand reaching Outer Expanse
-            ScavKing, // Artificer killing the Chieftain scavenger
-            SaveMoon, // Rivulet bringing the Rarefaction cell to LttM
-            Messenger, // Spearmaster delivering the encoded pearl to Comms array
-            Rubicon, // Saint Ascending in Rubicon
-            Pilgrim, // Encounter enough Echoes to trigger the Pilgrim passage
-            FoodQuest, // Eat every tracked food quest item
-            SpinningTop, // Watcher witnessing Spinning Top's ascension in Ancient Urban
-            SentientRot, // Watcher rotting all regions and having their final encounter with The Prince
-            Weaver, // Watcher sealing all warp points and having their final encounter with the Weaver
-            TrueEnding, // Watcher activating the pillars in Daemon and ascending
-        }
-
-        public enum EchoLowKarmaDifficulty
-        {
-            Impossible, WithFlower, MaxKarma, Vanilla
-        }
 
         /// <summary>Get a primitive key from a JObject.</summary>
         internal static T GetSimple<T>(this Dictionary<string, object> self, string key, T defaultValue = default) 
@@ -279,10 +236,7 @@ namespace RainWorldRandomizer
             try
             {
                 Disconnect(false);
-                return Connect(RandoOptions.archipelagoHostName.Value,
-                    RandoOptions.archipelagoPort.Value,
-                    RandoOptions.archipelagoSlotName.Value,
-                    RandoOptions.archipelagoPassword.Value);
+                return Connect(ConnectedHostName, ConnectedPort, ConnectedSlotName, ConnectedPassword);
             }
             catch (Exception e)
             {
@@ -367,6 +321,12 @@ namespace RainWorldRandomizer
                 return SlotDataResult.MissingData;
             }
 
+            ConnectedOptions = new OptionStruct()
+            {
+                archipelago = true,
+                useEnergyCell = true,
+            };
+
             if (!Version.TryParse(slotData.GetSimple<string>("apworld_version"), out WorldVersion))
             {
                 Plugin.Log.LogWarning("Could not determine APWorld version from slot data. The world may be of version 1.4 or older.");
@@ -374,9 +334,8 @@ namespace RainWorldRandomizer
             }
             
             // Check DLC state
-            IsMSC = slotData.GetSimple<long>("is_msc_enabled") > 0;
-            IsWatcher = slotData.GetSimple<long>("is_watcher_enabled") > 0;
-            if (ModManager.MSC != IsMSC || ModManager.Watcher != IsWatcher)
+            if (ModManager.MSC != slotData.GetSimple<long>("is_msc_enabled") > 0 
+                || ModManager.Watcher != slotData.GetSimple<long>("is_watcher_enabled") > 0)
             {
                 return SlotDataResult.InvalidDLC;
             }
@@ -386,93 +345,95 @@ namespace RainWorldRandomizer
             long completionType = slotData.GetSimple<long>("which_victory_condition");
             Slugcat = new SlugcatStats.Name(campaignString);
             
-            if (completionType == 3) completionCondition = CompletionCondition.FoodQuest;
+            if (completionType == 3) ConnectedOptions.goalCondition = RandoOptions.CompletionCondition.FoodQuest;
             else if (campaignString == "Watcher")
             {
                 if (WorldVersion.CompareTo(new Version("1.6.0")) >= 0)
                 {
-                    completionCondition = completionType switch
+                    ConnectedOptions.goalCondition = completionType switch
                     {
-                        1 => CompletionCondition.SentientRot,
-                        4 => CompletionCondition.Weaver,
-                        5 => CompletionCondition.TrueEnding,
-                        0 or _ => CompletionCondition.SpinningTop,
+                        1 => RandoOptions.CompletionCondition.SentientRot,
+                        4 => RandoOptions.CompletionCondition.Weaver,
+                        5 => RandoOptions.CompletionCondition.TrueEnding,
+                        0 or _ => RandoOptions.CompletionCondition.SpinningTop,
                     };
                 }
                 else
                 {
-                    completionCondition = completionType switch
+                    ConnectedOptions.goalCondition = completionType switch
                     {
-                        1 => CompletionCondition.SentientRot,
-                        2 => CompletionCondition.Weaver,
-                        4 => CompletionCondition.TrueEnding,
-                        0 or _ => CompletionCondition.SpinningTop,
+                        1 => RandoOptions.CompletionCondition.SentientRot,
+                        2 => RandoOptions.CompletionCondition.Weaver,
+                        4 => RandoOptions.CompletionCondition.TrueEnding,
+                        0 or _ => RandoOptions.CompletionCondition.SpinningTop,
                     };
                 }
             }
-            else if (completionType == 2) completionCondition = CompletionCondition.Pilgrim;
+            else if (completionType == 2) ConnectedOptions.goalCondition = RandoOptions.CompletionCondition.Pilgrim;
             else if (completionType == 0)
             {
-                completionCondition = campaignString == "Saint"
-                    ? CompletionCondition.Rubicon
-                    : CompletionCondition.Ascension;
+                ConnectedOptions.goalCondition = campaignString == "Saint"
+                    ? RandoOptions.CompletionCondition.Rubicon
+                    : RandoOptions.CompletionCondition.Ascension;
             }
             else
             {
-                completionCondition = campaignString switch
+                ConnectedOptions.goalCondition = campaignString switch
                 {
-                    "Yellow" or "White" or "Gourmand" => CompletionCondition.SlugTree,
-                    "Red" => CompletionCondition.HelpingHand,
-                    "Artificer" => CompletionCondition.ScavKing,
-                    "Rivulet" => CompletionCondition.SaveMoon,
-                    "Spear" => CompletionCondition.Messenger,
-                    "Saint" => CompletionCondition.Rubicon,
-                    "Sofanthiel" or _ => CompletionCondition.Ascension
+                    "Yellow" or "White" or "Gourmand" => RandoOptions.CompletionCondition.SlugTree,
+                    "Red" => RandoOptions.CompletionCondition.HelpingHand,
+                    "Artificer" => RandoOptions.CompletionCondition.ScavKing,
+                    "Rivulet" => RandoOptions.CompletionCondition.SaveMoon,
+                    "Spear" => RandoOptions.CompletionCondition.Messenger,
+                    "Saint" => RandoOptions.CompletionCondition.Rubicon,
+                    "Sofanthiel" or _ => RandoOptions.CompletionCondition.Ascension
                 };
             }
 
             // Choose starting den
             if (slotData.GetSimple<string>("starting_room") is string startShelter)
             {
-                useRandomStart = true;
+                ConnectedOptions.randomizeSpawnLocation = true;
                 desiredStartDen = startShelter;
             }
 
             // Set gate behavior
-            gateBehavior = (Plugin.GateBehavior)slotData.GetSimple<long>("which_gate_behavior");
+            ConnectedOptions.gateBehavior = (RandoOptions.GateBehavior)slotData.GetSimple<long>("which_gate_behavior");
 
-            PPwS = (PPwSBehavior)slotData.GetSimple("passage_progress_without_survivor", 2L);
-            sheltersanity = slotData.GetSimple("checks_sheltersanity", 1L) == 1L;
-            flowersanity = slotData.GetSimple("checks_flowersanity", 1L) == 1L;
-            devTokenChecks = slotData.GetSimple("checks_devtokens", 1L) == 1L;
-            echoDifficulty = (EchoLowKarmaDifficulty)slotData.GetSimple("difficulty_echo_low_karma", 3L);
+            ConnectedOptions.PPwSBehavior = (RandoOptions.PPwSBehavior)slotData.GetSimple("passage_progress_without_survivor", 2L);
+            ConnectedOptions.useShelterChecks = slotData.GetSimple("checks_sheltersanity", 1L) == 1L;
+            ConnectedOptions.useKarmaFlowerChecks = slotData.GetSimple("checks_flowersanity", 1L) == 1L;
+            ConnectedOptions.useDevTokenChecks = slotData.GetSimple("checks_devtokens", 1L) == 1L;
+            ConnectedOptions.echoDifficulty = (RandoOptions.EchoLowKarmaDifficulty)slotData.GetSimple("difficulty_echo_low_karma", 3L);
 
-            DeathLinkHandler.Active = slotData.GetSimple("death_link", 0L) > 0L;
+            ConnectedOptions.archipelagoDeathLink = slotData.GetSimple("death_link", 0L) > 0L;
+            DeathLinkHandler.Active = ConnectedOptions.archipelagoDeathLink;
 
             foodQuestAccessibility = slotData.GetSimple("checks_foodquest_accessibility", 0L);
-            foodQuest = IsMSC &&
+            ConnectedOptions.foodQuestBehavior = ModManager.MSC &&
                 (Slugcat.value == "Gourmand" || slotData.GetSimple("checks_foodquest", 0L) == 2)
                 ? (foodQuestAccessibility > 0
-                    ? FoodQuestBehavior.Expanded
-                    : FoodQuestBehavior.Enabled)
-                : FoodQuestBehavior.Disabled;
+                    ? RandoOptions.FoodQuestBehavior.Expanded
+                    : RandoOptions.FoodQuestBehavior.Enabled)
+                : RandoOptions.FoodQuestBehavior.Disabled;
 
             //Plugin.Log.LogDebug($"Foodquest accessibility flag: {Convert.ToString(foodQuestAccessibility, 2).PadLeft(64, '0')}");
 
-            spinningTopKeys = slotData.GetSimple("spinning_top_keys", 1L) == 1L;
-            daemonKeys = slotData.GetSimple("daemon_keys", 0L) == 1L;
-            rottedRegionTarget = slotData.GetSimple("rotted_region_target", 21L);
+            ConnectedOptions.spinningTopKeys = slotData.GetSimple("spinning_top_keys", 1L) == 1L;
+            ConnectedOptions.daemonKeys = slotData.GetSimple("daemon_keys", 0L) == 1L;
+            ConnectedOptions.rottedRegionTarget = (int)slotData.GetSimple("rotted_region_target", 21L);
             
             long randomWeaver = slotData.GetSimple("randomize_weaver", 0L);
-            weaverRandomized = completionCondition != CompletionCondition.SentientRot &&
-                               (RandoOptions.WeaverRequired() ? randomWeaver >= 1 : randomWeaver == 2);
+            ConnectedOptions.weaverRandomized = ConnectedOptions.goalCondition != RandoOptions.CompletionCondition.SentientRot 
+                                                && (RandoOptions.WeaverRequired() ? randomWeaver >= 1 : randomWeaver == 2);
             
             long spreadRot = slotData.GetSimple("checks_spread_rot", 0L);
-            spreadRotChecks = !RandoOptions.WeaverRequired() 
-                              && (completionCondition == CompletionCondition.SentientRot ? spreadRot >= 1 : spreadRot == 2);
+            ConnectedOptions.spreadRotChecks = !RandoOptions.WeaverRequired() 
+                                               && (ConnectedOptions.goalCondition == RandoOptions.CompletionCondition.SentientRot 
+                                                   ? spreadRot >= 1 : spreadRot == 2);
             
             long encounterWeaver = slotData.GetSimple("checks_weaver_encounters", 0L);
-            weaverChecks = RandoOptions.WeaverRequired() ? encounterWeaver >= 1 : encounterWeaver == 2;
+            ConnectedOptions.weaverChecks = RandoOptions.WeaverRequired() ? encounterWeaver >= 1 : encounterWeaver == 2;
 
             return SlotDataResult.Success;
         }

@@ -174,7 +174,7 @@ namespace RainWorldRandomizer
                         }
 
                         // Check for Food Quest goal
-                        if (fullCompletion) Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.FoodQuest);
+                        if (fullCompletion) Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.FoodQuest);
 
                         continue;
                     }
@@ -220,7 +220,7 @@ namespace RainWorldRandomizer
                 int echoesNeeded = Plugin.RandoManager.currentSlugcat.value == "Saint"
                     || Plugin.RandoManager.currentSlugcat.value == "Artificer" ? 7 : 6;
                 if (saveState.deathPersistentSaveData.ghostsTalkedTo.Count(kvp => kvp.Value >= 2) >= echoesNeeded)
-                    Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Pilgrim);
+                    Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.Pilgrim);
             }
         }
 
@@ -247,7 +247,7 @@ namespace RainWorldRandomizer
 
             // Safety location send for if randomized Weaver items locks the remaining encounters
             if (Plugin.ArchipelagoActive
-                && ArchipelagoConnection.weaverChecks
+                && RandoOptions.WeaverChecks
                 && saveState.miscWorldSaveData.numberOfVoidWeaverEncounters >= 4)
             {
                 for (int i = 1; i <= 4; i++)
@@ -508,7 +508,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static int OnGetNumOfVoidWeaverEncounters(Func<MiscWorldSaveData, int> orig, MiscWorldSaveData self)
         {
-            if (!Plugin.ArchipelagoActive || !ArchipelagoConnection.weaverRandomized) 
+            if (!Plugin.ArchipelagoActive || !RandoOptions.WeaverRandomized) 
                 return orig(self);
 
             return Math.Min(Plugin.ArchipelagoManager.WeaverIncrements, 4);
@@ -601,7 +601,7 @@ namespace RainWorldRandomizer
             {
                 if (Plugin.ArchipelagoActive)
                 {
-                    return ArchipelagoConnection.PPwS != ArchipelagoConnection.PPwSBehavior.Disabled;
+                    return RandoOptions.CurPPwSBehavior != RandoOptions.PPwSBehavior.Disabled;
                 }
                 return true;
             });
@@ -621,7 +621,7 @@ namespace RainWorldRandomizer
                 continue;
 
                 static bool BypassHardcodedSurvivorRequirement(bool prev) =>
-                    prev || (Plugin.ArchipelagoActive && ArchipelagoConnection.PPwS == ArchipelagoConnection.PPwSBehavior.Bypassed);
+                    prev || (Plugin.ArchipelagoActive && RandoOptions.CurPPwSBehavior == RandoOptions.PPwSBehavior.Bypassed);
             }
         }
 
@@ -643,7 +643,7 @@ namespace RainWorldRandomizer
             // Check for completion via Outer Expanse
             if (self.endTrigger)
             {
-                Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SlugTree);
+                Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.SlugTree);
             }
         }
 
@@ -657,7 +657,7 @@ namespace RainWorldRandomizer
             // Check for completion via killing Chieftain scavenger
             if (self.endingTriggered)
             {
-                Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.ScavKing);
+                Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.ScavKing);
             }
         }
 
@@ -671,7 +671,7 @@ namespace RainWorldRandomizer
             // Check for completion via delivering Spearmaster's pearl to Comms array
             if (self.SMEndingPhase == MSCRoomSpecificScript.SpearmasterEnding.SMEndingState.PEARLDATA)
             {
-                Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Messenger);
+                Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.Messenger);
             }
         }
         
@@ -703,7 +703,7 @@ namespace RainWorldRandomizer
             orig(self);
             if (self.animator is null) return;
             
-            Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
+            Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.Rubicon);
         }
 
         private static bool TryGivePlayerItem(this RainWorldGame game, Unlock.Item item)

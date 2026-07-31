@@ -61,6 +61,8 @@ public class NewArchipelagoGameTab : PositionedMenuObject
             page.subObjects.Remove(establishConnectionDialog);
             establishConnectionDialog.RemoveSprites();
             establishConnectionDialog = null;
+
+            RandoOptions.LoadedOptions = ArchipelagoConnection.ConnectedOptions;
             
             // If success, populate options UI. Else show error dialog
             connectResultDialog = new DialogBoxNotify(menu, this, connectTask.Result, "CONFIRM_CONNECT_RESULT", 

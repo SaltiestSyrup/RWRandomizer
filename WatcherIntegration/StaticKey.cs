@@ -15,8 +15,8 @@ public struct StaticKey
     {
         get
         {
-            if (!ArchipelagoConnection.spinningTopKeys && Constants.SpinningTopWarps.Contains(name)) return false;
-            if (!ArchipelagoConnection.daemonKeys && name.Contains("WRSA")) return false;
+            if (!RandoOptions.SpinningTopKeys && Constants.SpinningTopWarps.Contains(name)) return false;
+            if (!RandoOptions.DaemonKeys && name.Contains("WRSA")) return false;
 
             if (name.Contains("WAUA") && name != "WARA-WAUA") return false;  // leading out of Ancient Urban
             if (name == "WARA-WRSA") return false;  // leading out of Daemon

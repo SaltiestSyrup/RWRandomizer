@@ -209,6 +209,8 @@ namespace RainWorldRandomizer
             {
                 throw new FileNotFoundException();
             }
+
+            RandoOptions.LoadedOptions = file.options;
             
             randomizerKey = file.locationMap.ToDictionary(kvp => kvp.Key, kvp =>
                 new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true, out ExtEnumBase t) 

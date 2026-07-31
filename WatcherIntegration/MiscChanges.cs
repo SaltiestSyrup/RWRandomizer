@@ -96,8 +96,8 @@ namespace RainWorldRandomizer.WatcherIntegration
             static bool DontSkipWeaver()
             {
                 return !(Plugin.ArchipelagoActive
-                       && (ArchipelagoConnection.completionCondition == ArchipelagoConnection.CompletionCondition.SentientRot
-                           || ArchipelagoConnection.spreadRotChecks));
+                       && (RandoOptions.GoalCondition == RandoOptions.CompletionCondition.SentientRot
+                           || RandoOptions.SpreadRotChecks));
             }
         }
         

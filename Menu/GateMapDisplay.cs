@@ -359,7 +359,7 @@ namespace RainWorldRandomizer.Menu
         {
             if (Scug == "Watcher")
             {
-                if (!ArchipelagoConnection.daemonKeys) // Warp to Daemon from anywhere
+                if (!RandoOptions.DaemonKeys) // Warp to Daemon from anywhere
                     keys.Add($"Warp-{string.Join("-", new[] { ActualStartRegion, "WRSA" }.OrderBy(x => x))}");
                 if (Plugin.RandoManager.CanDynamicWarp()) // Warp to Outer Rim from anywhere
                     keys.Add($"Warp-{string.Join("-", new[] { ActualStartRegion, "WORA" }.OrderBy(x => x))}");

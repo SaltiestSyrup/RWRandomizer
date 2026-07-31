@@ -28,6 +28,7 @@ namespace RainWorldRandomizer
 
             base.StartNewGameSession(storyGameCharacter, continueSaved);
             currentSeed = ArchipelagoConnection.generationSeed;
+            // RandoOptions.LoadedOptions = ArchipelagoConnection.ConnectedOptions;
             LoadAPLocationDicts();
 
             // Verify slugcat
@@ -104,6 +105,8 @@ namespace RainWorldRandomizer
             {
                 throw new FileNotFoundException();
             }
+
+            RandoOptions.LoadedOptions = file.options;
             
             // SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
             ArchipelagoConnection.lastItemIndex = file.lastItemIndex;
@@ -338,7 +341,7 @@ namespace RainWorldRandomizer
 
         public bool InitializeSession(SlugcatStats.Name slugcat)
         {
-            if (ArchipelagoConnection.useRandomStart)
+            if (RandoOptions.RandomizeSpawnLocation)
             {
                 customStartDen = ArchipelagoConnection.desiredStartDen;
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
@@ -388,9 +391,9 @@ namespace RainWorldRandomizer
         // Thankfully, the only place that uses this is the spoiler menu, which can be re-written for AP
         public override Unlock GetUnlockAtLocation(string location) => null;
 
-        public void GiveCompletionCondition(ArchipelagoConnection.CompletionCondition condition)
+        public void GiveCompletionCondition(RandoOptions.CompletionCondition condition)
         {
-            if (gameCompleted || condition != ArchipelagoConnection.completionCondition) return;
+            if (gameCompleted || condition != RandoOptions.GoalCondition) return;
 
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();

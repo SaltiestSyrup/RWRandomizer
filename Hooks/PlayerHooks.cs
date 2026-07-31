@@ -101,13 +101,13 @@ namespace RainWorldRandomizer
                     && self.firstChunk.pos.y < 350f)
                 {
                     if (Plugin.RandoManager?.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher)
-                        Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.TrueEnding);
-                    Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Ascension);
+                        Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.TrueEnding);
+                    Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.Ascension);
                 }
                 else if (room.abstractRoom.name == "HR_FINAL"
                     && self.firstChunk.pos.y > room.PixelHeight + 500f)
                 {
-                    Plugin.ArchipelagoManager?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Rubicon);
+                    Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.Rubicon);
                 }
             }
         }

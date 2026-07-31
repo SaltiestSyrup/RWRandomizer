@@ -29,7 +29,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
             /// <summary>Reduce the number of regions needed for the Sentient Rot ending to match <see cref="Settings.rottedRegionTarget"/>.</summary>
             internal static int ApplyRottedRegionTarget(Func<MWSD, int> orig, MWSD self)
-                => Plugin.ArchipelagoActive ? Mathf.Max(orig(self) - 21 + (int)ArchipelagoConnection.rottedRegionTarget, 0) : orig(self);
+                => Plugin.ArchipelagoActive ? Mathf.Max(orig(self) - 21 + RandoOptions.RottedRegionTarget, 0) : orig(self);
 
             /// <summary>Detect completion conditions when switching to the ending slideshows.</summary>
             private static void DetectCompletion(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID orig, ProcessManager self, ProcessManager.ProcessID ID)
@@ -39,16 +39,16 @@ namespace RainWorldRandomizer.WatcherIntegration
                     switch (self.nextSlideshow.value)
                     {
                         case "EndingSpinningTop":
-                            Plugin.ArchipelagoManager.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SpinningTop);
+                            Plugin.ArchipelagoManager.GiveCompletionCondition(RandoOptions.CompletionCondition.SpinningTop);
                             // Release all Spinning Top checks because they are now impossible
                             foreach (var loc in Plugin.RandoManager.GetLocations().Where(l => l.kind == LocationInfo.LocationKind.SpinningTop))
                                 Plugin.ArchipelagoManager.GiveLocation(loc.internalName);
                             break;
                         case "EndingRot":
-                            Plugin.ArchipelagoManager.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SentientRot);
+                            Plugin.ArchipelagoManager.GiveCompletionCondition(RandoOptions.CompletionCondition.SentientRot);
                             break;
                         case "EndingVoidWeaver":
-                            Plugin.ArchipelagoManager.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.Weaver);
+                            Plugin.ArchipelagoManager.GiveCompletionCondition(RandoOptions.CompletionCondition.Weaver);
                             break;
                     }
                 }

@@ -85,14 +85,6 @@ namespace RainWorldRandomizer
             set { _game = new WeakReference<RainWorldGame>(value); }
         }
 
-        public enum GateBehavior
-        {
-            OnlyKey, // Only keys matter, karma not required
-            KeyAndKarma, // Need both key and karma
-            KeyOrKarma, // Key allows bypassing karma requirement
-            OnlyKarma // Keys not needed, normal gate behavior
-        }
-
         public void OnEnable()
         {
             // Register Enums
@@ -431,24 +423,24 @@ namespace RainWorldRandomizer
             }
 
             // Decide gate behavior
-            GateBehavior gateBehavior;
+            RandoOptions.GateBehavior gateBehavior;
             if (RandoManager is ManagerArchipelago)
             {
-                gateBehavior = ArchipelagoConnection.gateBehavior;
+                gateBehavior = RandoOptions.CurGateBehavior;
             }
             else if (RandoOptions.StartMinimumKarma)
             {
-                gateBehavior = GateBehavior.OnlyKey;
+                gateBehavior = RandoOptions.GateBehavior.OnlyKey;
             }
             else
             {
-                gateBehavior = GateBehavior.KeyAndKarma;
+                gateBehavior = RandoOptions.GateBehavior.KeyAndKarma;
             }
 
             // Apply behavior
             switch (gateBehavior)
             {
-                case GateBehavior.OnlyKey:
+                case RandoOptions.GateBehavior.OnlyKey:
                     if (hasKeyForGate)
                     {
                         newRequirements[0] = RegionGate.GateRequirement.OneKarma;
@@ -460,21 +452,21 @@ namespace RainWorldRandomizer
                         newRequirements[1] = RegionGate.GateRequirement.DemoLock;
                     }
                     break;
-                case GateBehavior.KeyAndKarma:
+                case RandoOptions.GateBehavior.KeyAndKarma:
                     if (!hasKeyForGate)
                     {
                         newRequirements[0] = RegionGate.GateRequirement.DemoLock;
                         newRequirements[1] = RegionGate.GateRequirement.DemoLock;
                     }
                     break;
-                case GateBehavior.KeyOrKarma:
+                case RandoOptions.GateBehavior.KeyOrKarma:
                     if (hasKeyForGate)
                     {
                         newRequirements[0] = RegionGate.GateRequirement.OneKarma;
                         newRequirements[1] = RegionGate.GateRequirement.OneKarma;
                     }
                     break;
-                case GateBehavior.OnlyKarma:
+                case RandoOptions.GateBehavior.OnlyKarma:
                     // Nothing to be done here, use vanilla mechanics
                     break;
             }

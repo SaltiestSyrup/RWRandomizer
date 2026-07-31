@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using HUD;
 using Menu;
+using MoreSlugcats;
 using RWCustom;
 using UnityEngine;
 using RWMenu = Menu.Menu;
@@ -14,7 +15,7 @@ public sealed class SlotSelector : ScrollingMenu
 {
     
     public SlotSelector(RWMenu menu, MenuObject owner, Vector2 pos) 
-        : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.5f, 0.8f))
+        : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.5f, 0.75f))
     {
         // Standalone slot entry
         // Archipelago slot entry
@@ -107,8 +108,9 @@ public sealed class SlotSelector : ScrollingMenu
         protected RoundedRect portraitBorder;
         protected MenuLabel cycleText;
         protected MenuLabel completionText;
-        public HoldButton startButton;
+        protected HoldButton startButton;
         protected SymbolButton deleteButton;
+        protected SimpleButton optionsButton;
         
         // Vars
         public int saveSlot;
@@ -182,26 +184,35 @@ public sealed class SlotSelector : ScrollingMenu
                     : new IntVector2(saveFile.karma, saveFile.maxKarma), false));
             hud.AddPart(new FoodMeter(hud, saveFile.maxFood.x, saveFile.maxFood.y));
             
-            // --- Labels
-            cycleText = new MenuLabel(menu, this, $"Cycle {saveFile.cycle}", 
-                new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 50f, 25f), default, true);
-            subObjects.Add(cycleText);
-
-            int checksComplete = saveFile.locationMap.Count(l => l.Value.collected);
-            int totalChecks = saveFile.locationMap.Count;
-            completionText = new MenuLabel(menu, this, 
-                $"{Mathf.RoundToInt((float)checksComplete / totalChecks * 100)}% ({checksComplete}/{totalChecks})", 
-                new Vector2(cycleText.pos.x + 250f, size.y - 20f), default, true);
-            subObjects.Add(completionText);
-
+            
             // --- Start button
             startButton = new HoldButton(menu, this, "PLAY", "", 
                 new Vector2(size.x - 60f, size.y / 2), 100f)
             {
                 rad = 35f
             };
+            
             subObjects.Add(startButton);
+            // --- Options button
+            optionsButton = new SimpleButton(menu, this, "OPTIONS", "OPTIONS",
+                new Vector2(size.x - startButton.rad * 2 - 145f, 10f), new Vector2(100f, 30f));
+            subObjects.Add(optionsButton);
+            
+            // --- Labels
+            TimeSpan time = TimeSpan.FromMilliseconds(saveFile.playtime);
+            cycleText = new MenuLabel(menu, this, $"Cycle {saveFile.cycle} ({(int)time.TotalHours:D2}h:{time.Minutes:D2}m:{time.Seconds:D2}s)", 
+                new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 10f, 25f), default, true) 
+                { label = { alignment = FLabelAlignment.Left } };
+            subObjects.Add(cycleText);
 
+            int checksComplete = saveFile.locationMap.Count(l => l.Value.collected);
+            int totalChecks = saveFile.locationMap.Count;
+            completionText = new MenuLabel(menu, this, 
+                $"{Mathf.RoundToInt((float)checksComplete / totalChecks * 100)}% ({checksComplete}/{totalChecks})", 
+                new Vector2(size.x - startButton.rad * 2 - 40f, size.y - 20f), default, true) 
+                { label = { alignment = FLabelAlignment.Right } };
+            subObjects.Add(completionText);
+            
             CreateBoundingBox();
             
             deleteButton = new SymbolButton(menu, this, "Menu_Symbol_Clear_All", "DELETE_SAVE", 
@@ -251,8 +262,12 @@ public sealed class SlotSelector : ScrollingMenu
 
             deleteButton.symbolSprite.alpha = alpha;
             startButton.menuLabel.label.alpha = alpha;
+            optionsButton.menuLabel.label.alpha = alpha;
 
-            foreach (FSprite sprite in (FSprite[])[..deleteButton.roundedRect.sprites, ..portraitBorder.sprites])
+            foreach (FSprite sprite in (FSprite[])[
+                         ..deleteButton.roundedRect.sprites, 
+                         ..portraitBorder.sprites,
+                         ..optionsButton.roundedRect.sprites])
             {
                 sprite.alpha = alpha;
                 sprite.isVisible = fade > 0;
@@ -299,6 +314,7 @@ public sealed class SlotSelector : ScrollingMenu
         private MenuLabel slotNameText;
         private AtlasAnimator loadingSpinner;
         private DialogBoxNotify connectResultDialog;
+        private FSprite logoBadge;
         
         // Vars
         private Task<string> connectTask;
@@ -307,8 +323,12 @@ public sealed class SlotSelector : ScrollingMenu
             : base(menu, owner, pos, size, saveSlot, saveFile)
         {
             slotNameText = new MenuLabel(menu, this, saveFile.connectionInfo.slotName,
-                new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 50f, size.y - 20f), default, true);
+                new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 10f, size.y - 20f), default, true)
+                { label = { alignment = FLabelAlignment.Left } };
             subObjects.Add(slotNameText);
+
+            logoBadge = new FSprite("Symbol_Archipelago");
+            Container.AddChild(logoBadge);
 
             startButton.signalText = "CONTINUE_GAME_AP";
         }
@@ -344,17 +364,22 @@ public sealed class SlotSelector : ScrollingMenu
         public override void GrafUpdate(float timeStacker)
         {
             base.GrafUpdate(timeStacker);
+
+            logoBadge.x = DrawPos(timeStacker).x + 16f;
+            logoBadge.y = DrawPos(timeStacker).y + 16f;
             
             float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
             float alpha = Mathf.Pow(smoothedFade, 2f);
 
             slotNameText.label.alpha = alpha;
+            logoBadge.alpha = alpha;
         }
 
         public override void RemoveSprites()
         {
             base.RemoveSprites();
             loadingSpinner?.RemoveFromContainer();
+            Container.RemoveChild(logoBadge);
         }
         
         public override void Singal(MenuObject sender, string message)
