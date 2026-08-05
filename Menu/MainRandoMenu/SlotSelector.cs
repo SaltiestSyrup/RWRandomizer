@@ -89,6 +89,10 @@ public sealed class SlotSelector : ScrollingMenu
                     }, () => { });
                 menu.manager.ShowDialog(confirmation);
                 break;
+            case "OPTIONS":
+                
+                // subObjects.Add(new OptionsDialog(menu, this, new Vector2(size.x / 2f - 400f, size.y / 2f - 200f), new Vector2(800f, 500f)));
+                break;
         }
     }
 
@@ -263,20 +267,22 @@ public sealed class SlotSelector : ScrollingMenu
             deleteButton.symbolSprite.alpha = alpha;
             startButton.menuLabel.label.alpha = alpha;
             optionsButton.menuLabel.label.alpha = alpha;
+            optionsButton.buttonBehav.greyedOut = sleep;
 
             foreach (FSprite sprite in (FSprite[])[
                          ..deleteButton.roundedRect.sprites, 
                          ..portraitBorder.sprites,
-                         ..optionsButton.roundedRect.sprites])
+                         ..optionsButton.roundedRect.sprites,
+                         ..optionsButton.selectRect.sprites])
             {
                 sprite.alpha = alpha;
-                sprite.isVisible = fade > 0;
+                sprite.isVisible = !sleep; //fade > 0;
             }
 
             foreach (FSprite sprite in startButton.circleSprites)
             {
                 sprite.alpha *= alpha;
-                sprite.isVisible = fade > 0;
+                sprite.isVisible = !sleep; //fade > 0;
             }
         }
 

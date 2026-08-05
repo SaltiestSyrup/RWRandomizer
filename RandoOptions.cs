@@ -303,10 +303,7 @@ namespace RainWorldRandomizer
         }
     }
     
-    // TODO Create one of these on first AP connection
     // TODO Create menu for making one for standalone
-    // TODO Save to save file
-    // TODO Load one from file on continue game
     
     public struct OptionStruct()
     {
@@ -326,13 +323,13 @@ namespace RainWorldRandomizer
         public float hunterCyclesDensity = 0.2f;
         public float trapsDensity = 0.2f;
         public int numDamageIncreases = 6;
+        public int extraKarmaIncreases = 2;
 
         public RandoOptions.GateBehavior gateBehavior = RandoOptions.GateBehavior.OnlyKey;
         public RandoOptions.PPwSBehavior PPwSBehavior = RandoOptions.PPwSBehavior.Disabled;
         public RandoOptions.EchoLowKarmaDifficulty echoDifficulty = RandoOptions.EchoLowKarmaDifficulty.Vanilla;
         public bool randomizeSpawnLocation = false;
         public bool startMinKarma = false;
-        public int extraKarmaIncreases = 2;
 
         // MSC
         public bool allowMetroForOthers = false;

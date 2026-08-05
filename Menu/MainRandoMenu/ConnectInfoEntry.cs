@@ -102,6 +102,11 @@ public class ConnectInfoEntry : RectangularMenuObject
     public override void Update()
     {
         base.Update();
+        hostNameLabel.inactive = ArchipelagoConnection.SocketConnected;
+        portLabel.inactive = ArchipelagoConnection.SocketConnected;
+        slotNameLabel.inactive = ArchipelagoConnection.SocketConnected;
+        passwordLabel.inactive = ArchipelagoConnection.SocketConnected;
+        
         connectButton.buttonBehav.greyedOut = ArchipelagoConnection.SocketConnected;
         ((CreateNewGamePage)owner.owner).modeButtons[0].buttonBehav.greyedOut = ArchipelagoConnection.SocketConnected;
         hostNameField.greyedOut = ArchipelagoConnection.SocketConnected;

@@ -118,39 +118,39 @@ namespace RainWorldRandomizer.Menu
 
             RandoOptions.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", true,
                 new ConfigurableInfo("Include checks for finding collectible tokens", null, "",
-                    ["Use Sandbox tokens as checks"]));
+                    ["Sandbox Tokens"]));
 
             RandoOptions.usePearlChecks = config.Bind<bool>("usePearlChecks", true,
                 new ConfigurableInfo("Include checks for bringing colored pearls to a den", null, "",
-                    ["Use Pearls as checks"]));
+                    ["Pearls"]));
 
             RandoOptions.useEchoChecks = config.Bind<bool>("useEchoChecks", true,
                 new ConfigurableInfo("Include checks for meeting Echoes", null, "",
-                    ["Use Echoes as checks"]));
+                    ["Echoes"]));
 
             RandoOptions.usePassageChecks = config.Bind<bool>("usePassageChecks", true,
                 new ConfigurableInfo("Include checks for completing Passages", null, "",
-                    ["Use Passages as checks"]));
+                    ["Passages"]));
 
             RandoOptions.useSpecialChecks = config.Bind<bool>("useSpecialChecks", true,
                 new ConfigurableInfo("Include checks for story objectives", null, "",
-                    ["Use Special checks"]));
+                    ["Unique"]));
 
             RandoOptions.useShelterChecks = config.Bind<bool>("useShelterChecks", false,
                 new ConfigurableInfo("Include checks for entering shelters", null, "",
-                    ["Use Shelters as checks"]));
+                    ["Shelters"]));
 
             RandoOptions.useDevTokenChecks = config.Bind<bool>("useDevTokenChecks", false,
                 new ConfigurableInfo("Include checks for collecting developer commentary tokens", null, "",
-                    ["Use Dev Tokens as checks"]));
+                    ["Dev Tokens"]));
 
             RandoOptions.useKarmaFlowerChecks = config.Bind<bool>("useKarmaFlowerChecks", false,
                 new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations", null, "",
-                    ["Use Karma Flowers as checks"]));
+                    ["Karma Flowers"]));
 
             RandoOptions.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
                 new ConfigurableInfo("Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages", null, "",
-                    ["Use Passage tokens as filler"]));
+                    ["Passage Tokens as Items"]));
 
             RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
                 new ConfigurableInfo("The percentage amount of filler items that will increase the remaining cycles when playing as Hunter." +
@@ -170,7 +170,7 @@ namespace RainWorldRandomizer.Menu
 
             RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
                 new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
-                    ["Randomize starting den"]));
+                    ["Randomize Start Region"]));
 
             RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
                 new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +

@@ -127,6 +127,7 @@
     <Compile Include="Menu\MainRandoMenu\ConnectInfoEntry.cs" />
     <Compile Include="Menu\MainRandoMenu\CreateNewGamePage.cs" />
     <Compile Include="Menu\MainRandoMenu\NewArchipelagoGameTab.cs" />
+    <Compile Include="Menu\MainRandoMenu\OptionsDialog.cs" />
     <Compile Include="Menu\MainRandoMenu\RandomizerMenu.cs" />
     <Compile Include="Menu\MainRandoMenu\CampaignSelectPage.cs" />
     <Compile Include="Menu\MainRandoMenu\SlotSelector.cs" />

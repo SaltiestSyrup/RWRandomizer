@@ -47,8 +47,6 @@ namespace RainWorldRandomizer
             
             try
             {
-                // TODO: There should be some validation that the save game being loaded is the correct one for the AP slot
-                // Probably do this when integrating data into save file. Then we can mine save data to find if player is loading the correct save
                 if (continueSaved) 
                     LoadSave(Plugin.Singleton.rainWorld.options.saveSlot);
                 else CreateNewSave();
