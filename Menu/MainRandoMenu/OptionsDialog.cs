@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Menu;
@@ -6,7 +5,6 @@ using Menu.Remix;
 using Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI.ValueTypes;
 using MonoMod.Utils;
-using RWCustom;
 using UnityEngine;
 using RWMenu = Menu.Menu;
 
@@ -16,8 +14,6 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 {
     private const float EDGE_MARGIN = 30f;
     private const float CENTER_MARGIN = 80f;
-    private const float LEFT_START_X = 20f;
-    private const float RIGHT_START_X = 450;
 
     public enum Mode
     {
@@ -146,13 +142,12 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
     private abstract class Tab(RWMenu menu, MenuObject owner, Vector2 pos) : PositionedMenuObject(menu, owner, pos)
     {
+        protected Dictionary<string, Option> options;
         public abstract void PopulateFromSaveFile(SaveFile save);
     }
 
     private class ChecksTab : Tab
     {
-        private Dictionary<string, CheckBoxOption> checkBoxOptions;
-        
         public ChecksTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
         {
             float runningY = ((Dialog)menu).size.y - 100f;
@@ -179,7 +174,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             };
             subObjects.Add(watcherLabel);
             
-            checkBoxOptions = new Dictionary<string, CheckBoxOption>
+            options = new Dictionary<string, Option>
             {
                 { "Sandbox", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY), 
                     RandoOptions.useSandboxTokenChecks) },
@@ -211,12 +206,12 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                 { "Weaver", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40), 
                     RandoOptions.useWeaverChecks) }
             };
-            subObjects.AddRange(checkBoxOptions.Values);
+            subObjects.AddRange(options.Values);
 
             // 
             if (((OptionsDialog)menu).myMode > Mode.StandaloneNew)
             {
-                foreach (CheckBoxOption option in checkBoxOptions.Values)
+                foreach (Option option in options.Values)
                 {
                     option.GreyedOut = true;
                 }
@@ -226,33 +221,29 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         public override void Update()
         {
             base.Update();
-            checkBoxOptions["FoodQuestEx"].GreyedOut = !checkBoxOptions["FoodQuest"].ValueBool;
+            options["FoodQuestEx"].GreyedOut = options["FoodQuest"].GreyedOut || !options["FoodQuest"].ValueBool;
         }
 
         public override void PopulateFromSaveFile(SaveFile save)
         {
-            checkBoxOptions["Sandbox"].ValueBool = save.options.useSandboxTokenChecks;
-            checkBoxOptions["Pearl"].ValueBool = save.options.usePearlChecks;
-            checkBoxOptions["Echo"].ValueBool = save.options.useEchoChecks;
-            checkBoxOptions["Passage"].ValueBool = save.options.usePassageChecks;
-            checkBoxOptions["Special"].ValueBool = save.options.useSpecialChecks;
-            checkBoxOptions["Shelter"].ValueBool = save.options.useShelterChecks;
-            checkBoxOptions["Flower"].ValueBool = save.options.useKarmaFlowerChecks;
-            checkBoxOptions["Dev"].ValueBool = save.options.useDevTokenChecks;
-            checkBoxOptions["Broadcast"].ValueBool = save.options.useSMTokens;
-            checkBoxOptions["FoodQuest"].ValueBool = save.options.foodQuestBehavior != RandoOptions.FoodQuestBehavior.Disabled;
-            checkBoxOptions["FoodQuestEx"].ValueBool = save.options.foodQuestBehavior == RandoOptions.FoodQuestBehavior.Expanded;
-            checkBoxOptions["SpreadRot"].ValueBool = save.options.spreadRotChecks;
-            checkBoxOptions["Weaver"].ValueBool = save.options.weaverChecks;
+            options["Sandbox"].ValueBool = save.options.useSandboxTokenChecks;
+            options["Pearl"].ValueBool = save.options.usePearlChecks;
+            options["Echo"].ValueBool = save.options.useEchoChecks;
+            options["Passage"].ValueBool = save.options.usePassageChecks;
+            options["Special"].ValueBool = save.options.useSpecialChecks;
+            options["Shelter"].ValueBool = save.options.useShelterChecks;
+            options["Flower"].ValueBool = save.options.useKarmaFlowerChecks;
+            options["Dev"].ValueBool = save.options.useDevTokenChecks;
+            options["Broadcast"].ValueBool = save.options.useSMTokens;
+            options["FoodQuest"].ValueBool = save.options.foodQuestBehavior != RandoOptions.FoodQuestBehavior.Disabled;
+            options["FoodQuestEx"].ValueBool = save.options.foodQuestBehavior == RandoOptions.FoodQuestBehavior.Expanded;
+            options["SpreadRot"].ValueBool = save.options.spreadRotChecks;
+            options["Weaver"].ValueBool = save.options.weaverChecks;
         }
     }
 
     private class ItemsTab : Tab
     {
-        private Dictionary<string, CheckBoxOption> checkBoxOptions;
-        private Dictionary<string, UpDownIntOption> upDownIntOptions;
-        private Dictionary<string, UpDownFloatOption> upDownFloatOptions;
-        
         public ItemsTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
         {
             float runningY = ((Dialog)menu).size.y - 80f;
@@ -272,7 +263,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             };
             subObjects.Add(perkLabel);
 
-            checkBoxOptions = new Dictionary<string, CheckBoxOption>
+            options = new Dictionary<string, Option>
             {
                 { "Passage", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY), 
                     RandoOptions.givePassageUnlocks) },
@@ -282,27 +273,16 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                     RandoOptions.daemonKeys) },
                 { "Weaver", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f), 
                     RandoOptions.weaverItems) },
-            };
-
-            upDownIntOptions = new Dictionary<string, UpDownIntOption>
-            {
                 { "DamageUp", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.numDamageIncreases) },
                 { "ExtraKarma", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.extraKarmaIncreases) },
-            };
-
-            upDownFloatOptions = new Dictionary<string, UpDownFloatOption>
-            {
                 { "PercentTraps", new UpDownFloatOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.trapsDensity) },
                 { "PercentHunter", new UpDownFloatOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.hunterCyclesDensity) },
-            };
-            
-            // Second row (perks)
-            checkBoxOptions.AddRange(new Dictionary<string, CheckBoxOption>
-            {
+                
+                // Second row (perks)
                 { "BackSpear", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY = ((Dialog)menu).size.y - 100f), 
                     RandoOptions.expeditionPerks[0]) },
                 { "DualWield", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
@@ -319,18 +299,13 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                     RandoOptions.expeditionPerks[6]) },
                 { "Agility", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
                     RandoOptions.expeditionPerks[7]) },
-            });
+            };
             
-            subObjects.AddRange(checkBoxOptions.Values);
-            subObjects.AddRange(upDownIntOptions.Values);
-            subObjects.AddRange(upDownFloatOptions.Values);
+            subObjects.AddRange(options.Values);
             
             if (((OptionsDialog)menu).myMode > Mode.StandaloneNew)
             {
-                foreach (Option option in (Option[])[
-                             ..checkBoxOptions.Values, 
-                             ..upDownIntOptions.Values, 
-                             ..upDownFloatOptions.Values])
+                foreach (Option option in options.Values)
                 {
                     option.GreyedOut = true;
                 }
@@ -339,28 +314,27 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
         public override void PopulateFromSaveFile(SaveFile save)
         {
-            checkBoxOptions["Passage"].ValueBool = save.options.givePassageUnlocks;
-            checkBoxOptions["STKeys"].ValueBool = save.options.spinningTopKeys;
-            checkBoxOptions["DaemonKeys"].ValueBool = save.options.daemonKeys;
-            checkBoxOptions["Weaver"].ValueBool = save.options.weaverRandomized;
-            upDownIntOptions["DamageUp"].ValueInt = save.options.numDamageIncreases;
-            upDownIntOptions["ExtraKarma"].ValueInt = save.options.extraKarmaIncreases;
-            upDownFloatOptions["PercentTraps"].ValueFloat = save.options.trapsDensity;
-            upDownFloatOptions["PercentHunter"].ValueFloat = save.options.hunterCyclesDensity;
-            checkBoxOptions["BackSpear"].ValueBool = save.options.expeditionPerks[0];
-            checkBoxOptions["DualWield"].ValueBool = save.options.expeditionPerks[1];
-            checkBoxOptions["ExpResistance"].ValueBool = save.options.expeditionPerks[2];
-            checkBoxOptions["ExpParry"].ValueBool = save.options.expeditionPerks[3];
-            checkBoxOptions["ExpJump"].ValueBool = save.options.expeditionPerks[4];
-            checkBoxOptions["Crafting"].ValueBool = save.options.expeditionPerks[5];
-            checkBoxOptions["Aquatic"].ValueBool = save.options.expeditionPerks[6];
-            checkBoxOptions["Agility"].ValueBool = save.options.expeditionPerks[7];
+            options["Passage"].ValueBool = save.options.givePassageUnlocks;
+            options["STKeys"].ValueBool = save.options.spinningTopKeys;
+            options["DaemonKeys"].ValueBool = save.options.daemonKeys;
+            options["Weaver"].ValueBool = save.options.weaverRandomized;
+            options["DamageUp"].ValueInt = save.options.numDamageIncreases;
+            options["ExtraKarma"].ValueInt = save.options.extraKarmaIncreases;
+            options["PercentTraps"].ValueFloat = save.options.trapsDensity;
+            options["PercentHunter"].ValueFloat = save.options.hunterCyclesDensity;
+            options["BackSpear"].ValueBool = save.options.expeditionPerks[0];
+            options["DualWield"].ValueBool = save.options.expeditionPerks[1];
+            options["ExpResistance"].ValueBool = save.options.expeditionPerks[2];
+            options["ExpParry"].ValueBool = save.options.expeditionPerks[3];
+            options["ExpJump"].ValueBool = save.options.expeditionPerks[4];
+            options["Crafting"].ValueBool = save.options.expeditionPerks[5];
+            options["Aquatic"].ValueBool = save.options.expeditionPerks[6];
+            options["Agility"].ValueBool = save.options.expeditionPerks[7];
         }
     }
 
     private class BehaviorsTab : Tab
     {
-        private Dictionary<string, Option> options;
         private MenuLabel slugcatLabel;
         
         public BehaviorsTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
@@ -443,13 +417,14 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
             // seed __
 
-            // if (!(menu as OptionsDialog)?.editMode ?? false)
-            // {
-            //     foreach (CheckBoxOption option in checkBoxOptions.Values)
-            //     {
-            //         option.GreyedOut = true;
-            //     }
-            // }
+            if (((OptionsDialog)menu).myMode > Mode.StandaloneNew)
+            {
+                foreach (KeyValuePair<string, Option> option in 
+                         options.Where(option => option.Key != "DeathLink"))
+                {
+                    option.Value.GreyedOut = true;
+                }
+            }
         }
 
         public override void PopulateFromSaveFile(SaveFile save)
@@ -458,293 +433,153 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         }
     }
 
-    private abstract class Option(RWMenu menu, MenuObject owner, Vector2 pos) 
-        : PositionedMenuObject(menu, owner, pos)
+    private abstract class Option : PositionedMenuObject
     {
+        protected MenuTabWrapper tabWrapper;
+        protected UIelementWrapper labelWrapper;
+        protected UIelementWrapper fieldWrapper;
+        
+        protected OpLabel label;
+        protected MenuLabel label1;
+        protected UIconfig field;
+        
         public virtual bool ValueBool { get; set; }
         public virtual int ValueInt { get; set; }
         public virtual float ValueFloat { get; set; }
         public virtual string ValueString { get; set; }
-        public abstract bool GreyedOut { get; set; }
+        public virtual bool GreyedOut
+        {
+            get { return field.greyedOut; }
+            set { field.greyedOut = value; }
+        }
+
+        protected Option(RWMenu menu, MenuObject owner, Vector2 pos, ConfigurableBase config) 
+            : base(menu, owner, pos)
+        {
+            tabWrapper = new MenuTabWrapper(menu, this);
+
+            // label1 = new MenuLabel(menu, this, config.info.Tags[0] as string, default, default, true) 
+            //     { label = { alignment = FLabelAlignment.Right } };
+            label = new OpLabel(default, default, config.info.Tags[0] as string, FLabelAlignment.Left, true);
+            labelWrapper = new UIelementWrapper(tabWrapper, label);
+            
+            // subObjects.Add(label1);
+            subObjects.Add(tabWrapper);
+        }
     } 
 
     private class CheckBoxOption : Option
     {
-        // Wrappers
-        private MenuTabWrapper tabWrapper;
-        private UIelementWrapper labelWrapper;
-        private UIelementWrapper checkBoxWrapper;
-        
-        // Elements
-        private OpLabel label;
-        private OpCheckBox checkBox;
-
         public override bool ValueBool
         {
-            get { return checkBox.GetValueBool(); }
-            set { checkBox.SetValueBool(value); }
-        }
-
-        public override bool GreyedOut
-        {
-            get
-            {
-                return checkBox.greyedOut;
-            }
-            set
-            {
-                checkBox.greyedOut = value;
-                label.bumpBehav.greyedOut = value;
-            }
+            get { return ((OpCheckBox)field).GetValueBool(); }
+            set { ((OpCheckBox)field).SetValueBool(value); }
         }
 
         public CheckBoxOption(RWMenu menu, MenuObject owner, Vector2 pos, Configurable<bool> config) 
-            : base(menu, owner, pos)
+            : base(menu, owner, pos, config)
         {
-            tabWrapper = new MenuTabWrapper(menu, this);
-            
-            checkBox = new OpCheckBox(config, 
+            field = new OpCheckBox(config, 
                 new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f - EDGE_MARGIN - 24f, -3f))
             {
                 description = config.info.description
             };
-            checkBoxWrapper = new UIelementWrapper(tabWrapper, checkBox);
-            
-            label = new OpLabel(default, default, config.info.Tags[0] as string, FLabelAlignment.Left, true)
-            {
-                bumpBehav = checkBox.bumpBehav,
-                description = checkBox.description
-            };
-            labelWrapper = new UIelementWrapper(tabWrapper, label);
-            
-            subObjects.Add(tabWrapper);
+            fieldWrapper = new UIelementWrapper(tabWrapper, field);
         }
     }
 
     private class UpDownIntOption : Option
     {
-        // Wrappers
-        private MenuTabWrapper tabWrapper;
-        private UIelementWrapper labelWrapper;
-        private UIelementWrapper upDownWrapper;
-        
-        // Elements
-        private OpLabel label;
-        private OpUpdown upDown;
-        
         public override int ValueInt
         {
-            get { return upDown.GetValueInt(); }
-            set { upDown.SetValueInt(value); }
-        }
-
-        public override bool GreyedOut
-        {
-            get
-            {
-                return upDown.greyedOut;
-            }
-            set
-            {
-                upDown.greyedOut = value;
-                label.bumpBehav.greyedOut = value;
-            }
+            get { return ((OpUpdown)field).GetValueInt(); }
+            set { ((OpUpdown)field).SetValueInt(value); }
         }
         
         public UpDownIntOption(RWMenu menu, MenuObject owner, Vector2 pos, Configurable<int> config) 
-            : base(menu, owner, pos) 
+            : base(menu, owner, pos, config) 
         {
-            tabWrapper = new MenuTabWrapper(menu, this);
-            
-            upDown = new OpUpdown(config, 
+            field = new OpUpdown(config, 
                 new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f - EDGE_MARGIN - 60f, -3f), 60f)
             {
                 description = config.info.description
             };
-            upDownWrapper = new UIelementWrapper(tabWrapper, upDown);
-            
-            label = new OpLabel(default, default, config.info.Tags[0] as string, FLabelAlignment.Left, true)
-            {
-                bumpBehav = upDown.bumpBehav,
-                description = upDown.description
-            };
-            labelWrapper = new UIelementWrapper(tabWrapper, label);
-            
-            subObjects.Add(tabWrapper);
+            fieldWrapper = new UIelementWrapper(tabWrapper, field);
         }
     }
     
     private class UpDownFloatOption : Option
     {
-        // Wrappers
-        private MenuTabWrapper tabWrapper;
-        private UIelementWrapper labelWrapper;
-        private UIelementWrapper upDownWrapper;
-        
-        // Elements
-        private OpLabel label;
-        private OpUpdown upDown;
-        
         public override float ValueFloat
         {
-            get { return upDown.GetValueFloat(); }
-            set { upDown.SetValueFloat(value); }
-        }
-
-        public override bool GreyedOut
-        {
-            get
-            {
-                return upDown.greyedOut;
-            }
-            set
-            {
-                upDown.greyedOut = value;
-                label.bumpBehav.greyedOut = value;
-            }
+            get { return ((OpUpdown)field).GetValueFloat(); }
+            set { ((OpUpdown)field).SetValueFloat(value); }
         }
         
         public UpDownFloatOption(RWMenu menu, MenuObject owner, Vector2 pos, Configurable<float> config) 
-            : base(menu, owner, pos) 
+            : base(menu, owner, pos, config) 
         {
-            tabWrapper = new MenuTabWrapper(menu, this);
-            
-            upDown = new OpUpdown(config, 
+            field = new OpUpdown(config, 
                 new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f - EDGE_MARGIN - 60f, -3f), 60f, 2)
             {
                 description = config.info.description
             };
-            upDownWrapper = new UIelementWrapper(tabWrapper, upDown);
-            
-            label = new OpLabel(default, default, config.info.Tags[0] as string, FLabelAlignment.Left, true)
-            {
-                bumpBehav = upDown.bumpBehav,
-                description = upDown.description
-            };
-            labelWrapper = new UIelementWrapper(tabWrapper, label);
-            
-            subObjects.Add(tabWrapper);
+            fieldWrapper = new UIelementWrapper(tabWrapper, field);
         }
     }
 
     private class DropdownOption : Option
     {
-        // Wrappers
-        private MenuTabWrapper tabWrapper;
-        private UIelementWrapper labelWrapper;
-        private UIelementWrapper dropDownWrapper;
-        
-        // Elements
-        private OpLabel label;
-        private OptionsMenu.OpComboBox2 dropDown;
-        
         // Vars
         private string[] choices;
         
         public override int ValueInt
         {
-            get { return choices.IndexOf(dropDown.value); }
-            set { dropDown.value = choices[value]; }
+            get { return choices.IndexOf(((OptionsMenu.OpComboBox2)field).value); }
+            set { ((OptionsMenu.OpComboBox2)field).value = choices[value]; }
         }
 
         public override string ValueString
         {
-            get { return dropDown.value; }
-            set { dropDown.value = value; }
-        }
-
-        public override bool GreyedOut
-        {
-            get
-            {
-                return dropDown.greyedOut;
-            }
-            set
-            {
-                dropDown.greyedOut = value;
-                label.bumpBehav.greyedOut = value;
-            }
+            get { return ((OptionsMenu.OpComboBox2)field).value; }
+            set { ((OptionsMenu.OpComboBox2)field).value = value; }
         }
     
         public DropdownOption(RWMenu menu, MenuObject owner, Vector2 pos, Configurable<string> config, string[] choices)
-            : base(menu, owner, pos)
+            : base(menu, owner, pos, config)
         {
             this.choices = choices;
-            tabWrapper = new MenuTabWrapper(menu, this);
-            
-            dropDown = new OptionsMenu.OpComboBox2(config, 
+            field = new OptionsMenu.OpComboBox2(config, 
                 new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f - EDGE_MARGIN - 100f, -3f), 
                 100f, choices)
             {
                 description = config.info.description
             };
             
-            dropDown.OnListOpen += _ => MenuHooks.FocusablesLocked = true;
-            dropDown.OnListClose += _ => MenuHooks.FocusablesLocked = false;
-            dropDownWrapper = new UIelementWrapper(tabWrapper, dropDown);
-            
-            label = new OpLabel(default, default, config.info.Tags[0] as string, FLabelAlignment.Left, true)
-            {
-                bumpBehav = dropDown.bumpBehav,
-                description = dropDown.description
-            };
-            labelWrapper = new UIelementWrapper(tabWrapper, label);
-            
-            subObjects.Add(tabWrapper);
+            ((OptionsMenu.OpComboBox2)field).OnListOpen += _ => MenuHooks.FocusablesLocked = true;
+            ((OptionsMenu.OpComboBox2)field).OnListClose += _ => MenuHooks.FocusablesLocked = false;
+            fieldWrapper = new UIelementWrapper(tabWrapper, field);
         }
     }
 
     private class TextFieldOption : Option
     {
-        // Wrappers
-        private MenuTabWrapper tabWrapper;
-        private UIelementWrapper labelWrapper;
-        private UIelementWrapper dropDownWrapper;
-        
-        // Elements
-        private OpLabel label;
-        private OpTextBox textBox;
-        
         public override string ValueString
         {
-            get { return textBox.value; }
-            set { textBox.value = value; }
-        }
-        
-        public override bool GreyedOut
-        {
-            get
-            {
-                return textBox.greyedOut;
-            }
-            set
-            {
-                textBox.greyedOut = value;
-                label.bumpBehav.greyedOut = value;
-            }
+            get { return ((OpTextBox)field).value; }
+            set { ((OpTextBox)field).value = value; }
         }
         
         public TextFieldOption(RWMenu menu, MenuObject owner, Vector2 pos, Configurable<string> config, float sizeX)
-            : base(menu, owner, pos)
+            : base(menu, owner, pos, config)
         {
-            tabWrapper = new MenuTabWrapper(menu, this);
-            
-            textBox = new OpTextBox(config, 
+            field = new OpTextBox(config, 
                 new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f - EDGE_MARGIN - sizeX, -3f), 
                 sizeX)
             {
                 description = config.info.description
             };
-            dropDownWrapper = new UIelementWrapper(tabWrapper, textBox);
-            
-            label = new OpLabel(default, default, config.info.Tags[0] as string, FLabelAlignment.Left, true)
-            {
-                bumpBehav = textBox.bumpBehav,
-                description = textBox.description
-            };
-            labelWrapper = new UIelementWrapper(tabWrapper, label);
-            
-            subObjects.Add(tabWrapper);
+            fieldWrapper = new UIelementWrapper(tabWrapper, field);
         }
     }
 }

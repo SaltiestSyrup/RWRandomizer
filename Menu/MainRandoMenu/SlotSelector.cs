@@ -105,6 +105,12 @@ public sealed class SlotSelector : ScrollingMenu
     {
         protected const float PORTRAIT_SIZE = 94f;
         protected const float PORTRAIT_OFFSET = 30f;
+
+        // We use a random sprite for Inv's illustration because silly
+        private readonly string[] invSprites =
+        [
+            "agony_001", "blush_001", "sm1", "sm2", "sm3", "sm4", "sm5", "sm7", "sm8", "sm9", "sm10", "sm12"
+        ];
         
         // Elements
         public HUD.HUD hud;
@@ -156,14 +162,6 @@ public sealed class SlotSelector : ScrollingMenu
             this.saveSlot = saveSlot;
             this.saveFile = saveFile;
             
-            // X bounding box 
-            // X Slugcat icon container
-            // X info text 1
-            // X info text 2
-            // X start button
-            //   options button
-            // X delete button
-            
             // --- Portrait
             string portrait = MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name(saveFile.slugcat));
             // Portrait is blank if slugcat invalid or DLC not present
@@ -171,6 +169,14 @@ public sealed class SlotSelector : ScrollingMenu
             {
                 slugcatPortrait = new MenuIllustration(menu, this, "illustrations", portrait, 
                     new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true);
+                subObjects.Add(slugcatPortrait);
+            }
+            else if (saveFile.slugcat == "Inv")
+            {
+                slugcatPortrait = new MenuIllustration(menu, this, "content", 
+                    invSprites[UnityEngine.Random.Range(0, invSprites.Length)], 
+                    new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true)
+                    { sprite = { scale = 0.2f } };
                 subObjects.Add(slugcatPortrait);
             }
             portraitBorder = new RoundedRect(menu, this, 
