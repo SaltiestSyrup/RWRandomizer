@@ -255,12 +255,12 @@ public sealed class SlotSelector : ScrollingMenu
         {
             base.GrafUpdate(timeStacker);
             
-            float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
+            float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.6f);
             float alpha = Mathf.Pow(smoothedFade, 2f);
             
             hud.Draw(timeStacker);
 
-            slugcatPortrait.alpha = alpha;
+            if (slugcatPortrait is not null) slugcatPortrait.alpha = alpha;
             cycleText.label.alpha = alpha;
             completionText.label.alpha = alpha;
 
@@ -297,7 +297,16 @@ public sealed class SlotSelector : ScrollingMenu
             base.Singal(sender, message);
             switch (message)
             {
-                
+                case "OPTIONS":
+                    if ((menu as RandomizerMenu) is not RandomizerMenu randomizerMenu
+                        || sender.owner != this) break;
+                    
+                    randomizerMenu.optionsDialog = new OptionsDialog(menu.manager,
+                        saveFile.isArchipelago ? OptionsDialog.Mode.ArchipelagoView : OptionsDialog.Mode.StandaloneView, 
+                        saveFile);
+                    menu.PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
+                    menu.manager.ShowDialog(randomizerMenu.optionsDialog);
+                    break;
             }
         }
 

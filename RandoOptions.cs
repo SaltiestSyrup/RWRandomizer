@@ -56,35 +56,47 @@ namespace RainWorldRandomizer
 
         internal static Configurable<string> textClientCosmeticConfig;
 
-        #region Obsolete Configurables
-        [Obsolete] internal static Configurable<bool> useSeed;
-        [Obsolete] internal static Configurable<int> seed;
-        [Obsolete] internal static Configurable<bool> useSandboxTokenChecks;
-        [Obsolete] internal static Configurable<bool> usePearlChecks;
-        [Obsolete] internal static Configurable<bool> useEchoChecks;
-        [Obsolete] internal static Configurable<bool> usePassageChecks;
-        [Obsolete] internal static Configurable<bool> useSpecialChecks;
-        [Obsolete] internal static Configurable<bool> useShelterChecks;
-        [Obsolete] internal static Configurable<bool> useDevTokenChecks;
-        [Obsolete] internal static Configurable<bool> useKarmaFlowerChecks;
-        [Obsolete] internal static Configurable<bool> givePassageUnlocks;
-        [Obsolete] internal static Configurable<float> hunterCyclesDensity;
-        [Obsolete] internal static Configurable<float> trapsDensity;
-        [Obsolete] internal static Configurable<int> numDamageIncreases;
-        [Obsolete] internal static Configurable<bool> randomizeSpawnLocation;
-        [Obsolete] internal static Configurable<bool> startMinKarma;
-        [Obsolete] internal static Configurable<int> extraKarmaIncreases;
+        #region Run Configurables
+        internal static Configurable<string> chosenSlugcat;
+        internal static Configurable<bool> useSeed;
+        internal static Configurable<string> seed;
+        internal static Configurable<bool> useSandboxTokenChecks;
+        internal static Configurable<bool> usePearlChecks;
+        internal static Configurable<bool> useEchoChecks;
+        internal static Configurable<bool> usePassageChecks;
+        internal static Configurable<bool> useSpecialChecks;
+        internal static Configurable<bool> useShelterChecks;
+        internal static Configurable<bool> useDevTokenChecks;
+        internal static Configurable<bool> useKarmaFlowerChecks;
+        internal static Configurable<bool> givePassageUnlocks;
+        internal static Configurable<float> hunterCyclesDensity;
+        internal static Configurable<float> trapsDensity;
+        internal static Configurable<int> numDamageIncreases;
+        internal static Configurable<bool> randomizeSpawnLocation;
+        internal static Configurable<bool> startMinKarma;
+        internal static Configurable<int> extraKarmaIncreases;
+        internal static Configurable<string> gateBehavior;
+        internal static Configurable<string> ppwsBehavior;
+        internal static Configurable<string> echoBehavior;
 
         // MSC
-        [Obsolete] internal static Configurable<bool> allowMetroForOthers;
-        [Obsolete] internal static Configurable<bool> allowSubmergedForOthers;
-        [Obsolete] internal static Configurable<bool> allowExteriorForInv;
-        [Obsolete] internal static Configurable<string> useFoodQuestChecks;
-        [Obsolete] internal static Configurable<bool> useExpandedFoodQuestChecks;
-        [Obsolete] internal static Configurable<bool> useEnergyCell;
-        [Obsolete] internal static Configurable<bool> useSMTokens;
-        [Obsolete] internal static Configurable<bool>[] expeditionPerks;
+        internal static Configurable<bool> allowMetroForOthers;
+        internal static Configurable<bool> allowSubmergedForOthers;
+        internal static Configurable<bool> allowExteriorForInv;
+        internal static Configurable<bool> useFoodQuestChecks;
+        internal static Configurable<bool> useExpandedFoodQuestChecks;
+        internal static Configurable<bool> useEnergyCell;
+        internal static Configurable<bool> useSMTokens;
+        internal static Configurable<bool>[] expeditionPerks;
 
+        // Watcher
+        internal static Configurable<bool> useSpreadRotChecks;
+        internal static Configurable<bool> useWeaverChecks;
+        internal static Configurable<bool> weaverItems;
+        internal static Configurable<bool> spinningTopKeys;
+        internal static Configurable<bool> daemonKeys;
+        internal static Configurable<int> rottedRegionTarget;
+        
         // Archipelago
         [Obsolete] internal static Configurable<bool> archipelago;
         [Obsolete] internal static Configurable<bool> archipelagoDeathLinkOverride;
@@ -96,9 +108,9 @@ namespace RainWorldRandomizer
             get { return LoadedOptions.useSeed; }
         }
 
-        public static int SetSeed
+        public static string SetSeed
         {
-            get { return UseSetSeed ? LoadedOptions.seed : 0; }
+            get { return UseSetSeed ? LoadedOptions.seed : ""; }
         }
 
         public static bool UseSandboxTokenChecks
@@ -308,7 +320,7 @@ namespace RainWorldRandomizer
     public struct OptionStruct()
     {
         public bool useSeed = false;
-        public int seed = 0;
+        public string seed = "";
 
         public bool useSandboxTokenChecks = true;
         public bool usePearlChecks = true;
@@ -359,7 +371,7 @@ namespace RainWorldRandomizer
             return new OptionStruct
             {
                 useSeed = RandoOptions.useSeed.Value,
-                seed = RandoOptions.seed.Value,
+                seed = RandoOptions.seed.Value.ToString(),
 
                 useSandboxTokenChecks = RandoOptions.useSandboxTokenChecks.Value,
                 usePearlChecks = RandoOptions.usePearlChecks.Value,
@@ -383,7 +395,7 @@ namespace RainWorldRandomizer
                 allowMetroForOthers = RandoOptions.allowMetroForOthers.Value,
                 allowSubmergedForOthers = RandoOptions.allowSubmergedForOthers.Value,
                 allowExteriorForInv = RandoOptions.allowExteriorForInv.Value,
-                foodQuestBehavior = RandoOptions.useFoodQuestChecks.Value == "Disabled"
+                foodQuestBehavior = !RandoOptions.useFoodQuestChecks.Value
                     ? RandoOptions.FoodQuestBehavior.Disabled
                     : RandoOptions.useExpandedFoodQuestChecks.Value
                         ? RandoOptions.FoodQuestBehavior.Expanded

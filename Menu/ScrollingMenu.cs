@@ -237,8 +237,8 @@ namespace RainWorldRandomizer.Menu;
                     }
                 }
 
-                active = myindex >= statusMenu.floatScrollPos
-                    && myindex < statusMenu.floatScrollPos + statusMenu.MaxVisibleItems;
+                active = myindex >= statusMenu.floatScrollPos - 1f
+                    && myindex < statusMenu.floatScrollPos + statusMenu.MaxVisibleItems + 1f;
                 
                 if (sleep)
                 {
@@ -251,17 +251,25 @@ namespace RainWorldRandomizer.Menu;
 
                 float value = statusMenu.StepsDownOfItem(myindex) - 1f;
                 float fadeTowards = 1f;
+                float difference = 0f;
                 if (myindex < statusMenu.floatScrollPos)
                 {
                     fadeTowards = Mathf.InverseLerp(statusMenu.floatScrollPos - 1f, statusMenu.floatScrollPos, value);
+                    difference = Mathf.Abs(myindex - statusMenu.floatScrollPos);
+                    //Mathf.Clamp01(value - statusMenu.floatScrollPos - 1f);
+                    //
+                    // 0
                 }
                 else if (myindex > statusMenu.floatScrollPos + statusMenu.MaxVisibleItems - 1)
                 {
                     float sum = statusMenu.floatScrollPos + statusMenu.MaxVisibleItems;
                     fadeTowards = Mathf.InverseLerp(sum, sum - 1, value);
+                    difference = Mathf.Abs(myindex - sum - 1);
+                    //Mathf.Clamp01(sum - value);
+                    //
                 }
 
-                fade = Custom.LerpAndTick(fade, fadeTowards, 0.12f, 0.1f);
+                fade = Mathf.Lerp(fade, fadeTowards, difference > 0.5f ? 1f : 0.5f);
                 // fade = Mathf.Lerp(fade, fadeTowards, Mathf.InverseLerp(0.5f, 0.45f, 0.5f));
 
                 if (fade == 0f && lastFade == 0f)
@@ -278,7 +286,7 @@ namespace RainWorldRandomizer.Menu;
                 if (sleep) return;
 
                 base.GrafUpdate(timeStacker);
-                float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
+                float smoothedFade = fade;// Mathf.Lerp(lastFade, fade, timeStacker);
 
                 if (smoothedFade > 0f && roundedRect != null)
                 {

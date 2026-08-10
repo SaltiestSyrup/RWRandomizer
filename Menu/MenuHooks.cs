@@ -1,5 +1,8 @@
 ﻿using Menu;
 using System;
+using System.Reflection;
+using Menu.Remix.MixedUI;
+using MonoMod.RuntimeDetour;
 using UnityEngine;
 
 namespace RainWorldRandomizer.Menu
@@ -7,6 +10,8 @@ namespace RainWorldRandomizer.Menu
     public static class MenuHooks
     {
         private static bool displayScrollMenu;
+        public static bool FocusablesLocked;
+        
         private static WeakReference<SimpleButton> _spoilerButton = new(null);
         public static SimpleButton SpoilerButton
         {
@@ -47,6 +52,12 @@ namespace RainWorldRandomizer.Menu
             On.Menu.PauseMenu.SpawnExitContinueButtons += OnSpawnExitContinueButtons;
             On.Menu.PauseMenu.SpawnConfirmButtons += OnSpawnConfirmButtons;
             On.HUD.HUD.InitSinglePlayerHud += OnInitSinglePlayerHud;
+
+            _ = new Hook(typeof(UIfocusable)
+                    .GetProperty(nameof(UIfocusable.CurrentlyFocusableMouse), 
+                        BindingFlags.NonPublic | BindingFlags.Instance)
+                    .GetGetMethod(true),
+                UIfocusableOnGetCurrentlyFocusableMouse);
         }
         
         public static void RemoveHooks()
@@ -222,6 +233,14 @@ namespace RainWorldRandomizer.Menu
                     SpoilerMenu = null;
                 }
             }
+        }
+        
+        /// <summary>
+        /// Stops other UIfocusables from stealing focus from OpComboBoxes when they're behind the selection box
+        /// </summary>
+        private static bool UIfocusableOnGetCurrentlyFocusableMouse(Func<UIfocusable, bool> orig, UIfocusable self)
+        {
+            return orig(self) && (!FocusablesLocked || self.Focused || self.held);
         }
     }
 }

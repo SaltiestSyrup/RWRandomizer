@@ -60,11 +60,11 @@ namespace RainWorldRandomizer.Generation
 
         public StringBuilder generationLog = new();
         public string customStartDen = "";
-        public int generationSeed;
+        public string generationSeed;
         public bool logVerbose;
 
 
-        public VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int generationSeed = 0)
+        public VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, string generationSeed = "")
         {
             this.slugcat = slugcat;
             this.timeline = timeline;
@@ -79,7 +79,7 @@ namespace RainWorldRandomizer.Generation
             // Using inferior System.Random because it's instanced rather than static.
             // UnityEngine.Random doesn't play well with threads
             this.generationSeed = generationSeed;
-            randomState = new Random(generationSeed);
+            randomState = new Random(generationSeed.GetHashCode()); //new Random(generationSeed);
         }
 
         public Task BeginGeneration(bool logVerbose = false)

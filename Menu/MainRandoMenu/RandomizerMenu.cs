@@ -32,7 +32,7 @@ public class RandomizerMenu : RWMenu
     private CampaignSelectPage campaignSelectPage;
 
     // Elements
-    private OptionsDialog optionsDialog;
+    public OptionsDialog optionsDialog;
     private SimpleButton exitButton;
     private DialogBoxNotify failedStartGameDialog;
 
@@ -106,11 +106,6 @@ public class RandomizerMenu : RWMenu
                         UpdatePage(1);
                         break;
                 }
-                break;
-            case "OPTIONS":
-                optionsDialog = new OptionsDialog(manager);
-                // PlaySound(SoundID.MENU_Switch_Page_In);
-                manager.ShowDialog(optionsDialog);
                 break;
             case "CONTINUE_GAME":
                 // TODO: Make this lead to a validation step which checks AP connections / DLC enabled

@@ -102,7 +102,7 @@ namespace RainWorldRandomizer
                 }
 
                 VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
-                    RandoOptions.UseSetSeed ? RandoOptions.SetSeed : UnityEngine.Random.Range(0, int.MaxValue));
+                    RandoOptions.UseSetSeed ? RandoOptions.SetSeed : UnityEngine.Random.Range(0, int.MaxValue).ToString());
 
                 Exception generationException = null;
                 bool timedOut = false;
@@ -169,7 +169,7 @@ namespace RainWorldRandomizer
             Plugin.Log.LogDebug("Starting bulk generation test");
             for (int i = 0; i < howMany; i++)
             {
-                generators[i] = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue));
+                generators[i] = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue).ToString());
                 genTask[i] = generators[i].BeginGeneration();
             }
 
