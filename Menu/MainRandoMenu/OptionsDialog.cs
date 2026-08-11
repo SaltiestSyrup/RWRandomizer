@@ -20,24 +20,24 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         StandaloneNew, StandaloneView, ArchipelagoNew, ArchipelagoView
     }
     
-    // Tab radio buttons
-    // Main Rect
-    // Body for each tab
-    // Elements
-    // private RoundedRect roundedRect;
     private SelectOneButton[] tabButtons;
     private Tab[] tabs;
     private SimpleButton exitButton;
     
     // Vars
-    // public SlugcatStats.Name slugcat;
     public readonly Mode myMode;
     private int currentTab;
+    private string slugcat;
+    private bool usingDownpour;
+    private bool usingWatcher;
     public SaveFile saveFile;
     
-    public OptionsDialog(ProcessManager manager, Mode mode) : base(manager)
+    public OptionsDialog(ProcessManager manager, Mode mode, string slugcat, bool usingDownpour, bool usingWatcher) : base(manager)
     {
         myMode = mode;
+        this.slugcat = slugcat;
+        this.usingDownpour = usingDownpour;
+        this.usingWatcher = usingWatcher;
         Vector2 centerScreen = manager.rainWorld.screenSize / 2f;
         size = new Vector2(800f, 500f);
 
@@ -86,11 +86,12 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         tabs[1] = new ItemsTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f));
         pages[0].subObjects.Add(tabs[1]);
         
-        tabs[2] = new BehaviorsTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f));
+        tabs[2] = new BehaviorsTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f), slugcat);
         pages[0].subObjects.Add(tabs[2]);
     }
 
-    public OptionsDialog(ProcessManager manager, Mode mode, SaveFile file) : this(manager, mode)
+    public OptionsDialog(ProcessManager manager, Mode mode, SaveFile file) 
+        : this(manager, mode, file.slugcat, file.isDownpourDLC, file.isWatcherDLC)
     {
         saveFile = file;
         foreach (Tab tab in tabs)
@@ -148,31 +149,14 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
     private class ChecksTab : Tab
     {
-        public ChecksTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
+        public ChecksTab(OptionsDialog menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
         {
-            float runningY = ((Dialog)menu).size.y - 100f;
-            float rightRowX = ((Dialog)menu).size.x / 2f + CENTER_MARGIN / 2f;
+            float runningY = menu.size.y - 100f;
+            float rightRowX = menu.size.x / 2f + CENTER_MARGIN / 2f;
 
             MenuLabel baseGameLabel = new MenuLabel(menu, this, "Base Game",
-                new Vector2(((Dialog)menu).size.x * 0.25f, ((Dialog)menu).size.y - 40f), default, true)
-            {
-                // label = { color = Color.blue }
-            };
+                new Vector2(menu.size.x * 0.25f, menu.size.y - 40f), default, true);
             subObjects.Add(baseGameLabel);
-            
-            MenuLabel downpourLabel = new MenuLabel(menu, this, "Downpour",
-                new Vector2(((Dialog)menu).size.x * 0.75f, ((Dialog)menu).size.y - 40f), default, true)
-            {
-                // label = { color = Color.green }
-            };
-            subObjects.Add(downpourLabel);
-            
-            MenuLabel watcherLabel = new MenuLabel(menu, this, "Watcher",
-                new Vector2(((Dialog)menu).size.x * 0.75f, ((Dialog)menu).size.y - 280f), default, true)
-            {
-                // label = { color = RainWorld.RippleGold }
-            };
-            subObjects.Add(watcherLabel);
             
             options = new Dictionary<string, Option>
             {
@@ -190,26 +174,51 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                     RandoOptions.useShelterChecks) },
                 { "Flower", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f), 
                     RandoOptions.useKarmaFlowerChecks) },
-                // MSC
-                { "Dev", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY = ((Dialog)menu).size.y - 100f), 
-                    RandoOptions.useDevTokenChecks) },
-                { "Broadcast", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.useSMTokens) },
-                { "FoodQuest", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.useFoodQuestChecks) },
-                { "FoodQuestEx", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.useExpandedFoodQuestChecks) },
-                
-                // Watcher
-                { "SpreadRot", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 120f), 
-                    RandoOptions.useSpreadRotChecks) },
-                { "Weaver", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40), 
-                    RandoOptions.useWeaverChecks) }
             };
-            subObjects.AddRange(options.Values);
 
-            // 
-            if (((OptionsDialog)menu).myMode > Mode.StandaloneNew)
+            // Downpour Exclusive
+            if (menu.usingDownpour)
+            {
+                MenuLabel downpourLabel = new MenuLabel(menu, this, "Downpour",
+                    new Vector2(menu.size.x * 0.75f, menu.size.y - 40f), default, true);
+                subObjects.Add(downpourLabel);
+                
+                options.AddRange(new Dictionary<string, Option>
+                {
+                    { "Dev", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY = menu.size.y - 100f), 
+                        RandoOptions.useDevTokenChecks) },
+                    { "FoodQuest", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.useFoodQuestChecks) },
+                    { "FoodQuestEx", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.useExpandedFoodQuestChecks) },
+                });
+
+                if (menu.slugcat is "Spear")
+                {
+                    options.Add("Broadcast", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.useSMTokens));
+                }
+            }
+
+            // Watcher Exclusive
+            if (menu.slugcat is "Watcher")
+            {
+                MenuLabel watcherLabel = new MenuLabel(menu, this, "Watcher",
+                    new Vector2(menu.size.x * 0.75f, menu.size.y - 280f), default, true);
+                subObjects.Add(watcherLabel);
+                
+                options.AddRange(new Dictionary<string, Option>
+                {
+                    { "SpreadRot", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 120f),
+                            RandoOptions.useSpreadRotChecks) },
+                    { "Weaver", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40),
+                            RandoOptions.useWeaverChecks) }
+                });
+            }
+            
+            subObjects.AddRange(options.Values);
+            
+            if (menu.myMode > Mode.StandaloneNew)
             {
                 foreach (Option option in options.Values)
                 {
@@ -221,12 +230,13 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         public override void Update()
         {
             base.Update();
+            // Expanded FQ greyed out if FQ disabled
             options["FoodQuestEx"].GreyedOut = options["FoodQuest"].GreyedOut || !options["FoodQuest"].ValueBool;
         }
 
         public override void PopulateFromSaveFile(SaveFile save)
         {
-            options["Sandbox"].ValueBool = save.options.useSandboxTokenChecks;
+            if (options.TryGetValue("Sandbox", out Option opt)) opt.ValueBool = save.options.useSandboxTokenChecks;
             options["Pearl"].ValueBool = save.options.usePearlChecks;
             options["Echo"].ValueBool = save.options.useEchoChecks;
             options["Passage"].ValueBool = save.options.usePassageChecks;
@@ -244,10 +254,10 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
     private class ItemsTab : Tab
     {
-        public ItemsTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
+        public ItemsTab(OptionsDialog menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
         {
-            float runningY = ((Dialog)menu).size.y - 80f;
-            float rightRowX = ((Dialog)menu).size.x / 2f + CENTER_MARGIN / 2f;
+            float runningY = menu.size.y - 80f;
+            float rightRowX = menu.size.x / 2f + CENTER_MARGIN / 2f;
             
             // MenuLabel baseGameLabel = new MenuLabel(menu, this, "Base Game",
             //     new Vector2(((Dialog)menu).size.x * 0.25f, ((Dialog)menu).size.y - 40f), default, true)
@@ -256,13 +266,6 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             // };
             // subObjects.Add(baseGameLabel);
             
-            MenuLabel perkLabel = new MenuLabel(menu, this, "Expedition Perks",
-                new Vector2(((Dialog)menu).size.x * 0.75f, ((Dialog)menu).size.y - 40f), default, true)
-            {
-                // label = { color = Color.green }
-            };
-            subObjects.Add(perkLabel);
-
             options = new Dictionary<string, Option>
             {
                 { "Passage", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY), 
@@ -281,29 +284,38 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                     RandoOptions.trapsDensity) },
                 { "PercentHunter", new UpDownFloatOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.hunterCyclesDensity) },
-                
-                // Second row (perks)
-                { "BackSpear", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY = ((Dialog)menu).size.y - 100f), 
-                    RandoOptions.expeditionPerks[0]) },
-                { "DualWield", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.expeditionPerks[1]) },
-                { "ExpResistance", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.expeditionPerks[2]) },
-                { "ExpParry", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.expeditionPerks[3]) },
-                { "ExpJump", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.expeditionPerks[4]) },
-                { "Crafting", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.expeditionPerks[5]) },
-                { "Aquatic", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.expeditionPerks[6]) },
-                { "Agility", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
-                    RandoOptions.expeditionPerks[7]) },
             };
+
+            if (menu.usingDownpour)
+            {
+                MenuLabel perkLabel = new MenuLabel(menu, this, "Expedition Perks",
+                    new Vector2(menu.size.x * 0.75f, menu.size.y - 40f), default, true);
+                subObjects.Add(perkLabel);
+                
+                options.AddRange(new Dictionary<string, Option>
+                {
+                    { "BackSpear", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY = menu.size.y - 100f), 
+                        RandoOptions.expeditionPerks[0]) },
+                    { "DualWield", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.expeditionPerks[1]) },
+                    { "ExpResistance", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.expeditionPerks[2]) },
+                    { "ExpParry", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.expeditionPerks[3]) },
+                    { "ExpJump", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.expeditionPerks[4]) },
+                    { "Crafting", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.expeditionPerks[5]) },
+                    { "Aquatic", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.expeditionPerks[6]) },
+                    { "Agility", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40f), 
+                        RandoOptions.expeditionPerks[7]) },
+                });
+            }
             
             subObjects.AddRange(options.Values);
             
-            if (((OptionsDialog)menu).myMode > Mode.StandaloneNew)
+            if (menu.myMode > Mode.StandaloneNew)
             {
                 foreach (Option option in options.Values)
                 {
@@ -337,7 +349,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
     {
         private MenuLabel slugcatLabel;
         
-        public BehaviorsTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
+        public BehaviorsTab(RWMenu menu, MenuObject owner, Vector2 pos, string slugcat) : base(menu, owner, pos)
         {
             float runningY = ((Dialog)menu).size.y - 40f;
 
@@ -345,11 +357,14 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
             // Slugcat
             MenuLabel slugcatLabel1 = new MenuLabel(menu, this, "Slugcat", 
-                new Vector2(EDGE_MARGIN, runningY -= 40f), default, true) 
+                    new Vector2(EDGE_MARGIN, runningY -= 40f), default, true) 
                 { label = { alignment = FLabelAlignment.Left }};
             subObjects.Add(slugcatLabel1);
-            slugcatLabel = new MenuLabel(menu, this, "",
-                new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f, runningY), default, true)
+            
+            slugcatLabel = new MenuLabel(menu, this, 
+                    Constants.SlugcatReadableNames.TryGetValue(slugcat, out string name) 
+                        ? name : "UNKNOWN", 
+                    new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f, runningY), default, true) 
                 { label = { alignment = FLabelAlignment.Right } };
             subObjects.Add(slugcatLabel);
             
@@ -375,47 +390,49 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                     RandoOptions.ppwsBehavior, ["Disabled", "Enabled", "Bypassed"]));
                 options.Add("EchoBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.echoBehavior, ["Impossible", "With Flower", "Max Karma", "Vanilla"]));
-                
-                options.Add("RotTarget", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.rottedRegionTarget));
+
+                if (slugcat is "Watcher")
+                {
+                    options.Add("RotTarget", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.rottedRegionTarget));
+                }
             }
             else
             {
                 options.Add("StartMinKarma", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.startMinKarma));
-            
-                options.Add("OpenSubmerged", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.allowSubmergedForOthers));
-                options.Add("OpenMetro", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.allowMetroForOthers));
-                // TODO Filter to INV only
-                options.Add("OpenExterior", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.allowExteriorForInv));
-            
-                options.Add("EnergyCell", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.useEnergyCell));
+
+                if (slugcat is not "Rivulet")
+                {
+                    options.Add("OpenSubmerged", new CheckBoxOption(menu, this,
+                        new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.allowSubmergedForOthers));
+                }
+
+                if (slugcat is not "Artificer")
+                {
+                    options.Add("OpenMetro", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.allowMetroForOthers));
+                }
+
+                if (slugcat is "Inv")
+                {
+                    options.Add("OpenExterior", new CheckBoxOption(menu, this,
+                        new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.allowExteriorForInv));
+                }
+                
+                if (slugcat is "Rivulet")
+                {
+                    options.Add("EnergyCell", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.useEnergyCell));
+                }
                 
                 options.Add("Seed", new TextFieldOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.seed, 150f));
             }
             
             subObjects.AddRange(options.Values);
-            
-            // slugcat ??
-            //  goal ??
-            // random spawn X
-            //  Deathlink X
-
-            // min karma X
-            //  gates _
-            //  ppws _
-            //  echo _
-
-            // regions (submerged, metro, exterior)   X
-            // rarefaction cell X
-            //  rotted region target ^
-
-            // seed __
 
             if (((OptionsDialog)menu).myMode > Mode.StandaloneNew)
             {
@@ -429,7 +446,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
         public override void PopulateFromSaveFile(SaveFile save)
         {
-            slugcatLabel.text = save.slugcat ?? "UNKNOWN"; // TODO: Make this readable name
+            // slugcatLabel.text = save.slugcat ?? "UNKNOWN"; // TODO: Make this readable name
         }
     }
 

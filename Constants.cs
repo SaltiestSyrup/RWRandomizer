@@ -9,6 +9,20 @@ namespace RainWorldRandomizer
     {
         public static readonly List<SlugcatStats.Name> CompatibleSlugcats = [];
 
+        public static readonly Dictionary<string, string> SlugcatReadableNames = new()
+        {
+            { "White", "Survivor" },
+            { "Yellow", "Monk" },
+            { "Red", "Hunter" },
+            { "Gourmand", "Gourmand" },
+            { "Artificer", "Artificer" },
+            { "Rivulet", "Rivulet" },
+            { "Spear", "Spearmaster" },
+            { "Saint", "Saint" },
+            { "Inv", "Inv" },
+            { "Watcher", "Watcher" },
+        };
+
         /// <summary>
         /// Describes which food quest items can be eaten by each slugcat. Matches order of <see cref="WinState.GourmandPassageTracker"/>
         /// </summary>
