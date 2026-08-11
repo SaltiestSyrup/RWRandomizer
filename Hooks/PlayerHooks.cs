@@ -530,9 +530,14 @@ namespace RainWorldRandomizer
             c.GotoNext(x => x.MatchCallOrCallvirt(typeof(Creature).GetMethod(nameof(Creature.LoseAllGrasps))));
 
             c.Emit(OpCodes.Dup);
-            c.EmitDelegate(DropBackSpear);
+            c.EmitDelegate(DropBackObjects);
+            return;
 
-            static void DropBackSpear(Creature crit) => (crit as Player)?.spearOnBack?.DropSpear();
+            static void DropBackObjects(Creature crit)
+            {
+                (crit as Player)?.spearOnBack?.DropSpear();
+                (crit as Player)?.slugOnBack?.DropSlug();
+            }
         }
     }
 }
