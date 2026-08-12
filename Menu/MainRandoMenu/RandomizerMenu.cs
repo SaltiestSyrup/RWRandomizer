@@ -34,12 +34,19 @@ public class RandomizerMenu : RWMenu
     // Elements
     public OptionsDialog optionsDialog;
     private SimpleButton exitButton;
-    private DialogBoxNotify failedStartGameDialog;
+    // private DialogBoxNotify failedStartGameDialog;
+    // public DialogNotify connectResultDialog;
 
     // Vars
     public SaveTracker saveTracker = new();
     private TaskCompletionSource<bool> progressionIsLoading = null;
-    
+
+    internal bool _freezeMenuFunctions;
+    public override bool FreezeMenuFunctions
+    {
+        get { return base.FreezeMenuFunctions || _freezeMenuFunctions; }
+    }
+
     public RandomizerMenu(ProcessManager manager) : base(manager, RandomizerEnums.ProcessID.RandomizerMenu)
     {
         
@@ -125,11 +132,6 @@ public class RandomizerMenu : RWMenu
             case "START_NEW_GAME":
                 CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat);
                 break;
-            case "CONFIRM_START_GAME_FAILURE":
-                pages[currentPage].subObjects.Remove(failedStartGameDialog);
-                failedStartGameDialog.RemoveSprites();
-                failedStartGameDialog = null;
-                break;
         }
     }
 
@@ -191,6 +193,15 @@ public class RandomizerMenu : RWMenu
             exitButtonPos, buttonSize);
         pages[newPage].subObjects.Add(exitButton);
         backObject = exitButton;
+
+        if (newPage == 2) // New game page
+        {
+            createNewGamePage.Enable();
+        }
+        else
+        {
+            createNewGamePage.Disable();
+        }
         
         currentPage = newPage;
     }
@@ -272,13 +283,8 @@ public class RandomizerMenu : RWMenu
         }
         catch (Exception e)
         {
+            manager.ShowDialog(new DialogNotify($"Encountered exception while attempting to start game:\n{e}", manager, () => { }));
             Plugin.Log.LogError($"Encountered exception while attempting to start game:\n{e}");
-            failedStartGameDialog = new DialogBoxNotify(this, pages[currentPage], 
-                $"Encountered exception while attempting to start game:\n{e}", 
-                "CONFIRM_START_GAME_FAILURE",
-                new Vector2(manager.rainWorld.options.ScreenSize.x / 2 - 240f, manager.rainWorld.options.ScreenSize.y / 2 - 160f), 
-                new Vector2(480f, 320f));
-            pages[currentPage].subObjects.Add(failedStartGameDialog);
         }
     }
 }

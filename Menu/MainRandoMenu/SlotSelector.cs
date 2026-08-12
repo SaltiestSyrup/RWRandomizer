@@ -334,7 +334,6 @@ public sealed class SlotSelector : ScrollingMenu
         // Elements
         private MenuLabel slotNameText;
         private AtlasAnimator loadingSpinner;
-        private DialogBoxNotify connectResultDialog;
         private FSprite logoBadge;
         
         // Vars
@@ -365,7 +364,8 @@ public sealed class SlotSelector : ScrollingMenu
             {
                 loadingSpinner?.RemoveFromContainer();
                 loadingSpinner = null;
-            
+
+                ((RandomizerMenu)menu)._freezeMenuFunctions = false;
                 // If success, populate options UI. Else show error dialog
                 if (ArchipelagoConnection.SocketConnected)
                 {
@@ -373,9 +373,8 @@ public sealed class SlotSelector : ScrollingMenu
                 }
                 else
                 {
-                    connectResultDialog = new DialogBoxNotify(menu, this, connectTask.Result, "CONFIRM_CONNECT_RESULT",
-                        new Vector2(-240f, -160f), new Vector2(480f, 320f));
-                    subObjects.Add(connectResultDialog);
+                    // Notify dialogs need a delegate passed to initialize for some reason, so pass empty lambda
+                    menu.manager.ShowDialog(new DialogNotify(connectTask.Result, menu.manager, () => { }));
                 }
                 
                 connectTask = null;
@@ -411,18 +410,12 @@ public sealed class SlotSelector : ScrollingMenu
                 case "CONTINUE_GAME_AP":
                     StartAsyncConnection();
                     break;
-                case "CONFIRM_CONNECT_RESULT":
-                    subObjects.Remove(connectResultDialog);
-                    connectResultDialog.RemoveSprites();
-                    connectResultDialog = null;
-                    startButton.buttonBehav.greyedOut = false;
-                    break;
             }
         }
         
         private void StartAsyncConnection()
         {
-            startButton.buttonBehav.greyedOut = true;
+            ((RandomizerMenu)menu)._freezeMenuFunctions = true;
             
             loadingSpinner = new AtlasAnimator(0, 
                 ScreenPos + new Vector2(size.x + 50f, size.y / 2f), 

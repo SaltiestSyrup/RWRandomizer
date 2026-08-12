@@ -26,8 +26,7 @@ public class NewArchipelagoGameTab : PositionedMenuObject
         // Slot data display on right
         // Start Game button on bottom
 
-        connectInfoEntry = new ConnectInfoEntry(menu, this, new Vector2());
-        subObjects.Add(connectInfoEntry);
+        
     }
 
     public override void Singal(MenuObject sender, string message)
@@ -50,6 +49,21 @@ public class NewArchipelagoGameTab : PositionedMenuObject
                 }
                 break;
         }
+    }
+
+    public void Enable()
+    {
+        connectInfoEntry = new ConnectInfoEntry(menu, this, new Vector2());
+        subObjects.Add(connectInfoEntry);
+    }
+
+    public void Disable()
+    {
+        if (connectInfoEntry is null) return;
+        
+        connectInfoEntry.RemoveSprites();
+        RemoveSubObject(connectInfoEntry);
+        connectInfoEntry = null;
     }
 
     public override void Update()

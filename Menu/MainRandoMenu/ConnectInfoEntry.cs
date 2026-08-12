@@ -1,6 +1,7 @@
 using Menu;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
+using RWCustom;
 using UnityEngine;
 using RWMenu = Menu.Menu;
 
@@ -102,10 +103,12 @@ public class ConnectInfoEntry : RectangularMenuObject
     public override void Update()
     {
         base.Update();
-        hostNameLabel.inactive = ArchipelagoConnection.SocketConnected;
-        portLabel.inactive = ArchipelagoConnection.SocketConnected;
-        slotNameLabel.inactive = ArchipelagoConnection.SocketConnected;
-        passwordLabel.inactive = ArchipelagoConnection.SocketConnected;
+        Color newCol = RWMenu.MenuRGB(ArchipelagoConnection.SocketConnected 
+            ? RWMenu.MenuColors.DarkGrey : RWMenu.MenuColors.White);
+        hostNameLabel.label.color = newCol;
+        portLabel.label.color = newCol;
+        slotNameLabel.label.color = newCol;
+        passwordLabel.label.color = newCol;
         
         connectButton.buttonBehav.greyedOut = ArchipelagoConnection.SocketConnected;
         ((CreateNewGamePage)owner.owner).modeButtons[0].buttonBehav.greyedOut = ArchipelagoConnection.SocketConnected;

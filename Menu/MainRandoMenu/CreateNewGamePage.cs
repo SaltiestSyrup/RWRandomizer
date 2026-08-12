@@ -42,6 +42,16 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
     {
         if (series.StartsWith("MODE-") && currentMode != to) SwitchMode(to);
     }
+    
+    public void Enable()
+    {
+        apTab?.Enable();
+    }
+
+    public void Disable()
+    {
+        apTab?.Disable();
+    }
 
     private void SwitchMode(int newMode)
     {
@@ -51,9 +61,11 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
         {
             case 0:
                 apTab.pos.y = screenCenter.y - 1500f;
+                apTab.Disable();
                 break;
             case 1:
                 apTab.pos.y = screenCenter.y;
+                apTab.Enable();
                 break;
         }
     }

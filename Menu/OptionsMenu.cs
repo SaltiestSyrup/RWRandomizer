@@ -101,10 +101,14 @@ namespace RainWorldRandomizer.Menu
                     ["Don't Notify Chat Messages"]));
 
             RandoOptions.textClientCosmeticConfig = config.Bind<string>("_TextClient", "");
-            ConnectInfoEntry.HostNameConfig = config.Bind<string>("_HostName", "archipelago.gg");
-            ConnectInfoEntry.PortConfig = config.Bind<int>("_Port", 0);
-            ConnectInfoEntry.SlotNameConfig = config.Bind<string>("_SlotName", "");
-            ConnectInfoEntry.PasswordConfig = config.Bind<string>("_Password", "");
+            ConnectInfoEntry.HostNameConfig = config.Bind<string>("_HostName", "archipelago.gg", 
+                new ConfigurableInfo("", null, "", ["Host Name"]));
+            ConnectInfoEntry.PortConfig = config.Bind<int>("_Port", 0,
+                new ConfigurableInfo("", null, "", ["Port"]));
+            ConnectInfoEntry.SlotNameConfig = config.Bind<string>("_SlotName", "",
+                new ConfigurableInfo("", null, "", ["Slot Name"]));
+            ConnectInfoEntry.PasswordConfig = config.Bind<string>("_Password", "",
+                new ConfigurableInfo("", null, "", ["Password"]));
 
             #region Obsolete Configurables
             #pragma warning disable CS0612 // Type or member is obsolete

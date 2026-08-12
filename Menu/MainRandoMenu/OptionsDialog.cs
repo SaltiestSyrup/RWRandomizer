@@ -204,7 +204,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             if (menu.slugcat is "Watcher")
             {
                 MenuLabel watcherLabel = new MenuLabel(menu, this, "Watcher",
-                    new Vector2(menu.size.x * 0.75f, menu.size.y - 280f), default, true);
+                    new Vector2(menu.size.x * 0.75f, menu.size.y - 240f), default, true);
                 subObjects.Add(watcherLabel);
                 
                 options.AddRange(new Dictionary<string, Option>
@@ -231,24 +231,29 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         {
             base.Update();
             // Expanded FQ greyed out if FQ disabled
-            options["FoodQuestEx"].GreyedOut = options["FoodQuest"].GreyedOut || !options["FoodQuest"].ValueBool;
+            if (options.ContainsKey("FoodQuest"))
+            {
+                options["FoodQuestEx"].GreyedOut = options["FoodQuest"].GreyedOut || !options["FoodQuest"].ValueBool;
+            }
         }
 
         public override void PopulateFromSaveFile(SaveFile save)
         {
-            if (options.TryGetValue("Sandbox", out Option opt)) opt.ValueBool = save.options.useSandboxTokenChecks;
-            options["Pearl"].ValueBool = save.options.usePearlChecks;
-            options["Echo"].ValueBool = save.options.useEchoChecks;
-            options["Passage"].ValueBool = save.options.usePassageChecks;
-            options["Special"].ValueBool = save.options.useSpecialChecks;
-            options["Shelter"].ValueBool = save.options.useShelterChecks;
-            options["Flower"].ValueBool = save.options.useKarmaFlowerChecks;
-            options["Dev"].ValueBool = save.options.useDevTokenChecks;
-            options["Broadcast"].ValueBool = save.options.useSMTokens;
-            options["FoodQuest"].ValueBool = save.options.foodQuestBehavior != RandoOptions.FoodQuestBehavior.Disabled;
-            options["FoodQuestEx"].ValueBool = save.options.foodQuestBehavior == RandoOptions.FoodQuestBehavior.Expanded;
-            options["SpreadRot"].ValueBool = save.options.spreadRotChecks;
-            options["Weaver"].ValueBool = save.options.weaverChecks;
+            if (options.TryGetValue("Sandbox", out Option opt1)) opt1.ValueBool = save.options.useSandboxTokenChecks;
+            if (options.TryGetValue("Pearl", out Option opt2)) opt2.ValueBool = save.options.usePearlChecks;
+            if (options.TryGetValue("Echo", out Option opt3)) opt3.ValueBool = save.options.useEchoChecks;
+            if (options.TryGetValue("Passage", out Option opt4)) opt4.ValueBool = save.options.usePassageChecks;
+            if (options.TryGetValue("Special", out Option opt5)) opt5.ValueBool = save.options.useSpecialChecks;
+            if (options.TryGetValue("Shelter", out Option opt6)) opt6.ValueBool = save.options.useShelterChecks;
+            if (options.TryGetValue("Flower", out Option opt7)) opt7.ValueBool = save.options.useKarmaFlowerChecks;
+            if (options.TryGetValue("Dev", out Option opt8)) opt8.ValueBool = save.options.useDevTokenChecks;
+            if (options.TryGetValue("Broadcast", out Option opt9)) opt9.ValueBool = save.options.useSMTokens;
+            if (options.TryGetValue("FoodQuest", out Option opt10)) opt10.ValueBool = 
+                save.options.foodQuestBehavior != RandoOptions.FoodQuestBehavior.Disabled;
+            if (options.TryGetValue("FoodQuestEx", out Option opt11)) opt11.ValueBool = 
+                save.options.foodQuestBehavior == RandoOptions.FoodQuestBehavior.Expanded;
+            if (options.TryGetValue("SpreadRot", out Option opt12)) opt12.ValueBool = save.options.spreadRotChecks;
+            if (options.TryGetValue("Weaver", out Option opt13)) opt13.ValueBool = save.options.weaverChecks;
         }
     }
 
@@ -326,59 +331,76 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
         public override void PopulateFromSaveFile(SaveFile save)
         {
-            options["Passage"].ValueBool = save.options.givePassageUnlocks;
-            options["STKeys"].ValueBool = save.options.spinningTopKeys;
-            options["DaemonKeys"].ValueBool = save.options.daemonKeys;
-            options["Weaver"].ValueBool = save.options.weaverRandomized;
-            options["DamageUp"].ValueInt = save.options.numDamageIncreases;
-            options["ExtraKarma"].ValueInt = save.options.extraKarmaIncreases;
-            options["PercentTraps"].ValueFloat = save.options.trapsDensity;
-            options["PercentHunter"].ValueFloat = save.options.hunterCyclesDensity;
-            options["BackSpear"].ValueBool = save.options.expeditionPerks[0];
-            options["DualWield"].ValueBool = save.options.expeditionPerks[1];
-            options["ExpResistance"].ValueBool = save.options.expeditionPerks[2];
-            options["ExpParry"].ValueBool = save.options.expeditionPerks[3];
-            options["ExpJump"].ValueBool = save.options.expeditionPerks[4];
-            options["Crafting"].ValueBool = save.options.expeditionPerks[5];
-            options["Aquatic"].ValueBool = save.options.expeditionPerks[6];
-            options["Agility"].ValueBool = save.options.expeditionPerks[7];
+            if (options.TryGetValue("Passage", out Option opt1)) opt1.ValueBool = save.options.givePassageUnlocks;
+            if (options.TryGetValue("STKeys", out Option opt2)) opt2.ValueBool = save.options.spinningTopKeys;
+            if (options.TryGetValue("DaemonKeys", out Option opt3)) opt3.ValueBool = save.options.daemonKeys;
+            if (options.TryGetValue("Weaver", out Option opt4)) opt4.ValueBool = save.options.weaverRandomized;
+            if (options.TryGetValue("DamageUp", out Option opt5)) opt5.ValueInt = save.options.numDamageIncreases;
+            if (options.TryGetValue("ExtraKarma", out Option opt6)) opt6.ValueInt = save.options.extraKarmaIncreases;
+            if (options.TryGetValue("PercentTraps", out Option opt7)) opt7.ValueFloat = save.options.trapsDensity;
+            if (options.TryGetValue("PercentHunter", out Option opt8)) opt8.ValueFloat = save.options.hunterCyclesDensity;
+            if (options.TryGetValue("BackSpear", out Option opt9)) opt9.ValueBool = save.options.expeditionPerks[0];
+            if (options.TryGetValue("DualWield", out Option opt10)) opt10.ValueBool = save.options.expeditionPerks[1];
+            if (options.TryGetValue("ExpResistance", out Option opt11)) opt11.ValueBool = save.options.expeditionPerks[2];
+            if (options.TryGetValue("ExpParry", out Option opt12)) opt12.ValueBool = save.options.expeditionPerks[3];
+            if (options.TryGetValue("ExpJump", out Option opt13)) opt13.ValueBool = save.options.expeditionPerks[4];
+            if (options.TryGetValue("Crafting", out Option opt14)) opt14.ValueBool = save.options.expeditionPerks[5];
+            if (options.TryGetValue("Aquatic", out Option opt15)) opt15.ValueBool = save.options.expeditionPerks[6];
+            if (options.TryGetValue("Agility", out Option opt16)) opt16.ValueBool = save.options.expeditionPerks[7];
         }
     }
 
     private class BehaviorsTab : Tab
     {
         private MenuLabel slugcatLabel;
+        private MenuLabel randomSpawnLabel;
         
-        public BehaviorsTab(RWMenu menu, MenuObject owner, Vector2 pos, string slugcat) : base(menu, owner, pos)
+        public BehaviorsTab(OptionsDialog menu, MenuObject owner, Vector2 pos, string slugcat) : base(menu, owner, pos)
         {
-            float runningY = ((Dialog)menu).size.y - 40f;
+            float runningY = menu.size.y - 40f;
+            float rightRowX = menu.size.x / 2f + CENTER_MARGIN / 2f;
 
             options = new Dictionary<string, Option>();
 
             // Slugcat
             MenuLabel slugcatLabel1 = new MenuLabel(menu, this, "Slugcat", 
-                    new Vector2(EDGE_MARGIN, runningY -= 40f), default, true) 
+                    new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
                 { label = { alignment = FLabelAlignment.Left }};
             subObjects.Add(slugcatLabel1);
             
             slugcatLabel = new MenuLabel(menu, this, 
                     Constants.SlugcatReadableNames.TryGetValue(slugcat, out string name) 
                         ? name : "UNKNOWN", 
-                    new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f, runningY), default, true) 
+                    new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true) 
                 { label = { alignment = FLabelAlignment.Right } };
             subObjects.Add(slugcatLabel);
-            
-            options.Add("RandomSpawn", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                RandoOptions.randomizeSpawnLocation));
 
-            if (((OptionsDialog)menu).myMode >= Mode.ArchipelagoNew) // Archipelago
+            // Checkbox toggle for creation, show chosen region otherwise
+            if (menu.myMode == Mode.StandaloneView)
+            {
+                options.Add("RandomSpawn", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                    RandoOptions.randomizeSpawnLocation));
+            }
+            else
+            {
+                MenuLabel randomSpawnLabel1 = new MenuLabel(menu, this, "Starting Region", 
+                        new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
+                    { label = { alignment = FLabelAlignment.Left }};
+                subObjects.Add(randomSpawnLabel1);
+                randomSpawnLabel = new MenuLabel(menu, this, "", 
+                        new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true) 
+                    { label = { alignment = FLabelAlignment.Right } };
+                subObjects.Add(randomSpawnLabel);
+            }
+
+            if (menu.myMode >= Mode.ArchipelagoNew) // Archipelago
             {
                 MenuLabel goalLabel1 = new MenuLabel(menu, this, "Victory Condition", 
-                        new Vector2(EDGE_MARGIN, runningY -= 40f), default, true) 
+                        new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
                     { label = { alignment = FLabelAlignment.Left }};
                 subObjects.Add(goalLabel1);
                 MenuLabel goalLabel2 = new MenuLabel(menu, this, ArchipelagoConnection.ConnectedOptions.goalCondition.ToString(), // TODO: Make this readable name
-                        new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f, runningY), default, true)
+                        new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true)
                     { label = { alignment = FLabelAlignment.Right } };
                 subObjects.Add(goalLabel2);
                 options.Add("DeathLink", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
@@ -396,8 +418,17 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                     options.Add("RotTarget", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                         RandoOptions.rottedRegionTarget));
                 }
+                
+                options.Add("HostName", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY = menu.size.y - 40f),
+                    ConnectInfoEntry.HostNameConfig, 200f, false, true));
+                options.Add("Port", new TextFieldIntOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
+                    ConnectInfoEntry.PortConfig, 55f));
+                options.Add("SlotName", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
+                    ConnectInfoEntry.SlotNameConfig, 180f));
+                options.Add("Password", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
+                    ConnectInfoEntry.PasswordConfig, 200f));
             }
-            else
+            else // Standalone
             {
                 options.Add("StartMinKarma", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.startMinKarma));
@@ -434,7 +465,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             
             subObjects.AddRange(options.Values);
 
-            if (((OptionsDialog)menu).myMode > Mode.StandaloneNew)
+            if (menu.myMode > Mode.StandaloneNew)
             {
                 foreach (KeyValuePair<string, Option> option in 
                          options.Where(option => option.Key != "DeathLink"))
@@ -446,7 +477,23 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
         public override void PopulateFromSaveFile(SaveFile save)
         {
-            // slugcatLabel.text = save.slugcat ?? "UNKNOWN"; // TODO: Make this readable name
+            if (randomSpawnLabel is not null) randomSpawnLabel.text = save.startingDen.Split('_')[0];
+            if (options.TryGetValue("DeathLink", out Option opt1)) opt1.ValueBool = save.options.archipelagoDeathLink;
+            if (options.TryGetValue("GateBehavior", out Option opt2)) opt2.ValueInt = (int)save.options.gateBehavior;
+            if (options.TryGetValue("PPwSBehavior", out Option opt3)) opt3.ValueInt = (int)save.options.PPwSBehavior;
+            if (options.TryGetValue("EchoBehavior", out Option opt4)) opt4.ValueInt = (int)save.options.echoDifficulty;
+            if (options.TryGetValue("RotTarget", out Option opt5)) opt5.ValueInt = save.options.rottedRegionTarget;
+            if (options.TryGetValue("StartMinKarma", out Option opt6)) opt6.ValueBool = save.options.startMinKarma;
+            if (options.TryGetValue("OpenSubmerged", out Option opt7)) opt7.ValueBool = save.options.allowSubmergedForOthers;
+            if (options.TryGetValue("OpenMetro", out Option opt8)) opt8.ValueBool = save.options.allowMetroForOthers;
+            if (options.TryGetValue("OpenExterior", out Option opt9)) opt9.ValueBool = save.options.allowExteriorForInv;
+            if (options.TryGetValue("EnergyCell", out Option opt10)) opt10.ValueBool = save.options.useEnergyCell;
+            if (options.TryGetValue("Seed", out Option opt11)) opt11.ValueString = save.options.seed;
+            
+            if (options.TryGetValue("HostName", out Option opt12)) opt12.ValueString = save.connectionInfo.hostName;
+            if (options.TryGetValue("Port", out Option opt13)) opt13.ValueInt = save.connectionInfo.port;
+            if (options.TryGetValue("SlotName", out Option opt14)) opt14.ValueString = save.connectionInfo.slotName;
+            if (options.TryGetValue("Password", out Option opt15)) opt15.ValueString = save.connectionInfo.password;
         }
     }
 
@@ -456,9 +503,8 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         protected UIelementWrapper labelWrapper;
         protected UIelementWrapper fieldWrapper;
         
-        protected OpLabel label;
-        protected MenuLabel label1;
-        protected UIconfig field;
+        protected MenuLabel label;
+        public UIconfig field;
         
         public virtual bool ValueBool { get; set; }
         public virtual int ValueInt { get; set; }
@@ -475,12 +521,10 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         {
             tabWrapper = new MenuTabWrapper(menu, this);
 
-            // label1 = new MenuLabel(menu, this, config.info.Tags[0] as string, default, default, true) 
-            //     { label = { alignment = FLabelAlignment.Right } };
-            label = new OpLabel(default, default, config.info.Tags[0] as string, FLabelAlignment.Left, true);
-            labelWrapper = new UIelementWrapper(tabWrapper, label);
+            label = new MenuLabel(menu, this, config.info.Tags[0] as string, new Vector2(0f, 15f), default, true) 
+                { label = { alignment = FLabelAlignment.Left } };
             
-            // subObjects.Add(label1);
+            subObjects.Add(label);
             subObjects.Add(tabWrapper);
         }
     } 
@@ -497,7 +541,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             : base(menu, owner, pos, config)
         {
             field = new OpCheckBox(config, 
-                new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f - EDGE_MARGIN - 24f, -3f))
+                new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f - EDGE_MARGIN - 24f, 0f))
             {
                 description = config.info.description
             };
@@ -587,7 +631,37 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             set { ((OpTextBox)field).value = value; }
         }
         
-        public TextFieldOption(RWMenu menu, MenuObject owner, Vector2 pos, Configurable<string> config, float sizeX)
+        public TextFieldOption(RWMenu menu, MenuObject owner, Vector2 pos, Configurable<string> config, float sizeX, 
+            bool allowSpace = false, bool infiniteLength = false)
+            : base(menu, owner, pos, config)
+        {
+            field = new OpTextBox(config, 
+                new Vector2(((Dialog)menu).size.x / 2f - CENTER_MARGIN / 2f - EDGE_MARGIN - sizeX, -3f), 
+                sizeX)
+            {
+                description = config.info.description
+            };
+            if (allowSpace) ((OpTextBox)field).allowSpace = true;
+            if (infiniteLength) ((OpTextBox)field).maxLength = int.MaxValue;
+            fieldWrapper = new UIelementWrapper(tabWrapper, field);
+        }
+    }
+    
+    private class TextFieldIntOption : Option
+    {
+        public override int ValueInt
+        {
+            get { return ((OpTextBox)field).valueInt; }
+            set { ((OpTextBox)field).valueInt = value; }
+        }
+
+        public override string ValueString
+        {
+            get { return ((OpTextBox)field).value; }
+            set { ((OpTextBox)field).value = value; }
+        }
+        
+        public TextFieldIntOption(RWMenu menu, MenuObject owner, Vector2 pos, Configurable<int> config, float sizeX)
             : base(menu, owner, pos, config)
         {
             field = new OpTextBox(config, 
