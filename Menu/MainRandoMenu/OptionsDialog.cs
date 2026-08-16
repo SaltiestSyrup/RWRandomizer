@@ -45,30 +45,19 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         
         tabButtons = new SelectOneButton[3];
         
-        tabButtons[0] = new SelectOneButton(this, pages[0], "CHECKS", "OPTAB-CHECKS",
-            centerScreen + new Vector2(30f - size.x / 2, size.y / 2f - 6f), new Vector2(100f, 30f),
-            tabButtons, 0)
-        {
-            fadeAlpha = 4f
-        };
-        tabButtons[1] = new SelectOneButton(this, pages[0], "ITEMS", "OPTAB-ITEMS",
-            centerScreen + new Vector2(140f - size.x / 2, size.y / 2f - 6f), new Vector2(100f, 30f),
-            tabButtons, 1)
-        {
-            fadeAlpha = 4f
-        };
-        tabButtons[2] = new SelectOneButton(this, pages[0], "BEHAVIORS", "OPTAB-BEHAVIORS",
-            centerScreen + new Vector2(250f - size.x / 2, size.y / 2f - 6f), new Vector2(100f, 30f),
-            tabButtons, 2)
-        {
-            fadeAlpha = 4f
-        };
+        tabButtons[0] = new SelectOneButton(this, pages[0], "GENERAL", "OPTAB-GENERAL", 
+                centerScreen + new Vector2(30f - size.x / 2, size.y / 2f - 6f), new Vector2(100f, 30f), tabButtons, 0) 
+            { fadeAlpha = 4f };
+        tabButtons[1] = new SelectOneButton(this, pages[0], "CHECKS", "OPTAB-CHECKS", 
+                centerScreen + new Vector2(140f - size.x / 2, size.y / 2f - 6f), new Vector2(100f, 30f), tabButtons, 1) 
+            { fadeAlpha = 4f };
+        tabButtons[2] = new SelectOneButton(this, pages[0], "ITEMS", "OPTAB-ITEMS", 
+                centerScreen + new Vector2(250f - size.x / 2, size.y / 2f - 6f), new Vector2(100f, 30f), tabButtons, 2) 
+            { fadeAlpha = 4f };
         pages[0].subObjects.AddRange(tabButtons);
         
-        roundedRect = new RoundedRect(this, pages[0], centerScreen - size / 2f, size, true)
-        {
-            fillAlpha = 1f
-        };
+        roundedRect = new RoundedRect(this, pages[0], centerScreen - size / 2f, size, true) 
+            { fillAlpha = 1f };
         pages[0].subObjects.Add(roundedRect);
         
         exitButton = new SimpleButton(this, pages[0], "DONE", "CLOSE_OPTIONS",
@@ -78,16 +67,15 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         
         tabs = new Tab[3];
 
-        // pages.Add(new Page(this, null, "CHECKS", 1));
-        tabs[0] = new ChecksTab(this, pages[0], roundedRect.pos);
+        tabs[0] = new GeneralTab(this, pages[0], roundedRect.pos, slugcat);
         pages[0].subObjects.Add(tabs[0]);
         
-        // pages.Add(new Page(this, null, "ITEMS", 2));
-        tabs[1] = new ItemsTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f));
+        tabs[1] = new ChecksTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f));
         pages[0].subObjects.Add(tabs[1]);
         
-        tabs[2] = new BehaviorsTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f), slugcat);
+        tabs[2] = new ItemsTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f));
         pages[0].subObjects.Add(tabs[2]);
+        
     }
 
     public OptionsDialog(ProcessManager manager, Mode mode, SaveFile file) 
@@ -147,6 +135,158 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         public abstract void PopulateFromSaveFile(SaveFile save);
     }
 
+    private class GeneralTab : Tab
+    {
+        private MenuLabel slugcatLabel;
+        private MenuLabel randomSpawnLabel;
+        private MenuLabel goalLabel;
+        
+        public GeneralTab(OptionsDialog menu, MenuObject owner, Vector2 pos, string slugcat) : base(menu, owner, pos)
+        {
+            float runningY = menu.size.y - 40f;
+            float rightRowX = menu.size.x / 2f + CENTER_MARGIN / 2f;
+
+            options = new Dictionary<string, Option>();
+
+            // Slugcat
+            MenuLabel slugcatLabel1 = new MenuLabel(menu, this, "Slugcat", 
+                    new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
+                { label = { alignment = FLabelAlignment.Left }};
+            subObjects.Add(slugcatLabel1);
+            
+            slugcatLabel = new MenuLabel(menu, this, 
+                    Constants.SlugcatReadableNames.TryGetValue(slugcat, out string name) 
+                        ? name : "UNKNOWN", 
+                    new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true) 
+                { label = { alignment = FLabelAlignment.Right } };
+            subObjects.Add(slugcatLabel);
+
+            // Checkbox toggle for creation, show chosen region otherwise
+            if (menu.myMode == Mode.StandaloneView)
+            {
+                options.Add("RandomSpawn", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                    RandoOptions.randomizeSpawnLocation));
+            }
+            else
+            {
+                MenuLabel randomSpawnLabel1 = new MenuLabel(menu, this, "Starting Region", 
+                        new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
+                    { label = { alignment = FLabelAlignment.Left }};
+                subObjects.Add(randomSpawnLabel1);
+                randomSpawnLabel = new MenuLabel(menu, this, "", 
+                        new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true) 
+                    { label = { alignment = FLabelAlignment.Right } };
+                subObjects.Add(randomSpawnLabel);
+            }
+
+            if (menu.myMode >= Mode.ArchipelagoNew) // Archipelago
+            {
+                MenuLabel goalLabel1 = new MenuLabel(menu, this, "Victory Condition", 
+                        new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
+                    { label = { alignment = FLabelAlignment.Left }};
+                subObjects.Add(goalLabel1);
+                goalLabel = new MenuLabel(menu, this, "",
+                        new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true)
+                    { label = { alignment = FLabelAlignment.Right } };
+                subObjects.Add(goalLabel);
+                options.Add("DeathLink", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                    RandoOptions.archipelagoDeathLinkOverride));
+                
+                options.Add("GateBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                    RandoOptions.gateBehavior, ["Only Key", "Key and Karma", "Key or Karma", "Only Karma"]));
+                options.Add("PPwSBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                    RandoOptions.ppwsBehavior, ["Disabled", "Enabled", "Bypassed"]));
+                options.Add("EchoBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                    RandoOptions.echoBehavior, ["Impossible", "With Flower", "Max Karma", "Vanilla"]));
+
+                if (slugcat is "Watcher")
+                {
+                    options.Add("RotTarget", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.rottedRegionTarget));
+                }
+                
+                options.Add("HostName", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY = menu.size.y - 80f),
+                    ConnectInfoEntry.HostNameConfig, 200f, false, true));
+                options.Add("Port", new TextFieldIntOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
+                    ConnectInfoEntry.PortConfig, 55f));
+                options.Add("SlotName", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
+                    ConnectInfoEntry.SlotNameConfig, 180f));
+                options.Add("Password", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
+                    ConnectInfoEntry.PasswordConfig, 200f));
+            }
+            else // Standalone
+            {
+                options.Add("StartMinKarma", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                    RandoOptions.startMinKarma));
+
+                if (slugcat is not "Rivulet")
+                {
+                    options.Add("OpenSubmerged", new CheckBoxOption(menu, this,
+                        new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.allowSubmergedForOthers));
+                }
+
+                if (slugcat is not "Artificer")
+                {
+                    options.Add("OpenMetro", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.allowMetroForOthers));
+                }
+
+                if (slugcat is "Inv")
+                {
+                    options.Add("OpenExterior", new CheckBoxOption(menu, this,
+                        new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.allowExteriorForInv));
+                }
+                
+                if (slugcat is "Rivulet")
+                {
+                    options.Add("EnergyCell", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.useEnergyCell));
+                }
+                
+                options.Add("Seed", new TextFieldOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                    RandoOptions.seed, 150f));
+            }
+            
+            subObjects.AddRange(options.Values);
+
+            if (menu.myMode > Mode.StandaloneNew)
+            {
+                foreach (KeyValuePair<string, Option> option in 
+                         options.Where(option => !(new string[]
+                         {
+                             "DeathLink", "HostName", "Port", "SlotName", "Password"
+                         }.Contains(option.Key))))
+                {
+                    option.Value.GreyedOut = true;
+                }
+            }
+        }
+
+        public override void PopulateFromSaveFile(SaveFile save)
+        {
+            if (randomSpawnLabel is not null) randomSpawnLabel.text = save.startingDen.Split('_')[0];
+            if (goalLabel is not null) goalLabel.text = save.options.goalCondition.ToString();
+            if (options.TryGetValue("DeathLink", out Option opt1)) opt1.ValueBool = save.options.archipelagoDeathLink;
+            if (options.TryGetValue("GateBehavior", out Option opt2)) opt2.ValueInt = (int)save.options.gateBehavior;
+            if (options.TryGetValue("PPwSBehavior", out Option opt3)) opt3.ValueInt = (int)save.options.PPwSBehavior;
+            if (options.TryGetValue("EchoBehavior", out Option opt4)) opt4.ValueInt = (int)save.options.echoDifficulty;
+            if (options.TryGetValue("RotTarget", out Option opt5)) opt5.ValueInt = save.options.rottedRegionTarget;
+            if (options.TryGetValue("StartMinKarma", out Option opt6)) opt6.ValueBool = save.options.startMinKarma;
+            if (options.TryGetValue("OpenSubmerged", out Option opt7)) opt7.ValueBool = save.options.allowSubmergedForOthers;
+            if (options.TryGetValue("OpenMetro", out Option opt8)) opt8.ValueBool = save.options.allowMetroForOthers;
+            if (options.TryGetValue("OpenExterior", out Option opt9)) opt9.ValueBool = save.options.allowExteriorForInv;
+            if (options.TryGetValue("EnergyCell", out Option opt10)) opt10.ValueBool = save.options.useEnergyCell;
+            if (options.TryGetValue("Seed", out Option opt11)) opt11.ValueString = save.options.seed;
+            
+            if (options.TryGetValue("HostName", out Option opt12)) opt12.ValueString = save.connectionInfo.hostName;
+            if (options.TryGetValue("Port", out Option opt13)) opt13.ValueInt = save.connectionInfo.port;
+            if (options.TryGetValue("SlotName", out Option opt14)) opt14.ValueString = save.connectionInfo.slotName;
+            if (options.TryGetValue("Password", out Option opt15)) opt15.ValueString = save.connectionInfo.password;
+        }
+    }
+    
     private class ChecksTab : Tab
     {
         public ChecksTab(OptionsDialog menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
@@ -349,154 +489,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             if (options.TryGetValue("Agility", out Option opt16)) opt16.ValueBool = save.options.expeditionPerks[7];
         }
     }
-
-    private class BehaviorsTab : Tab
-    {
-        private MenuLabel slugcatLabel;
-        private MenuLabel randomSpawnLabel;
-        
-        public BehaviorsTab(OptionsDialog menu, MenuObject owner, Vector2 pos, string slugcat) : base(menu, owner, pos)
-        {
-            float runningY = menu.size.y - 40f;
-            float rightRowX = menu.size.x / 2f + CENTER_MARGIN / 2f;
-
-            options = new Dictionary<string, Option>();
-
-            // Slugcat
-            MenuLabel slugcatLabel1 = new MenuLabel(menu, this, "Slugcat", 
-                    new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
-                { label = { alignment = FLabelAlignment.Left }};
-            subObjects.Add(slugcatLabel1);
-            
-            slugcatLabel = new MenuLabel(menu, this, 
-                    Constants.SlugcatReadableNames.TryGetValue(slugcat, out string name) 
-                        ? name : "UNKNOWN", 
-                    new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true) 
-                { label = { alignment = FLabelAlignment.Right } };
-            subObjects.Add(slugcatLabel);
-
-            // Checkbox toggle for creation, show chosen region otherwise
-            if (menu.myMode == Mode.StandaloneView)
-            {
-                options.Add("RandomSpawn", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.randomizeSpawnLocation));
-            }
-            else
-            {
-                MenuLabel randomSpawnLabel1 = new MenuLabel(menu, this, "Starting Region", 
-                        new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
-                    { label = { alignment = FLabelAlignment.Left }};
-                subObjects.Add(randomSpawnLabel1);
-                randomSpawnLabel = new MenuLabel(menu, this, "", 
-                        new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true) 
-                    { label = { alignment = FLabelAlignment.Right } };
-                subObjects.Add(randomSpawnLabel);
-            }
-
-            if (menu.myMode >= Mode.ArchipelagoNew) // Archipelago
-            {
-                MenuLabel goalLabel1 = new MenuLabel(menu, this, "Victory Condition", 
-                        new Vector2(EDGE_MARGIN, (runningY -= 40f) + 15f), default, true) 
-                    { label = { alignment = FLabelAlignment.Left }};
-                subObjects.Add(goalLabel1);
-                MenuLabel goalLabel2 = new MenuLabel(menu, this, ArchipelagoConnection.ConnectedOptions.goalCondition.ToString(), // TODO: Make this readable name
-                        new Vector2(menu.size.x / 2f - CENTER_MARGIN / 2f, runningY + 15f), default, true)
-                    { label = { alignment = FLabelAlignment.Right } };
-                subObjects.Add(goalLabel2);
-                options.Add("DeathLink", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.archipelagoDeathLinkOverride));
-                
-                options.Add("GateBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.gateBehavior, ["Only Key", "Key and Karma", "Key or Karma", "Only Karma"]));
-                options.Add("PPwSBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.ppwsBehavior, ["Disabled", "Enabled", "Bypassed"]));
-                options.Add("EchoBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.echoBehavior, ["Impossible", "With Flower", "Max Karma", "Vanilla"]));
-
-                if (slugcat is "Watcher")
-                {
-                    options.Add("RotTarget", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.rottedRegionTarget));
-                }
-                
-                options.Add("HostName", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY = menu.size.y - 40f),
-                    ConnectInfoEntry.HostNameConfig, 200f, false, true));
-                options.Add("Port", new TextFieldIntOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
-                    ConnectInfoEntry.PortConfig, 55f));
-                options.Add("SlotName", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
-                    ConnectInfoEntry.SlotNameConfig, 180f));
-                options.Add("Password", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
-                    ConnectInfoEntry.PasswordConfig, 200f));
-            }
-            else // Standalone
-            {
-                options.Add("StartMinKarma", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.startMinKarma));
-
-                if (slugcat is not "Rivulet")
-                {
-                    options.Add("OpenSubmerged", new CheckBoxOption(menu, this,
-                        new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.allowSubmergedForOthers));
-                }
-
-                if (slugcat is not "Artificer")
-                {
-                    options.Add("OpenMetro", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.allowMetroForOthers));
-                }
-
-                if (slugcat is "Inv")
-                {
-                    options.Add("OpenExterior", new CheckBoxOption(menu, this,
-                        new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.allowExteriorForInv));
-                }
-                
-                if (slugcat is "Rivulet")
-                {
-                    options.Add("EnergyCell", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.useEnergyCell));
-                }
-                
-                options.Add("Seed", new TextFieldOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.seed, 150f));
-            }
-            
-            subObjects.AddRange(options.Values);
-
-            if (menu.myMode > Mode.StandaloneNew)
-            {
-                foreach (KeyValuePair<string, Option> option in 
-                         options.Where(option => option.Key != "DeathLink"))
-                {
-                    option.Value.GreyedOut = true;
-                }
-            }
-        }
-
-        public override void PopulateFromSaveFile(SaveFile save)
-        {
-            if (randomSpawnLabel is not null) randomSpawnLabel.text = save.startingDen.Split('_')[0];
-            if (options.TryGetValue("DeathLink", out Option opt1)) opt1.ValueBool = save.options.archipelagoDeathLink;
-            if (options.TryGetValue("GateBehavior", out Option opt2)) opt2.ValueInt = (int)save.options.gateBehavior;
-            if (options.TryGetValue("PPwSBehavior", out Option opt3)) opt3.ValueInt = (int)save.options.PPwSBehavior;
-            if (options.TryGetValue("EchoBehavior", out Option opt4)) opt4.ValueInt = (int)save.options.echoDifficulty;
-            if (options.TryGetValue("RotTarget", out Option opt5)) opt5.ValueInt = save.options.rottedRegionTarget;
-            if (options.TryGetValue("StartMinKarma", out Option opt6)) opt6.ValueBool = save.options.startMinKarma;
-            if (options.TryGetValue("OpenSubmerged", out Option opt7)) opt7.ValueBool = save.options.allowSubmergedForOthers;
-            if (options.TryGetValue("OpenMetro", out Option opt8)) opt8.ValueBool = save.options.allowMetroForOthers;
-            if (options.TryGetValue("OpenExterior", out Option opt9)) opt9.ValueBool = save.options.allowExteriorForInv;
-            if (options.TryGetValue("EnergyCell", out Option opt10)) opt10.ValueBool = save.options.useEnergyCell;
-            if (options.TryGetValue("Seed", out Option opt11)) opt11.ValueString = save.options.seed;
-            
-            if (options.TryGetValue("HostName", out Option opt12)) opt12.ValueString = save.connectionInfo.hostName;
-            if (options.TryGetValue("Port", out Option opt13)) opt13.ValueInt = save.connectionInfo.port;
-            if (options.TryGetValue("SlotName", out Option opt14)) opt14.ValueString = save.connectionInfo.slotName;
-            if (options.TryGetValue("Password", out Option opt15)) opt15.ValueString = save.connectionInfo.password;
-        }
-    }
-
+    
     private abstract class Option : PositionedMenuObject
     {
         protected MenuTabWrapper tabWrapper;
