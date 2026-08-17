@@ -475,8 +475,6 @@ namespace RainWorldRandomizer
             // Send a bounce packet
             Session.Socket.SendPacketAsync(new BouncePacket()
             {
-                Games = [GAME_NAME],
-                Tags = ["Tracker"],
                 Slots = [Session.Players.ActivePlayer.Slot],
                 Data = new Dictionary<string, JToken> { { dataKey, JToken.FromObject(info) } }
             });
