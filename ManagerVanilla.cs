@@ -131,7 +131,7 @@ namespace RainWorldRandomizer
                     randomizerKey = generator.GetCompletedSeed();
                     locations = [..randomizerKey.Select(kvp => new LocationInfo(kvp.Key, false, false))];
                     customStartDen = generator.customStartDen;
-                    currentSeed = generator.generationSeed.ToString();
+                    currentSeed = generator.generationSeed;
                     SaveManager.WriteToFile(Plugin.Singleton.rainWorld, this);
                 }
                 else

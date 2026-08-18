@@ -30,7 +30,7 @@ public static class MenuHelpers
             "Rivulet" => ModManager.MSC ? "multiplayerportrait41-rivulet" : null,
             "Saint" => ModManager.MSC ? "multiplayerportrait41-saint" : null,
             "Watcher" => ModManager.Watcher ? "multiplayerportrait41-watcher" : null,
-            _ => null
+            _ => "multiplayerportrait02"
         };
     }
 }

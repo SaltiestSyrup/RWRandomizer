@@ -165,20 +165,20 @@ public sealed class SlotSelector : ScrollingMenu
             // --- Portrait
             string portrait = MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name(saveFile.slugcat));
             // Portrait is blank if slugcat invalid or DLC not present
-            if (portrait is not null)
+            if (saveFile.slugcat == "Inv")
+            {
+                slugcatPortrait = new MenuIllustration(menu, this, "content", 
+                        invSprites[UnityEngine.Random.Range(0, invSprites.Length)], 
+                        new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true)
+                    { sprite = { scale = 0.2f } };
+            }
+            else
             {
                 slugcatPortrait = new MenuIllustration(menu, this, "illustrations", portrait, 
                     new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true);
-                subObjects.Add(slugcatPortrait);
             }
-            else if (saveFile.slugcat == "Inv")
-            {
-                slugcatPortrait = new MenuIllustration(menu, this, "content", 
-                    invSprites[UnityEngine.Random.Range(0, invSprites.Length)], 
-                    new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true)
-                    { sprite = { scale = 0.2f } };
-                subObjects.Add(slugcatPortrait);
-            }
+
+            subObjects.Add(slugcatPortrait);
             portraitBorder = new RoundedRect(menu, this, 
                 new Vector2(PORTRAIT_OFFSET, (size.y - PORTRAIT_SIZE) / 2), 
                 Vector2.one * PORTRAIT_SIZE, false);
