@@ -309,7 +309,11 @@ public sealed class SlotSelector : ScrollingMenu
                     
                     randomizerMenu.optionsDialog = new OptionsDialog(menu.manager,
                         saveFile.isArchipelago ? OptionsDialog.Mode.ArchipelagoView : OptionsDialog.Mode.StandaloneView, 
-                        saveFile);
+                        saveFile, () =>
+                        {
+                            randomizerMenu.optionsDialog.OutputToSaveFile(ref saveFile);
+                            SaveManager.WriteToFile(saveFile, saveSlot);
+                        });
                     menu.PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
                     menu.manager.ShowDialog(randomizerMenu.optionsDialog);
                     break;

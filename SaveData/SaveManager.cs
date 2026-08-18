@@ -284,6 +284,12 @@ namespace RainWorldRandomizer
         }
         
         // Requires the correct Progression to be active
+        /// <summary>
+        /// Creates and writes save data to file, using the game and randomizer's current state.
+        /// </summary>
+        /// <param name="rainWorld"></param>
+        /// <param name="randoManager"></param>
+        /// <param name="saveCurrentState">Whether certain non death persistent values should be saved.</param>
         public static void WriteToFile(RainWorld rainWorld, ManagerBase randoManager, bool saveCurrentState = true)
         {
             if (rainWorld.progression.currentSaveState is null)
@@ -304,6 +310,20 @@ namespace RainWorldRandomizer
             StreamWriter file = File.CreateText(Path.Combine(path, $"rand{rainWorld.options.saveSlot}.json"));
             
             file.Write(JsonConvert.SerializeObject(SaveFile.Create(rainWorld.progression.currentSaveState, randoManager, saveCurrentState)));
+            file.Close();
+        }
+
+        /// <summary>
+        /// Writes an existing <see cref="SaveFile"/> instance to file, at the specified save slot.
+        /// </summary>
+        public static void WriteToFile(SaveFile saveFile, int slot)
+        {
+            string path = SaveTracker.PersistentDataDir;
+            Directory.CreateDirectory(path);
+
+            StreamWriter file = File.CreateText(Path.Combine(path, $"rand{slot}.json"));
+            
+            file.Write(JsonConvert.SerializeObject(saveFile));
             file.Close();
         }
 

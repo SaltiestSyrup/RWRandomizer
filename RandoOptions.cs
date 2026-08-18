@@ -99,7 +99,7 @@ namespace RainWorldRandomizer
         
         // Archipelago
         [Obsolete] internal static Configurable<bool> archipelago;
-        [Obsolete] internal static Configurable<bool> archipelagoDeathLinkOverride;
+        internal static Configurable<bool> archipelagoDeathLinkOverride;
         #endregion
 
         // Base

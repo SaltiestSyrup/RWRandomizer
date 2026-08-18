@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Menu;
@@ -31,6 +32,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
     private bool usingDownpour;
     private bool usingWatcher;
     public SaveFile saveFile;
+    private Action saveOptionsCallback;
     
     public OptionsDialog(ProcessManager manager, Mode mode, string slugcat, bool usingDownpour, bool usingWatcher) : base(manager)
     {
@@ -78,10 +80,11 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         
     }
 
-    public OptionsDialog(ProcessManager manager, Mode mode, SaveFile file) 
+    public OptionsDialog(ProcessManager manager, Mode mode, SaveFile file, Action saveOptionsCallback = null) 
         : this(manager, mode, file.slugcat, file.isDownpourDLC, file.isWatcherDLC)
     {
         saveFile = file;
+        this.saveOptionsCallback = saveOptionsCallback;
         foreach (Tab tab in tabs)
         {
             tab.PopulateFromSaveFile(file);
@@ -101,6 +104,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             case "CLOSE_OPTIONS":
                 PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
                 manager.StopSideProcess(this);
+                saveOptionsCallback?.Invoke();
                 break;
         }
     }
@@ -113,6 +117,14 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         {
             tabs[i].pos = roundedRect.pos + (i == newPage ? 0f : -1f) * new Vector2(0f, 2000f);
             tabs[i].lastPos = tabs[i].pos;
+        }
+    }
+
+    public void OutputToSaveFile(ref SaveFile file)
+    {
+        foreach (Tab tab in tabs)
+        {
+            tab.OutputToSaveFile(ref file);
         }
     }
     
@@ -133,6 +145,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
     {
         protected Dictionary<string, Option> options;
         public abstract void PopulateFromSaveFile(SaveFile save);
+        public abstract void OutputToSaveFile(ref SaveFile save);
     }
 
     private class GeneralTab : Tab
@@ -254,10 +267,10 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             if (menu.myMode > Mode.StandaloneNew)
             {
                 foreach (KeyValuePair<string, Option> option in 
-                         options.Where(option => !(new string[]
+                         options.Where(option => !new[]
                          {
                              "DeathLink", "HostName", "Port", "SlotName", "Password"
-                         }.Contains(option.Key))))
+                         }.Contains(option.Key) || menu.myMode == Mode.ArchipelagoNew))
                 {
                     option.Value.GreyedOut = true;
                 }
@@ -284,6 +297,32 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             if (options.TryGetValue("Port", out Option opt13)) opt13.ValueInt = save.connectionInfo.port;
             if (options.TryGetValue("SlotName", out Option opt14)) opt14.ValueString = save.connectionInfo.slotName;
             if (options.TryGetValue("Password", out Option opt15)) opt15.ValueString = save.connectionInfo.password;
+        }
+
+        public override void OutputToSaveFile(ref SaveFile save)
+        {
+            if (options.TryGetValue("DeathLink", out Option opt1)) save.options.archipelagoDeathLink = opt1.ValueBool;
+            if (options.TryGetValue("HostName", out Option opt2)) save.connectionInfo.hostName = opt2.ValueString;
+            if (options.TryGetValue("Port", out Option opt3)) save.connectionInfo.port = opt3.ValueInt;
+            if (options.TryGetValue("SlotName", out Option opt4)) save.connectionInfo.slotName = opt4.ValueString;
+            if (options.TryGetValue("Password", out Option opt5)) save.connectionInfo.password = opt5.ValueString;
+            
+            // Return if not editing mode
+            if (((OptionsDialog)menu).myMode is Mode.StandaloneView or Mode.ArchipelagoView) return;
+            
+            if (options.TryGetValue("GateBehavior", out Option opt6)) 
+                save.options.gateBehavior = (RandoOptions.GateBehavior)opt6.ValueInt;
+            if (options.TryGetValue("PPwSBehavior", out Option opt7)) 
+                save.options.PPwSBehavior = (RandoOptions.PPwSBehavior)opt7.ValueInt;
+            if (options.TryGetValue("EchoBehavior", out Option opt8)) 
+                save.options.echoDifficulty = (RandoOptions.EchoLowKarmaDifficulty)opt8.ValueInt;
+            if (options.TryGetValue("RotTarget", out Option opt9)) save.options.rottedRegionTarget = opt9.ValueInt;
+            if (options.TryGetValue("StartMinKarma", out Option opt10)) save.options.startMinKarma = opt10.ValueBool;
+            if (options.TryGetValue("OpenSubmerged", out Option opt11)) save.options.allowSubmergedForOthers = opt11.ValueBool;
+            if (options.TryGetValue("OpenMetro", out Option opt12)) save.options.allowMetroForOthers = opt12.ValueBool;
+            if (options.TryGetValue("OpenExterior", out Option opt13)) save.options.allowExteriorForInv = opt13.ValueBool;
+            if (options.TryGetValue("EnergyCell", out Option opt14)) save.options.useEnergyCell = opt14.ValueBool;
+            if (options.TryGetValue("Seed", out Option opt15)) save.options.seed = opt15.ValueString;
         }
     }
     
@@ -395,6 +434,33 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             if (options.TryGetValue("SpreadRot", out Option opt12)) opt12.ValueBool = save.options.spreadRotChecks;
             if (options.TryGetValue("Weaver", out Option opt13)) opt13.ValueBool = save.options.weaverChecks;
         }
+
+        public override void OutputToSaveFile(ref SaveFile save)
+        {
+            // Return if not editing mode
+            if (((OptionsDialog)menu).myMode is Mode.StandaloneView or Mode.ArchipelagoView) return;
+            
+            if (options.TryGetValue("Sandbox", out Option opt1)) save.options.useSandboxTokenChecks = opt1.ValueBool;
+            if (options.TryGetValue("Pearl", out Option opt2)) save.options.usePearlChecks = opt2.ValueBool;
+            if (options.TryGetValue("Echo", out Option opt3)) save.options.useEchoChecks = opt3.ValueBool;
+            if (options.TryGetValue("Passage", out Option opt4)) save.options.usePassageChecks = opt4.ValueBool;
+            if (options.TryGetValue("Special", out Option opt5)) save.options.useSpecialChecks = opt5.ValueBool;
+            if (options.TryGetValue("Shelter", out Option opt6)) save.options.useShelterChecks = opt6.ValueBool;
+            if (options.TryGetValue("Flower", out Option opt7)) save.options.useKarmaFlowerChecks = opt7.ValueBool;
+            if (options.TryGetValue("Dev", out Option opt8)) save.options.useDevTokenChecks = opt8.ValueBool;
+            if (options.TryGetValue("Broadcast", out Option opt9)) save.options.useSMTokens = opt9.ValueBool;
+            if (options.TryGetValue("FoodQuest", out Option opt10)
+                && options.TryGetValue("FoodQuestEx", out Option opt11))
+            {
+                save.options.foodQuestBehavior = opt10.ValueBool
+                    ? opt11.ValueBool 
+                        ? RandoOptions.FoodQuestBehavior.Expanded 
+                        : RandoOptions.FoodQuestBehavior.Enabled
+                    : RandoOptions.FoodQuestBehavior.Disabled;
+            }
+            if (options.TryGetValue("SpreadRot", out Option opt12)) save.options.spreadRotChecks = opt12.ValueBool;
+            if (options.TryGetValue("Weaver", out Option opt13)) save.options.weaverChecks = opt13.ValueBool;
+        }
     }
 
     private class ItemsTab : Tab
@@ -410,26 +476,42 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             //     // label = { color = Color.blue }
             // };
             // subObjects.Add(baseGameLabel);
-            
-            options = new Dictionary<string, Option>
+
+            options = new Dictionary<string, Option>();
+
+            if (menu.myMode <= Mode.StandaloneView)
             {
-                { "Passage", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY), 
-                    RandoOptions.givePassageUnlocks) },
-                { "STKeys", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f), 
-                    RandoOptions.spinningTopKeys) },
-                { "DaemonKeys", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f), 
-                    RandoOptions.daemonKeys) },
-                { "Weaver", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f), 
-                    RandoOptions.weaverItems) },
-                { "DamageUp", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.numDamageIncreases) },
-                { "ExtraKarma", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.extraKarmaIncreases) },
-                { "PercentTraps", new UpDownFloatOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.trapsDensity) },
-                { "PercentHunter", new UpDownFloatOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.hunterCyclesDensity) },
-            };
+                options.AddRange(new Dictionary<string, Option>
+                {
+                    { "Passage", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY), 
+                        RandoOptions.givePassageUnlocks) },
+                    { "DamageUp", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.numDamageIncreases) },
+                    { "ExtraKarma", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.extraKarmaIncreases) },
+                    { "PercentTraps", new UpDownFloatOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.trapsDensity) },
+                });
+
+                if (menu.slugcat == "Hunter")
+                {
+                    options.Add("PercentHunter", new UpDownFloatOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.hunterCyclesDensity));
+                }
+            }
+
+            if (menu.slugcat == "Watcher")
+            {
+                options.AddRange(new Dictionary<string, Option>
+                {
+                    { "STKeys", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f), 
+                        RandoOptions.spinningTopKeys) },
+                    { "DaemonKeys", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f), 
+                        RandoOptions.daemonKeys) },
+                    { "Weaver", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f), 
+                        RandoOptions.weaverItems) },
+                });
+            }
 
             if (menu.usingDownpour)
             {
@@ -487,6 +569,29 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             if (options.TryGetValue("Crafting", out Option opt14)) opt14.ValueBool = save.options.expeditionPerks[5];
             if (options.TryGetValue("Aquatic", out Option opt15)) opt15.ValueBool = save.options.expeditionPerks[6];
             if (options.TryGetValue("Agility", out Option opt16)) opt16.ValueBool = save.options.expeditionPerks[7];
+        }
+
+        public override void OutputToSaveFile(ref SaveFile save)
+        {
+            // Return if not editing mode
+            if (((OptionsDialog)menu).myMode is Mode.StandaloneView or Mode.ArchipelagoView) return;
+            
+            if (options.TryGetValue("Passage", out Option opt1)) save.options.givePassageUnlocks = opt1.ValueBool;
+            if (options.TryGetValue("STKeys", out Option opt2)) save.options.spinningTopKeys = opt2.ValueBool;
+            if (options.TryGetValue("DaemonKeys", out Option opt3)) save.options.daemonKeys = opt3.ValueBool;
+            if (options.TryGetValue("Weaver", out Option opt4)) save.options.weaverRandomized = opt4.ValueBool;
+            if (options.TryGetValue("DamageUp", out Option opt5)) save.options.numDamageIncreases = opt5.ValueInt;
+            if (options.TryGetValue("ExtraKarma", out Option opt6)) save.options.extraKarmaIncreases = opt6.ValueInt;
+            if (options.TryGetValue("PercentTraps", out Option opt7)) save.options.trapsDensity = opt7.ValueFloat;
+            if (options.TryGetValue("PercentHunter", out Option opt8)) save.options.hunterCyclesDensity = opt8.ValueFloat;
+            if (options.TryGetValue("BackSpear", out Option opt9)) save.options.expeditionPerks[0] = opt9.ValueBool;
+            if (options.TryGetValue("DualWield", out Option opt10)) save.options.expeditionPerks[1] = opt10.ValueBool;
+            if (options.TryGetValue("ExpResistance", out Option opt11)) save.options.expeditionPerks[2] = opt11.ValueBool;
+            if (options.TryGetValue("ExpParry", out Option opt12)) save.options.expeditionPerks[3] = opt12.ValueBool;
+            if (options.TryGetValue("ExpJump", out Option opt13)) save.options.expeditionPerks[4] = opt13.ValueBool;
+            if (options.TryGetValue("Crafting", out Option opt14)) save.options.expeditionPerks[5] = opt14.ValueBool;
+            if (options.TryGetValue("Aquatic", out Option opt15)) save.options.expeditionPerks[6] = opt15.ValueBool;
+            if (options.TryGetValue("Agility", out Option opt16)) save.options.expeditionPerks[7] = opt16.ValueBool;
         }
     }
     

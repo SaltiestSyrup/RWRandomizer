@@ -12,10 +12,9 @@ public class NewArchipelagoGameTab : PositionedMenuObject
 {
     // Elements
     private ConnectInfoEntry connectInfoEntry;
-    private HoldButton startButton;
     
     private DialogBoxAsyncWait establishConnectionDialog;
-    private DialogBoxNotify connectResultDialog;
+    private DialogNotify connectResultDialog;
     
     // Vars
     private Task<string> connectTask;
@@ -36,17 +35,6 @@ public class NewArchipelagoGameTab : PositionedMenuObject
         {
             case "CONNECT":
                 StartAsyncConnection();
-                break;
-            case "CONFIRM_CONNECT_RESULT":
-                subObjects.Remove(connectResultDialog);
-                connectResultDialog.RemoveSprites();
-                connectResultDialog = null;
-                // TODO: Allow browsing options before jumping into game
-                if (ArchipelagoConnection.SocketConnected)
-                {
-                    ((CreateNewGamePage)owner).chosenSlugcat = ArchipelagoConnection.Slugcat;
-                    base.Singal(this, "START_NEW_GAME");
-                }
                 break;
         }
     }
@@ -79,10 +67,39 @@ public class NewArchipelagoGameTab : PositionedMenuObject
             RandoOptions.LoadedOptions = ArchipelagoConnection.ConnectedOptions;
             
             // If success, populate options UI. Else show error dialog
-            connectResultDialog = new DialogBoxNotify(menu, this, connectTask.Result, "CONFIRM_CONNECT_RESULT", 
-                new Vector2(-240f, -160f), new Vector2(480f, 320f));
-            subObjects.Add(connectResultDialog);
-
+            if (ArchipelagoConnection.SocketConnected)
+            {
+                Disable(); // Remove connect info entry so that it can be used in options
+                ((CreateNewGamePage)owner).chosenSlugcat = ArchipelagoConnection.Slugcat;
+                // After options is closed enter the game
+                ((RandomizerMenu)menu).optionsDialog = new OptionsDialog(menu.manager,
+                    OptionsDialog.Mode.ArchipelagoNew, new SaveFile
+                    {
+                        options = ArchipelagoConnection.ConnectedOptions,
+                        connectionInfo = new SaveFile.ConnectionInfo
+                        {
+                            hostName = ArchipelagoConnection.ConnectedHostName,
+                            port = ArchipelagoConnection.ConnectedPort,
+                            slotName = ArchipelagoConnection.ConnectedSlotName,
+                            password = ArchipelagoConnection.ConnectedPassword,
+                        },
+                        startingDen = ArchipelagoConnection.desiredStartDen,
+                        slugcat = ArchipelagoConnection.Slugcat.value,
+                        isDownpourDLC = ModManager.MSC,
+                        isWatcherDLC = ModManager.Watcher
+                    },
+                    () =>
+                    {
+                        try { Singal(this, "START_NEW_GAME"); }
+                        catch (Exception e) { Plugin.Log.LogError(e); }
+                    });
+                menu.manager.ShowDialog(((RandomizerMenu)menu).optionsDialog);
+            }
+            else
+            {
+                connectResultDialog = new DialogNotify(connectTask.Result, menu.manager, () => { });
+                menu.manager.ShowDialog(connectResultDialog);
+            }
             connectTask = null;
         }
     }
