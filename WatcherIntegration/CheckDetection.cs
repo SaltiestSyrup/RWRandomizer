@@ -64,8 +64,6 @@ namespace RainWorldRandomizer.WatcherIntegration
                     // Directly check the integers flag because we've hijacked the helper property
                     int encounters = ++self.room.game.GetStorySession.saveState.miscWorldSaveData.integersWatcher[4];
                     
-                    Plugin.Log.LogDebug(encounters);
-                    
                     for (int i = 0; i < encounters; i++)
                         Plugin.RandoManager.GiveLocation($"Weaver-{i + 1}");
                 }

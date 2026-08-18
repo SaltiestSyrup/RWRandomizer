@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using HUD;
 using Menu;
-using MoreSlugcats;
 using RWCustom;
 using UnityEngine;
 using RWMenu = Menu.Menu;
@@ -29,7 +28,6 @@ public sealed class SlotSelector : ScrollingMenu
         scrollUpButton.RemoveSprites();
         
         PopulateEntries();
-        
     }
 
     protected override void PopulateEntries()
@@ -94,11 +92,6 @@ public sealed class SlotSelector : ScrollingMenu
                 // subObjects.Add(new OptionsDialog(menu, this, new Vector2(size.x / 2f - 400f, size.y / 2f - 200f), new Vector2(800f, 500f)));
                 break;
         }
-    }
-
-    public override void RemoveSprites()
-    {
-        base.RemoveSprites();
     }
     
     public class Slot : Entry, IOwnAHUD

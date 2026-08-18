@@ -91,11 +91,6 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         }
     }
 
-    public override void GrafUpdate(float timeStacker)
-    {
-        base.GrafUpdate(timeStacker);
-    }
-
     public override void Singal(MenuObject sender, string message)
     {
         base.Singal(sender, message);
@@ -111,7 +106,6 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
     private void UpdatePage(int newPage)
     {
-        // InitPagelessObjects(newPage);
         currentTab = newPage;
         for (int i = 0; i < tabs.Length; i++)
         {

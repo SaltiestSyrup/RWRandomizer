@@ -8,7 +8,7 @@ using RWMenu = Menu.Menu;
 
 namespace RainWorldRandomizer.Menu;
 
-public class NewArchipelagoGameTab : PositionedMenuObject
+public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) : PositionedMenuObject(menu, owner, pos)
 {
     // Elements
     private ConnectInfoEntry connectInfoEntry;
@@ -18,15 +18,6 @@ public class NewArchipelagoGameTab : PositionedMenuObject
     
     // Vars
     private Task<string> connectTask;
-    
-    public NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
-    {
-        // Connect info fields in center
-        // Slot data display on right
-        // Start Game button on bottom
-
-        
-    }
 
     public override void Singal(MenuObject sender, string message)
     {

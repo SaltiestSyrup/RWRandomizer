@@ -114,7 +114,7 @@ namespace RainWorldRandomizer
             region = RegionOfLocation(kind, internalName);
             internalDesc = CreateInternalDesc();
 
-            Plugin.Log.LogDebug($"New AP LocationInfo: {displayName} => {internalName}, {kind}, {region}, {internalDesc}");
+            // Plugin.Log.LogDebug($"New AP LocationInfo: {displayName} => {internalName}, {kind}, {region}, {internalDesc}");
         }
 
         public LocationInfo(KeyValuePair<string, bool> pair, bool findAPID) : this(pair.Key, pair.Value, findAPID) { }

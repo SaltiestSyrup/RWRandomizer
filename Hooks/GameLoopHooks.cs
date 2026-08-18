@@ -262,12 +262,6 @@ namespace RainWorldRandomizer
             saveState.miscWorldSaveData.smPearlTagged = Plugin.RandoManager.GivenSpearPearlRewrite;
             saveState.miscWorldSaveData.hasRippleEggWarpAbility = Plugin.RandoManager.GivenRippleEggWarp;
 
-            SaveFile file = SaveFile.Create(saveState, Plugin.RandoManager);
-
-            string converted = JsonConvert.SerializeObject(file, Formatting.Indented);
-            Plugin.Log.LogDebug(converted);
-            Plugin.Log.LogDebug(JsonConvert.DeserializeObject<SaveFile>(converted));
-
             // If we're spawning in a room with a warp target (likely from Watcher return home), set positon there
             self.TryMovePlayersToDynamicWarpTarget();
         }
