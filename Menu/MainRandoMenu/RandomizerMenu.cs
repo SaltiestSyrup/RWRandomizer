@@ -114,6 +114,10 @@ public class RandomizerMenu : RWMenu
                         break;
                 }
                 break;
+            case "NEW_GAME":
+                MovePage(false);
+                UpdatePage(2);
+                break;
             case "CONTINUE_GAME":
                 // TODO: Make this lead to a validation step which checks AP connections / DLC enabled
                 if (sender is SlotSelector.Slot slot)
@@ -125,12 +129,11 @@ public class RandomizerMenu : RWMenu
                     Plugin.Log.LogError("Failed to determine slot to begin game with");
                 }
                 break;
-            case "NEW_GAME":
-                MovePage(false);
-                UpdatePage(2);
-                break;
             case "START_NEW_GAME":
                 CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat);
+                break;
+            case "CONTINUE_FROM_LEGACY":
+                CreateNewFromStoryData(((CreateNewGamePage)sender.owner).chosenSlugcat);
                 break;
         }
     }
@@ -234,6 +237,22 @@ public class RandomizerMenu : RWMenu
         manager.rainWorld.options.saveSlot = slot;
         manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
         manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
+        
+        StartGame(slugcat);
+    }
+
+    private void CreateNewFromStoryData(SlugcatStats.Name slugcat)
+    {
+        SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
+        SaveTracker.CustomSlotActive = true;
+        if (!saveTracker.TryGetNextSaveSlot(manager.rainWorld.options.saveSlot, out int newSlot))
+        {
+            Plugin.Log.LogError("Failed to find new valid save slot number");
+            return;
+        }
+        manager.rainWorld.options.saveSlot = newSlot;
+        // manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
+        // manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
         
         StartGame(slugcat);
     }

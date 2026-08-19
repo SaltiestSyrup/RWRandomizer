@@ -216,11 +216,11 @@ namespace RainWorldRandomizer
             _scoutedLocations = null;
         }
 
-        // public struct APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
-        // {
-        //     public long lastIndex = lastIndex;
-        //     public Dictionary<string, bool> locationsStatus = locationsStatus;
-        // }
+        public struct APSave(long lastIndex, Dictionary<string, bool> locationsStatus)
+        {
+            public long lastIndex = lastIndex;
+            public Dictionary<string, bool> locationsStatus = locationsStatus;
+        }
 
         // AP saves store the found locations under a save ID, which is a string of pattern "[Generation Seed]_[Player Name]"
         // public static bool IsThereAnAPSave(string saveId)
@@ -271,16 +271,37 @@ namespace RainWorldRandomizer
             }
         }
 
-        
-        // TODO
-        // Make all save function calls use new one instead
-        // make menu read from file and populate save slot info
-        // Allow creating and deleting saves
-        // 
-
         public static bool HasSaveFileForSlot(int saveSlot)
         {
             return File.Exists(Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}"));
+        }
+
+        /// <summary>
+        /// Find if there is a legacy Archipelago save file for the given generation seed and slot name.
+        /// </summary>
+        public static bool HasLegacySave(string seed, string slotName)
+        {
+            return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{seed}_{slotName}.json"));
+        }
+
+        // TODO: Detection for existing standalone saves
+        public static bool HasLegacySave()
+        {
+            throw new NotImplementedException();
+        }
+
+        public static long GetLastIndexFromLegacy(string seed, string slotName)
+        {
+            string saveId = $"{seed}_{slotName}";
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json");
+            
+            if (!File.Exists(path))
+            {
+                Plugin.Log.LogError($"Failed to load save from file: ap_save_{saveId}.json");
+                return 0L;
+            }
+            
+            return JsonConvert.DeserializeObject<APSave>(File.ReadAllText(path)).lastIndex;
         }
         
         // Requires the correct Progression to be active

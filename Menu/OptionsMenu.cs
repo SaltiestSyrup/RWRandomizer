@@ -694,7 +694,7 @@ namespace RainWorldRandomizer.Menu
             //
             // deathLinkOverrideCheckbox.OnChange += () =>
             // {
-            //     // TODO: DeathLink probably shouldn't send a toggle to server every time the box is clicked, change to happen on apply settings
+            //     // DeathLink probably shouldn't send a toggle to server every time the box is clicked, change to happen on apply settings
             //     DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
             // };
             //
