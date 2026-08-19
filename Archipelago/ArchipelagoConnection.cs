@@ -406,6 +406,19 @@ namespace RainWorldRandomizer
             ConnectedOptions.useDevTokenChecks = slotData.GetSimple("checks_devtokens", 1L) == 1L;
             ConnectedOptions.echoDifficulty = (RandoOptions.EchoLowKarmaDifficulty)slotData.GetSimple("difficulty_echo_low_karma", 3L);
 
+            List<string> perks = slotData.GetArray<string>("expedition_perks", new List<string>()).ToList();
+            ConnectedOptions.expeditionPerks =
+            [
+                perks.Contains("Back Spear Perk"),
+                perks.Contains("Dual Wielding Perk"),
+                perks.Contains("Blast Resistance Perk"),
+                perks.Contains("Explosive Parry Perk"),
+                perks.Contains("Explosive Jump Perk"),
+                perks.Contains("Crafting Perk"),
+                perks.Contains("Aquatic Perk"),
+                perks.Contains("Agility Perk"),
+            ];
+
             ConnectedOptions.archipelagoDeathLink = slotData.GetSimple("death_link", 0L) > 0L;
             DeathLinkHandler.Active = ConnectedOptions.archipelagoDeathLink;
 
