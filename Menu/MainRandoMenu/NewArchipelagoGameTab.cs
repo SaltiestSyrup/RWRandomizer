@@ -32,6 +32,8 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
 
     public void Enable()
     {
+        if (connectInfoEntry is not null) return;
+        
         connectInfoEntry = new ConnectInfoEntry(menu, this, new Vector2());
         subObjects.Add(connectInfoEntry);
     }

@@ -159,7 +159,6 @@ namespace RainWorldRandomizer
             }
 
             locationsLoaded = true;
-            SaveGame(false);
         }
 
         public void SyncLocations()

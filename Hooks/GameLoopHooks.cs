@@ -514,8 +514,8 @@ namespace RainWorldRandomizer
         private static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
             bool origSuccess = orig(self, saveCurrentState, saveMaps, saveMiscProg);
-
-            if (Plugin.RandomizerActive)
+            
+            if (Plugin.RandomizerActive && origSuccess)
             {
                 try
                 {

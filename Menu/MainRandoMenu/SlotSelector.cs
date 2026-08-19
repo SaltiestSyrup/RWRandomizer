@@ -20,7 +20,7 @@ public sealed class SlotSelector : ScrollingMenu
         // Archipelago slot entry
 
         entryWidth = 0.95f * size.x;
-        entryHeight = 0.20f * size.y;
+        entryHeight = 0.22f * size.y;
         roundedRect.fillAlpha = 0.7f;
         
         // Remove unneeded elements
@@ -186,7 +186,7 @@ public sealed class SlotSelector : ScrollingMenu
                 saveFile.ripple > 0 ? new IntVector2((int)((saveFile.ripple - 1f) * 2f), 100) 
                     : new IntVector2(saveFile.karma, saveFile.maxKarma), false));
             hud.AddPart(new FoodMeter(hud, saveFile.maxFood.x, saveFile.maxFood.y));
-            
+            hud.foodMeter.NewShowCount(saveFile.food);
             
             // --- Start button
             startButton = new HoldButton(menu, this, "PLAY", "", 

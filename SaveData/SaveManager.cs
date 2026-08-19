@@ -409,7 +409,7 @@ namespace RainWorldRandomizer
                 maxKarma = saveState.deathPersistentSaveData.karmaCap,
                 ripple = saveState.deathPersistentSaveData.rippleLevel,
                 karmaReinforced = saveState.deathPersistentSaveData.reinforcedKarma,
-                food = saveState.food,
+                food = saveState.totFood,
                 maxFood = SlugcatStats.SlugcatFoodMeter(saveState.saveStateNumber),
                 cycle = saveState.cycleNumber,
                 playtime = SpeedRunTimer.GetCampaignTimeTracker(saveState.saveStateNumber).TotalFreeTime,
