@@ -113,46 +113,7 @@ namespace RainWorldRandomizer
         //     file.Close();
         // }
 
-        // public static (Queue<Unlock.Item>, Queue<TrapsHandler.Trap>) LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
-        // {
-        //     Queue<Unlock.Item> itemQueue = [];
-        //     Queue<TrapsHandler.Trap> trapQueue = [];
-        //
-        //     if (!File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt")))
-        //         return (itemQueue, trapQueue);
-        //
-        //     string[] text = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt"));
-        //
-        //     foreach (string line in text)
-        //     {
-        //         string[] itemString = Regex.Split(line, ",");
-        //         Unlock.Item item;
-        //
-        //         if (itemString[0] == "Trap")
-        //         {
-        //             trapQueue.Enqueue(new TrapsHandler.Trap(itemString[1]));
-        //             continue;
-        //         }
-        //
-        //         if (itemString[0] == nameof(DataPearl.AbstractDataPearl.DataPearlType))
-        //         {
-        //             item = Unlock.IDToItem(itemString[1], true);
-        //         }
-        //         else if (itemString[0] == nameof(AbstractPhysicalObject.AbstractObjectType))
-        //         {
-        //             item = Unlock.IDToItem(itemString[1]);
-        //         }
-        //         else
-        //         {
-        //             Plugin.Log.LogError($"Encountered error in LoadItemQueue:\n\t'{itemString[0]}' is not a valid type");
-        //             continue;
-        //         }
-        //
-        //         itemQueue.Enqueue(item);
-        //     }
-        //
-        //     return (itemQueue, trapQueue);
-        // }
+        
 
         // [Obsolete("Unsafe when RandoManager is null, which is the only case where it is useful")]
         // public static int CountRedsCycles(int saveSlot)
@@ -290,6 +251,27 @@ namespace RainWorldRandomizer
             throw new NotImplementedException();
         }
 
+        public static void DestroyLegacySave(string seed, string slotName, string slugcat, int saveSlot)
+        {
+            string mainPath = ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath;
+            if (File.Exists(Path.Combine(mainPath, $"ap_save_{seed}_{slotName}.json")))
+            {
+                File.Move(Path.Combine(mainPath, $"ap_save_{seed}_{slotName}.json"), 
+                    Path.Combine(mainPath, $"ap_save_{seed}_{slotName}_OLD.json"));
+            }
+
+            if (File.Exists(Path.Combine(mainPath, $"item_delivery_{slugcat}_{saveSlot}.txt")))
+            {
+                File.Move(Path.Combine(mainPath, $"item_delivery_{slugcat}_{saveSlot}.txt"), 
+                    Path.Combine(mainPath, $"item_delivery_{slugcat}_{saveSlot}_OLD.txt"));
+            }
+        }
+
+        public static void DestroyLegacySave()
+        {
+            throw new NotImplementedException();
+        }
+
         public static long GetLastIndexFromLegacy(string seed, string slotName)
         {
             string saveId = $"{seed}_{slotName}";
@@ -302,6 +284,48 @@ namespace RainWorldRandomizer
             }
             
             return JsonConvert.DeserializeObject<APSave>(File.ReadAllText(path)).lastIndex;
+        }
+        
+        // Legacy item queue fetching
+        public static (Queue<Unlock.Item>, Queue<TrapsHandler.Trap>) LoadItemQueue(SlugcatStats.Name slugcat, int saveSlot)
+        {
+            Queue<Unlock.Item> itemQueue = [];
+            Queue<TrapsHandler.Trap> trapQueue = [];
+        
+            if (!File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt")))
+                return (itemQueue, trapQueue);
+        
+            string[] text = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt"));
+        
+            foreach (string line in text)
+            {
+                string[] itemString = Regex.Split(line, ",");
+                Unlock.Item item;
+        
+                if (itemString[0] == "Trap")
+                {
+                    trapQueue.Enqueue(new TrapsHandler.Trap(itemString[1]));
+                    continue;
+                }
+        
+                if (itemString[0] == nameof(DataPearl.AbstractDataPearl.DataPearlType))
+                {
+                    item = Unlock.IDToItem(itemString[1], true);
+                }
+                else if (itemString[0] == nameof(AbstractPhysicalObject.AbstractObjectType))
+                {
+                    item = Unlock.IDToItem(itemString[1]);
+                }
+                else
+                {
+                    Plugin.Log.LogError($"Encountered error in LoadItemQueue:\n\t'{itemString[0]}' is not a valid type");
+                    continue;
+                }
+        
+                itemQueue.Enqueue(item);
+            }
+        
+            return (itemQueue, trapQueue);
         }
         
         // Requires the correct Progression to be active

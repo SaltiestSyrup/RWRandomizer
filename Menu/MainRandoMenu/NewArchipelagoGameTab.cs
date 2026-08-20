@@ -108,7 +108,7 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
                 "Successfully connected to the Multiworld.\n" +
                 "A legacy save file for this slot name and multiworld was found,\n" +
                 "would you like to import the campaign data from the currently selected Rain World slot?\n" +
-                "If not, a new game will be created instead.",
+                "If not, a new game will be created instead and the old data will be discarded.",
                 new Vector2(600f, 200f), 
                 menu.manager,
                 () => // On yes, load legacy file. Else go to options dialog as normal
@@ -120,6 +120,10 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
                 }, 
                 () =>
                 {
+                    // Destroy old save if we aren't using it, so manager doesn't get confused
+                    SaveManager.DestroyLegacySave(ArchipelagoConnection.generationSeed, 
+                        ArchipelagoConnection.ConnectedSlotName, ArchipelagoConnection.Slugcat.value, 
+                        menu.manager.rainWorld.options.saveSlot);
                     // Add directly to the stack, because calling ShowDialog here freezes the game
                     menu.manager.dialogStack.Add(CreateOptionsDialog());
                 }));

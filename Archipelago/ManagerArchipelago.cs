@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using RainWorldRandomizer.Menu;
+using RainWorldRandomizer.SaveData;
 
 namespace RainWorldRandomizer
 {
@@ -58,7 +59,7 @@ namespace RainWorldRandomizer
             }
 
             // Ask for fresh items list if there isn't one waiting
-            if (!ArchipelagoConnection.waitingItemPackets.Any(p => p.Index == 0))
+            if (ArchipelagoConnection.waitingItemPackets.All(p => p.Index != 0))
             {
                 ArchipelagoConnection.SendSyncPacket();
             }
@@ -156,6 +157,19 @@ namespace RainWorldRandomizer
                 Plugin.Singleton.notifQueue.Enqueue(new MessageText(
                     $"Failed to create new Archipelago save", UnityEngine.Color.red));
                 return;
+            }
+
+            if (SaveManager.HasLegacySave(ArchipelagoConnection.generationSeed,
+                    ArchipelagoConnection.ConnectedSlotName))
+            {
+                (itemDeliveryQueue, pendingTrapQueue) = 
+                    SaveManager.LoadItemQueue(currentSlugcat, SaveTracker.OrigSaveSlot);
+                
+                lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
+                
+                SaveManager.DestroyLegacySave(ArchipelagoConnection.generationSeed, 
+                    ArchipelagoConnection.ConnectedSlotName, currentSlugcat.value, 
+                    SaveTracker.OrigSaveSlot);
             }
 
             locationsLoaded = true;
