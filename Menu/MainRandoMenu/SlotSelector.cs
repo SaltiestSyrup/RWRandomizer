@@ -76,7 +76,7 @@ public sealed class SlotSelector : ScrollingMenu
             case "DELETE_SAVE":
                 DialogConfirm confirmation = new DialogConfirm(
                     "Are you sure you want to permanently delete this saved game?\nThis action cannot be undone.",
-                    new Vector2(480f, 320f), menu.manager, 
+                    new Vector2(480f, 200f), menu.manager, 
                     () =>
                     {
                         Slot slot = (Slot)sender.owner;
@@ -84,7 +84,10 @@ public sealed class SlotSelector : ScrollingMenu
                         RemoveSubObject(slot);
                         entries.Remove(slot);
                         SaveManager.DeleteFile(menu.manager.rainWorld, slot.saveSlot);
-                    }, () => { });
+                    }, () => { })
+                {
+                    descriptionLabel = { label = { color = new HSLColor(1f, 0.80f, 0.35f).rgb } }
+                };
                 menu.manager.ShowDialog(confirmation);
                 break;
             case "OPTIONS":
