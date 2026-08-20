@@ -91,8 +91,8 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
 
     private void InitiateStartGameDialogs()
     {
-        Singal(this, "START_NEW_GAME");
         RandoOptions.LoadedOptions = ArchipelagoConnection.ConnectedOptions;
+        ((CreateNewGamePage)owner).chosenSlugcat = ArchipelagoConnection.Slugcat;
         
         // Show error dialog if connection failed
         if (!ArchipelagoConnection.SocketConnected)
@@ -105,10 +105,11 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
         if (SaveManager.HasLegacySave(ArchipelagoConnection.generationSeed, ArchipelagoConnection.ConnectedSlotName))
         {
             menu.manager.ShowDialog(new DialogConfirm(
-                "Connection Successful.\n" +
-                "A legacy save file for this slot name and multiworld was found.\n" +
-                "Would you like to import the campaign data from the currently selected Rain World slot?\n" +
-                "If no, a new game will be created instead.",
+                "Successfully connected to the Multiworld.\n" +
+                "A legacy save file for this slot name and multiworld was found,\n" +
+                "would you like to import the campaign data from the currently selected Rain World slot?\n" +
+                "If not, a new game will be created instead.",
+                new Vector2(600f, 200f), 
                 menu.manager,
                 () => // On yes, load legacy file. Else go to options dialog as normal
                 {
@@ -116,19 +117,23 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
                         SaveManager.GetLastIndexFromLegacy(ArchipelagoConnection.generationSeed,
                             ArchipelagoConnection.ConnectedSlotName);
                     Singal(this, "CONTINUE_FROM_LEGACY");
-                }, ShowOptionsDialog));
+                }, 
+                () =>
+                {
+                    // Add directly to the stack, because calling ShowDialog here freezes the game
+                    menu.manager.dialogStack.Add(CreateOptionsDialog());
+                }));
             return;
         }
         
-        ShowOptionsDialog();
+        menu.manager.ShowDialog(CreateOptionsDialog());
     }
 
-    private void ShowOptionsDialog()
+    private OptionsDialog CreateOptionsDialog()
     {
         Disable(); // Remove connect info entry so that it can be used in options
-        ((CreateNewGamePage)owner).chosenSlugcat = ArchipelagoConnection.Slugcat;
         // After options is closed enter the game
-        ((RandomizerMenu)menu).optionsDialog = new OptionsDialog(menu.manager,
+        return ((RandomizerMenu)menu).optionsDialog = new OptionsDialog(menu.manager,
             OptionsDialog.Mode.ArchipelagoNew, new SaveFile
             {
                 options = ArchipelagoConnection.ConnectedOptions,
@@ -149,6 +154,5 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
                 try { Singal(this, "START_NEW_GAME"); }
                 catch (Exception e) { Plugin.Log.LogError(e); }
             });
-        menu.manager.ShowDialog(((RandomizerMenu)menu).optionsDialog);
     }
 }
