@@ -234,7 +234,9 @@ namespace RainWorldRandomizer
 
         public static bool HasSaveFileForSlot(int saveSlot)
         {
-            return File.Exists(Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}"));
+            Plugin.Log.LogDebug($"Save slot {saveSlot} has file? {File.Exists(Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json"))}");
+            return File.Exists(Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json"));
+            
         }
 
         /// <summary>
@@ -294,7 +296,12 @@ namespace RainWorldRandomizer
         public static long GetLastIndexFromLegacy(string seed, string slotName)
         {
             string saveId = $"{seed}_{slotName}";
-            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json");
+            
+            string path = Path.Combine(ModManager.InstalledMods.FirstOrDefault(m => 
+                    m.id == "salty_syrup.check_randomizer")?.NewestPath ?? "", $"ap_save_{saveId}.json");
+            // TODO DELETE THIS AFTER BETA
+            if (!File.Exists(path)) path = Path.Combine(ModManager.ActiveMods.First(m => 
+                    m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json");
             
             if (!File.Exists(path))
             {
@@ -311,10 +318,16 @@ namespace RainWorldRandomizer
             Queue<Unlock.Item> itemQueue = [];
             Queue<TrapsHandler.Trap> trapQueue = [];
         
-            if (!File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt")))
+            string path = Path.Combine(ModManager.InstalledMods.FirstOrDefault(m => 
+                    m.id == "salty_syrup.check_randomizer")?.NewestPath ?? "", $"item_delivery_{slugcat.value}_{saveSlot}.txt");
+            // TODO DELETE THIS AFTER BETA
+            if (!File.Exists(path)) path = Path.Combine(ModManager.ActiveMods.First(m => 
+                    m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt");
+            
+            if (!File.Exists(path))
                 return (itemQueue, trapQueue);
         
-            string[] text = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt"));
+            string[] text = File.ReadAllLines(Path.Combine(path));
         
             foreach (string line in text)
             {
@@ -371,7 +384,11 @@ namespace RainWorldRandomizer
             string path = SaveTracker.PersistentDataDir;
             Directory.CreateDirectory(path);
 
-            StreamWriter file = File.CreateText(Path.Combine(path, $"rand{rainWorld.options.saveSlot}.json"));
+            int slotToSave = SaveTracker.ActiveLegacySlot >= 0
+                ? SaveTracker.ActiveLegacySlot
+                : rainWorld.options.saveSlot;
+            
+            StreamWriter file = File.CreateText(Path.Combine(path, $"rand{slotToSave}.json"));
             
             file.Write(JsonConvert.SerializeObject(SaveFile.Create(rainWorld.progression.currentSaveState, randoManager, saveCurrentState)));
             file.Close();
@@ -421,6 +438,13 @@ namespace RainWorldRandomizer
                 && (rainWorld.progression?.progressionLoaded ?? false))
             {
                 Plugin.Log.LogError("Cannot delete save file, as there is one currently loaded");
+                return;
+            }
+
+            if (saveSlot < SaveTracker.SLOT_OFFSET)
+            {
+                Plugin.Log.LogError($"Cannot delete save slot {saveSlot}, as it does not map to a valid randomizer slot number");
+                return;
             }
             
             string filePath1 = Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json");
@@ -433,6 +457,11 @@ namespace RainWorldRandomizer
 
     public struct SaveFile()
     {
+        // Backwards Compat
+        // Is considered a legacy slot if this value is greater than 0
+        // Maps to the save slot that the legacy campaign is stored under
+        public int legacySaveSlot = -1;
+        
         // Normal stats
         public bool isDownpourDLC = false;
         public bool isWatcherDLC = false;
@@ -466,6 +495,8 @@ namespace RainWorldRandomizer
             return new SaveFile
             {
                 // TODO: Doesn't currently consider whether current state should be saved for normal save values
+                legacySaveSlot = Plugin.Singleton.rainWorld.options.saveSlot < SaveTracker.SLOT_OFFSET 
+                    ? Plugin.Singleton.rainWorld.options.saveSlot : -1,
                 isDownpourDLC = ModManager.MSC,
                 isWatcherDLC = ModManager.Watcher,
                 slugcat = saveState.saveStateNumber.value,

@@ -49,7 +49,7 @@ namespace RainWorldRandomizer
             try
             {
                 if (continueSaved) 
-                    LoadSave(Plugin.Singleton.rainWorld.options.saveSlot);
+                    LoadSave(SaveTracker.CurrentRandomizerSlot);
                 else CreateNewSave();
             }
             catch (Exception e)

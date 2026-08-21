@@ -21,6 +21,7 @@ public static class SaveDataHooks
             self.rainWorld.progression.Destroy(curSlot);
             self.rainWorld.progression = new PlayerProgression(self.rainWorld, true, true);
             SaveTracker.CustomSlotActive = false;
+            SaveTracker.ActiveLegacySlot = -1;
         }
         
         orig(self, id);

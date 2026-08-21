@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Menu;
 using Menu.Remix;
-using Newtonsoft.Json;
 using RainWorldRandomizer.SaveData;
 using RWCustom;
 using UnityEngine;
@@ -122,7 +119,7 @@ public class RandomizerMenu : RWMenu
                 // TODO: Make this lead to a validation step which checks AP connections / DLC enabled
                 if (sender is SlotSelector.Slot slot)
                 {
-                    ContinueGame(slot.saveSlot, new SlugcatStats.Name(slot.saveFile.slugcat));
+                    ContinueGame(slot.saveSlot, new SlugcatStats.Name(slot.saveFile.slugcat), slot.saveFile.legacySaveSlot >= 0);
                 }
                 else
                 {
@@ -130,10 +127,10 @@ public class RandomizerMenu : RWMenu
                 }
                 break;
             case "START_NEW_GAME":
-                CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat);
+                CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat, false);
                 break;
             case "CONTINUE_FROM_LEGACY":
-                CreateNewFromStoryData(((CreateNewGamePage)sender.owner).chosenSlugcat);
+                CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat, true);
                 break;
         }
     }
@@ -214,7 +211,7 @@ public class RandomizerMenu : RWMenu
         
     }
 
-    private void CreateNewGame(SlugcatStats.Name slugcat)
+    private void CreateNewGame(SlugcatStats.Name slugcat, bool fromLegacy)
     {
         SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
         SaveTracker.CustomSlotActive = true;
@@ -223,36 +220,36 @@ public class RandomizerMenu : RWMenu
             Plugin.Log.LogError("Failed to find new valid save slot number");
             return;
         }
-        manager.rainWorld.options.saveSlot = newSlot;
-        manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
-        manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
-        
-        StartGame(slugcat);
-    }
 
-    private void ContinueGame(int slot, SlugcatStats.Name slugcat)
-    {
-        SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
-        SaveTracker.CustomSlotActive = true;
-        manager.rainWorld.options.saveSlot = slot;
-        manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
-        manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
-        
-        StartGame(slugcat);
-    }
-
-    private void CreateNewFromStoryData(SlugcatStats.Name slugcat)
-    {
-        SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
-        SaveTracker.CustomSlotActive = true;
-        if (!saveTracker.TryGetNextSaveSlot(manager.rainWorld.options.saveSlot, out int newSlot))
+        if (fromLegacy)
         {
-            Plugin.Log.LogError("Failed to find new valid save slot number");
-            return;
+            SaveTracker.ActiveLegacySlot = newSlot;
         }
-        manager.rainWorld.options.saveSlot = newSlot;
-        // manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
-        // manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
+        else
+        {
+            manager.rainWorld.options.saveSlot = newSlot;
+            manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
+            manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
+        }
+        
+        StartGame(slugcat);
+    }
+
+    private void ContinueGame(int slot, SlugcatStats.Name slugcat, bool fromLegacy)
+    {
+        SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
+        SaveTracker.CustomSlotActive = true;
+
+        if (fromLegacy)
+        {
+            SaveTracker.ActiveLegacySlot = slot;
+        }
+        else
+        {
+            manager.rainWorld.options.saveSlot = slot;
+            manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
+            manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
+        }
         
         StartGame(slugcat);
     }

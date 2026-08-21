@@ -12,6 +12,11 @@ public class SaveTracker
     
     public static int OrigSaveSlot = 0;
     public static bool CustomSlotActive;
+    /// <summary>
+    /// Refers to the save slot the randomizer file is stored under, not the campaign slot the game is loading.
+    /// Negative if no legacy slot active
+    /// </summary>
+    public static int ActiveLegacySlot = -1;
 
     private Dictionary<int, SaveFile> saveSlots;
 
@@ -21,6 +26,16 @@ public class SaveTracker
         {
             saveSlots ??= LoadSlotsFromFile();
             return saveSlots;
+        }
+    }
+
+    public static int CurrentRandomizerSlot
+    {
+        get
+        {
+            if (!CustomSlotActive) return -1;
+            if (ActiveLegacySlot >= 0) return ActiveLegacySlot;
+            return Plugin.Singleton.rainWorld.options.saveSlot;
         }
     }
 
