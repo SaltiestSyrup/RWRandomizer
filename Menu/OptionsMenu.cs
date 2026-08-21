@@ -525,8 +525,9 @@ namespace RainWorldRandomizer.Menu
                 "slots and remembering which file is or isn't a randomizer game!\n\n" +
                 "To import a previous run into the new save system, first make sure you have selected the Rain World save slot " +
                 "that the game you want to continue is on. Then, click \"New Game\" in the randomizer menu and connect " +
-                "to Archipelago. You will receive a prompt to import the save data, press OK and the file will be copied " +
-                "into a new Randomizer file. Once you've sheltered or died at least once, the file will be fully transferred.");
+                "to Archipelago. You will receive a prompt to import the save data, press OK and the game should start where you " +
+                "left off previously. Make sure each time you connect to this game in the future you are still on the same" +
+                "Rain World save slot, as it will be using the story campaign for saving data still.");
             Tabs[tabIndex].AddItems(explanationLabel);
 
             // OpCheckBox APCheckBox = AddCheckBox(RandoOptions.archipelago, new(LEFT_OPTION_X, runningY), tabIndex);
