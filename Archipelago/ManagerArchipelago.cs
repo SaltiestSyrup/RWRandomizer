@@ -84,6 +84,7 @@ namespace RainWorldRandomizer
         {
             _currentMaxKarma = 0;
             _rippleIncrements = 0;
+            _weaverIncrements = 0;
             _hunterBonusCyclesGiven = 0;
             _numDamageUpgrades = 0;
             _givenNeuronGlow = false;
@@ -92,6 +93,7 @@ namespace RainWorldRandomizer
             _givenLongerCycles = false;
             _givenPebblesOff = false;
             _givenSpearPearlRewrite = false;
+            _givenRippleEggWarp = false;
 
             gatesStatus.Clear();
             CollectedStaticKeys.Clear();

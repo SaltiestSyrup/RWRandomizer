@@ -269,7 +269,7 @@ namespace RainWorldRandomizer
 
                 // Find den to travel to
                 string customDen = Plugin.RandoManager.customStartDen;
-                if (!RandoOptions.RandomizeSpawnLocation || customDen.Equals("NONE"))
+                if (!RandoOptions.RandomizeSpawnLocation || customDen is "NONE" or "")
                 {
                     customDen = Constants.SlugcatDefaultStartingDen[self.saveState.saveStateNumber];
                 }

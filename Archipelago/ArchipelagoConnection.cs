@@ -348,7 +348,7 @@ namespace RainWorldRandomizer
             if (completionType == 3) ConnectedOptions.goalCondition = RandoOptions.CompletionCondition.FoodQuest;
             else if (campaignString == "Watcher")
             {
-                if (WorldVersion.CompareTo(new Version("1.6.0")) >= 0)
+                if (WorldVersion.CompareTo(new Version("1.6.0")) < 0)
                 {
                     ConnectedOptions.goalCondition = completionType switch
                     {
@@ -391,7 +391,7 @@ namespace RainWorldRandomizer
             }
 
             // Choose starting den
-            if (slotData.GetSimple<string>("starting_room") is string startShelter)
+            if (slotData.GetSimple<string>("starting_room") is string startShelter && startShelter != "")
             {
                 ConnectedOptions.randomizeSpawnLocation = true;
                 desiredStartDen = startShelter;
@@ -459,8 +459,6 @@ namespace RainWorldRandomizer
             // Send a bounce packet
             Session.Socket.SendPacketAsync(new BouncePacket()
             {
-                Games = [GAME_NAME],
-                Tags = ["Tracker"],
                 Slots = [Session.Players.ActivePlayer.Slot],
                 Data = new Dictionary<string, JToken> { { dataKey, JToken.FromObject(info) } }
             });

@@ -20,7 +20,7 @@ namespace RainWorldRandomizer
     {
         public const string PLUGIN_GUID = "salty_syrup.check_randomizer_beta";
         public const string PLUGIN_NAME = "Randomizer BETA";
-        public const string PLUGIN_VERSION = "1.6.0";
+        public const string PLUGIN_VERSION = "1.6.5";
 
         internal static BepInEx.Logging.ManualLogSource Log;
 

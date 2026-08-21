@@ -45,13 +45,13 @@ namespace RainWorldRandomizer.Menu
             }
             subObjects.AddRange(nodes.Values);
 
-            List<string> gates =
+            HashSet<string> gates =
                 Plugin.RandoManager.GetGatesStatus()
                     .Where(x => x.Value)
                     .Select(x => x.Key)
                     .Union(Plugin.RandoManager.GetAllOpenWarps().Select(x => $"Warp-{x}"))
                     .Union(Constants.ForceOpenGates)
-                    .ToList();
+                    .ToHashSet();
 
             foreach (string gate in gates)
             {
@@ -355,7 +355,7 @@ namespace RainWorldRandomizer.Menu
         /// <summary>
         /// Given a list of currently held keys, determine which region nodes are accessible.
         /// </summary>
-        public static IEnumerable<string> GetAccessibleNodes(List<string> keys)
+        public static IEnumerable<string> GetAccessibleNodes(HashSet<string> keys)
         {
             if (Scug == "Watcher")
             {

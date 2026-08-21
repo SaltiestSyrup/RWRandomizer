@@ -448,12 +448,14 @@ namespace RainWorldRandomizer
             // Additionally require the perk in order to trigger jump
             c.GotoNext(MoveType.After,
                 x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.pyroJumpped)))); // 01B8
+            c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(DoesNotHaveExplosiveJump);
             // -> brtrue
             
             // Additionally require the perk in order to trigger parry
             c.GotoNext(MoveType.After,
                 x => x.MatchLdfld(typeof(Player).GetField(nameof(Player.submerged)))); // 0808
+            c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(DoesNotHaveExplosiveParry);
             // -> brtrue
             return;
@@ -465,13 +467,13 @@ namespace RainWorldRandomizer
                 return Plugin.RandoManager.HasExpeditionPerk(Perks.ExplosiveParry)
                     || Plugin.RandoManager.HasExpeditionPerk(Perks.ExplosiveJump);
             }
-            static bool DoesNotHaveExplosiveJump(bool origValue) => origValue || !ShouldHaveJump();
-            static bool DoesNotHaveExplosiveParry(bool origValue) => origValue || !ShouldHaveParry();
+            static bool DoesNotHaveExplosiveJump(bool origValue, Player player) => origValue || !ShouldHaveJump(player);
+            static bool DoesNotHaveExplosiveParry(bool origValue, Player player) => origValue || !ShouldHaveParry(player);
 
-            static bool ShouldHaveJump() => Plugin.Singleton.Game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer
+            static bool ShouldHaveJump(Player player) => player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Artificer
                 || Plugin.RandoManager?.HasExpeditionPerk(Perks.ExplosiveJump) is true;
-            static bool ShouldHaveParry() => Plugin.Singleton.Game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer
-                || Plugin.RandoManager?.HasExpeditionPerk(Perks.ExplosiveParry) is true;
+            static bool ShouldHaveParry(Player player) =>  player.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Artificer
+                                                          || Plugin.RandoManager?.HasExpeditionPerk(Perks.ExplosiveParry) is true;
         }
 
         /// <summary>
@@ -540,10 +542,14 @@ namespace RainWorldRandomizer
             c.GotoNext(x => x.MatchCallOrCallvirt(typeof(Creature).GetMethod(nameof(Creature.LoseAllGrasps))));
 
             c.Emit(OpCodes.Dup);
-            c.EmitDelegate(DropBackSpear);
+            c.EmitDelegate(DropBackObjects);
             return;
 
-            static void DropBackSpear(Creature crit) => (crit as Player)?.spearOnBack?.DropSpear();
+            static void DropBackObjects(Creature crit)
+            {
+                (crit as Player)?.spearOnBack?.DropSpear();
+                (crit as Player)?.slugOnBack?.DropSlug();
+            }
         }
     }
 }

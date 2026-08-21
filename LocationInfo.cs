@@ -238,7 +238,7 @@ namespace RainWorldRandomizer
                 _ => internalName
             };
 
-            if (InMetaRegion) return desc;
+            if (InMetaRegion || kind == LocationKind.EncounterWeaver) return desc;
             return $"{Plugin.RegionNamesMap[region]} - {desc}";
         }
 
