@@ -518,6 +518,17 @@ namespace RainWorldRandomizer.Menu
             // ----- Left side Configurables -----
             float runningY = FIRST_LINE_Y;
 
+            OpLabelLong explanationLabel = new OpLabelLong(new Vector2(LEFT_OPTION_X, runningY), new Vector2(300f, 0f),
+                "Hey, where did the connection screen go?\n\n" +
+                "How you connect to Archipelago has changed! You can find the new menu by clicking the \"RANDOMIZER\" button " +
+                "on the main menu. Saved games are now stored separate from story campaigns, so no more juggling save " +
+                "slots and remembering which file is or isn't a randomizer game!\n\n" +
+                "To import a previous run into the new save system, first make sure you have selected the Rain World save slot " +
+                "that the game you want to continue is on. Then, click \"New Game\" in the randomizer menu and connect " +
+                "to Archipelago. You will receive a prompt to import the save data, press OK and the file will be copied " +
+                "into a new Randomizer file. Once you've sheltered or died at least once, the file will be fully transferred.");
+            Tabs[tabIndex].AddItems(explanationLabel);
+
             // OpCheckBox APCheckBox = AddCheckBox(RandoOptions.archipelago, new(LEFT_OPTION_X, runningY), tabIndex);
             // runningY -= NEWLINE_DECREMENT * 1.5f;
 
@@ -562,13 +573,11 @@ namespace RainWorldRandomizer.Menu
             runningY = FIRST_LINE_Y;
 
             OptionGroup deathLinkGroup = new(this, "AP_DeathLink", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
-            //OpLabel deathLinkLabel = new(RIGHT_OPTION_X + 45f, runningY, Translate("Death Link Settings"));
-            //deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
-            //deathLinkGroup.AddElements(deathLinkLabel);
-            //runningY -= NEWLINE_DECREMENT;
+            OpLabel deathLinkLabel = new(RIGHT_OPTION_X + 45f, runningY, Translate("Death Link Settings"));
+            deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
+            deathLinkGroup.AddElements(deathLinkLabel);
+            runningY -= NEWLINE_DECREMENT;
 
-            // OpCheckBox deathLinkOverrideCheckbox = deathLinkGroup.AddCheckBox(RandoOptions.archipelagoDeathLinkOverride, new(RIGHT_OPTION_X + 30f, runningY));
-            // runningY -= NEWLINE_DECREMENT;
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X + 30f, runningY));
@@ -588,117 +597,7 @@ namespace RainWorldRandomizer.Menu
 
             // Slot data information
             runningY = Mathf.Min(runningY, 322.5f);
-            // OptionGroup slotDataGroup = new(this, "AP_Slot_Data", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
-            // OpLabelLong slotDataLabelLeft = new(new Vector2(RIGHT_OPTION_X, 60f), new Vector2(200f, runningY - 60f), "", false);
-            // OpLabelLong slotDataLabelRight = new(new Vector2(RIGHT_OPTION_X + 210f, 60f), new Vector2(50f, runningY - 60f), "", false, FLabelAlignment.Right);
-            // slotDataGroup.AddElements(slotDataLabelLeft, slotDataLabelRight);
-            // slotDataGroup.AddToTab(tabIndex);
-            // optionGroups.Add(slotDataGroup);
-
-            // OpSimpleButton clearSavesButton = new(new Vector2(490f, 10f), new Vector2(100f, 25f), "Clear Save Files")
-            // {
-            //     colorEdge = new Color(0.85f, 0.35f, 0.4f),
-            //     description = Translate("Delete ALL Archipelago save games. It's a good idea to do this periodically to save space")
-            // };
-            // Tabs[tabIndex].AddItems(clearSavesButton);
-
-            // ----- Update / Button Logic -----
-
-            // void APCheckedChange()
-            // {
-            //     bool APDisabled = !APCheckBox.GetValueBool();
-            //     // Disconnect connection when AP is turned off
-            //     if (APDisabled && ArchipelagoConnection.HasConnected)
-            //     {
-            //         ArchipelagoConnection.Disconnect(true);
-            //         slotDataLabelLeft.text = "";
-            //         slotDataLabelRight.text = "";
-            //     }
-            //     connectionGroup.Disabled = APDisabled;
-            //     deathLinkGroup.Disabled = APDisabled;
-            //     foreach (OptionGroup group in standaloneExclusiveGroups)
-            //     {
-            //         group.Disabled = !APDisabled;
-            //     }
-            // }
-
-            // Call the function once to initialize
-            // APCheckedChange();
-            // APCheckBox.OnChange += APCheckedChange;
-
-            // Attempt AP connection on click
-            // connectButton.OnClick += (trigger) =>
-            // {
-            //     try
-            //     {
-            //         connectResultLabel.text = ArchipelagoConnection.Connect(
-            //         hostNameTextBox.value,
-            //         portTextBox.valueInt,
-            //         slotNameTextBox.value,
-            //         passwordTextBox.value == "" ? null : passwordTextBox.value);
-            //     }
-            //     catch (Exception e)
-            //     {
-            //         connectResultLabel.text = $"An unexpected error occurred while connecting to the server:\n\n {e}";
-            //         Plugin.Log.LogError("Encountered exception while connecting to server:");
-            //         Plugin.Log.LogError(e);
-            //     }
-            //
-            //     if (!ArchipelagoConnection.HasConnected) return;
-            //
-            //     deathLinkOverrideCheckbox.SetValueBool(DeathLinkHandler.Active);
-            //
-            //     // Create / Update slot data information
-            //     slotDataLabelLeft.text = string.Join("\n",
-            //     [
-            //         "Current Settings Information\n",
-            //         "Using MSC:",
-            //         "Using Watcher:",
-            //         "Chosen Slugcat:",
-            //         "Using Random Start:",
-            //         "Chosen Starting Room:",
-            //         "Completion Condition:",
-            //         "Passage Progress w/o Survivor:",
-            //         "Using DeathLink:",
-            //         "Food Quest:",
-            //         "Shelter-sanity:",
-            //         "Flower-sanity:",
-            //         "Dev token checks:",
-            //     ]);
-            //     slotDataLabelRight.text = string.Join("\n",
-            //     [
-            //         $"\n\n{ArchipelagoConnection.IsMSC}",
-            //         $"{ArchipelagoConnection.IsWatcher}",
-            //         $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}",
-            //         $"{ArchipelagoConnection.useRandomStart}",
-            //         $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}",
-            //         $"{ArchipelagoConnection.completionCondition}",
-            //         $"{ArchipelagoConnection.PPwS}",
-            //         $"{DeathLinkHandler.Active}",
-            //         $"{ArchipelagoConnection.foodQuest}",
-            //         $"{ArchipelagoConnection.sheltersanity}",
-            //         $"{ArchipelagoConnection.flowersanity}",
-            //         $"{ArchipelagoConnection.devTokenChecks}",
-            //     ]);
-            // };
-            // Disconnect from AP on click
-            // disconnectButton.OnClick += (trigger) =>
-            // {
-            //     if (ArchipelagoConnection.Disconnect(true))
-            //     {
-            //         connectResultLabel.text = "Disconnected from server";
-            //         slotDataLabelLeft.text = "";
-            //         slotDataLabelRight.text = "";
-            //     }
-            // };
-            //
-            // deathLinkOverrideCheckbox.OnChange += () =>
-            // {
-            //     // DeathLink probably shouldn't send a toggle to server every time the box is clicked, change to happen on apply settings
-            //     DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
-            // };
-            //
-            // clearSavesButton.OnClick += AskToClearSaveFiles;
+            
         }
 
         private void AskToClearSaveFiles(UIfocusable trigger)

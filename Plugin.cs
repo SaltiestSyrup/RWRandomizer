@@ -18,8 +18,8 @@ namespace RainWorldRandomizer
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
-        public const string PLUGIN_NAME = "Randomizer";
+        public const string PLUGIN_GUID = "salty_syrup.check_randomizer_beta";
+        public const string PLUGIN_NAME = "Randomizer BETA";
         public const string PLUGIN_VERSION = "1.6.0";
 
         internal static BepInEx.Logging.ManualLogSource Log;

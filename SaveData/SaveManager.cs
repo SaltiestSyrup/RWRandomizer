@@ -242,7 +242,11 @@ namespace RainWorldRandomizer
         /// </summary>
         public static bool HasLegacySave(string seed, string slotName)
         {
-            return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{seed}_{slotName}.json"));
+            // TODO DELETE SECOND PART AFTER BETA
+            Plugin.Log.LogDebug(ModManager.InstalledMods.FirstOrDefault(m => m.id == "salty_syrup.check_randomizer")?.NewestPath);
+            return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{seed}_{slotName}.json"))
+                || File.Exists(Path.Combine(ModManager.InstalledMods.FirstOrDefault(m => 
+                        m.id == "salty_syrup.check_randomizer")?.NewestPath ?? "", $"ap_save_{seed}_{slotName}.json"));
         }
 
         // TODO: Detection for existing standalone saves
@@ -264,6 +268,21 @@ namespace RainWorldRandomizer
             {
                 File.Move(Path.Combine(mainPath, $"item_delivery_{slugcat}_{saveSlot}.txt"), 
                     Path.Combine(mainPath, $"item_delivery_{slugcat}_{saveSlot}_OLD.txt"));
+            }
+            
+            // TODO DELETE THIS AFTER BETA
+            string origModPath = ModManager.InstalledMods.FirstOrDefault(m => m.id == "salty_syrup.check_randomizer")?.NewestPath;
+            if (origModPath is null) return;
+            if (File.Exists(Path.Combine(origModPath, $"ap_save_{seed}_{slotName}.json")))
+            {
+                File.Move(Path.Combine(origModPath, $"ap_save_{seed}_{slotName}.json"), 
+                    Path.Combine(origModPath, $"ap_save_{seed}_{slotName}_OLD.json"));
+            }
+
+            if (File.Exists(Path.Combine(origModPath, $"item_delivery_{slugcat}_{saveSlot}.txt")))
+            {
+                File.Move(Path.Combine(origModPath, $"item_delivery_{slugcat}_{saveSlot}.txt"), 
+                    Path.Combine(origModPath, $"item_delivery_{slugcat}_{saveSlot}_OLD.txt"));
             }
         }
 
