@@ -60,11 +60,11 @@ namespace RainWorldRandomizer.Generation
 
         public StringBuilder generationLog = new();
         public string customStartDen = "";
-        public int generationSeed;
+        public string generationSeed;
         public bool logVerbose;
 
 
-        public VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int generationSeed = 0)
+        public VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, string generationSeed = "")
         {
             this.slugcat = slugcat;
             this.timeline = timeline;
@@ -79,7 +79,7 @@ namespace RainWorldRandomizer.Generation
             // Using inferior System.Random because it's instanced rather than static.
             // UnityEngine.Random doesn't play well with threads
             this.generationSeed = generationSeed;
-            randomState = new Random(generationSeed);
+            randomState = new Random(generationSeed.GetHashCode()); //new Random(generationSeed);
         }
 
         public Task BeginGeneration(bool logVerbose = false)
@@ -122,11 +122,11 @@ namespace RainWorldRandomizer.Generation
             // Load Tokens
             if (RandoOptions.UseSandboxTokenChecks)
             {
-                lock (Plugin.Singleton.collectTokenHandler)
+                lock (CollectTokenHandler.availableTokens)
                 {
-                    if (Plugin.Singleton.collectTokenHandler.tokensLoadedFor != slugcat)
+                    if (CollectTokenHandler.tokensLoadedFor != slugcat)
                     {
-                        Plugin.Singleton.collectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
+                        CollectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
                     }
                 }
             }
@@ -177,9 +177,9 @@ namespace RainWorldRandomizer.Generation
 
                 // Create Token locations
                 if (RandoOptions.UseSandboxTokenChecks
-                    && Plugin.Singleton.collectTokenHandler.availableTokens.ContainsKey(regionShort))
+                    && CollectTokenHandler.availableTokens.ContainsKey(regionShort))
                 {
-                    foreach (string token in Plugin.Singleton.collectTokenHandler.availableTokens[regionShort])
+                    foreach (string token in CollectTokenHandler.availableTokens[regionShort])
                     {
                         string name = $"Token-{token}";
                         if (token.Split('-').Length == 1) name += $"-{regionShort}";

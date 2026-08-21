@@ -1,5 +1,8 @@
 ﻿using Menu;
 using System;
+using System.Reflection;
+using Menu.Remix.MixedUI;
+using MonoMod.RuntimeDetour;
 using UnityEngine;
 
 namespace RainWorldRandomizer.Menu
@@ -7,6 +10,8 @@ namespace RainWorldRandomizer.Menu
     public static class MenuHooks
     {
         private static bool displayScrollMenu;
+        public static bool FocusablesLocked;
+        
         private static WeakReference<SimpleButton> _spoilerButton = new(null);
         public static SimpleButton SpoilerButton
         {
@@ -40,28 +45,55 @@ namespace RainWorldRandomizer.Menu
 
         public static void ApplyHooks()
         {
-            On.Menu.PauseMenu.ctor += OnMenuCtor;
+            On.Menu.MainMenu.ctor += MainMenuOnCtor;
+            On.Menu.PauseMenu.ctor += OnPauseMenuCtor;
             On.Menu.PauseMenu.Singal += OnMenuSignal;
             On.Menu.PauseMenu.ShutDownProcess += OnMenuShutdownProcess;
             On.Menu.PauseMenu.SpawnExitContinueButtons += OnSpawnExitContinueButtons;
             On.Menu.PauseMenu.SpawnConfirmButtons += OnSpawnConfirmButtons;
             On.HUD.HUD.InitSinglePlayerHud += OnInitSinglePlayerHud;
-        }
 
+            _ = new Hook(typeof(UIfocusable)
+                    .GetProperty(nameof(UIfocusable.CurrentlyFocusableMouse), 
+                        BindingFlags.NonPublic | BindingFlags.Instance)
+                    .GetGetMethod(true),
+                UIfocusableOnGetCurrentlyFocusableMouse);
+        }
+        
         public static void RemoveHooks()
         {
-            On.Menu.PauseMenu.ctor -= OnMenuCtor;
+            On.Menu.PauseMenu.ctor -= OnPauseMenuCtor;
             On.Menu.PauseMenu.Singal -= OnMenuSignal;
             On.Menu.PauseMenu.ShutDownProcess -= OnMenuShutdownProcess;
             On.Menu.PauseMenu.SpawnExitContinueButtons -= OnSpawnExitContinueButtons;
             On.Menu.PauseMenu.SpawnConfirmButtons -= OnSpawnConfirmButtons;
             On.HUD.HUD.InitSinglePlayerHud -= OnInitSinglePlayerHud;
         }
+        
+        private static void MainMenuOnCtor(On.Menu.MainMenu.orig_ctor orig, MainMenu self, ProcessManager manager, bool showRegionSpecificBkg)
+        {
+            orig(self, manager, showRegionSpecificBkg);
+            
+            float buttonWidth = MainMenu.GetButtonWidth(self.CurrLang);
+            Vector2 pos = new Vector2(683f - buttonWidth / 2f, 0f);
+            Vector2 size = new Vector2(buttonWidth, 30f);
+            
+            self.AddMainMenuButton(new SimpleButton(self, self.pages[0], self.Translate("RANDOMIZER"), "RANDOMIZER", pos, size),
+                RandomizerButtonPressed, self.mainMenuButtons.Count - 1);
+            
+            return;
 
-        private static void OnMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
+            void RandomizerButtonPressed()
+            {
+                self.PlaySound(SoundID.MENU_Switch_Page_In);
+                self.manager.RequestMainProcessSwitch(RandomizerEnums.ProcessID.RandomizerMenu);
+            }
+        }
+
+        private static void OnPauseMenuCtor(On.Menu.PauseMenu.orig_ctor orig, PauseMenu self, ProcessManager manager, RainWorldGame game)
         {
             orig(self, manager, game);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             // Control scheme display is just in the way
             self.controlMap.RemoveSprites();
@@ -140,7 +172,7 @@ namespace RainWorldRandomizer.Menu
         private static void OnSpawnExitContinueButtons(On.Menu.PauseMenu.orig_SpawnExitContinueButtons orig, PauseMenu self)
         {
             orig(self);
-            if (!Plugin.RandoManager.isRandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
+            if (!Plugin.RandomizerActive || Plugin.RandoManager is ManagerArchipelago) return;
 
             SpoilerButton = new SimpleButton(self, self.pages[0], self.Translate("RANDOMIZER"), "SHOW_SPOILERS",
                 new Vector2(self.ContinueAndExitButtonsXPos - 460.2f - self.moveLeft, 15f),
@@ -165,7 +197,7 @@ namespace RainWorldRandomizer.Menu
         private static void OnMenuSignal(On.Menu.PauseMenu.orig_Singal orig, PauseMenu self, MenuObject sender, string message)
         {
             orig(self, sender, message);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             if (message is "SHOW_SPOILERS")
             {
@@ -177,6 +209,7 @@ namespace RainWorldRandomizer.Menu
         private static void OnInitSinglePlayerHud(On.HUD.HUD.orig_InitSinglePlayerHud orig, HUD.HUD self, RoomCamera cam)
         {
             orig(self, cam);
+            if (!Plugin.RandomizerActive) return;
 
             CurrentChatLog = new ChatLog(self, self.fContainers[1]);
             self.AddPart(CurrentChatLog);
@@ -200,6 +233,14 @@ namespace RainWorldRandomizer.Menu
                     SpoilerMenu = null;
                 }
             }
+        }
+        
+        /// <summary>
+        /// Stops other UIfocusables from stealing focus from OpComboBoxes when they're behind the selection box
+        /// </summary>
+        private static bool UIfocusableOnGetCurrentlyFocusableMouse(Func<UIfocusable, bool> orig, UIfocusable self)
+        {
+            return orig(self) && (!FocusablesLocked || self.Focused || self.held);
         }
     }
 }

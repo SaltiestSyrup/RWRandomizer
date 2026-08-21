@@ -6,12 +6,12 @@ using System.Collections.Generic;
 
 namespace RainWorldRandomizer
 {
-    public class CollectTokenHandler
+    public static class CollectTokenHandler
     {
-        public SlugcatStats.Name tokensLoadedFor = null;
-        public Dictionary<string, string[]> availableTokens = [];
+        public static SlugcatStats.Name tokensLoadedFor = null;
+        public static Dictionary<string, string[]> availableTokens = [];
 
-        public void ApplyHooks()
+        public static void ApplyHooks()
         {
             On.CollectToken.AvailableToPlayer += OnTokenAvailableToPlayer;
             On.CollectToken.Pop += OnTokenPop;
@@ -33,7 +33,7 @@ namespace RainWorldRandomizer
             }
         }
 
-        public void RemoveHooks()
+        public static void RemoveHooks()
         {
             On.CollectToken.AvailableToPlayer -= OnTokenAvailableToPlayer;
             On.CollectToken.Pop -= OnTokenPop;
@@ -51,15 +51,15 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Constructs a list of all tokens that can be collected for a given slugcat
         /// </summary>
-        public void LoadAvailableTokens(RainWorld rainWorld, SlugcatStats.Name slugcat)
+        public static void LoadAvailableTokens(RainWorld rainWorld, SlugcatStats.Name slugcat)
         {
             availableTokens.Clear();
             List<string> allRegions = Region.GetFullRegionOrder();
 
-            for (int i = 0; i < allRegions.Count; i++)
+            foreach (var region in allRegions)
             {
                 List<string> idsToAdd = [];
-                string regionLower = allRegions[i].ToLowerInvariant();
+                string regionLower = region.ToLowerInvariant();
 
                 foreach (var token in rainWorld.regionBlueTokens[regionLower])
                 {
@@ -93,7 +93,7 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                availableTokens.Add(allRegions[i], [.. idsToAdd]);
+                availableTokens.Add(region, [.. idsToAdd]);
             }
             tokensLoadedFor = slugcat;
         }
@@ -101,9 +101,10 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Detect token collection
         /// </summary>
-        public void OnTokenPop(On.CollectToken.orig_Pop orig, CollectToken self, Player player)
+        private static void OnTokenPop(On.CollectToken.orig_Pop orig, CollectToken self, Player player)
         {
             orig(self, player);
+            if (!Plugin.RandomizerActive) return;
 
             // Prevent TextPrompt from being issued.
             if (RandoOptions.DisableTokenPopUps) self.anythingUnlocked = false;
@@ -115,7 +116,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Make Sandbox tokens spawn regardless of meta unlocks
         /// </summary>
-        public void ILRoomLoaded(ILContext il)
+        /// TODO Test this for normal and dev tokens
+        private static void ILRoomLoaded(ILContext il)
         {
             ILCursor c = new(il);
 
@@ -192,6 +194,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate(AlreadyHasToken);
             c.Emit(OpCodes.Brfalse, devJumpTrue);
             c.Emit(OpCodes.Br, devJumpFalse);
+            return;
 
             // ---
             void InjectHasTokenCheck()
@@ -202,18 +205,20 @@ namespace RainWorldRandomizer
                 c.Emit(OpCodes.Ldloc, localVarIndex);
                 c.EmitDelegate(AlreadyHasToken);
             }
-        }
-
-        private bool AlreadyHasToken(Room room, int index)
-        {
-            string tokenString = TokenToLocationName(room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData, room.abstractRoom.name);
-            return Plugin.RandoManager.IsLocationGiven(tokenString) is true or null;
+            
+            static bool AlreadyHasToken(Room room, int index)
+            {
+                if (!Plugin.RandomizerActive) // To get unmodified behavior, return false if dev token else true
+                    return room.roomSettings.placedObjects[index].type != MoreSlugcatsEnums.PlacedObjectType.DevToken;
+                string tokenString = TokenToLocationName(room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData, room.abstractRoom.name);
+                return Plugin.RandoManager.IsLocationGiven(tokenString) is true or null;
+            }
         }
 
         /// <summary>
         /// Prevent Dev tokens from getting instantly destroyed when spawned
         /// </summary>
-        private void CollectTokenUpdateIL(ILContext il)
+        private static void CollectTokenUpdateIL(ILContext il)
         {
             ILCursor c = new(il);
 
@@ -224,8 +229,7 @@ namespace RainWorldRandomizer
                 );
 
             // If it never reads as a dev token it won't destroy it
-            c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldc_I4_0);
+            c.EmitDelegate(OverwriteDevToken);
 
             // --- 
 
@@ -236,15 +240,18 @@ namespace RainWorldRandomizer
                 );
 
             c.EmitDelegate(ExtendTokenRange);
+            return;
 
-            static bool ExtendTokenRange(bool origVal) => true;
+            static bool OverwriteDevToken(bool origVal) => Plugin.RandomizerActive ? false : origVal;
+            static bool ExtendTokenRange(bool origVal) => Plugin.RandomizerActive ? true : origVal;
         }
 
         /// <summary>
         /// Make tokens spawn as Inv, and make Dev tokens spawn
         /// </summary>
-        public bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
+        private static bool OnTokenAvailableToPlayer(On.CollectToken.orig_AvailableToPlayer orig, CollectToken self)
         {
+            if (!Plugin.RandomizerActive) return orig(self);
             if (self.room.game.StoryCharacter is null) return false;
 
             bool isInv = ModManager.MSC && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
@@ -252,7 +259,7 @@ namespace RainWorldRandomizer
             return orig(self) || (shouldBeAvailable && (isInv || self.devToken));
         }
 
-        private void ILOverrideHiddenOrUnplayable(ILContext il)
+        private static void ILOverrideHiddenOrUnplayable(ILContext il)
         {
             ILCursor c = new(il);
 
@@ -265,9 +272,11 @@ namespace RainWorldRandomizer
 
             c.Emit(OpCodes.Ldloc, localIndex);
             c.EmitDelegate(HiddenOrUnplayableAndNotInv);
+            return;
 
             static bool HiddenOrUnplayableAndNotInv(bool isHiddenOrUnplayable, SlugcatStats.Name slugcat)
             {
+                if (!Plugin.RandomizerActive) return isHiddenOrUnplayable;
                 return isHiddenOrUnplayable && (!ModManager.MSC || slugcat != MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
             }
         }
@@ -275,32 +284,36 @@ namespace RainWorldRandomizer
         /// <summary>
         /// If <see cref="RandoOptions.DisableTokenPopUps"/> is enabled, prevent chatlogs from happening.
         /// </summary>
-        private void Player_ProcessChatLog(ILContext il)
+        private static void Player_ProcessChatLog(ILContext il)
         {
             ILCursor c = new(il);
 
             // Prevent stun and mushroom effect (branch interception at 0026).
             c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<ChatlogData.ChatlogID>).GetMethod("op_Inequality")));
-            bool PreventStun(bool prev) => prev && !RandoOptions.DisableTokenPopUps;
             c.EmitDelegate(PreventStun);
 
             // Prevent chatlog from being displayed (branch interception at 00b1).
             c.GotoNext(MoveType.Before, x => x.MatchLdcI4(60));  // 00aa
-            int PreventChatlog(int prev) => RandoOptions.DisableTokenPopUps ? 59 : prev;
             c.EmitDelegate(PreventChatlog);
+            return;
+            
+            static bool PreventStun(bool prev) => Plugin.RandomizerActive ? prev && !RandoOptions.DisableTokenPopUps : prev;
+            static int PreventChatlog(int prev) => Plugin.RandomizerActive && RandoOptions.DisableTokenPopUps ? 59 : prev;
         }
 
         /// <summary>
         /// If <see cref="RandoOptions.DisableTokenPopUps"/> is enabled, prevent Slugcat from being stopped by touching a chatlog token.
         /// </summary>
-        private void Player_InitChatLog(ILContext il)
+        private static void Player_InitChatLog(ILContext il)
         {
             ILCursor c = new(il);
 
             // Prevent the `for` loop from running (branch interception at 0038).
             c.GotoNext(MoveType.Before, x => x.MatchConvI4());  // 0037
-            static int PreventStop(int prev) => RandoOptions.DisableTokenPopUps ? 0 : prev;
             c.EmitDelegate(PreventStop);
+            return;
+            
+            static int PreventStop(int prev) => Plugin.RandomizerActive && RandoOptions.DisableTokenPopUps ? 0 : prev;
         }
 
         public static string TokenToLocationName(CollectToken.CollectTokenData data, string room)

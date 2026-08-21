@@ -3,10 +3,12 @@ using MoreSlugcats;
 using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using RainWorldRandomizer.Menu;
+using RainWorldRandomizer.SaveData;
 
 namespace RainWorldRandomizer
 {
@@ -16,44 +18,41 @@ namespace RainWorldRandomizer
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        public const string PLUGIN_GUID = "salty_syrup.check_randomizer";
-        public const string PLUGIN_NAME = "Randomizer";
+        public const string PLUGIN_GUID = "salty_syrup.check_randomizer_beta";
+        public const string PLUGIN_NAME = "Randomizer BETA";
         public const string PLUGIN_VERSION = "1.6.5";
 
         internal static BepInEx.Logging.ManualLogSource Log;
 
-        public static Plugin Singleton = null;
+        public static Plugin Singleton;
         public static ManagerBase RandoManager = null;
-        private static List<LogicAddon> logicAddons = [];
-
-        public CollectTokenHandler collectTokenHandler;
-
-        private OptionsMenu options;
-
-        public RainWorld rainWorld;
-        public WeakReference<RainWorldGame> _game = new(null);
-        public RainWorldGame Game
-        {
-            get
-            {
-                if (_game.TryGetTarget(out RainWorldGame g)) return g;
-                else return null;
-            }
-            set
-            {
-                _game = new WeakReference<RainWorldGame>(value);
-            }
-        }
-
-        // Queue of pending notifications to be sent to the player in-game
-        public Queue<MessageText> notifQueue = new();
-
-        // A map of every region to it's display name
+        private static List<LogicAddon> _logicAddons = [];
+        // A map of every region to its display name
         public static Dictionary<string, string> RegionNamesMap = [];
         // A map of the 'correct' region acronyms for each region depending on current slugcat
         public static Dictionary<string, string> ProperRegionMap = [];
-        public static Dictionary<string, RegionGate.GateRequirement[]> defaultGateRequirements = [];
+        public static Dictionary<string, RegionGate.GateRequirement[]> DefaultGateRequirements = [];
 
+        public static bool RandomizerActive
+        {
+            get { return RandoManager?.isRandomizerActive is true; }
+        }
+
+        public static bool ArchipelagoActive
+        {
+            get { return RandoManager is ManagerArchipelago; }
+        }
+
+        public static ManagerArchipelago ArchipelagoManager
+        {
+            get { return RandoManager as ManagerArchipelago; }
+        }
+        
+        public static ManagerVanilla VanillaManager
+        {
+            get { return RandoManager as ManagerVanilla; }
+        }
+        
         /// <summary>Whether there are any third-party regions.</summary>
         public static bool AnyThirdPartyRegions
         {
@@ -73,12 +72,17 @@ namespace RainWorldRandomizer
             }
         }
 
-        public enum GateBehavior
+        private OptionsMenu options;
+        // Queue of pending notifications to be sent to the player in-game
+        public Queue<MessageText> notifQueue = new();
+        
+        public RainWorld rainWorld;
+        private WeakReference<RainWorldGame> _game = new(null);
+        
+        public RainWorldGame Game
         {
-            OnlyKey, // Only keys matter, karma not required
-            KeyAndKarma, // Need both key and karma
-            KeyOrKarma, // Key allows bypassing karma requirement
-            OnlyKarma // Keys not needed, normal gate behavior
+            get { return _game.TryGetTarget(out RainWorldGame g) ? g : null; }
+            set { _game = new WeakReference<RainWorldGame>(value); }
         }
 
         public void OnEnable()
@@ -98,13 +102,12 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            collectTokenHandler = new CollectTokenHandler();
             options = new OptionsMenu();
 
             // Create hooks
             try
             {
-                collectTokenHandler.ApplyHooks();
+                CollectTokenHandler.ApplyHooks();
                 MenuHooks.ApplyHooks();
                 TokenCachePatcher.ApplyHooks();
 
@@ -115,6 +118,7 @@ namespace RainWorldRandomizer
                 SpearmasterCutscenes.ApplyHooks();
                 SleepScreenHooks.ApplyHooks();
                 FlowerCheckHandler.ApplyHooks();
+                SaveDataHooks.ApplyHooks();
 
                 LocationColorizer.ApplyHooks();
                 TrapsHandler.ApplyHooks();
@@ -153,7 +157,7 @@ namespace RainWorldRandomizer
             // Remove hooks
             try
             {
-                collectTokenHandler.RemoveHooks();
+                CollectTokenHandler.RemoveHooks();
                 MenuHooks.RemoveHooks();
                 TokenCachePatcher.RemoveHooks();
 
@@ -164,6 +168,7 @@ namespace RainWorldRandomizer
                 SpearmasterCutscenes.RemoveHooks();
                 SleepScreenHooks.RemoveHooks();
                 FlowerCheckHandler.RemoveHooks();
+                SaveDataHooks.RemoveHooks();
 
                 LocationColorizer.RemoveHooks();
                 TrapsHandler.RemoveHooks();
@@ -194,6 +199,11 @@ namespace RainWorldRandomizer
         {
             orig(self);
             Futile.atlasManager.LoadAtlas("Atlases/randomizer");
+            Futile.atlasManager.LoadImage("illustrations/randomizerpage");
+            // Texture2D texture2D = new(0, 0);
+            // texture2D.LoadRawTextureData(File.ReadAllBytes(AssetManager.ResolveFilePath("illustrations/randomizerpage.png")));
+            // texture2D.filterMode = FilterMode.Point;
+            // Futile.atlasManager.LoadAtlasFromTexture("randomizerpage", texture2D, false);
 
             // If you try to load an already loaded AssetBundle,
             // a message gets logged to exceptionLog.txt but no exception is actually thrown.
@@ -259,10 +269,10 @@ namespace RainWorldRandomizer
 
             // Make the logic time
             CustomLogicBuilder.DefineLogic();
-            foreach (LogicAddon addon in logicAddons) addon.DefineLogic();
+            foreach (LogicAddon addon in _logicAddons) addon.DefineLogic();
         }
 
-        public static void AddLogicAddon(LogicAddon addon) => logicAddons.Add(addon);
+        public static void AddLogicAddon(LogicAddon addon) => _logicAddons.Add(addon);
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom)
         {
@@ -399,7 +409,7 @@ namespace RainWorldRandomizer
         {
             bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
             RegionGate.GateRequirement[] newRequirements =
-                defaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
+                DefaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
                 ? (RegionGate.GateRequirement[])v.Clone()
                 : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
             RegionGate.GateRequirement[] origRequirements = (RegionGate.GateRequirement[])newRequirements.Clone();
@@ -413,24 +423,24 @@ namespace RainWorldRandomizer
             }
 
             // Decide gate behavior
-            GateBehavior gateBehavior;
+            RandoOptions.GateBehavior gateBehavior;
             if (RandoManager is ManagerArchipelago)
             {
-                gateBehavior = ArchipelagoConnection.gateBehavior;
+                gateBehavior = RandoOptions.CurGateBehavior;
             }
             else if (RandoOptions.StartMinimumKarma)
             {
-                gateBehavior = GateBehavior.OnlyKey;
+                gateBehavior = RandoOptions.GateBehavior.OnlyKey;
             }
             else
             {
-                gateBehavior = GateBehavior.KeyAndKarma;
+                gateBehavior = RandoOptions.GateBehavior.KeyAndKarma;
             }
 
             // Apply behavior
             switch (gateBehavior)
             {
-                case GateBehavior.OnlyKey:
+                case RandoOptions.GateBehavior.OnlyKey:
                     if (hasKeyForGate)
                     {
                         newRequirements[0] = RegionGate.GateRequirement.OneKarma;
@@ -442,21 +452,21 @@ namespace RainWorldRandomizer
                         newRequirements[1] = RegionGate.GateRequirement.DemoLock;
                     }
                     break;
-                case GateBehavior.KeyAndKarma:
+                case RandoOptions.GateBehavior.KeyAndKarma:
                     if (!hasKeyForGate)
                     {
                         newRequirements[0] = RegionGate.GateRequirement.DemoLock;
                         newRequirements[1] = RegionGate.GateRequirement.DemoLock;
                     }
                     break;
-                case GateBehavior.KeyOrKarma:
+                case RandoOptions.GateBehavior.KeyOrKarma:
                     if (hasKeyForGate)
                     {
                         newRequirements[0] = RegionGate.GateRequirement.OneKarma;
                         newRequirements[1] = RegionGate.GateRequirement.OneKarma;
                     }
                     break;
-                case GateBehavior.OnlyKarma:
+                case RandoOptions.GateBehavior.OnlyKarma:
                     // Nothing to be done here, use vanilla mechanics
                     break;
             }

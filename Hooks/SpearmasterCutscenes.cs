@@ -16,7 +16,7 @@ namespace RainWorldRandomizer
                 On.DataPearl.PearlIsNotMisc += OnPearlIsNotMisc;
                 On.SSOracleBehavior.SSSleepoverBehavior.Update += OnMoonUpdate;
 
-                IL.MoreSlugcats.SpearMasterPearl.AbstractSpearMasterPearl.ctor += ILAbstractSpearMasterPearlctor;
+                IL.MoreSlugcats.SpearMasterPearl.AbstractSpearMasterPearl.ctor += ILAbstractSpearMasterPearlCtor;
                 IL.Player.Regurgitate += ILRegurgitate;
                 IL.SSOracleBehavior.SSSleepoverBehavior.Update += ILMoonUpdate;
                 IL.SSOracleBehavior.Update += ILSSOracleBehaviorUpdate;
@@ -34,7 +34,7 @@ namespace RainWorldRandomizer
             On.DataPearl.PearlIsNotMisc -= OnPearlIsNotMisc;
             On.SSOracleBehavior.SSSleepoverBehavior.Update -= OnMoonUpdate;
 
-            IL.MoreSlugcats.SpearMasterPearl.AbstractSpearMasterPearl.ctor -= ILAbstractSpearMasterPearlctor;
+            IL.MoreSlugcats.SpearMasterPearl.AbstractSpearMasterPearl.ctor -= ILAbstractSpearMasterPearlCtor;
             IL.Player.Regurgitate -= ILRegurgitate;
             IL.SSOracleBehavior.SSSleepoverBehavior.Update -= ILMoonUpdate;
             IL.SSOracleBehavior.Update -= ILSSOracleBehaviorUpdate;
@@ -44,7 +44,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Make the fake pearl count as a misc pearl
         /// </summary>
-        public static bool OnPearlIsNotMisc(On.DataPearl.orig_PearlIsNotMisc orig, DataPearl.AbstractDataPearl.DataPearlType pearlType)
+        private static bool OnPearlIsNotMisc(On.DataPearl.orig_PearlIsNotMisc orig, DataPearl.AbstractDataPearl.DataPearlType pearlType)
         {
             bool origResult = orig(pearlType);
 
@@ -54,7 +54,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Add realizer case for fake pearl
         /// </summary>
-        public static void OnMSCItemsRealizer(On.AbstractPhysicalObject.orig_MSCItemsRealizer orig, AbstractPhysicalObject self)
+        private static void OnMSCItemsRealizer(On.AbstractPhysicalObject.orig_MSCItemsRealizer orig, AbstractPhysicalObject self)
         {
             orig(self);
 
@@ -67,8 +67,14 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Make LttM give mark and fix flags to make her behave properly
         /// </summary>
-        public static void OnMoonUpdate(On.SSOracleBehavior.SSSleepoverBehavior.orig_Update orig, SSOracleBehavior.SSSleepoverBehavior self)
+        private static void OnMoonUpdate(On.SSOracleBehavior.SSSleepoverBehavior.orig_Update orig, SSOracleBehavior.SSSleepoverBehavior self)
         {
+            if (!Plugin.RandomizerActive)
+            {
+                orig(self);
+                return;
+            }
+            
             if (!(Plugin.RandoManager.IsLocationGiven("Meet_LttM_Spear") ?? true))
             {
                 self.owner.NewAction(SSOracleBehavior.Action.General_GiveMark);
@@ -78,19 +84,18 @@ namespace RainWorldRandomizer
             orig(self);
 
             if (!Plugin.RandoManager.GivenSpearPearlRewrite
-                && self.owner.inspectPearl is not null
-                && self.owner.inspectPearl is SpearMasterPearl)
+                && self.owner.inspectPearl is SpearMasterPearl pearl)
             {
                 self.oracle.room.game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = false;
-                (self.owner.inspectPearl.AbstractPearl as SpearMasterPearl.AbstractSpearMasterPearl).broadcastTagged = false;
-                (self.owner.inspectPearl as SpearMasterPearl).holoVisible = false;
+                (pearl.AbstractPearl as SpearMasterPearl.AbstractSpearMasterPearl).broadcastTagged = false;
+                pearl.holoVisible = false;
             }
         }
 
         /// <summary>
         /// Fix flags for Pebbles to make him behave properly
         /// </summary>
-        public static void ILSSOracleBehaviorUpdate(ILContext il)
+        private static void ILSSOracleBehaviorUpdate(ILContext il)
         {
             ILCursor c = new(il);
 
@@ -106,16 +111,13 @@ namespace RainWorldRandomizer
 
             c.Index -= 1;
 
-            c.EmitDelegate<Func<bool, bool>>(broadcastTagged =>
-            {
-                return broadcastTagged || (Plugin.RandoManager.IsLocationGiven("Meet_LttM_Spear") ?? false);
-            });
+            c.EmitDelegate<Func<bool, bool>>(broadcastTagged => broadcastTagged || (Plugin.RandoManager?.IsLocationGiven("Meet_LttM_Spear") ?? false));
         }
 
         /// <summary>
         /// Explode the fake pearl along with the overseer
         /// </summary>
-        public static void ILSSOracleMeetPurpleUpdate(ILContext il)
+        private static void ILSSOracleMeetPurpleUpdate(ILContext il)
         {
             ILCursor c = new(il);
 
@@ -129,9 +131,11 @@ namespace RainWorldRandomizer
             // Explode the pearl
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(DetonatePearl);
+            return;
 
             static void DetonatePearl(SSOracleBehavior.SSOracleMeetPurple self)
             {
+                if (!Plugin.RandomizerActive) return;
                 for (int i = 0; i < 20; i++)
                 {
                     self.oracle.room.AddObject(new Spark(self.MySMcore.firstChunk.pos,
@@ -144,7 +148,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Revert LttM writing to the pearl
         /// </summary>
-        public static void ILMoonUpdate(ILContext il)
+        private static void ILMoonUpdate(ILContext il)
         {
             ILCursor c = new(il);
 
@@ -157,22 +161,18 @@ namespace RainWorldRandomizer
                 x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.theMark)))
                 );
 
-                c.EmitDelegate<Func<bool, bool>>(hasMark =>
-                {
-                    return hasMark || (Plugin.RandoManager.IsLocationGiven("Meet_LttM_Spear") ?? false);
-                });
+                c.EmitDelegate<Func<bool, bool>>(hasMark => hasMark || (Plugin.RandoManager?.IsLocationGiven("Meet_LttM_Spear") ?? false));
             }
         }
 
         /// <summary>
         /// Replace AbstractSpearMasterPearl creation with AbstractFakeSpearMasterPearl
         /// </summary>
-        public static void ILRegurgitate(ILContext il)
+        private static void ILRegurgitate(ILContext il)
         {
             ILCursor c = new(il);
 
-            c.GotoNext(
-                MoveType.After,
+            c.GotoNext(MoveType.After,
                 x => x.MatchNewobj(typeof(SpearMasterPearl.AbstractSpearMasterPearl)
                     .GetConstructor(
                     [
@@ -183,32 +183,23 @@ namespace RainWorldRandomizer
                         typeof(int),
                         typeof(int),
                         typeof(PlacedObject.ConsumableObjectData)
-                    ]))
-                );
+                    ])));
 
-            ILLabel jump = c.MarkLabel();
+            c.EmitDelegate(ReplacePearl);
+            return;
 
-            c.Index--;
-
-            c.Emit(OpCodes.Newobj, typeof(FakeSpearMasterPearl.AbstractFakeSpearMasterPearl)
-                .GetConstructor(
-                [
-                    typeof(World),
-                    typeof(PhysicalObject),
-                    typeof(WorldCoordinate),
-                    typeof(EntityID),
-                    typeof(int),
-                    typeof(int),
-                    typeof(PlacedObject.ConsumableObjectData) 
-                ]));
-
-            c.Emit(OpCodes.Br, jump);
+            static SpearMasterPearl.AbstractSpearMasterPearl ReplacePearl(SpearMasterPearl.AbstractSpearMasterPearl origPearl)
+            {
+                if (!Plugin.RandomizerActive) return origPearl;
+                return new FakeSpearMasterPearl.AbstractFakeSpearMasterPearl(origPearl.world, null, origPearl.pos,
+                    origPearl.ID, -1, -1, null);
+            }
         }
 
         /// <summary>
         /// Change AbstractObjectType and DataPearlType of special pearl depending on if it's a fake pearl
         /// </summary>
-        public static void ILAbstractSpearMasterPearlctor(ILContext il)
+        private static void ILAbstractSpearMasterPearlCtor(ILContext il)
         {
             ILCursor c = new(il);
 
@@ -233,14 +224,15 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Pop);
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(ReplacePearlDataPearlType);
+            return;
 
-            AbstractPhysicalObject.AbstractObjectType ReplacePearlAbstractObjectType(SpearMasterPearl.AbstractSpearMasterPearl self)
+            static AbstractPhysicalObject.AbstractObjectType ReplacePearlAbstractObjectType(SpearMasterPearl.AbstractSpearMasterPearl self)
             {
                 return self is FakeSpearMasterPearl.AbstractFakeSpearMasterPearl
                     ? RandomizerEnums.AbstractObjectType.SpearmasterpearlFake
                     : MoreSlugcatsEnums.AbstractObjectType.Spearmasterpearl;
             }
-            DataPearl.AbstractDataPearl.DataPearlType ReplacePearlDataPearlType(SpearMasterPearl.AbstractSpearMasterPearl self)
+            static DataPearl.AbstractDataPearl.DataPearlType ReplacePearlDataPearlType(SpearMasterPearl.AbstractSpearMasterPearl self)
             {
                 return self is FakeSpearMasterPearl.AbstractFakeSpearMasterPearl
                     ? RandomizerEnums.DataPearlType.SpearmasterpearlFake

@@ -24,7 +24,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Tracks Karma flowers placed in rooms via room settings. Flowers from other sources are not added to this table. 
         /// </summary>
-        internal static ConditionalWeakTable<AbstractPhysicalObject, LocationInfo> trackedFlowers = new();
+        public static ConditionalWeakTable<AbstractPhysicalObject, LocationInfo> TrackedFlowers = new();
 
         /// <summary>
         /// Register any flowers to the CWT when a room is loaded
@@ -32,17 +32,17 @@ namespace RainWorldRandomizer
         private static void OnRoomLoaded(On.Room.orig_Loaded orig, Room self)
         {
             orig(self);
-            if (!RandoOptions.UseKarmaFlowerChecks) return;
+            if (!Plugin.RandomizerActive || !RandoOptions.UseKarmaFlowerChecks) return;
             foreach (AbstractWorldEntity entity in self.abstractRoom.entities)
             {
                 if (entity is AbstractPhysicalObject abstractObj
                     && abstractObj.type == AbstractPhysicalObject.AbstractObjectType.KarmaFlower)
                 {
-                    if (trackedFlowers.TryGetValue(abstractObj, out _) || string.IsNullOrEmpty(abstractObj.placedObjectOrigin)) continue;
+                    if (TrackedFlowers.TryGetValue(abstractObj, out _) || string.IsNullOrEmpty(abstractObj.placedObjectOrigin)) continue;
 
                     string flowerString = $"Flower-{abstractObj.placedObjectOrigin.Split(':')[0].ToUpperInvariant()}";
                     if (Plugin.RandoManager.GetLocations().FirstOrDefault(l => l.internalName == flowerString) is not LocationInfo loc) continue;
-                    trackedFlowers.Add(abstractObj, loc);
+                    TrackedFlowers.Add(abstractObj, loc);
                 }
             }
         }
@@ -54,9 +54,10 @@ namespace RainWorldRandomizer
         {
             // Bites is decremented at the start of orig,
             // so we check if bites is 1 instead of 0
-            if (RandoOptions.UseKarmaFlowerChecks
+            if (Plugin.RandomizerActive
+                && RandoOptions.UseKarmaFlowerChecks
                 && self.bites == 1
-                && trackedFlowers.TryGetValue(self.abstractPhysicalObject, out LocationInfo data)
+                && TrackedFlowers.TryGetValue(self.abstractPhysicalObject, out LocationInfo data)
                 && !data.Collected)
             {
                 Plugin.RandoManager.GiveLocation(data.internalName);
@@ -69,10 +70,11 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void OnSpearHitWithoutStopping(On.Spear.orig_HitSomethingWithoutStopping orig, Spear self, PhysicalObject obj, BodyChunk chunk, PhysicalObject.Appendage appendage)
         {
-            if (RandoOptions.UseKarmaFlowerChecks
+            if (Plugin.RandomizerActive
+                && RandoOptions.UseKarmaFlowerChecks
                 && self.Spear_NeedleCanFeed()
                 && obj is KarmaFlower flower
-                && trackedFlowers.TryGetValue(flower.abstractPhysicalObject, out LocationInfo data)
+                && TrackedFlowers.TryGetValue(flower.abstractPhysicalObject, out LocationInfo data)
                 && !data.Collected)
             {
                 Plugin.RandoManager.GiveLocation(data.internalName);
@@ -85,7 +87,8 @@ namespace RainWorldRandomizer
         /// </summary>
         private static int OnPlayerFoodInRoom(On.Player.orig_FoodInRoom_Room_bool orig, Player self, Room checkRoom, bool eatAndDestroy)
         {
-            if (RandoOptions.UseKarmaFlowerChecks
+            if (Plugin.RandomizerActive
+                && RandoOptions.UseKarmaFlowerChecks
                 && eatAndDestroy
                 && checkRoom.game.session is StoryGameSession)
             {
@@ -95,7 +98,7 @@ namespace RainWorldRandomizer
                     if (entity is AbstractPhysicalObject abstractObj
                         && abstractObj.realizedObject != null
                         && abstractObj.type == AbstractPhysicalObject.AbstractObjectType.KarmaFlower
-                        && trackedFlowers.TryGetValue(abstractObj, out LocationInfo data)
+                        && TrackedFlowers.TryGetValue(abstractObj, out LocationInfo data)
                         && !data.Collected)
                     {
                         Plugin.RandoManager.GiveLocation(data.internalName);
@@ -103,27 +106,6 @@ namespace RainWorldRandomizer
                 }
             }
             return orig(self, checkRoom, eatAndDestroy);
-        }
-
-        private class FlowerData
-        {
-            public string locID;
-            public bool alreadyChecked;
-
-            public FlowerData(AbstractPhysicalObject obj)
-            {
-                // Flower-[ROOM_NAME]
-                locID = $"Flower-{obj.placedObjectOrigin.Split(':')[0].ToUpperInvariant()}";
-                alreadyChecked = Plugin.RandoManager.IsLocationGiven(locID) ?? true;
-                //Plugin.Log.LogDebug($"Register flower: {locID}");
-            }
-
-            public void AwardCheck()
-            {
-                Plugin.RandoManager.GiveLocation(locID);
-                alreadyChecked = true;
-                //Plugin.Log.LogDebug($"Checked flower: {locID}");
-            }
         }
     }
 }

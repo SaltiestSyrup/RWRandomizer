@@ -14,15 +14,15 @@ namespace RainWorldRandomizer
         public class Trap
         {
             public string id;
-            public TrapDefinition definition;
-            public int timer;
+            private TrapDefinition definition;
+            private int timer;
 
             public Trap(string id)
             {
                 this.id = id;
-                if (trapDefinitions.ContainsKey(id))
+                if (TrapDefinitions.ContainsKey(id))
                 {
-                    definition = trapDefinitions[id];
+                    definition = TrapDefinitions[id];
                 }
                 else
                 {
@@ -40,12 +40,12 @@ namespace RainWorldRandomizer
 
                 if (definition.duration > 0)
                 {
-                    TrapUpdate += Update;
-                    activeTraps.Add(this);
+                    _trapUpdate += Update;
+                    _activeTraps.Add(this);
                 }
             }
 
-            public void Update(RainWorldGame game)
+            private void Update(RainWorldGame game)
             {
                 definition.onUpdate(game);
 
@@ -55,17 +55,18 @@ namespace RainWorldRandomizer
                 else Deactivate(game);
             }
 
-            public void Deactivate(RainWorldGame game)
+            private void Deactivate(RainWorldGame game)
             {
                 definition.onDeactivate(game);
-                TrapUpdate -= Update;
-                activeTraps.Remove(this);
+                _trapUpdate -= Update;
+                _activeTraps.Remove(this);
             }
+            
             public void NewRoom(RainWorldGame game) => definition.onNewRoom(game);
         }
 
-        public readonly struct TrapDefinition(Action<RainWorldGame> TriggerAction, Action<RainWorldGame> DisableAction = null,
-            Action<RainWorldGame> UpdateAction = null, Action<RainWorldGame> NewRoomAction = null, int duration = 0)
+        private readonly struct TrapDefinition(Action<RainWorldGame> triggerAction, Action<RainWorldGame> disableAction = null,
+            Action<RainWorldGame> updateAction = null, Action<RainWorldGame> newRoomAction = null, int duration = 0)
         {
             /// <summary>
             /// How many game ticks (40/s) the effect should last. 0 for single activation traps
@@ -74,22 +75,22 @@ namespace RainWorldRandomizer
             /// <summary>
             /// Action called when the trap first triggers
             /// </summary>
-            public readonly Action<RainWorldGame> onTrigger = TriggerAction;
+            public readonly Action<RainWorldGame> onTrigger = triggerAction;
             /// <summary>
             /// Action called every update while active
             /// </summary>
-            public readonly Action<RainWorldGame> onUpdate = UpdateAction ?? ((game) => { });
+            public readonly Action<RainWorldGame> onUpdate = updateAction ?? ((game) => { });
             /// <summary>
             /// Action called when the duration expires. Trap is deleted right after
             /// </summary>
-            public readonly Action<RainWorldGame> onDeactivate = DisableAction ?? ((game) => { });
+            public readonly Action<RainWorldGame> onDeactivate = disableAction ?? ((game) => { });
             /// <summary>
             /// Action called when a player enters a new room. Useful for room-only effects that need re-triggering
             /// </summary>
-            public readonly Action<RainWorldGame> onNewRoom = NewRoomAction ?? ((game) => { });
+            public readonly Action<RainWorldGame> onNewRoom = newRoomAction ?? ((game) => { });
         }
 
-        private static readonly Dictionary<string, TrapDefinition> trapDefinitions = new()
+        private static readonly Dictionary<string, TrapDefinition> TrapDefinitions = new()
         {
             { "Stun", new TrapDefinition(TrapStun) },
             { "Timer", new TrapDefinition(game => { TrapCycleTimer(game); }) },
@@ -139,12 +140,12 @@ namespace RainWorldRandomizer
             },
         };
 
-        private static int currentCooldown = 0;
+        private static int _currentCooldown = 0;
         /// <summary>
         /// Traps with a duration that are currently active
         /// </summary>
-        private static HashSet<Trap> activeTraps = [];
-        private static Action<RainWorldGame> TrapUpdate = (game) => { };
+        private static HashSet<Trap> _activeTraps = [];
+        private static Action<RainWorldGame> _trapUpdate = (game) => { };
 
         public static void ApplyHooks()
         {
@@ -192,25 +193,25 @@ namespace RainWorldRandomizer
         private static void ResetCooldown()
         {
             // Set the new countdown randomly in desired range * the default frame rate
-            currentCooldown = UnityEngine.Random.Range(RandoOptions.trapMinimumCooldown.Value, RandoOptions.trapMaximumCooldown.Value) * 40;
+            _currentCooldown = UnityEngine.Random.Range(RandoOptions.trapMinimumCooldown.Value, RandoOptions.trapMaximumCooldown.Value) * 40;
         }
 
         public static void OnRainWorldGameUpdate(On.RainWorldGame.orig_Update orig, RainWorldGame self)
         {
             orig(self);
-            if (self.GamePaused) return;
+            if (!Plugin.RandomizerActive || self.GamePaused) return;
 
             // Decrement countdown every tick
-            if (currentCooldown > 0)
+            if (_currentCooldown > 0)
             {
-                currentCooldown--;
+                _currentCooldown--;
             }
 
-            TrapUpdate(self);
+            _trapUpdate(self);
 
-            if ((Plugin.RandoManager?.pendingTrapQueue.Count ?? 0) == 0) return;
+            if (Plugin.RandoManager.pendingTrapQueue.Count == 0) return;
 
-            if (currentCooldown == 0)
+            if (_currentCooldown == 0)
             {
                 // Defer trap trigger until the player is in a proper state to suffer
                 if (self.FirstAlivePlayer?.realizedCreature?.room == null
@@ -233,7 +234,7 @@ namespace RainWorldRandomizer
             orig(self, newRoom);
             if (self == newRoom.game.FirstAlivePlayer?.realizedCreature)
             {
-                foreach (Trap trap in activeTraps)
+                foreach (Trap trap in _activeTraps)
                 {
                     trap.NewRoom(newRoom.game);
                 }
@@ -318,14 +319,14 @@ namespace RainWorldRandomizer
             huntingCreatures = [..huntingCreatures.Where(c => c.TryGetTarget(out AbstractCreature crit) && crit.creatureTemplate.type != template)];
         }
 
-        private static bool alarmTrapActive = false;
+        private static bool _alarmTrapActive;
 
         /// <summary>Alerts every creature of the player's position</summary>
         private static void TrapAlarmActivate(this RainWorldGame game)
         {
-            alarmTrapActive = true;
+            _alarmTrapActive = true;
 
-            Player player = game.FirstAlivePlayer?.realizedCreature as Player;
+            if (game.FirstAlivePlayer?.realizedCreature is not Player player) return;
 
             // For each realized room
             foreach (AbstractRoom room in game.world.abstractRooms.Where(e => e.realizedRoom != null))
@@ -340,8 +341,8 @@ namespace RainWorldRandomizer
 
         private static void TrapAlarmDeactivate(this RainWorldGame game)
         {
-            alarmTrapActive = false;
-            Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Alarm trap has faded"));
+            _alarmTrapActive = false;
+            Plugin.Singleton.notifQueue.Enqueue(new MessageText("Alarm trap has faded"));
         }
 
         /// <summary>
@@ -364,10 +365,11 @@ namespace RainWorldRandomizer
 
             c.GotoNext(x => x.MatchLdcI4(0));
             c.MarkLabel(jump);
+            return;
 
             static bool CreatureHuntPlayer(AbstractCreatureAI self)
             {
-                bool shouldTrack = alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && self.parent == crit2);
+                bool shouldTrack = _alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && self.parent == crit2);
                 return shouldTrack && self.parent.world.game.Players is not null;
             }
         }
@@ -392,10 +394,11 @@ namespace RainWorldRandomizer
 
             c.GotoNext(x => x.MatchLdcI4(0));
             c.MarkLabel(jump);
+            return;
 
             static bool CreatureHuntPlayer(ArtificialIntelligence self)
             {
-                bool shouldTrack = alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && self.creature == crit2);
+                bool shouldTrack = _alarmTrapActive || huntingCreatures.Any(c => c.TryGetTarget(out AbstractCreature crit2) && self.creature == crit2);
                 return shouldTrack && self.tracker is not null && self.creature.world.game.Players is not null;
             }
         }
@@ -403,38 +406,38 @@ namespace RainWorldRandomizer
         /// <summary>
         /// All rooms currently affected by gravity trap. Rooms may be null if player has unloaded them
         /// </summary>
-        private static List<WeakReference<Room>> gravityTrappedRooms = [];
+        private static List<WeakReference<Room>> _gravityTrappedRooms = [];
 
         /// <summary>Sets the gravity to 0 (Does not apply to rooms with <see cref="AntiGravity"/> or other gravity effects)</summary>
         private static void TrapGravityActivate(this RainWorldGame game)
         {
-            Room currentRoom = (game.FirstAlivePlayer?.realizedCreature as Player).room;
+            if ((game.FirstAlivePlayer?.realizedCreature as Player)?.room is not Room currentRoom) return;
 
             // Track each room this effect is applied to for cleaning up later
-            gravityTrappedRooms.Add(new WeakReference<Room>(currentRoom));
+            _gravityTrappedRooms.Add(new WeakReference<Room>(currentRoom));
 
             // Most gravity effects in the game apply through update loops,
-            // so this will be overidden instantly in those cases
+            // so this will be overridden instantly in those cases
             currentRoom.gravity = 0f;
         }
 
         /// <summary>Turns gravity back on for affected rooms</summary>
         private static void TrapGravityDeactivate(this RainWorldGame game)
         {
-            foreach (WeakReference<Room> roomRef in gravityTrappedRooms)
+            foreach (WeakReference<Room> roomRef in _gravityTrappedRooms)
             {
                 // Abstracted rooms will already have gravity reset when realized again
                 if (roomRef.TryGetTarget(out Room room)) room.gravity = 1f;
             }
-            gravityTrappedRooms.Clear();
+            _gravityTrappedRooms.Clear();
         }
 
-        private static bool rainTrapActive = false;
+        private static bool _rainTrapActive;
 
         /// <summary>Triggers precycle rain effect</summary>
         private static void TrapRainActivate(this RainWorldGame game)
         {
-            rainTrapActive = true;
+            _rainTrapActive = true;
             // TODO: Couldn't figure out how flooding works to force it to always happen. May return to this later
             //game.globalRain.drainWorldFlood = 10f;
             //Plugin.Log.LogDebug(game.globalRain.flood);
@@ -443,7 +446,7 @@ namespace RainWorldRandomizer
         /// <summary>Returns rain trap to normal</summary>
         private static void TrapRainDeactivate(this RainWorldGame game)
         {
-            rainTrapActive = false;
+            _rainTrapActive = false;
             //Plugin.Log.LogDebug(game.globalRain.flood);
             //Plugin.Log.LogDebug(game.globalRain.drainWorldFlood);
             //Room room = (game.FirstAlivePlayer?.realizedCreature as Player).room;
@@ -471,8 +474,6 @@ namespace RainWorldRandomizer
             c.EmitDelegate(ActivateRainTrap);
             c.Emit(OpCodes.Brtrue, jump);
 
-            static bool ActivateRainTrap() => rainTrapActive;
-
             // --- Modify values
 
             // Load pulse intensity at 055F
@@ -481,6 +482,9 @@ namespace RainWorldRandomizer
             c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(GlobalRain).GetField(nameof(GlobalRain.preCycleRainPulse_Scale))));
             // Supply new value for scale without overriding precyles
             c.EmitDelegate(AddRainTrapPulseScale);
+            return;
+
+            static bool ActivateRainTrap() => _rainTrapActive;
 
             static float AddRainTrapPulseScale(float oldScale) => oldScale > 0 ? oldScale : 1f;
         }
@@ -496,10 +500,7 @@ namespace RainWorldRandomizer
             c.GotoNext(x => x.MatchRet());
 
             // If precycle is not active but trap is, set our intensity
-            c.EmitDelegate<Func<float, float>>(intensity =>
-            {
-                return rainTrapActive ? 1f : 0f;
-            });
+            c.EmitDelegate<Func<float, float>>(intensity => _rainTrapActive ? 1f : 0f);
         }
 
         /// <summary>
@@ -514,7 +515,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<int, int>>(preTimer =>
             {
                 if (preTimer > 0f) return preTimer;
-                return rainTrapActive ? 1 : 0;
+                return _rainTrapActive ? 1 : 0;
             });
         }
 
@@ -529,20 +530,20 @@ namespace RainWorldRandomizer
             c.EmitDelegate<Func<int, int>>(preTimer =>
             {
                 if (preTimer > 0f) return preTimer;
-                return rainTrapActive ? 1 : 0;
+                return _rainTrapActive ? 1 : 0;
             });
 
             c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(RainCycle).GetField(nameof(RainCycle.maxPreTimer))));
             c.EmitDelegate<Func<int, int>>(maxPreTimer =>
             {
                 if (maxPreTimer > 0f) return maxPreTimer;
-                return rainTrapActive ? 1 : 0;
+                return _rainTrapActive ? 1 : 0;
             });
         }
 
         private static void TrapRippleSpawnActivate(this RainWorldGame game)
         {
-            Room room = (game.FirstAlivePlayer?.realizedCreature as Player).room;
+            if ((game.FirstAlivePlayer?.realizedCreature as Player)?.room is not Room room) return;
 
             for (int i = 0; i < 10; i++)
             {
@@ -569,8 +570,7 @@ namespace RainWorldRandomizer
 
             c.GotoNext(MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(RainWorld).GetProperty(nameof(RainWorld.ShowLogs)).GetGetMethod()),
-                x => x.MatchBrfalse(out _)
-                );
+                x => x.MatchBrfalse(out _));
 
             ILLabel label = c.DefineLabel();
 
@@ -581,8 +581,9 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ret);
 
             c.MarkLabel(label);
+            return;
 
-            static bool AlarmTrapActive() => alarmTrapActive;
+            static bool AlarmTrapActive() => _alarmTrapActive;
         }
 
         /// <summary>
@@ -593,13 +594,13 @@ namespace RainWorldRandomizer
             ILCursor c = new(il);
 
             c.GotoNext(MoveType.After,
-                x => x.MatchCallOrCallvirt(typeof(RainWorld).GetProperty(nameof(RainWorld.ShowLogs)).GetGetMethod())
-                );
+                x => x.MatchCallOrCallvirt(typeof(RainWorld).GetProperty(nameof(RainWorld.ShowLogs)).GetGetMethod()));
 
             c.Emit(OpCodes.Pop);
             c.EmitDelegate(AlarmTrapInactive);
+            return;
 
-            static bool AlarmTrapInactive() => !alarmTrapActive;
+            static bool AlarmTrapInactive() => !_alarmTrapActive;
         }
     }
 }

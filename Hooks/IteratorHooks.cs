@@ -67,7 +67,7 @@ namespace RainWorldRandomizer
         private static void OnEatNeuron(On.OracleSwarmer.orig_BitByPlayer orig, OracleSwarmer self, Creature.Grasp grasp, bool eu)
         {
             orig(self, grasp, eu);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             if (self.bites < 1)
             {
@@ -81,7 +81,7 @@ namespace RainWorldRandomizer
         private static void OnEatNeuron(On.SLOracleSwarmer.orig_BitByPlayer orig, SLOracleSwarmer self, Creature.Grasp grasp, bool eu)
         {
             orig(self, grasp, eu);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             if (self.bites < 1)
             {
@@ -94,6 +94,8 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void EatenNeuron(Player player)
         {
+            if (!Plugin.RandomizerActive) return;
+            
             // Remove unearned glowing effect
             if (!Plugin.RandoManager.GivenNeuronGlow)
             {
@@ -110,7 +112,7 @@ namespace RainWorldRandomizer
         private static void SLOrcacleStateOnFromString(On.SLOrcacleState.orig_FromString orig, SLOrcacleState self, string s)
         {
             orig(self, s);
-            if (self.neuronsLeft == 0) self.neuronsLeft = 1;
+            if (Plugin.RandomizerActive && self.neuronsLeft == 0) self.neuronsLeft = 1;
         }
 
         /// <summary>
@@ -119,7 +121,7 @@ namespace RainWorldRandomizer
         private static void OnGiftNeuron(On.SLOracleBehavior.orig_ConvertingSSSwarmer orig, SLOracleBehavior self)
         {
             orig(self);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             Plugin.RandoManager.GiveLocation("Gift_Neuron");
         }
@@ -129,13 +131,8 @@ namespace RainWorldRandomizer
         /// </summary>
         private static void OnSSOracleBehaviorUpdate(On.SSOracleBehavior.orig_Update orig, SSOracleBehavior self, bool eu)
         {
-            if (!Plugin.RandoManager.isRandomizerActive)
-            {
-                orig(self, eu);
-                return;
-            }
-
             orig(self, eu);
+            if (!Plugin.RandomizerActive) return;
 
             // Pebbles gives the mark
             if (self.action == SSOracleBehavior.Action.General_GiveMark && self.inActionCounter == 300)
@@ -144,9 +141,9 @@ namespace RainWorldRandomizer
                 // No karma increases >:(
                 self.oracle.room.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
                 self.oracle.room.game.GetStorySession.saveState.deathPersistentSaveData.karma = Plugin.RandoManager.CurrentMaxKarma;
-                for (int num2 = 0; num2 < self.oracle.room.game.cameras.Length; num2++)
+                foreach (var camera in self.oracle.room.game.cameras)
                 {
-                    self.oracle.room.game.cameras[num2].hud.karmaMeter?.UpdateGraphic();
+                    camera.hud.karmaMeter?.UpdateGraphic();
                 }
 
                 // Reset the mark if not unlocked yet
@@ -182,56 +179,34 @@ namespace RainWorldRandomizer
                 );
 
             c.EmitDelegate(AllPlayersHaveRobot);
+            return;
 
-            static bool AllPlayersHaveRobot(AncientBot foundRobot) => true;
+            static bool AllPlayersHaveRobot(AncientBot foundRobot) => Plugin.RandomizerActive;
         }
 
         /// <summary>
         /// Modify Pebbles to give the mark when he otherwise wouldn't
         /// </summary>
-        // TODO: Rewrite Pebbles meet white hook, goto is volatile
         private static void PebblesMeetWhiteUpdateIL(ILContext il)
         {
-            try
+            ILCursor c = new(il);
+
+            c.GotoNext(x =>
+                x.MatchLdsfld(typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk))));
+            c.GotoNext(MoveType.After,
+                x => x.MatchLdsfld(
+                    typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk))));
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(ForceGiveMark);
+            return;
+
+            static SSOracleBehavior.Action ForceGiveMark(SSOracleBehavior.Action origAction, SSOracleBehavior.SubBehavior self)
             {
-                ILCursor c = new(il);
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveState))),
-                    x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.deathPersistentSaveData))),
-                    x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.theMark))),
-                    x => x.MatchBrfalse(out _),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchCallOrCallvirt(out _),
-                    x => x.MatchLdcI4(40),
-                    x => x.MatchBle(out _),
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner))),
-                    x => x.MatchLdsfld(typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk)))
-                    );
+                if (!Plugin.RandomizerActive) return origAction;
 
-                c.MoveAfterLabels();
-
-                // Force pebbles to 'give the mark' to the player regardless of them already having it
-                c.Emit(OpCodes.Pop);
-                //c.Emit(OpCodes.Ldarg_0);
-                //c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner)));
-                c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_GiveMark)));
-
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchCallOrCallvirt(typeof(SSOracleBehavior).GetMethod(nameof(SSOracleBehavior.NewAction)))
-                    );
-
-                c.Emit(OpCodes.Ldarg_0);
-                c.Emit(OpCodes.Ldfld, typeof(SSOracleBehavior.SubBehavior).GetField(nameof(SSOracleBehavior.SubBehavior.owner)));
-                c.Emit(OpCodes.Ldsfld, typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk)));
-                c.Emit(OpCodes.Stfld, typeof(SSOracleBehavior).GetField(nameof(SSOracleBehavior.afterGiveMarkAction)));
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.LogError("Failed Hooking for PebblesUpdateWhite");
-                Plugin.Log.LogError(e);
+                self.owner.afterGiveMarkAction = SSOracleBehavior.Action.General_MarkTalk;
+                return SSOracleBehavior.Action.General_GiveMark;
             }
         }
 
@@ -251,7 +226,7 @@ namespace RainWorldRandomizer
             // Force this check to always return false
             c.Index += 2;
             c.Emit(OpCodes.Pop);
-            c.EmitDelegate(() => false);
+            c.EmitDelegate(() => !Plugin.RandomizerActive);
         }
 
         /// <summary>
@@ -271,12 +246,6 @@ namespace RainWorldRandomizer
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(AssignDefaultPlayerIfNoRobot);
 
-            static Player AssignDefaultPlayerIfNoRobot(Player foundPlayerWithRobot, SSOracleBehavior.SSOracleMeetArty self)
-            {
-                if (foundPlayerWithRobot is not null) return foundPlayerWithRobot;
-                return self.oracle.room.game.FirstRealizedPlayer;
-            }
-
             // Check if player has the mark at 00CF
             c.GotoNext(
                 MoveType.After,
@@ -285,12 +254,6 @@ namespace RainWorldRandomizer
 
             // Make sure check is given on the first meeting, and only once
             c.EmitDelegate(ShouldPebblesNotGiveMark);
-
-            static bool ShouldPebblesNotGiveMark(bool hasTheMark)
-            {
-                return Plugin.RandoManager.IsLocationGiven("Meet_FP") is true;
-            }
-
 
             // Before assigning afterGiveMarkAction at 0116
             c.GotoNext(
@@ -301,10 +264,23 @@ namespace RainWorldRandomizer
             // Throw Arty out after trying to give mark if no robot
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(ThrowOutIfNoRobo);
+            return;
+
+            static Player AssignDefaultPlayerIfNoRobot(Player foundPlayerWithRobot, SSOracleBehavior.SSOracleMeetArty self)
+            {
+                if (!Plugin.RandomizerActive) return foundPlayerWithRobot;
+                return foundPlayerWithRobot ?? self.oracle.room.game.FirstRealizedPlayer;
+            }
+            
+            static bool ShouldPebblesNotGiveMark(bool hasTheMark)
+            {
+                return Plugin.RandoManager?.IsLocationGiven("Meet_FP") is true;
+            }
 
             static SSOracleBehavior.Action ThrowOutIfNoRobo(SSOracleBehavior.Action origNextAction, SSOracleBehavior.SSOracleMeetArty self)
             {
-                if (self.oracle.room.game.GetStorySession.saveState.hasRobo) return origNextAction;
+                if (!Plugin.RandomizerActive
+                    || self.oracle.room.game.GetStorySession.saveState.hasRobo) return origNextAction;
 
                 self.Deactivate();
                 return SSOracleBehavior.Action.ThrowOut_ThrowOut;
@@ -327,11 +303,6 @@ namespace RainWorldRandomizer
                 ))
             {
                 c.EmitDelegate(ReplaceWithLocationCheck);
-            }
-
-            static bool ReplaceWithLocationCheck(bool energyTaken)
-            {
-                return RandoOptions.UseEnergyCell ? Plugin.RandoManager.IsLocationGiven("Kill_FP") ?? false : energyTaken;
             }
 
             ILCursor c1 = new(il);
@@ -357,17 +328,24 @@ namespace RainWorldRandomizer
             c1.Emit(OpCodes.Ldarg_0);
             c1.EmitDelegate(EnergyCellCheck);
             c1.Emit(OpCodes.Brtrue, jump);
+            return;
+
+            static bool ReplaceWithLocationCheck(bool energyTaken)
+            {
+                if (!Plugin.RandomizerActive) return energyTaken;
+                return RandoOptions.UseEnergyCell ? Plugin.RandoManager.IsLocationGiven("Kill_FP") ?? false : energyTaken;
+            }
 
             static bool EnergyCellCheck(MSCRoomSpecificScript.RM_CORE_EnergyCell self)
             {
-                if (!RandoOptions.UseEnergyCell) return false;
+                if (!Plugin.RandomizerActive || !RandoOptions.UseEnergyCell) return false;
 
                 Plugin.RandoManager.GiveLocation("Kill_FP");
 
                 // If power is not supposed to be off yet, turn it back on
                 if (!Plugin.RandoManager.GivenPebblesOff)
                 {
-                    (self.room.game.session as StoryGameSession).saveState.miscWorldSaveData.pebblesEnergyTaken = false;
+                    self.room.game.GetStorySession.saveState.miscWorldSaveData.pebblesEnergyTaken = false;
                 }
 
                 self.myEnergyCell = null;
@@ -382,7 +360,7 @@ namespace RainWorldRandomizer
         private static void MoonMarkUpdate(On.SLOracleBehaviorHasMark.orig_Update orig, SLOracleBehaviorHasMark self, bool eu)
         {
             orig(self, eu);
-            if (!Plugin.RandoManager.isRandomizerActive) return;
+            if (!Plugin.RandomizerActive) return;
 
             // Meeting for the first time
             if (self.oracle.room.game.GetStorySession.saveState.miscWorldSaveData.SLOracleState.playerEncountersWithMark > 0)
@@ -418,8 +396,8 @@ namespace RainWorldRandomizer
         {
             if (self.phase == SLOracleWakeUpProcedure.Phase.Done)
             {
-                Plugin.RandoManager.GiveLocation("Save_LttM");
-                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.HelpingHand);
+                Plugin.RandoManager?.GiveLocation("Save_LttM");
+                Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.HelpingHand);
             }
 
             orig(self, eu);
@@ -438,13 +416,12 @@ namespace RainWorldRandomizer
                 );
 
             // Tell LttM we have the mark if this should be riv ending scene
-            c.EmitDelegate<Func<bool, bool>>((hasMark) =>
-            {
-                return hasMark ||
-                    (ModManager.MSC
-                    && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet
-                    && Plugin.Singleton.Game.IsMoonActive());
-            });
+            c.EmitDelegate<Func<bool, bool>>(hasMark => 
+                hasMark || 
+                (Plugin.RandomizerActive
+                 && ModManager.MSC 
+                 && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Rivulet 
+                 && Plugin.Singleton.Game.IsMoonActive()));
         }
 
         /// <summary>
@@ -457,7 +434,7 @@ namespace RainWorldRandomizer
             // Check for completion via visiting LttM after placing the Rarefaction cell
             if (eventName == "RivEndingFade")
             {
-                (Plugin.RandoManager as ManagerArchipelago)?.GiveCompletionCondition(ArchipelagoConnection.CompletionCondition.SaveMoon);
+                Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.SaveMoon);
             }
         }
 
@@ -473,16 +450,14 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(RainWorldGame).GetProperty(nameof(RainWorldGame.StoryCharacter)).GetGetMethod()),
-                //x => x.MatchLdfld(typeof(StoryGameSession).GetField(nameof(StoryGameSession.saveStateNumber))),
                 x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Artificer))),
                 x => x.MatchCallOrCallvirt(out _),
                 x => x.MatchBrfalse(out jump)
                 );
 
-            c.EmitDelegate(() => { return Plugin.RandoManager.GivenRobo; });
+            c.EmitDelegate(() => !Plugin.RandomizerActive || Plugin.RandoManager.GivenRobo);
             c.Emit(OpCodes.Brfalse, jump);
-
-
+            
             ILCursor c1 = new(il);
 
             // Inv's Meet FP check is given when killed by FP
@@ -495,18 +470,18 @@ namespace RainWorldRandomizer
             {
                 if (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel)
                 {
-                    Plugin.RandoManager.GiveLocation("Meet_FP");
+                    Plugin.RandoManager?.GiveLocation("Meet_FP");
                 }
             });
         }
 
         /// <summary>
-        /// Modify Iterators to use speech sounds if mark is not aquired
+        /// Modify Iterators to use speech sounds if mark is not acquired
         /// </summary>
         private static void DialogueAddMessage(On.HUD.DialogBox.orig_NewMessage_string_float_float_int orig, HUD.DialogBox self, string text, float xOrientation, float yPos, int extraLinger)
         {
             // Act as normal if conditions met
-            bool shouldIteratorSpeak = Plugin.RandoManager.GivenMark
+            bool shouldIteratorSpeak = !Plugin.RandomizerActive || Plugin.RandoManager.GivenMark
                 || (ModManager.MSC && Plugin.RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint);
             bool noRoomExists = (self.hud.owner as Player)?.room is null;
             if (shouldIteratorSpeak || noRoomExists)

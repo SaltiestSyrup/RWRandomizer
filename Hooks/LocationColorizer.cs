@@ -54,7 +54,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static Color OnGetTokenColor(Func<CollectToken, Color> orig, CollectToken self)
         {
-            if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return orig(self);
+            if (!Plugin.RandomizerActive || !RandoOptions.ColorPickupsWithHints) return orig(self);
 
             // If color already found, continue to use it
             if (tokenColors.TryGetValue(self, out ColorAsClass c)) return c.color;
@@ -65,12 +65,12 @@ namespace RainWorldRandomizer
             // If the location isn't scouted, make the token white as a fallback
             if (tokenString is null || !SaveManager.ScoutedLocations.TryGetValue(tokenString, out ItemFlags flags))
             {
-                color = new(Color.white);
+                color = new ColorAsClass(Color.white);
                 tokenColors.Add(self, color);
                 return color.color;
             }
 
-            color = new(ItemFlagsToColor(flags));
+            color = new ColorAsClass(ItemFlagsToColor(flags));
             tokenColors.Add(self, color);
             return color.color;
         }
@@ -87,9 +87,11 @@ namespace RainWorldRandomizer
                 c.EmitDelegate(AlwaysUseLightColor);
             }
 
+            return;
+
             static bool AlwaysUseLightColor(bool origVal)
             {
-                return origVal || (Plugin.RandoManager is not null && RandoOptions.ColorPickupsWithHints);
+                return origVal || (Plugin.RandomizerActive && RandoOptions.ColorPickupsWithHints);
             }
         }
 
@@ -98,7 +100,7 @@ namespace RainWorldRandomizer
         /// </summary>
         private static Color OnDataPearl_UniquePearlMainColor(On.DataPearl.orig_UniquePearlMainColor orig, DataPearl.AbstractDataPearl.DataPearlType pearlType)
         {
-            if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return orig(pearlType);
+            if (!Plugin.RandomizerActive || !RandoOptions.ColorPickupsWithHints) return orig(pearlType);
 
             string pearlString = Plugin.RandoManager.GetLocations()
                 .FirstOrDefault(l => l.kind == LocationInfo.LocationKind.Pearl && l.internalDesc == pearlType.value)
@@ -118,15 +120,15 @@ namespace RainWorldRandomizer
         private static void OnShortcutGraphics_GenerateSprites(On.ShortcutGraphics.orig_GenerateSprites orig, ShortcutGraphics self)
         {
             orig(self);
-            if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
+            if (!Plugin.RandomizerActive || !RandoOptions.ColorPickupsWithHints) return;
 
             Room myRoom = self.room;
-            for (int l = 0; l < myRoom.shortcuts.Length; l++)
+            for (int i = 0; i < myRoom.shortcuts.Length; i++)
             {
                 // Shortcut is non-hidden room exit and there is a shelter on the other side
-                if (myRoom.shortcuts[l].shortCutType != ShortcutData.Type.RoomExit) continue;
-                if (myRoom.world.GetAbstractRoom(myRoom.abstractRoom.connections[myRoom.shortcuts[l].destNode]) is not AbstractRoom destRoom) continue;
-                if (self.entranceSprites[l, 0] is null) continue;
+                if (myRoom.shortcuts[i].shortCutType != ShortcutData.Type.RoomExit) continue;
+                if (myRoom.world.GetAbstractRoom(myRoom.abstractRoom.connections[myRoom.shortcuts[i].destNode]) is not AbstractRoom destRoom) continue;
+                if (self.entranceSprites[i, 0] is null) continue;
                 if (!destRoom.shelter) continue;
 
                 // Additionally ignore already collected shelter locations
@@ -136,7 +138,7 @@ namespace RainWorldRandomizer
 
                 if (shelterString is null || !SaveManager.ScoutedLocations.TryGetValue(shelterString, out ItemFlags flags)) continue;
 
-                shortcutColors.Add(self.entranceSprites[l, 0], new(ItemFlagsToColor(flags)));
+                shortcutColors.Add(self.entranceSprites[i, 0], new ColorAsClass(ItemFlagsToColor(flags)));
             }
         }
 
@@ -159,13 +161,11 @@ namespace RainWorldRandomizer
                 c.EmitDelegate(ReplaceWithCustomColor);
             }
 
+            return;
+
             static Color ReplaceWithCustomColor(Color origColor, ShortcutGraphics self, int index)
             {
-                if (shortcutColors.TryGetValue(self.entranceSprites[index, 0], out ColorAsClass color))
-                {
-                    return color.color;
-                }
-                return origColor;
+                return shortcutColors.TryGetValue(self.entranceSprites[index, 0], out ColorAsClass color) ? color.color : origColor;
             }
         }
 
@@ -175,9 +175,9 @@ namespace RainWorldRandomizer
         private static void OnKarmaFlower_DrawSprites(On.KarmaFlower.orig_DrawSprites orig, KarmaFlower self, RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
         {
             orig(self, sLeaser, rCam, timeStacker, camPos);
-            if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
+            if (!Plugin.RandomizerActive || !RandoOptions.ColorPickupsWithHints) return;
 
-            if (!FlowerCheckHandler.trackedFlowers.TryGetValue(self.abstractPhysicalObject, out LocationInfo loc)) return;
+            if (!FlowerCheckHandler.TrackedFlowers.TryGetValue(self.abstractPhysicalObject, out LocationInfo loc)) return;
             if (loc.internalName is null || loc.Collected || !SaveManager.ScoutedLocations.TryGetValue(loc.internalName, out ItemFlags flags)) return;
 
             sLeaser.sprites[self.EffectSprite(0)].color = ItemFlagsToColor(flags);
@@ -189,7 +189,7 @@ namespace RainWorldRandomizer
         private static void EndgameMeter_GrafUpdate(On.Menu.EndgameMeter.orig_GrafUpdate orig, EndgameMeter self, float timeStacker)
         {
             orig(self, timeStacker);
-            if (Plugin.RandoManager is null || !RandoOptions.ColorPickupsWithHints) return;
+            if (!Plugin.RandomizerActive || !RandoOptions.ColorPickupsWithHints) return;
 
             string passageString = Plugin.RandoManager.GetLocations()
                 .FirstOrDefault(l => l.kind == LocationInfo.LocationKind.Passage && l.internalDesc == self.tracker.ID.value)
@@ -208,7 +208,7 @@ namespace RainWorldRandomizer
         private static Color ItemFlagsToColor(ItemFlags flags)
         {
             if ((int)(flags & ItemFlags.Advancement) > 0) return ArchipelagoConnection.palette[PaletteColor.Magenta];
-            if (((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap))) > 0) return ArchipelagoConnection.palette[PaletteColor.Blue];
+            if ((int)(flags & (ItemFlags.NeverExclude | ItemFlags.Trap)) > 0) return ArchipelagoConnection.palette[PaletteColor.Blue];
             return ArchipelagoConnection.palette[PaletteColor.Cyan];
         }
     }

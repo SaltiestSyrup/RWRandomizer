@@ -10,7 +10,7 @@ namespace RainWorldRandomizer
     /// </summary>
     public abstract class ManagerBase
     {
-        public int currentSeed;
+        public string currentSeed;
         public bool isRandomizerActive = false;
         public SlugcatStats.Name currentSlugcat;
 
@@ -104,7 +104,7 @@ namespace RainWorldRandomizer
             set { _givenRippleEggWarp = value;}
         }
 
-        protected int _currentMaxKarma = 4;
+        protected int _currentMaxKarma;
         /// <summary>The number of Ripple items collected.</summary>
         protected int _rippleIncrements;
         protected int _weaverIncrements;
@@ -250,7 +250,7 @@ namespace RainWorldRandomizer
         public HashSet<string> GetAllOpenWarps()
         {
             HashSet<string> ret = [.. CollectedStaticKeys, .. Constants.UnkeyableWarps];
-            if (!ArchipelagoConnection.spinningTopKeys) ret.UnionWith(Constants.SpinningTopWarps);
+            if (!RandoOptions.SpinningTopKeys) ret.UnionWith(Constants.SpinningTopWarps);
             return ret;
         }
 

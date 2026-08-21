@@ -123,7 +123,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
         public static class Hooks
         {
-            internal static void ApplyHooks()
+            public static void ApplyHooks()
             {
                 On.Watcher.WarpPoint.Update += WarpPoint_Update;
                 On.Watcher.WarpTear.DrawSprites += WarpTear_DrawSprites;
@@ -141,7 +141,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                 }
             }
 
-            internal static void RemoveHooks()
+            public static void RemoveHooks()
             {
                 On.Watcher.WarpPoint.Update -= WarpPoint_Update;
                 On.Watcher.WarpTear.DrawSprites -= WarpTear_DrawSprites;
@@ -167,7 +167,7 @@ namespace RainWorldRandomizer.WatcherIntegration
 
                 static WarpPoint.State ChangeStatus(WarpPoint.State state)
                 {
-                    return WarpPoint.State.Sealed;
+                    return Plugin.RandomizerActive ? WarpPoint.State.Sealed : state;
                 }
             }
 
@@ -178,7 +178,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 orig(self, eu);
 
-                if (self.MissingKey())
+                if (Plugin.RandomizerActive && self.MissingKey())
                 {
                     if (self.currentState != WarpPoint.State.Sealed)
                         self.Rando_LockWarp(false);
@@ -234,7 +234,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                 SaveState saveState = self.room.game.GetStorySession.saveState;
                 string regionToSeal = self.Data.destRegion;
                 // Don't seal the region if any of the following are true
-                if (regionToSeal is null // The region we left is unknown
+                if (!Plugin.RandomizerActive
+                    || regionToSeal is null // The region we left is unknown
                     || Region.IsWatcherVanillaRegion(regionToSeal) // Leaving a tutorial region
                     || Region.IsSentientRotRegion(regionToSeal) // Leaving a rotted region
                     || self.Data.rippleWarp // The warp is a ripple warp
@@ -242,7 +243,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     || self.MyIdentifyingString() != self.room.game.GetStorySession.pendingWarpPointTransferId) // We didn't just pass through this warp
                     return;
 
-                Plugin.Log.LogDebug($"Attempting to seal all region warps");
+                Plugin.Log.LogDebug("Attempting to seal all region warps");
                 Plugin.Log.LogDebug($"This warp point: origin = {self.room.abstractRoom.name}, destination = {self.Data.destRoom}, sealing region = {regionToSeal}");
 
                 List<string> roomsWithWarpsRemaining = self.room.game.GetStorySession.saveState.RoomsWithWarpsRemainingToBeSealed(true, regionToSeal);
@@ -329,14 +330,17 @@ namespace RainWorldRandomizer.WatcherIntegration
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate(SealWarpInsteadOfDynamicWarping);
                 c.Emit(OpCodes.Brtrue, jumpSkipDynamicWarp);
+                return;
 
                 static bool SealWarpInsteadOfDynamicWarping(Player player)
                 {
                     Room room = player.room;
                     MiscWorldSaveData mwsd = room.game.GetStorySession.saveState.miscWorldSaveData;
 
-                    if (player.room.warpPoints.Count == 0) return false;
-                    if (!mwsd.hasVoidWeaverAbility) return false;
+                    if (!Plugin.RandomizerActive
+                        || player.room.warpPoints.Count == 0
+                        || !mwsd.hasVoidWeaverAbility) 
+                        return false;
 
                     // There should only be one in a room, but iterate anyway just in case
                     foreach (WarpPoint warp in player.room.warpPoints)

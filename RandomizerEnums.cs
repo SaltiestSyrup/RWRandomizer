@@ -15,6 +15,7 @@ namespace RainWorldRandomizer
             AbstractObjectType.RegisterValues();
             DataPearlType.RegisterValues();
             Tutorial.RegisterValues();
+            ProcessID.RegisterValues();
         }
 
         internal static void UnregisterAllValues()
@@ -23,6 +24,7 @@ namespace RainWorldRandomizer
             AbstractObjectType.UnregisterValues();
             DataPearlType.UnregisterValues();
             Tutorial.UnregisterValues();
+            ProcessID.UnregisterValues();
         }
 
         public class SliderId
@@ -87,6 +89,22 @@ namespace RainWorldRandomizer
             }
 
             public static DeathPersistentSaveData.Tutorial WatcherSealLockedWarp;
+        }
+
+        public class ProcessID
+        {
+            internal static void RegisterValues()
+            {
+                RandomizerMenu = new ProcessManager.ProcessID("RandomizerMenu", true);
+            }
+
+            internal static void UnregisterValues()
+            {
+                RandomizerMenu?.Unregister();
+                RandomizerMenu = null;
+            }
+
+            public static ProcessManager.ProcessID RandomizerMenu;
         }
     }
 }

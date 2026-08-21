@@ -32,83 +32,9 @@ namespace RainWorldRandomizer.Menu
 
         public OptionsMenu()
         {
-            RandoOptions.useSeed = config.Bind<bool>("useSeed", false,
-                new ConfigurableInfo("Whether the randomizer will use a set seed or a generated one", null, "",
-                    ["Use seed"]));
-
-            RandoOptions.seed = config.Bind<int>("seed", 0,
-                new ConfigurableInfo("The seed used to generate the randomizer if 'Use seed' is checked",
-                    new ConfigAcceptableRange<int>(0, int.MaxValue), ""));
-
-            RandoOptions.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", true,
-                new ConfigurableInfo("Include checks for finding collectible tokens", null, "",
-                    ["Use Sandbox tokens as checks"]));
-
-            RandoOptions.usePearlChecks = config.Bind<bool>("usePearlChecks", true,
-                new ConfigurableInfo("Include checks for bringing colored pearls to a den", null, "",
-                    ["Use Pearls as checks"]));
-
-            RandoOptions.useEchoChecks = config.Bind<bool>("useEchoChecks", true,
-                new ConfigurableInfo("Include checks for meeting Echoes", null, "",
-                    ["Use Echoes as checks"]));
-
-            RandoOptions.usePassageChecks = config.Bind<bool>("usePassageChecks", true,
-                new ConfigurableInfo("Include checks for completing Passages", null, "",
-                    ["Use Passages as checks"]));
-
-            RandoOptions.useSpecialChecks = config.Bind<bool>("useSpecialChecks", true,
-                new ConfigurableInfo("Include checks for story objectives", null, "",
-                    ["Use Special checks"]));
-
-            RandoOptions.useShelterChecks = config.Bind<bool>("useShelterChecks", false,
-                new ConfigurableInfo("Include checks for entering shelters", null, "",
-                    ["Use Shelters as checks"]));
-
-            RandoOptions.useDevTokenChecks = config.Bind<bool>("useDevTokenChecks", false,
-                new ConfigurableInfo("Include checks for collecting developer commentary tokens", null, "",
-                    ["Use Dev Tokens as checks"]));
-
-            RandoOptions.useKarmaFlowerChecks = config.Bind<bool>("useKarmaFlowerChecks", false,
-                new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations", null, "",
-                    ["Use Karma Flowers as checks"]));
-
             RandoOptions.itemDeliveryMethod = config.Bind<string>("itemDeliveryMethod", "Menu Only",
                 new ConfigurableInfo("Additional options for object retrieval. They can be stored in slugcats stomach, or automatically spawned in shelters", null, "",
                     ["Item delivery method"]));
-
-            RandoOptions.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
-                new ConfigurableInfo("Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages", null, "",
-                    ["Use Passage tokens as filler"]));
-
-            RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
-                new ConfigurableInfo("The percentage amount of filler items that will increase the remaining cycles when playing as Hunter." +
-                    "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
-                    new ConfigAcceptableRange<float>(0, 1), "",
-                    ["Hunter cycle increases"]));
-
-            RandoOptions.trapsDensity = config.Bind<float>("trapsDensity", 0.2f,
-                new ConfigurableInfo("The percentage amount of filler items that will be trap effects. Set to 0 to disable traps entirely",
-                    new ConfigAcceptableRange<float>(0, 1), "",
-                    ["Traps percentage"]));
-
-            RandoOptions.numDamageIncreases = config.Bind<int>("numDamageIncreases", 6,
-                new ConfigurableInfo("The amount of permanent damage upgrade items to add to the pool. Each item collected gives an additive +20% damage to thrown spears",
-                    new ConfigAcceptableRange<int>(0, 10), "",
-                    ["Damage Upgrades"]));
-
-            RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
-                new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
-                    ["Randomize starting den"]));
-
-            RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
-                new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
-                    "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
-                    ["Start with low karma"]));
-
-            RandoOptions.extraKarmaIncreases = config.Bind<int>("extraKarmaIncreases", 2,
-                new ConfigurableInfo("How many extra karma items above the minimum required will be placed in the world",
-                    new ConfigAcceptableRange<int>(0, 10), "",
-                    ["Extra karma increases"]));
 
             RandoOptions.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
                 new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
@@ -126,93 +52,24 @@ namespace RainWorldRandomizer.Menu
                 new ConfigurableInfo("Use a gate map instead of the gate key list on the pause screen", null, "",
                     ["Use gate map"]));
 
-            // ----- MSC -----
-            RandoOptions.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
-                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (When possible)", null, "",
-                    ["Open Metropolis"]));
-
-            RandoOptions.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
-                new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
-                    ["Open Submerged Superstructure"]));
-
-            RandoOptions.allowExteriorForInv = config.Bind<bool>("allowExteriorForInv", false, 
-                new ConfigurableInfo("By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty", null, "",
-                    ["Open Exterior for Inv"]));
-
-            RandoOptions.useFoodQuestChecks = config.Bind<string>("useFoodQuestChecks", "Disabled",
-                new ConfigurableInfo("Makes every food in Gourmand's food quest count as a check. Other slugcats will only consider the foods they can eat", null, "",
-                    ["Use Food quest checks"]));
-
-            RandoOptions.useExpandedFoodQuestChecks = config.Bind<bool>("useExpandedFoodQuestChecks", false,
-                new ConfigurableInfo("Extends food quest checks to include almost all creatures (Some of these can be very difficult)", null, "",
-                    ["Use Expanded Food Quest"]));
-
-            RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
-                new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized", null, "",
-                    ["Use Mass Rarefaction cell"]));
-
-            RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
-                new ConfigurableInfo("Include Spearmaster's broadcast tokens as checks", null, "",
-                    ["Use Broadcast Checks"]));
-
-            RandoOptions.expeditionPerks = new Configurable<bool>[8];
-            RandoOptions.expeditionPerks[0] = config.Bind<bool>("IncludeBackSpear", false,
-                new ConfigurableInfo("Add the Back Spear perk to the item pool", null, "",
-                    ["Include Back Spear"]));
-
-            RandoOptions.expeditionPerks[1] = config.Bind<bool>("IncludeDualWielding", false,
-                new ConfigurableInfo("Add the Dual Wielding perk to the item pool", null, "",
-                    ["Include Dual Wielding"]));
-
-            RandoOptions.expeditionPerks[2] = config.Bind<bool>("IncludeExplosionResistance", false,
-                new ConfigurableInfo("Add the Explosion Resistance perk to the item pool", null, "",
-                    ["Include Explosion Resistance"]));
-
-            RandoOptions.expeditionPerks[3] = config.Bind<bool>("IncludeExplosiveParry", false,
-                new ConfigurableInfo("Add the Explosive Parry perk to the item pool", null, "",
-                    ["Include Explosive Parry"]));
-
-            RandoOptions.expeditionPerks[4] = config.Bind<bool>("IncludeExplosiveJump", false,
-                new ConfigurableInfo("Add the Explosive Jump perk to the item pool", null, "",
-                    ["Include Explosive Jump"]));
-
-            RandoOptions.expeditionPerks[5] = config.Bind<bool>("IncludeItemCrafting", false,
-                new ConfigurableInfo("Add the Item Crafting perk to the item pool", null, "",
-                    ["Include Item Crafting"]));
-
-            RandoOptions.expeditionPerks[6] = config.Bind<bool>("IncludeAquatic", false,
-                new ConfigurableInfo("Add the Aquatic perk to the item pool", null, "",
-                    ["Include Aquatic"]));
-
-            RandoOptions.expeditionPerks[7] = config.Bind<bool>("IncludeAgility", false,
-                new ConfigurableInfo("Add the Agility perk to the item pool", null, "",
-                    ["Include Agility"]));
-
             // ----- Archipelago -----
-            RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
-                new ConfigurableInfo("Enable Archipelago mode. Standalone settings will be ignored in favor of .yaml settings", null, "",
-                    ["Enable Archipelago"]));
 
-            RandoOptions.archipelagoHostName = config.Bind<string>("ArchipelagoHostName", "archipelago.gg",
-                new ConfigurableInfo("Host name for server connection. Leave as archipelago.gg if using the website", null, "",
-                    ["Host Name"]));
-
-            RandoOptions.archipelagoPort = config.Bind<int>("ArchipelagoPort", 38281,
-                new ConfigurableInfo("Port for server connection", null, "",
-                    ["Port"]));
+            // RandoOptions.archipelagoHostName = config.Bind<string>("ArchipelagoHostName", "archipelago.gg",
+            //     new ConfigurableInfo("Host name for server connection. Leave as archipelago.gg if using the website", null, "",
+            //         ["Host Name"]));
+            //
+            // RandoOptions.archipelagoPort = config.Bind<int>("ArchipelagoPort", 38281,
+            //     new ConfigurableInfo("Port for server connection", null, "",
+            //         ["Port"]));
+            //
+            // RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
+            //     new ConfigurableInfo("Your slot name for server connection", null, "",
+            //         ["Slot Name"]));
+            //
+            // RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
+            //     new ConfigurableInfo("Password for server connection (Optional)", null, "",
+            //         ["Password"]));
             
-            RandoOptions.archipelagoSlotName = config.Bind<string>("ArchipelagoSlotName", "",
-                new ConfigurableInfo("Your slot name for server connection", null, "",
-                    ["Slot Name"]));
-
-            RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
-                new ConfigurableInfo("Password for server connection (Optional)", null, "",
-                    ["Password"]));
-
-            RandoOptions.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
-                new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here", null, "",
-                    ["Enable DeathLink"]));
-
             RandoOptions.archipelagoPreventDLKarmaLoss = config.Bind<bool>("ArchipelagoPreventDLKarmaLoss", false,
                 new ConfigurableInfo("Whether deaths received from DeathLink should ignore the normal karma loss mechanics", null, "",
                     ["Prevent DeathLink Karma Loss"]));
@@ -244,6 +101,202 @@ namespace RainWorldRandomizer.Menu
                     ["Don't Notify Chat Messages"]));
 
             RandoOptions.textClientCosmeticConfig = config.Bind<string>("_TextClient", "");
+            ConnectInfoEntry.HostNameConfig = config.Bind<string>("_HostName", "archipelago.gg", 
+                new ConfigurableInfo("", null, "", ["Host Name"]));
+            ConnectInfoEntry.PortConfig = config.Bind<int>("_Port", 0,
+                new ConfigurableInfo("", null, "", ["Port"]));
+            ConnectInfoEntry.SlotNameConfig = config.Bind<string>("_SlotName", "",
+                new ConfigurableInfo("", null, "", ["Slot Name"]));
+            ConnectInfoEntry.PasswordConfig = config.Bind<string>("_Password", "",
+                new ConfigurableInfo("", null, "", ["Password"]));
+
+            #region Obsolete Configurables
+            #pragma warning disable CS0612 // Type or member is obsolete
+            RandoOptions.chosenSlugcat = config.Bind<string>("ChosenSlugcat", "White",
+                new ConfigurableInfo("The slugcat campaign you will be playing", null, "",
+                    ["Slugcat"]));
+            
+            RandoOptions.useSeed = config.Bind<bool>("useSeed", false,
+                new ConfigurableInfo("Whether the randomizer will use a set seed or a generated one", null, "",
+                    ["Use seed"]));
+
+            RandoOptions.seed = config.Bind<string>("seed", "",
+                new ConfigurableInfo("The seed used to generate the randomizer. Will be random seed if empty", null, "",
+                    ["Seed"]));
+
+            RandoOptions.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", true,
+                new ConfigurableInfo("Include checks for finding collectible tokens", null, "",
+                    ["Sandbox Tokens"]));
+
+            RandoOptions.usePearlChecks = config.Bind<bool>("usePearlChecks", true,
+                new ConfigurableInfo("Include checks for bringing colored pearls to a den", null, "",
+                    ["Pearls"]));
+
+            RandoOptions.useEchoChecks = config.Bind<bool>("useEchoChecks", true,
+                new ConfigurableInfo("Include checks for meeting Echoes", null, "",
+                    ["Echoes"]));
+
+            RandoOptions.usePassageChecks = config.Bind<bool>("usePassageChecks", true,
+                new ConfigurableInfo("Include checks for completing Passages", null, "",
+                    ["Passages"]));
+
+            RandoOptions.useSpecialChecks = config.Bind<bool>("useSpecialChecks", true,
+                new ConfigurableInfo("Include checks for story objectives", null, "",
+                    ["Unique"]));
+
+            RandoOptions.useShelterChecks = config.Bind<bool>("useShelterChecks", false,
+                new ConfigurableInfo("Include checks for entering shelters", null, "",
+                    ["Shelters"]));
+
+            RandoOptions.useDevTokenChecks = config.Bind<bool>("useDevTokenChecks", false,
+                new ConfigurableInfo("Include checks for collecting developer commentary tokens", null, "",
+                    ["Dev Tokens"]));
+
+            RandoOptions.useKarmaFlowerChecks = config.Bind<bool>("useKarmaFlowerChecks", false,
+                new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations", null, "",
+                    ["Karma Flowers"]));
+
+            RandoOptions.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
+                new ConfigurableInfo("Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages", null, "",
+                    ["Passage Tokens"]));
+
+            RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
+                new ConfigurableInfo("The percentage amount of filler items that will increase the remaining cycles when playing as Hunter." +
+                    "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
+                    new ConfigAcceptableRange<float>(0, 1), "",
+                    ["Percent Hunter Cycles"]));
+
+            RandoOptions.trapsDensity = config.Bind<float>("trapsDensity", 0.2f,
+                new ConfigurableInfo("The percentage amount of filler items that will be trap effects. Set to 0 to disable traps entirely",
+                    new ConfigAcceptableRange<float>(0, 1), "",
+                    ["Percent Traps"]));
+
+            RandoOptions.numDamageIncreases = config.Bind<int>("numDamageIncreases", 6,
+                new ConfigurableInfo("The amount of permanent damage upgrade items to add to the pool. Each item collected gives an additive +20% damage to thrown spears",
+                    new ConfigAcceptableRange<int>(0, 10), "",
+                    ["Damage Upgrades"]));
+
+            RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
+                new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
+                    ["Randomize Starting Region"]));
+
+            RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
+                new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
+                    "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
+                    ["Minimum Starting Karma"]));
+
+            RandoOptions.extraKarmaIncreases = config.Bind<int>("extraKarmaIncreases", 2,
+                new ConfigurableInfo("How many extra karma items above the minimum required will be placed in the world",
+                    new ConfigAcceptableRange<int>(0, 10), "",
+                    ["Extra Karma Increases"]));
+
+            RandoOptions.gateBehavior = config.Bind<string>("GateBehavior", "Only Key",
+                new ConfigurableInfo("What the requirement for travelling through gates should be", null, "",
+                    ["Gate Behavior"]));
+            
+            RandoOptions.ppwsBehavior = config.Bind<string>("PPwSBehavior", "Bypassed",
+                new ConfigurableInfo("Affects which passages can be obtained before Survivor. Disabled and Enabled mirror Remix setting behavior, Bypassed allows all passages to be obtained before Survivor", null, "",
+                    ["PPwS Behavior"]));
+            
+            RandoOptions.echoBehavior = config.Bind<string>("EchoBehavior", "Vanilla",
+                new ConfigurableInfo("Affects the conditions for echo spawning before 5 maximum karma", null, "",
+                    ["Echo Behavior"]));
+            
+            RandoOptions.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
+                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (When possible)", null, "",
+                    ["Open Metropolis"]));
+
+            RandoOptions.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
+                new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
+                    ["Open Submerged Superstructure"]));
+
+            RandoOptions.allowExteriorForInv = config.Bind<bool>("allowExteriorForInv", false, 
+                new ConfigurableInfo("By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty", null, "",
+                    ["Open Exterior for Inv"]));
+
+            RandoOptions.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", false,
+                new ConfigurableInfo("Include checks for eating every food in Gourmand's food quest. Other slugcats will only have checks for the foods they are able to eat", null, "",
+                    ["Food Quest"]));
+
+            RandoOptions.useExpandedFoodQuestChecks = config.Bind<bool>("useExpandedFoodQuestChecks", false,
+                new ConfigurableInfo("Extends food quest checks to include almost all edible creatures and objects", null, "",
+                    ["Food Quest Expanded"]));
+
+            RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
+                new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized", null, "",
+                    ["Use Mass Rarefaction cell"]));
+
+            RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
+                new ConfigurableInfo("Include checks for collecting broadcast tokens in Spearmaster's campaign", null, "",
+                    ["Spearmaster Broadcasts"]));
+
+            RandoOptions.expeditionPerks = new Configurable<bool>[8];
+            RandoOptions.expeditionPerks[0] = config.Bind<bool>("IncludeBackSpear", false,
+                new ConfigurableInfo("Add the Back Spear perk to the item pool", null, "",
+                    ["Back Spear"]));
+
+            RandoOptions.expeditionPerks[1] = config.Bind<bool>("IncludeDualWielding", false,
+                new ConfigurableInfo("Add the Dual Wielding perk to the item pool", null, "",
+                    ["Dual Wielding"]));
+
+            RandoOptions.expeditionPerks[2] = config.Bind<bool>("IncludeExplosionResistance", false,
+                new ConfigurableInfo("Add the Explosion Resistance perk to the item pool", null, "",
+                    ["Explosion Resistance"]));
+
+            RandoOptions.expeditionPerks[3] = config.Bind<bool>("IncludeExplosiveParry", false,
+                new ConfigurableInfo("Add the Explosive Parry perk to the item pool", null, "",
+                    ["Explosive Parry"]));
+
+            RandoOptions.expeditionPerks[4] = config.Bind<bool>("IncludeExplosiveJump", false,
+                new ConfigurableInfo("Add the Explosive Jump perk to the item pool", null, "",
+                    ["Explosive Jump"]));
+
+            RandoOptions.expeditionPerks[5] = config.Bind<bool>("IncludeItemCrafting", false,
+                new ConfigurableInfo("Add the Item Crafting perk to the item pool", null, "",
+                    ["Item Crafting"]));
+
+            RandoOptions.expeditionPerks[6] = config.Bind<bool>("IncludeAquatic", false,
+                new ConfigurableInfo("Add the Aquatic perk to the item pool", null, "",
+                    ["Aquatic"]));
+
+            RandoOptions.expeditionPerks[7] = config.Bind<bool>("IncludeAgility", false,
+                new ConfigurableInfo("Add the Agility perk to the item pool", null, "",
+                    ["Agility"]));
+            
+            RandoOptions.useSpreadRotChecks = config.Bind<bool>("SpreadRotChecks", false,
+                new ConfigurableInfo("Include checks for spreading rot to each region in the Watcher campaign", null, "",
+                    ["Spreading Rot"]));
+            
+            RandoOptions.useWeaverChecks = config.Bind<bool>("WeaverChecks", false,
+                new ConfigurableInfo("Include checks for each of the 4 encounters with the Weaver", null, "",
+                    ["Weaver Encounters"]));
+            
+            RandoOptions.weaverItems = config.Bind<bool>("WeaverItems", false,
+                new ConfigurableInfo("Adds 4 progressive Weaver items to the item pool, instead of incrementing from encounters", null, "",
+                    ["Weaver Encounters"]));
+            
+            RandoOptions.spinningTopKeys = config.Bind<bool>("SpinningTopKeys", false,
+                new ConfigurableInfo("The warps that Spinning Top opens will require keys to traverse. If this is disabled, you can always travel through these warps", null, "",
+                    ["Spinning Top Keys"]));
+            
+            RandoOptions.daemonKeys = config.Bind<bool>("DaemonKeys", false,
+                new ConfigurableInfo("The warps to Daemon will require keys to traverse", null, "",
+                    ["Daemon Keys"]));
+
+            RandoOptions.rottedRegionTarget = config.Bind<int>("RottedRegionTarget", 21,
+                new ConfigurableInfo("How many rotted regions are required in order to trigger the sentient rot ending",
+                    new ConfigAcceptableRange<int>(1, 21), "",
+                    ["Regions to Rot"]));
+
+            RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
+                new ConfigurableInfo("Enable Archipelago mode. Standalone settings will be ignored in favor of .yaml settings", null, "",
+                    ["Enable Archipelago"]));
+            
+            RandoOptions.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
+                new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here", null, "",
+                    ["Enable DeathLink"]));
+            #pragma warning restore CS0612 // Type or member is obsolete
+            #endregion
         }
 
         public override void Initialize()
@@ -285,68 +338,68 @@ namespace RainWorldRandomizer.Menu
             runningY -= NEWLINE_DECREMENT;
 
             // Seed
-            OptionGroup seedGroup = new(this, "Seed", new(10f, 10f));
-            OpCheckBox useSeedCheckbox = seedGroup.AddCheckBox(RandoOptions.useSeed, new(LEFT_OPTION_X, runningY));
-
-            OpTextBox seedText = new(RandoOptions.seed, new Vector2(125f, runningY), 100f)
-            {
-                description = Translate(RandoOptions.seed.info.description),
-            };
-            seedGroup.AddElements(seedText);
-            runningY -= NEWLINE_DECREMENT * 1.5f;
+            // OptionGroup seedGroup = new(this, "Seed", new(10f, 10f));
+            // OpCheckBox useSeedCheckbox = seedGroup.AddCheckBox(RandoOptions.useSeed, new(LEFT_OPTION_X, runningY));
+            //
+            // OpTextBox seedText = new(RandoOptions.seed, new Vector2(125f, runningY), 100f)
+            // {
+            //     description = Translate(RandoOptions.seed.info.description),
+            // };
+            // seedGroup.AddElements(seedText);
+            // runningY -= NEWLINE_DECREMENT * 1.5f;
 
             // Make the seed field be active only when useSeed is selected
-            void UseSeedChange() => seedText.greyedOut = seedGroup.Disabled || !useSeedCheckbox.GetValueBool();
-
-            seedText.OnUpdate += UseSeedChange; // Can't get the box to start greyed, just set on Update
-            seedGroup.AddToTab(tabIndex);
-            optionGroups.Add(seedGroup);
+            // void UseSeedChange() => seedText.greyedOut = seedGroup.Disabled || !useSeedCheckbox.GetValueBool();
+            //
+            // seedText.OnUpdate += UseSeedChange; // Can't get the box to start greyed, just set on Update
+            // seedGroup.AddToTab(tabIndex);
+            // optionGroups.Add(seedGroup);
 
             // Misc Generation
-            OptionGroup miscGroup = new(this, "Misc_Generation", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            miscGroup.AddCheckBox(RandoOptions.randomizeSpawnLocation, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            miscGroup.AddCheckBox(RandoOptions.startMinKarma, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            miscGroup.AddUpDown(RandoOptions.extraKarmaIncreases, true, new(LEFT_OPTION_X, runningY), 50f);
-            runningY -= NEWLINE_DECREMENT * 1.5f;
-            miscGroup.AddToTab(tabIndex);
-            optionGroups.Add(miscGroup);
+            // OptionGroup miscGroup = new(this, "Misc_Generation", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            // miscGroup.AddCheckBox(RandoOptions.randomizeSpawnLocation, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // miscGroup.AddCheckBox(RandoOptions.startMinKarma, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // miscGroup.AddUpDown(RandoOptions.extraKarmaIncreases, true, new(LEFT_OPTION_X, runningY), 50f);
+            // runningY -= NEWLINE_DECREMENT * 1.5f;
+            // miscGroup.AddToTab(tabIndex);
+            // optionGroups.Add(miscGroup);
 
             // Checks
-            OptionGroup checksGroup = new(this, "Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            checksGroup.AddCheckBox(RandoOptions.useSandboxTokenChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.usePearlChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.useEchoChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.usePassageChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.useSpecialChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.useShelterChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.useKarmaFlowerChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 1.5f;
-            checksGroup.AddToTab(tabIndex);
-            optionGroups.Add(checksGroup);
+            // OptionGroup checksGroup = new(this, "Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            // checksGroup.AddCheckBox(RandoOptions.useSandboxTokenChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.usePearlChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.useEchoChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.usePassageChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.useSpecialChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.useShelterChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.useKarmaFlowerChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT * 1.5f;
+            // checksGroup.AddToTab(tabIndex);
+            // optionGroups.Add(checksGroup);
 
             // Filler Items
-            OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(RIGHT_OPTION_X - LEFT_OPTION_X + GROUP_SIZE_X, 0f));
-            fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
-            runningY -= NEWLINE_DECREMENT;
-            fillerGroup.AddUpDown(RandoOptions.trapsDensity, false, new(LEFT_OPTION_X, runningY), 60f);
-            runningY += NEWLINE_DECREMENT * 2; // new column
-            fillerGroup.AddUpDown(RandoOptions.numDamageIncreases, true, new(RIGHT_OPTION_X, runningY), 60f);
+            // OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(RIGHT_OPTION_X - LEFT_OPTION_X + GROUP_SIZE_X, 0f));
+            // fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
+            // runningY -= NEWLINE_DECREMENT;
+            // fillerGroup.AddUpDown(RandoOptions.trapsDensity, false, new(LEFT_OPTION_X, runningY), 60f);
+            // runningY += NEWLINE_DECREMENT * 2; // new column
+            // fillerGroup.AddUpDown(RandoOptions.numDamageIncreases, true, new(RIGHT_OPTION_X, runningY), 60f);
 
-            fillerGroup.AddToTab(tabIndex);
-            optionGroups.Add(fillerGroup);
-
-            // Populate group set for disbling when AP
-            standaloneExclusiveGroups.AddRange([seedGroup, miscGroup, checksGroup, fillerGroup]);
+            // fillerGroup.AddToTab(tabIndex);
+            // optionGroups.Add(fillerGroup);
+            //
+            // // Populate group set for disbling when AP
+            // standaloneExclusiveGroups.AddRange([seedGroup, miscGroup, checksGroup, fillerGroup]);
 
             // ----- Right side configs -----
             runningY = FIRST_LINE_Y;
@@ -404,59 +457,59 @@ namespace RainWorldRandomizer.Menu
             if (!ModManager.MSC) return;
 
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Downpour"));
-            float runningY = FIRST_LINE_Y;
+            // float runningY = FIRST_LINE_Y;
 
-            OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Checks and Regions"));
-            Tabs[tabIndex].AddItems(standaloneConfigsLabel);
-            runningY -= NEWLINE_DECREMENT;
+            // OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Checks and Regions"));
+            // Tabs[tabIndex].AddItems(standaloneConfigsLabel);
+            // runningY -= NEWLINE_DECREMENT;
 
             // Open optional regions
-            OptionGroup unlockRegionsGroup = new(this, "MSC_Regions", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            unlockRegionsGroup.AddCheckBox(RandoOptions.allowMetroForOthers, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            unlockRegionsGroup.AddCheckBox(RandoOptions.allowExteriorForInv, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 1.5f;
+            // OptionGroup unlockRegionsGroup = new(this, "MSC_Regions", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            // unlockRegionsGroup.AddCheckBox(RandoOptions.allowMetroForOthers, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // unlockRegionsGroup.AddCheckBox(RandoOptions.allowExteriorForInv, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT * 1.5f;
 
             // Check types
-            OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            // OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
 
-            OpComboBox2 foodQuestComboBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
-                ["Disabled", "Enabled", "Gourmand Only"]);
-            OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string))
-            { bumpBehav = foodQuestComboBox.bumpBehav };
-            checksGroup.AddElements(foodQuestComboBox, foodQuestLabel);
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.useExpandedFoodQuestChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.useDevTokenChecks, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.useEnergyCell, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT;
-            checksGroup.AddCheckBox(RandoOptions.useSMTokens, new(LEFT_OPTION_X, runningY));
-            runningY -= NEWLINE_DECREMENT * 1.5f;
+            // OpComboBox2 foodQuestComboBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
+            //     ["Disabled", "Enabled", "Gourmand Only"]);
+            // OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string))
+            // { bumpBehav = foodQuestComboBox.bumpBehav };
+            // checksGroup.AddElements(foodQuestComboBox, foodQuestLabel);
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.useExpandedFoodQuestChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.useDevTokenChecks, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.useEnergyCell, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT;
+            // checksGroup.AddCheckBox(RandoOptions.useSMTokens, new(LEFT_OPTION_X, runningY));
+            // runningY -= NEWLINE_DECREMENT * 1.5f;
 
-            runningY = FIRST_LINE_Y;
+            // runningY = FIRST_LINE_Y;
+            //
+            // OpLabel expeditionConfigsLabel = new(RIGHT_OPTION_X + 15f, runningY, Translate("Expedition Perks"));
+            // Tabs[tabIndex].AddItems(expeditionConfigsLabel);
+            // runningY -= NEWLINE_DECREMENT;
 
-            OpLabel expeditionConfigsLabel = new(RIGHT_OPTION_X + 15f, runningY, Translate("Expedition Perks"));
-            Tabs[tabIndex].AddItems(expeditionConfigsLabel);
-            runningY -= NEWLINE_DECREMENT;
-
-            OptionGroup expeditionPerksGroup = new(this, "MSC_Perks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            foreach (Configurable<bool> perk in RandoOptions.expeditionPerks)
-            {
-                expeditionPerksGroup.AddCheckBox(perk, new(RIGHT_OPTION_X, runningY));
-                runningY -= NEWLINE_DECREMENT;
-            }
+            // OptionGroup expeditionPerksGroup = new(this, "MSC_Perks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
+            // foreach (Configurable<bool> perk in RandoOptions.expeditionPerks)
+            // {
+            //     expeditionPerksGroup.AddCheckBox(perk, new(RIGHT_OPTION_X, runningY));
+            //     runningY -= NEWLINE_DECREMENT;
+            // }
 
             // Add to tab
-            unlockRegionsGroup.AddToTab(tabIndex);
-            checksGroup.AddToTab(tabIndex);
-            expeditionPerksGroup.AddToTab(tabIndex);
-
-            optionGroups.AddRange([unlockRegionsGroup, checksGroup, expeditionPerksGroup]);
-            standaloneExclusiveGroups.AddRange([unlockRegionsGroup, checksGroup, expeditionPerksGroup]);
+            // unlockRegionsGroup.AddToTab(tabIndex);
+            // checksGroup.AddToTab(tabIndex);
+            // expeditionPerksGroup.AddToTab(tabIndex);
+            //
+            // optionGroups.AddRange([unlockRegionsGroup, checksGroup, expeditionPerksGroup]);
+            // standaloneExclusiveGroups.AddRange([unlockRegionsGroup, checksGroup, expeditionPerksGroup]);
         }
 
         public void PopulateArchipelagoTab()
@@ -465,57 +518,66 @@ namespace RainWorldRandomizer.Menu
             // ----- Left side Configurables -----
             float runningY = FIRST_LINE_Y;
 
-            OpCheckBox APCheckBox = AddCheckBox(RandoOptions.archipelago, new(LEFT_OPTION_X, runningY), tabIndex);
-            runningY -= NEWLINE_DECREMENT * 1.5f;
+            OpLabelLong explanationLabel = new OpLabelLong(new Vector2(LEFT_OPTION_X, runningY), new Vector2(300f, 0f),
+                "Hey, where did the connection screen go?\n\n" +
+                "How you connect to Archipelago has changed! You can find the new menu by clicking the \"RANDOMIZER\" button " +
+                "on the main menu. Saved games are now stored separate from story campaigns, so no more juggling save " +
+                "slots and remembering which file is or isn't a randomizer game!\n\n" +
+                "To import a previous run into the new save system, first make sure you have selected the Rain World save slot " +
+                "that the game you want to continue is on. Then, click \"New Game\" in the randomizer menu and connect " +
+                "to Archipelago. You will receive a prompt to import the save data, press OK and the file will be copied " +
+                "into a new Randomizer file. Once you've sheltered or died at least once, the file will be fully transferred.");
+            Tabs[tabIndex].AddItems(explanationLabel);
 
-            OptionGroup connectionGroup = new(this, "AP_Connection", new(10f, 10f));
-            OpTextBox hostNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoHostName, new(LEFT_OPTION_X, runningY), 200f);
-            runningY -= NEWLINE_DECREMENT;
-            OpTextBox portTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPort, new(LEFT_OPTION_X, runningY), 55f);
-            runningY -= NEWLINE_DECREMENT;
-            OpTextBox slotNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoSlotName, new(LEFT_OPTION_X, runningY), 200f);
-            slotNameTextBox.allowSpace = true;
-            runningY -= NEWLINE_DECREMENT;
-            OpTextBox passwordTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f);
-            passwordTextBox.allowSpace = true;
-            runningY -= NEWLINE_DECREMENT;
+            // OpCheckBox APCheckBox = AddCheckBox(RandoOptions.archipelago, new(LEFT_OPTION_X, runningY), tabIndex);
+            // runningY -= NEWLINE_DECREMENT * 1.5f;
+
+            // OptionGroup connectionGroup = new(this, "AP_Connection", new(10f, 10f));
+            // OpTextBox hostNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoHostName, new(LEFT_OPTION_X, runningY), 200f);
+            // runningY -= NEWLINE_DECREMENT;
+            // OpTextBox portTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPort, new(LEFT_OPTION_X, runningY), 55f);
+            // runningY -= NEWLINE_DECREMENT;
+            // OpTextBox slotNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoSlotName, new(LEFT_OPTION_X, runningY), 200f);
+            // slotNameTextBox.allowSpace = true;
+            // runningY -= NEWLINE_DECREMENT;
+            // OpTextBox passwordTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f);
+            // passwordTextBox.allowSpace = true;
+            // runningY -= NEWLINE_DECREMENT;
 
             // Force infinite length on important information fields
-            hostNameTextBox.maxLength = int.MaxValue;
-            slotNameTextBox.maxLength = int.MaxValue;
-            passwordTextBox.maxLength = int.MaxValue;
+            // hostNameTextBox.maxLength = int.MaxValue;
+            // slotNameTextBox.maxLength = int.MaxValue;
+            // passwordTextBox.maxLength = int.MaxValue;
 
-            OpSimpleButton connectButton = new(new Vector2(LEFT_OPTION_X, runningY), new Vector2(60f, 20f), "Connect")
-            {
-                description = "Attempt to connect to the Archipelago server"
-            };
-            OpSimpleButton disconnectButton = new(new Vector2(LEFT_OPTION_X + 80f, runningY), new Vector2(80f, 20f), "Disconnect")
-            {
-                description = "Disconnect from the current session"
-            };
-            connectionGroup.AddElements(connectButton, disconnectButton);
-            runningY -= NEWLINE_DECREMENT;
-            connectionGroup.AddToTab(tabIndex);
-            optionGroups.Add(connectionGroup);
+            // OpSimpleButton connectButton = new(new Vector2(LEFT_OPTION_X, runningY), new Vector2(60f, 20f), "Connect")
+            // {
+            //     description = "Attempt to connect to the Archipelago server"
+            // };
+            // OpSimpleButton disconnectButton = new(new Vector2(LEFT_OPTION_X + 80f, runningY), new Vector2(80f, 20f), "Disconnect")
+            // {
+            //     description = "Disconnect from the current session"
+            // };
+            // connectionGroup.AddElements(connectButton, disconnectButton);
+            // runningY -= NEWLINE_DECREMENT;
+            // connectionGroup.AddToTab(tabIndex);
+            // optionGroups.Add(connectionGroup);
 
             // ----- Status Information -----
-            OptionGroup statusGroup = new(this, "AP_Status", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
-            OpLabelLong connectResultLabel = new(new Vector2(LEFT_OPTION_X, 60f), new Vector2(GROUP_SIZE_X, runningY - 60f), "");
-            statusGroup.AddElements(connectResultLabel);
-            statusGroup.AddToTab(tabIndex);
-            optionGroups.Add(statusGroup);
+            // OptionGroup statusGroup = new(this, "AP_Status", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
+            // OpLabelLong connectResultLabel = new(new Vector2(LEFT_OPTION_X, 60f), new Vector2(GROUP_SIZE_X, runningY - 60f), "");
+            // statusGroup.AddElements(connectResultLabel);
+            // statusGroup.AddToTab(tabIndex);
+            // optionGroups.Add(statusGroup);
 
             // ----- Right side Configurables -----
             runningY = FIRST_LINE_Y;
 
             OptionGroup deathLinkGroup = new(this, "AP_DeathLink", new(10f, 10f), new(GROUP_SIZE_X - 30f, 0f));
-            //OpLabel deathLinkLabel = new(RIGHT_OPTION_X + 45f, runningY, Translate("Death Link Settings"));
-            //deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
-            //deathLinkGroup.AddElements(deathLinkLabel);
-            //runningY -= NEWLINE_DECREMENT;
-
-            OpCheckBox deathLinkOverrideCheckbox = deathLinkGroup.AddCheckBox(RandoOptions.archipelagoDeathLinkOverride, new(RIGHT_OPTION_X + 30f, runningY));
+            OpLabel deathLinkLabel = new(RIGHT_OPTION_X + 45f, runningY, Translate("Death Link Settings"));
+            deathLinkLabel.bumpBehav = new BumpBehaviour(deathLinkLabel);
+            deathLinkGroup.AddElements(deathLinkLabel);
             runningY -= NEWLINE_DECREMENT;
+
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X + 30f, runningY));
@@ -535,117 +597,7 @@ namespace RainWorldRandomizer.Menu
 
             // Slot data information
             runningY = Mathf.Min(runningY, 322.5f);
-            OptionGroup slotDataGroup = new(this, "AP_Slot_Data", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
-            OpLabelLong slotDataLabelLeft = new(new Vector2(RIGHT_OPTION_X, 60f), new Vector2(200f, runningY - 60f), "", false);
-            OpLabelLong slotDataLabelRight = new(new Vector2(RIGHT_OPTION_X + 210f, 60f), new Vector2(50f, runningY - 60f), "", false, FLabelAlignment.Right);
-            slotDataGroup.AddElements(slotDataLabelLeft, slotDataLabelRight);
-            slotDataGroup.AddToTab(tabIndex);
-            optionGroups.Add(slotDataGroup);
-
-            OpSimpleButton clearSavesButton = new(new Vector2(490f, 10f), new Vector2(100f, 25f), "Clear Save Files")
-            {
-                colorEdge = new Color(0.85f, 0.35f, 0.4f),
-                description = Translate("Delete ALL Archipelago save games. It's a good idea to do this periodically to save space")
-            };
-            Tabs[tabIndex].AddItems(clearSavesButton);
-
-            // ----- Update / Button Logic -----
-
-            void APCheckedChange()
-            {
-                bool APDisabled = !APCheckBox.GetValueBool();
-                // Disconnect connection when AP is turned off
-                if (APDisabled && ArchipelagoConnection.HasConnected)
-                {
-                    ArchipelagoConnection.Disconnect(true);
-                    slotDataLabelLeft.text = "";
-                    slotDataLabelRight.text = "";
-                }
-                connectionGroup.Disabled = APDisabled;
-                deathLinkGroup.Disabled = APDisabled;
-                foreach (OptionGroup group in standaloneExclusiveGroups)
-                {
-                    group.Disabled = !APDisabled;
-                }
-            }
-
-            // Call the function once to initialize
-            APCheckedChange();
-            APCheckBox.OnChange += APCheckedChange;
-
-            // Attempt AP connection on click
-            connectButton.OnClick += (trigger) =>
-            {
-                try
-                {
-                    connectResultLabel.text = ArchipelagoConnection.Connect(
-                    hostNameTextBox.value,
-                    portTextBox.valueInt,
-                    slotNameTextBox.value,
-                    passwordTextBox.value == "" ? null : passwordTextBox.value);
-                }
-                catch (Exception e)
-                {
-                    connectResultLabel.text = $"An unexpected error occurred while connecting to the server:\n\n {e}";
-                    Plugin.Log.LogError("Encountered exception while connecting to server:");
-                    Plugin.Log.LogError(e);
-                }
-
-                if (!ArchipelagoConnection.HasConnected) return;
-
-                deathLinkOverrideCheckbox.SetValueBool(DeathLinkHandler.Active);
-
-                // Create / Update slot data information
-                slotDataLabelLeft.text = string.Join("\n",
-                [
-                    "Current Settings Information\n",
-                    "Using MSC:",
-                    "Using Watcher:",
-                    "Chosen Slugcat:",
-                    "Using Random Start:",
-                    "Chosen Starting Room:",
-                    "Completion Condition:",
-                    "Passage Progress w/o Survivor:",
-                    "Using DeathLink:",
-                    "Food Quest:",
-                    "Shelter-sanity:",
-                    "Flower-sanity:",
-                    "Dev token checks:",
-                ]);
-                slotDataLabelRight.text = string.Join("\n",
-                [
-                    $"\n\n{ArchipelagoConnection.IsMSC}",
-                    $"{ArchipelagoConnection.IsWatcher}",
-                    $"{SlugcatStats.getSlugcatName(ArchipelagoConnection.Slugcat)}",
-                    $"{ArchipelagoConnection.useRandomStart}",
-                    $"{(ArchipelagoConnection.useRandomStart ? ArchipelagoConnection.desiredStartDen : "N/A")}",
-                    $"{ArchipelagoConnection.completionCondition}",
-                    $"{ArchipelagoConnection.PPwS}",
-                    $"{DeathLinkHandler.Active}",
-                    $"{ArchipelagoConnection.foodQuest}",
-                    $"{ArchipelagoConnection.sheltersanity}",
-                    $"{ArchipelagoConnection.flowersanity}",
-                    $"{ArchipelagoConnection.devTokenChecks}",
-                ]);
-            };
-            // Disconnect from AP on click
-            disconnectButton.OnClick += (trigger) =>
-            {
-                if (ArchipelagoConnection.Disconnect(true))
-                {
-                    connectResultLabel.text = "Disconnected from server";
-                    slotDataLabelLeft.text = "";
-                    slotDataLabelRight.text = "";
-                }
-            };
-
-            deathLinkOverrideCheckbox.OnChange += () =>
-            {
-                // TODO: DeathLink probably shouldn't send a toggle to server every time the box is clicked, change to happen on apply settings
-                DeathLinkHandler.Active = deathLinkOverrideCheckbox.GetValueBool();
-            };
-
-            clearSavesButton.OnClick += AskToClearSaveFiles;
+            
         }
 
         private void AskToClearSaveFiles(UIfocusable trigger)

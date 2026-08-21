@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using RainWorldRandomizer.Menu;
+using RainWorldRandomizer.SaveData;
 
 namespace RainWorldRandomizer
 {
@@ -27,6 +28,8 @@ namespace RainWorldRandomizer
             }
 
             base.StartNewGameSession(storyGameCharacter, continueSaved);
+            currentSeed = ArchipelagoConnection.generationSeed;
+            // RandoOptions.LoadedOptions = ArchipelagoConnection.ConnectedOptions;
             LoadAPLocationDicts();
 
             // Verify slugcat
@@ -43,13 +46,11 @@ namespace RainWorldRandomizer
             // Load save file
             SaveManager.ClearScoutedLocationCache();
             
-            string saveId = $"{ArchipelagoConnection.generationSeed}_{ArchipelagoConnection.playerName}";
             try
             {
-                // TODO: There should be some validation that the save game being loaded is the correct one for the AP slot
-                // Probably do this when integrating data into save file. Then we can mine save data to find if player is loading the correct save
-                if (SaveManager.IsThereAnAPSave(saveId)) LoadSave(saveId);
-                else CreateNewSave(saveId);
+                if (continueSaved) 
+                    LoadSave(Plugin.Singleton.rainWorld.options.saveSlot);
+                else CreateNewSave();
             }
             catch (Exception e)
             {
@@ -58,7 +59,7 @@ namespace RainWorldRandomizer
             }
 
             // Ask for fresh items list if there isn't one waiting
-            if (!ArchipelagoConnection.waitingItemPackets.Any(p => p.Index == 0))
+            if (ArchipelagoConnection.waitingItemPackets.All(p => p.Index != 0))
             {
                 ArchipelagoConnection.SendSyncPacket();
             }
@@ -99,24 +100,42 @@ namespace RainWorldRandomizer
             passageTokensStatus.Clear();
         }
 
-        public void LoadSave(string saveId)
+        public void LoadSave(int saveSlot)
         {
-            SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
-            ArchipelagoConnection.lastItemIndex = save.lastIndex;
-            locations = [.. save.locationsStatus.Select(kvp => new LocationInfo(kvp, true))];
+            if (!SaveManager.TryReadFromFile(saveSlot, out SaveFile file))
+            {
+                throw new FileNotFoundException();
+            }
+
+            RandoOptions.LoadedOptions = file.options;
+            
+            // SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
+            ArchipelagoConnection.lastItemIndex = file.lastItemIndex;
+            locations = [.. file.locationMap.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.collected, true))];
             currentSlugcat = ArchipelagoConnection.Slugcat;
 
             SyncLocations();
 
-            // Load the item delivery queue from file as normal
-            (itemDeliveryQueue, pendingTrapQueue) = SaveManager.LoadItemQueue(ArchipelagoConnection.Slugcat, Plugin.Singleton.rainWorld.options.saveSlot);
-            lastItemDeliveryQueue = new(itemDeliveryQueue);
+            itemDeliveryQueue = [];
+            foreach (Unlock.Item item in file.pendingFiller.Select(f => 
+                         Unlock.IDToItem(f.id, f.type == nameof(DataPearl.AbstractDataPearl.DataPearlType))))
+            {
+                itemDeliveryQueue.Enqueue(item);
+            }
+            
+            pendingTrapQueue = [];
+            foreach (TrapsHandler.Trap item in file.pendingTraps.Select(t => new TrapsHandler.Trap(t)))
+            {
+                pendingTrapQueue.Enqueue(item);
+            }
+            
+            lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
 
-            Plugin.Log.LogInfo($"Loaded save game {saveId}");
+            Plugin.Log.LogInfo($"Loaded save game {saveSlot}");
             locationsLoaded = true;
         }
 
-        public void CreateNewSave(string saveId)
+        public void CreateNewSave()
         {
             currentSlugcat = ArchipelagoConnection.Slugcat;
             locations.Clear();
@@ -126,13 +145,7 @@ namespace RainWorldRandomizer
             {
                 try
                 {
-                    //LocationInfo loc = new(locID);
-                    //string display = $"{IDToLocation[locID]} | {loc.internalName}";
-                    //if (IDToLocation[locID] == loc.internalName)
-                    //    Plugin.Log.LogDebug(display);
-                    //else
-                    //    Plugin.Log.LogError(display);
-                    locations.Add(new(locID));
+                    locations.Add(new LocationInfo(locID));
                 }
                 catch (Exception e)
                 {
@@ -148,8 +161,20 @@ namespace RainWorldRandomizer
                 return;
             }
 
+            if (SaveManager.HasLegacySave(ArchipelagoConnection.generationSeed,
+                    ArchipelagoConnection.ConnectedSlotName))
+            {
+                (itemDeliveryQueue, pendingTrapQueue) = 
+                    SaveManager.LoadItemQueue(currentSlugcat, SaveTracker.OrigSaveSlot);
+                
+                lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
+                
+                SaveManager.DestroyLegacySave(ArchipelagoConnection.generationSeed, 
+                    ArchipelagoConnection.ConnectedSlotName, currentSlugcat.value, 
+                    SaveTracker.OrigSaveSlot);
+            }
+
             locationsLoaded = true;
-            SaveGame(false);
         }
 
         public void SyncLocations()
@@ -329,7 +354,7 @@ namespace RainWorldRandomizer
 
         public bool InitializeSession(SlugcatStats.Name slugcat)
         {
-            if (ArchipelagoConnection.useRandomStart)
+            if (RandoOptions.RandomizeSpawnLocation)
             {
                 customStartDen = ArchipelagoConnection.desiredStartDen;
                 Plugin.Log.LogInfo($"Using randomized starting den: {customStartDen}");
@@ -379,9 +404,9 @@ namespace RainWorldRandomizer
         // Thankfully, the only place that uses this is the spoiler menu, which can be re-written for AP
         public override Unlock GetUnlockAtLocation(string location) => null;
 
-        public void GiveCompletionCondition(ArchipelagoConnection.CompletionCondition condition)
+        public void GiveCompletionCondition(RandoOptions.CompletionCondition condition)
         {
-            if (gameCompleted || condition != ArchipelagoConnection.completionCondition) return;
+            if (gameCompleted || condition != RandoOptions.GoalCondition) return;
 
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();
@@ -391,12 +416,6 @@ namespace RainWorldRandomizer
 
         public override void SaveGame(bool saveCurrentState)
         {
-            SaveManager.WriteItemQueueToFile(
-                saveCurrentState ? itemDeliveryQueue : lastItemDeliveryQueue,
-                pendingTrapQueue,
-                currentSlugcat,
-                Plugin.Singleton.rainWorld.options.saveSlot);
-
             // Don't save if locations are not loaded
             if (!locationsLoaded) return;
 
@@ -409,11 +428,8 @@ namespace RainWorldRandomizer
                         loc.MarkCollected();
                 }
             }
-
-            SaveManager.WriteAPSaveToFile(
-                $"{ArchipelagoConnection.generationSeed}_{ArchipelagoConnection.playerName}",
-                ArchipelagoConnection.lastItemIndex,
-                locations);
+            
+            SaveManager.WriteToFile(Plugin.Singleton.rainWorld, this, saveCurrentState);
         }
 
         private struct APReadableNames(Dictionary<string, string> locations, Dictionary<string, string> items)

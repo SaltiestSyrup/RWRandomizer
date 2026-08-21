@@ -4,10 +4,36 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
+using Menu;
 using Menu.Remix.MixedUI;
+using MoreSlugcats;
 using UnityEngine;
+using Watcher;
 
 namespace RainWorldRandomizer.Menu;
+
+public static class MenuHelpers
+{
+    /// <summary>
+    /// <see cref="CharacterSelectPage"/> has a similar method but does not make it static, so we have a manual helper function instead.
+    /// </summary>
+    public static string GetSlugcatPortrait(SlugcatStats.Name slugcat)
+    {
+        return slugcat.value switch
+        {
+            "White" => "multiplayerportrait01",
+            "Yellow" => "multiplayerportrait11",
+            "Red" => "multiplayerportrait21",
+            "Gourmand" => ModManager.MSC ? "multiplayerportrait41-gourmand" : null,
+            "Artificer" => ModManager.MSC ? "multiplayerportrait41-artificer" : null,
+            "Spear" => ModManager.MSC ? "multiplayerportrait41-spear" : null,
+            "Rivulet" => ModManager.MSC ? "multiplayerportrait41-rivulet" : null,
+            "Saint" => ModManager.MSC ? "multiplayerportrait41-saint" : null,
+            "Watcher" => ModManager.Watcher ? "multiplayerportrait41-watcher" : null,
+            _ => "multiplayerportrait02"
+        };
+    }
+}
 
 /// <summary>
 /// Simple struct for storing messages before creating their UI
