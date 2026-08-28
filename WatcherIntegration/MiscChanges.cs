@@ -15,50 +15,47 @@ namespace RainWorldRandomizer.WatcherIntegration
                 IL.Player.WatcherUpdate += FixDialWarpAbilityHardcode;
                 IL.Watcher.WatcherRoomSpecificScript.AddRoomSpecificScript += FixDialWarpAbilityHardcode;
                 IL.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.Update += FixDialWarpAbilityHardcode;
-                IL.Watcher.WarpPoint.NewWorldLoaded_Room += WarpPointOnNewWorldLoaded_Room;
+                IL.RoomSettings.LoadPlacedObjects_StringArray_Timeline += RoomSettingsOnLoadPlacedObjects_StringArray_Timeline;
             }
             catch (Exception e)
             {
                 Plugin.Log.LogError(e);
             }
         }
-        
+
         public static void RemoveHooks()
         {
             IL.Watcher.WarpPoint.ActivateWeaver += WarpPointOnActivateWeaver;
             IL.Player.WatcherUpdate -= FixDialWarpAbilityHardcode;
             IL.Watcher.WatcherRoomSpecificScript.AddRoomSpecificScript -= FixDialWarpAbilityHardcode;
             IL.Watcher.WatcherRoomSpecificScript.WORA_ElderSpawn.Update -= FixDialWarpAbilityHardcode;
-            IL.Watcher.WarpPoint.NewWorldLoaded_Room += WarpPointOnNewWorldLoaded_Room;
+            IL.RoomSettings.LoadPlacedObjects_StringArray_Timeline -= RoomSettingsOnLoadPlacedObjects_StringArray_Timeline;
         }
-        
+
         /// <summary>
         /// Stop karma flowers from being removed by warp filters
         /// </summary>
-        private static void WarpPointOnNewWorldLoaded_Room(ILContext il)
+        private static void RoomSettingsOnLoadPlacedObjects_StringArray_Timeline(ILContext il)
         {
             ILCursor c = new(il);
-
-            // Right before fetching the field from the PlacedObject
-            c.GotoNext(MoveType.Before,
-                x => x.MatchLdfld(typeof(PlacedObject).GetField(nameof(PlacedObject.deactivatedByWarpFilter))));
-            // We intercept and modify the object
-            c.EmitDelegate(DontWarpFilterFlowers);
             
-            // Do it again for the other check
+            // Right before setting the field on the PlacedObject
             c.GotoNext(MoveType.Before,
-                x => x.MatchLdfld(typeof(PlacedObject).GetField(nameof(PlacedObject.deactivatedByWarpFilter))));
+                x => x.MatchLdcI4(1),
+                x => x.MatchStfld(typeof(PlacedObject).GetField(nameof(PlacedObject.deactivatedByWarpFilter))));
+            
+            // Duplicate the PlacedObject to pass into method
+            c.Emit(OpCodes.Dup);
+            c.Index++;
+            
             c.EmitDelegate(DontWarpFilterFlowers);
-
             return;
-            
-            static PlacedObject DontWarpFilterFlowers(PlacedObject obj)
-            {
-                if (!Plugin.RandoManager.isRandomizerActive) return obj;
 
-                if (obj.deactivatedByWarpFilter && obj.type == PlacedObject.Type.KarmaFlower)
-                    obj.deactivatedByWarpFilter = false;
-                return obj;
+            static bool DontWarpFilterFlowers(PlacedObject obj, bool origVal)
+            {
+                if (!Plugin.RandoManager.isRandomizerActive) return origVal;
+
+                return obj.type != PlacedObject.Type.KarmaFlower;
             }
         }
         
