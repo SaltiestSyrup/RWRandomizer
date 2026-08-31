@@ -104,21 +104,23 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
 
         if (SaveManager.HasLegacySave(ArchipelagoConnection.generationSeed, ArchipelagoConnection.ConnectedSlotName))
         {
-            menu.manager.ShowDialog(new DialogConfirm(
+            menu.manager.ShowDialog(new DialogMultiSelect(
                 "Successfully connected to the Multiworld.\n" +
                 "A legacy save file for this slot name and multiworld was found,\n" +
                 "would you like to import the campaign data from the currently selected Rain World slot?\n" +
                 "If not, a new game will be created instead and the old data will be discarded.",
                 new Vector2(600f, 200f), 
                 menu.manager,
-                () => // On yes, load legacy file. Else go to options dialog as normal
+                // On yes, load legacy file
+                ("IMPORT", () => 
                 {
                     ArchipelagoConnection.lastItemIndex =
                         SaveManager.GetLastIndexFromLegacy(ArchipelagoConnection.generationSeed,
                             ArchipelagoConnection.ConnectedSlotName);
                     Singal(this, "CONTINUE_FROM_LEGACY");
-                }, 
-                () =>
+                }), 
+                // Discard the legacy file and start a new game
+                ("DISCARD", () =>
                 {
                     // Destroy old save if we aren't using it, so manager doesn't get confused
                     SaveManager.DestroyLegacySave(ArchipelagoConnection.generationSeed, 
@@ -126,7 +128,9 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
                         menu.manager.rainWorld.options.saveSlot);
                     // Add directly to the stack, because calling ShowDialog here freezes the game
                     menu.manager.dialogStack.Add(CreateOptionsDialog());
-                }));
+                }),
+                // Make no decision, disconnect and return to connection screen
+                ("CANCEL", () => { ArchipelagoConnection.Disconnect(true); })));
             return;
         }
         
