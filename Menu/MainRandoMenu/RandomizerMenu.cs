@@ -99,6 +99,7 @@ public class RandomizerMenu : RWMenu
         switch (message)
         {
             case "EXIT":
+                if (pagesMoving) break;
                 switch (currentPage)
                 {
                     case 0 or 1:
