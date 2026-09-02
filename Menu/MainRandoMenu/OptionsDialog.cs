@@ -65,6 +65,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         exitButton = new SimpleButton(this, pages[0], "DONE", "CLOSE_OPTIONS",
             roundedRect.pos + new Vector2(size.x - 105f, 5f),
             new Vector2(100f, 30f));
+        backObject = exitButton;
         pages[0].subObjects.Add(exitButton);
         
         tabs = new Tab[3];
@@ -77,7 +78,27 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         
         tabs[2] = new ItemsTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f));
         pages[0].subObjects.Add(tabs[2]);
-        
+
+        // Set Selectables
+        tabButtons[0].nextSelectable[0] = tabButtons[0];
+        tabButtons[0].nextSelectable[1] = tabButtons[0];
+        tabButtons[0].nextSelectable[2] = tabButtons[1];
+        tabButtons[0].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
+        tabButtons[1].nextSelectable[0] = tabButtons[0];
+        tabButtons[1].nextSelectable[1] = tabButtons[1];
+        tabButtons[1].nextSelectable[2] = tabButtons[2];
+        tabButtons[1].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
+        tabButtons[2].nextSelectable[0] = tabButtons[1];
+        tabButtons[2].nextSelectable[1] = tabButtons[2];
+        tabButtons[2].nextSelectable[2] = tabButtons[2];
+        tabButtons[2].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
+        tabs[0].SetSelectables(tabButtons[0], exitButton);
+        tabs[1].SetSelectables(tabButtons[1], exitButton);
+        tabs[2].SetSelectables(tabButtons[2], exitButton);
+        exitButton.nextSelectable[0] = exitButton;
+        exitButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();
+        exitButton.nextSelectable[2] = exitButton;
+        exitButton.nextSelectable[3] = exitButton;
     }
 
     public OptionsDialog(ProcessManager manager, Mode mode, SaveFile file, Action saveOptionsCallback = null) 
@@ -112,6 +133,10 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             tabs[i].pos = roundedRect.pos + (i == newPage ? 0f : -1f) * new Vector2(0f, 2000f);
             tabs[i].lastPos = tabs[i].pos;
         }
+        tabButtons[0].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
+        tabButtons[1].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
+        tabButtons[2].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
+        exitButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();
     }
 
     public void OutputToSaveFile(ref SaveFile file)
@@ -140,6 +165,61 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         protected Dictionary<string, Option> options;
         public abstract void PopulateFromSaveFile(SaveFile save);
         public abstract void OutputToSaveFile(ref SaveFile save);
+
+        public MenuObject GetFirstSelectable()
+        {
+            return options.FirstOrDefault().Value?.GetSelectable();
+        }
+
+        public virtual void SetSelectables(MenuObject myTabButton, MenuObject doneButton)
+        {
+            // Group the options by their x position, so we can assign selectables by vertical column
+            var grouped = options.Values.GroupBy(
+                o => o.pos.x, // Group by x position
+                o => o, // Keep the full Option objects
+                (key, val) => new
+                {
+                    posX = key,
+                    optionsInGroup = val.ToList()
+                }).ToList();
+            // Sort by x position
+            grouped.Sort(((x, y) => x.posX.CompareTo(y.posX)));
+
+            for (int i = 0; i < grouped.Count; i++)
+            {
+                for (int j = 0; j < grouped[i].optionsInGroup.Count; j++)
+                {
+                    MenuObject option = grouped[i].optionsInGroup[j].GetSelectable();
+                    // Left goes to self if this is left column,
+                    // the lowest element in last column if self is further down than last column's length,
+                    // else the left adjacent element 
+                    option.nextSelectable[0] = i == 0
+                        ? option
+                        : grouped[i - 1].optionsInGroup.Count <= j 
+                            ? grouped[i - 1].optionsInGroup.Last().GetSelectable()
+                            : grouped[i - 1].optionsInGroup[j].GetSelectable();
+                    // Up goes to the current tab's button if this is top row, else the above element
+                    option.nextSelectable[1] = j == 0 
+                        ? myTabButton 
+                        : grouped[i].optionsInGroup[j - 1].GetSelectable();
+                    // Right side has same logic as left
+                    option.nextSelectable[2] = i == grouped.Count - 1
+                        ? option
+                        : grouped[i + 1].optionsInGroup.Count <= j 
+                            ? grouped[i + 1].optionsInGroup.Last().GetSelectable()
+                            : grouped[i + 1].optionsInGroup[j].GetSelectable();
+                    // Down goes to exit button if this is the bottom of the column, else the below element
+                    option.nextSelectable[3] = j == grouped[i].optionsInGroup.Count - 1
+                        ? doneButton
+                        : grouped[i].optionsInGroup[j + 1].GetSelectable();
+                    Plugin.Log.LogDebug($"{i}, {j}\n" +
+                                        $"\t{option.nextSelectable[0].GetHashCode()}\n" +
+                                        $"\t{option.nextSelectable[1].GetHashCode()}\n" +
+                                        $"\t{option.nextSelectable[2].GetHashCode()}\n" +
+                                        $"\t{option.nextSelectable[3].GetHashCode()}\n");
+                }
+            }
+        }
     }
 
     private class GeneralTab : Tab
@@ -618,6 +698,11 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             
             subObjects.Add(label);
             subObjects.Add(tabWrapper);
+        }
+        
+        public virtual MenuObject GetSelectable()
+        {
+            return fieldWrapper;
         }
     } 
 
