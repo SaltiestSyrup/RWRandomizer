@@ -31,7 +31,7 @@ namespace RainWorldRandomizer.Menu;
 
         protected int ScrollPos { get; set; }
 
-        private int MaxVisibleItems
+        public int MaxVisibleItems
         {
             get
             {
@@ -145,6 +145,16 @@ namespace RainWorldRandomizer.Menu;
             return Mathf.Min(index, filteredEntries.Count - 1) + 1;
         }
 
+        protected int LastVisibleItem()
+        {
+            return ScrollPos + MaxVisibleItems - 1;
+        }
+
+        public int IndexOf(Entry entry)
+        {
+            return filteredEntries.IndexOf(entry);
+        }
+
         protected float IdealYPosForItem(int index)
         {
             return size.y - ((entryHeight + 10f) * (StepsDownOfItem(index) - floatScrollPos)) - 7f;
@@ -209,7 +219,7 @@ namespace RainWorldRandomizer.Menu;
             public override void Update()
             {
                 base.Update();
-                ScrollingMenu statusMenu = owner as ScrollingMenu;
+                ScrollingMenu statusMenu = (ScrollingMenu)owner;
                 lastFade = fade;
                 lastSelectedBlink = selectedBlink;
 
@@ -227,18 +237,18 @@ namespace RainWorldRandomizer.Menu;
                 }
                 lastSelected = Selected;
 
-                int myindex = -1;
-                for (int i = 0; i < statusMenu.filteredEntries.Count; i++)
-                {
-                    if (statusMenu.filteredEntries[i] == this)
-                    {
-                        myindex = i;
-                        break;
-                    }
-                }
+                int myIndex = statusMenu.IndexOf(this);
+                // for (int i = 0; i < statusMenu.filteredEntries.Count; i++)
+                // {
+                //     if (statusMenu.filteredEntries[i] == this)
+                //     {
+                //         myindex = i;
+                //         break;
+                //     }
+                // }
 
-                active = myindex >= statusMenu.floatScrollPos - 1f
-                    && myindex < statusMenu.floatScrollPos + statusMenu.MaxVisibleItems + 1f;
+                active = myIndex >= statusMenu.floatScrollPos - 1f
+                    && myIndex < statusMenu.floatScrollPos + statusMenu.MaxVisibleItems + 1f;
                 
                 if (sleep)
                 {
@@ -249,22 +259,22 @@ namespace RainWorldRandomizer.Menu;
                     sleep = false;
                 }
 
-                float value = statusMenu.StepsDownOfItem(myindex) - 1f;
+                float value = statusMenu.StepsDownOfItem(myIndex) - 1f;
                 float fadeTowards = 1f;
                 float difference = 0f;
-                if (myindex < statusMenu.floatScrollPos)
+                if (myIndex < statusMenu.floatScrollPos)
                 {
                     fadeTowards = Mathf.InverseLerp(statusMenu.floatScrollPos - 1f, statusMenu.floatScrollPos, value);
-                    difference = Mathf.Abs(myindex - statusMenu.floatScrollPos);
+                    difference = Mathf.Abs(myIndex - statusMenu.floatScrollPos);
                     //Mathf.Clamp01(value - statusMenu.floatScrollPos - 1f);
                     //
                     // 0
                 }
-                else if (myindex > statusMenu.floatScrollPos + statusMenu.MaxVisibleItems - 1)
+                else if (myIndex > statusMenu.floatScrollPos + statusMenu.MaxVisibleItems - 1)
                 {
                     float sum = statusMenu.floatScrollPos + statusMenu.MaxVisibleItems;
                     fadeTowards = Mathf.InverseLerp(sum, sum - 1, value);
-                    difference = Mathf.Abs(myindex - sum - 1);
+                    difference = Mathf.Abs(myIndex - sum - 1);
                     //Mathf.Clamp01(sum - value);
                     //
                 }

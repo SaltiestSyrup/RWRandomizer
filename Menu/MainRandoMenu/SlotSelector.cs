@@ -12,7 +12,6 @@ namespace RainWorldRandomizer.Menu;
 
 public sealed class SlotSelector : ScrollingMenu
 {
-    
     public SlotSelector(RWMenu menu, MenuObject owner, Vector2 pos) 
         : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.5f, 0.75f))
     {
@@ -49,6 +48,13 @@ public sealed class SlotSelector : ScrollingMenu
                 entries.Add(new Slot(menu, this, 
                     new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(index)),
                     new Vector2(entryWidth, entryHeight), slot.Key, slot.Value));
+            }
+
+            // 0 = left, 1 = up, 2 = right, 3 = down
+            if (index != 0)
+            {
+                entries[index].nextSelectable[1] = entries[index - 1];
+                entries[index - 1].nextSelectable[3] = entries[index];
             }
             
             subObjects.Add(entries[index]);
@@ -94,6 +100,16 @@ public sealed class SlotSelector : ScrollingMenu
                 
                 // subObjects.Add(new OptionsDialog(menu, this, new Vector2(size.x / 2f - 400f, size.y / 2f - 200f), new Vector2(800f, 500f)));
                 break;
+        }
+    }
+    
+    // Assigning how directional inputs navigate the menu needs to be done outside constructor,
+    // after all elements are created.  
+    public void SetNavigation()
+    {
+        foreach (Slot slot in entries.Cast<Slot>())
+        {
+            slot.SetNavigation();
         }
     }
     
@@ -199,6 +215,7 @@ public sealed class SlotSelector : ScrollingMenu
             };
             
             subObjects.Add(startButton);
+            
             // --- Options button
             optionsButton = new SimpleButton(menu, this, "OPTIONS", "OPTIONS",
                 new Vector2(size.x - startButton.rad * 2 - 145f, 10f), new Vector2(100f, 30f));
@@ -251,6 +268,16 @@ public sealed class SlotSelector : ScrollingMenu
             
             hud.karmaMeter.pos = ScreenPos + new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 35.01f, size.y / 2 + 0.01f);
             hud.foodMeter.pos = hud.karmaMeter.pos + new Vector2(hud.karmaMeter.Radius + 20.01f, 0f);
+
+            // Scroll to this element if we've selected it with controller / keyboard navigation
+            if (sleep && !menu.manager.menuesMouseMode 
+                      && (startButton.Selected || optionsButton.Selected || deleteButton.Selected))
+            {
+                SlotSelector scrollMenu = (SlotSelector)owner;
+                int myIndex = scrollMenu.IndexOf(this);
+                scrollMenu.ScrollPos = myIndex < scrollMenu.ScrollPos 
+                    ? myIndex : myIndex - scrollMenu.MaxVisibleItems + 1;
+            }
         }
 
         public override void GrafUpdate(float timeStacker)
@@ -327,6 +354,23 @@ public sealed class SlotSelector : ScrollingMenu
         }
 
         public void FoodCountDownDone() { }
+
+        public void SetNavigation()
+        {
+            // Define controller navigation (0 = left, 1 = up, 2 = right, 3 = down)
+            startButton.nextSelectable[0] = optionsButton;
+            startButton.nextSelectable[1] = (this.nextSelectable[1] as Slot)?.startButton ?? startButton;
+            startButton.nextSelectable[2] = owner.nextSelectable[2];
+            startButton.nextSelectable[3] = (this.nextSelectable[3] as Slot)?.startButton ?? startButton;
+            optionsButton.nextSelectable[0] = deleteButton;
+            optionsButton.nextSelectable[1] = (this.nextSelectable[1] as Slot)?.optionsButton ?? optionsButton;
+            optionsButton.nextSelectable[2] = startButton;
+            optionsButton.nextSelectable[3] = (this.nextSelectable[3] as Slot)?.optionsButton ?? optionsButton;
+            deleteButton.nextSelectable[0] = startButton;
+            deleteButton.nextSelectable[1] = (this.nextSelectable[1] as Slot)?.deleteButton ?? deleteButton;
+            deleteButton.nextSelectable[2] = optionsButton;
+            deleteButton.nextSelectable[3] = (this.nextSelectable[3] as Slot)?.deleteButton ?? deleteButton;
+        }
     }
 
     public class ArchipelagoSlot : Slot

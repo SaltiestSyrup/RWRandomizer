@@ -33,6 +33,10 @@ public sealed class CampaignSelectPage : PositionedMenuObject
             new Vector2(slotSelector.pos.x + slotSelector.size.x + 20f, slotSelector.pos.y),
             new Vector2(100f, 30f));
         subObjects.Add(startButton);
+
+        // Set this so it can be propagated to the slot start buttons
+        slotSelector.nextSelectable[2] = startButton;
+        slotSelector.SetNavigation();
     }
 
     public override void GrafUpdate(float timeStacker)
