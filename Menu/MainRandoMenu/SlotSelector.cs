@@ -90,6 +90,7 @@ public sealed class SlotSelector : ScrollingMenu
                         RemoveSubObject(slot);
                         entries.Remove(slot);
                         SaveManager.DeleteFile(menu.manager.rainWorld, slot.saveSlot);
+                        SetNavigation();
                     }, () => { })
                 {
                     descriptionLabel = { label = { color = new HSLColor(1f, 0.80f, 0.35f).rgb } }
@@ -107,8 +108,13 @@ public sealed class SlotSelector : ScrollingMenu
     // after all elements are created.  
     public void SetNavigation()
     {
-        foreach (Slot slot in entries.Cast<Slot>())
+        for (int i = 0; i < filteredEntries.Count; i++)
         {
+            Slot slot = (Slot)filteredEntries[i];
+            // 0 = left, 1 = up, 2 = right, 3 = down
+            filteredEntries[i].nextSelectable[1] = i > 0 ? filteredEntries[i - 1] : null;
+            filteredEntries[i].nextSelectable[3] = i < filteredEntries.Count - 1 ? filteredEntries[i + 1] : null;
+            
             slot.SetNavigation();
         }
     }
