@@ -420,7 +420,6 @@ namespace RainWorldRandomizer
             ];
 
             ConnectedOptions.archipelagoDeathLink = slotData.GetSimple("death_link", 0L) > 0L;
-            DeathLinkHandler.Active = ConnectedOptions.archipelagoDeathLink; // TODO: Set deathlink properly on connection to existing save
 
             foodQuestAccessibility = slotData.GetSimple("checks_foodquest_accessibility", 0L);
             ConnectedOptions.foodQuestBehavior = ModManager.MSC &&

@@ -73,6 +73,9 @@ namespace RainWorldRandomizer
                 return;
             }
 
+            // Set DeathLink flag
+            DeathLinkHandler.Active = RandoOptions.LoadedOptions.archipelagoDeathLink;
+
             isRandomizerActive = true;
             // All good, randomizer active
         }
