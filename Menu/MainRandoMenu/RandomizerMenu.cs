@@ -83,6 +83,11 @@ public class RandomizerMenu : RWMenu
         // Load existing game page
         campaignSelectPage = new CampaignSelectPage(this, pages[1], default);
         pages[1].subObjects.Add(campaignSelectPage);
+        
+        exitButton.nextSelectable[0] = exitButton;
+        exitButton.nextSelectable[1] = exitButton;
+        exitButton.nextSelectable[2] = campaignSelectPage.GetFirstSelectable();
+        exitButton.nextSelectable[3] = campaignSelectPage.GetFirstSelectable();
 
         // Create new game page
         createNewGamePage = new CreateNewGamePage(this, pages[2], default);
@@ -194,6 +199,10 @@ public class RandomizerMenu : RWMenu
             exitButtonPos, buttonSize);
         pages[newPage].subObjects.Add(exitButton);
         backObject = exitButton;
+        exitButton.nextSelectable[0] = exitButton;
+        exitButton.nextSelectable[1] = exitButton;
+        exitButton.nextSelectable[2] = newPage == 1 ? campaignSelectPage.GetFirstSelectable() : null;
+        exitButton.nextSelectable[3] = newPage == 1 ? campaignSelectPage.GetFirstSelectable() : null;
 
         if (newPage == 2) // New game page
         {

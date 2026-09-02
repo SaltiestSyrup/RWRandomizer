@@ -37,6 +37,15 @@ public sealed class CampaignSelectPage : PositionedMenuObject
         // Set this so it can be propagated to the slot start buttons
         slotSelector.nextSelectable[2] = startButton;
         slotSelector.SetNavigation();
+        startButton.nextSelectable[0] = GetFirstSelectable();
+        startButton.nextSelectable[1] = GetFirstSelectable();
+        startButton.nextSelectable[2] = startButton;
+        startButton.nextSelectable[3] = startButton;
+    }
+
+    public MenuObject GetFirstSelectable()
+    {
+        return ((SlotSelector.Slot)slotSelector.GetEntryAtIndex(0)).startButton;
     }
 
     public override void GrafUpdate(float timeStacker)

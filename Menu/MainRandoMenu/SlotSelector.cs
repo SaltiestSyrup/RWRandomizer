@@ -130,7 +130,7 @@ public sealed class SlotSelector : ScrollingMenu
         protected RoundedRect portraitBorder;
         protected MenuLabel cycleText;
         protected MenuLabel completionText;
-        protected HoldButton startButton;
+        public HoldButton startButton;
         protected SymbolButton deleteButton;
         protected SimpleButton optionsButton;
         

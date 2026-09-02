@@ -178,6 +178,11 @@ namespace RainWorldRandomizer.Menu;
             }
         }
 
+        public Entry GetEntryAtIndex(int index)
+        {
+            return index >= 0 && index < filteredEntries.Count ? filteredEntries[index] : null;
+        }
+
         public override void Singal(MenuObject sender, string message)
         {
             base.Singal(sender, message);
