@@ -48,16 +48,6 @@ public class RandomizerMenu : RWMenu
     {
         
         anchors = new Vector2(Custom.GetScreenOffsets()[0], Custom.GetScreenOffsets()[1]);
-        
-        /*
-            Central saved games tab
-                Save game container
-                AP and Standalone version
-            Connection info pop-up
-            Chosen options viewer (takes from AP or S)
-            Standalone options editor
-            
-        */
 
         pages = [
             new Page(this, null, "SCENE", 0),
@@ -65,8 +55,7 @@ public class RandomizerMenu : RWMenu
             new Page(this, null, "CREATE", 2),
         ];
 
-        // TODO: Change landscape scene
-        scene = new InteractiveMenuScene(this, null, MenuScene.SceneID.Landscape_SS)
+        scene = new InteractiveMenuScene(this, null, manager.rainWorld.options.subBackground)
         {
             blurMax = 250f,
             blurMin = 150f,
@@ -212,6 +201,12 @@ public class RandomizerMenu : RWMenu
         {
             createNewGamePage.Disable();
         }
+
+        selectedObject = newPage switch
+        {
+            1 => campaignSelectPage.GetFirstSelectable(),
+            _ => null
+        };
         
         currentPage = newPage;
     }

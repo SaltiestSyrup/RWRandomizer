@@ -50,9 +50,6 @@ namespace RainWorldRandomizer
                     .GetGetMethod(),
                     progressHook);
 
-                IL.Menu.SlugcatSelectMenu.Update += SlugcatSelectMenuUpdateIL;
-                IL.Menu.SlugcatSelectMenu.ContinueStartedGame += SlugcatSelectOverrideDeadCheckIL;
-                IL.Menu.SlugcatSelectMenu.UpdateStartButtonText += SlugcatSelectOverrideDeadCheckIL;
                 IL.MoreSlugcats.MSCRoomSpecificScript.AddRoomSpecificScript += AddMSCRoomSpecificScriptIL;
                 IL.MoreSlugcats.CutsceneArtificer.Update += CutsceneArtificerUpdateIL;
                 IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
@@ -80,9 +77,6 @@ namespace RainWorldRandomizer
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
             On.ScavengerAI.CollectScore_PhysicalObject_bool -= OnScavengerAICollectScore;
 
-            IL.Menu.SlugcatSelectMenu.Update -= SlugcatSelectMenuUpdateIL;
-            IL.Menu.SlugcatSelectMenu.ContinueStartedGame -= SlugcatSelectOverrideDeadCheckIL;
-            IL.Menu.SlugcatSelectMenu.UpdateStartButtonText -= SlugcatSelectOverrideDeadCheckIL;
             IL.MoreSlugcats.MSCRoomSpecificScript.AddRoomSpecificScript += AddMSCRoomSpecificScriptIL;
             IL.MoreSlugcats.CutsceneArtificer.Update -= CutsceneArtificerUpdateIL;
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
@@ -134,73 +128,6 @@ namespace RainWorldRandomizer
                     return;
                 }
                 self.denPosition = Plugin.RandoManager.customStartDen;
-            }
-        }
-
-        // TODO: This cam be removed later
-        /// <summary>
-        /// Stop game from going to statistics page instead of the game if there is a randomizer save.
-        /// This hook is applied to both <see cref="SlugcatSelectMenu.UpdateStartButtonText"/> and <see cref="SlugcatSelectMenu.ContinueStartedGame"/>
-        /// </summary>
-        private static void SlugcatSelectOverrideDeadCheckIL(ILContext il)
-        {
-            ILCursor c = new(il);
-
-            FieldInfo[] flags =
-            [
-                typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.redIsDead)),
-                typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.artificerIsDead)),
-                typeof(SlugcatSelectMenu).GetField(nameof(SlugcatSelectMenu.saintIsDead))
-            ];
-
-            // The check is the same for all 3 cases, so just loop through them
-            foreach (var flag in flags)
-            {
-                ILLabel jump = null;
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld(flag),
-                    x => x.MatchBrfalse(out jump)
-                );
-
-                c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate(OverrideIsDead);
-                c.Emit(OpCodes.Brfalse, jump);
-            }
-
-            return;
-
-            static bool OverrideIsDead(SlugcatSelectMenu menu)
-            {
-                SlugcatStats.Name slugcat = menu.slugcatPages[menu.slugcatPageIndex].slugcatNumber;
-                int saveSlot = menu.manager.rainWorld.options.saveSlot;
-                return !(Plugin.ArchipelagoActive || SaveManager.IsThereASavedGame(slugcat, saveSlot));
-            }
-        }
-
-        // TODO: Remove this when we stop loading from story menu
-        /// <summary>
-        /// Disable start game button if proper conditions are not met
-        /// </summary>
-        private static void SlugcatSelectMenuUpdateIL(ILContext il)
-        {
-            ILCursor c1 = new(il);
-
-            // Check slugcat unlocked at 0362
-            c1.GotoNext(MoveType.After,
-                x => x.MatchCallOrCallvirt(typeof(SlugcatSelectMenu).GetMethod(nameof(SlugcatSelectMenu.SlugcatUnlocked)))
-                );
-            c1.Emit(OpCodes.Ldarg_0);
-            c1.EmitDelegate(CanPlaySlugcat);
-            return;
-
-            static bool CanPlaySlugcat(bool orig, SlugcatSelectMenu self)
-            {
-                if (!RandoOptions.archipelago.Value) return orig;
-
-                return ArchipelagoConnection.SocketConnected
-                    && ArchipelagoConnection.Slugcat == self.colorFromIndex(self.slugcatPageIndex);
             }
         }
 

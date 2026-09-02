@@ -242,7 +242,6 @@ namespace RainWorldRandomizer
         {
             int origResult = orig(extracycles);
 
-            // TODO: Remove this when we stop loading from story menu
             if (!Plugin.RandomizerActive) return int.MaxValue;
 
             // Remove cycle limit completely for Archipelago
@@ -253,24 +252,12 @@ namespace RainWorldRandomizer
                     return Plugin.Singleton.Game.GetStorySession.saveState.cycleNumber + 1;
                 }
                 // If this isn't in game there's not an easy way to get the cycle count
-                // Will need to hook individual cases to fix this
                 return int.MaxValue;
             }
 
             int bonusCycles = ModManager.MMF && MMF.cfgHunterBonusCycles != null
                 ? MMF.cfgHunterBonusCycles.Value : 5;
             int baseCycles = extracycles ? origResult - bonusCycles : origResult;
-
-            // If the save hasn't been initialized, read the file to count cycles
-            //if (!Plugin.RandoManager.isRandomizerActive)
-            //{
-            //    int countedCycles = SaveManager.CountRedsCycles(Plugin.Singleton.rainWorld.options.saveSlot);
-            //    if (countedCycles == -1)
-            //    {
-            //        return origResult;
-            //    }
-            //    return baseCycles + (countedCycles * bonusCycles);
-            //}
 
             return baseCycles + (Plugin.RandoManager.HunterBonusCyclesGiven * bonusCycles);
         }
