@@ -20,7 +20,7 @@ public sealed class SlotSelector : ScrollingMenu
 
         entryWidth = 0.95f * size.x;
         entryHeight = 0.22f * size.y;
-        roundedRect.fillAlpha = 0.7f;
+        roundedRect.fillAlpha = 0.9f;
         
         // Remove unneeded elements
         scrollDownButton.RemoveSprites();
@@ -139,10 +139,14 @@ public sealed class SlotSelector : ScrollingMenu
         public HoldButton startButton;
         protected SymbolButton deleteButton;
         protected SimpleButton optionsButton;
+        protected RoundedRect extInfoRect;
+        protected MenuLabel extInfoLabel;
         
         // Vars
         public int saveSlot;
         public SaveFile saveFile;
+        private bool isDisabled;
+        private string disabledReason = "";
         
         public int CurrentFood
         {
@@ -213,7 +217,7 @@ public sealed class SlotSelector : ScrollingMenu
             hud.AddPart(new FoodMeter(hud, saveFile.maxFood.x, saveFile.maxFood.y));
             hud.foodMeter.NewShowCount(saveFile.food);
             
-            // --- Start button
+            // --- Start Button
             startButton = new HoldButton(menu, this, "PLAY", "", 
                 new Vector2(size.x - 60f, size.y / 2), 100f)
             {
@@ -222,7 +226,7 @@ public sealed class SlotSelector : ScrollingMenu
             
             subObjects.Add(startButton);
             
-            // --- Options button
+            // --- Options Button
             optionsButton = new SimpleButton(menu, this, "OPTIONS", "OPTIONS",
                 new Vector2(size.x - startButton.rad * 2 - 145f, 10f), new Vector2(100f, 30f));
             subObjects.Add(optionsButton);
@@ -242,8 +246,11 @@ public sealed class SlotSelector : ScrollingMenu
                 { label = { alignment = FLabelAlignment.Right } };
             subObjects.Add(completionText);
             
+            // --- Bounding Box
             CreateBoundingBox();
             
+            // --- Delete Button
+            // Made last because it needs to be drawn on top of bounding box
             deleteButton = new SymbolButton(menu, this, "Menu_Symbol_Clear_All", "DELETE_SAVE", 
                 new Vector2(2f, size.y - 26f))
             {
@@ -254,6 +261,46 @@ public sealed class SlotSelector : ScrollingMenu
                 }
             };
             subObjects.Add(deleteButton);
+            
+            // --- Disabled Info Box
+            // Disable starting the game if this is a legacy file that can't be loaded currently
+            if (saveFile.legacySaveSlot >= 0 && menu.manager.rainWorld.options.saveSlot != saveFile.legacySaveSlot)
+            {
+                isDisabled = true;
+                disabledReason = $"- This is a legacy file. The save slot this was\n created under (Slot #{saveFile.legacySaveSlot + 1}) must be active to play.";
+            }
+            
+            // Disable starting the game if the DLCs do not match
+            if (saveFile.isDownpourDLC ^ ModManager.MSC || saveFile.isWatcherDLC ^ ModManager.Watcher)
+            {
+                if (isDisabled) disabledReason += "\n\n";
+                isDisabled = true;
+                disabledReason += $"- You must have the same DLCs enabled as when\n this save was created to play." +
+                                  $"\n    More Slugcats Expansion: {(saveFile.isDownpourDLC ? "ENABLED" : "DISABLED")}" +
+                                  $"\n    The Watcher: {(saveFile.isWatcherDLC ? "ENABLED" : "DISABLED")}";
+            }
+            
+            if (isDisabled)
+            {
+                startButton.GetButtonBehavior.greyedOut = true;
+                extInfoRect = new RoundedRect(menu, this, 
+                    default, 
+                    default, true)
+                {
+                    fillAlpha = 1f
+                };
+                extInfoLabel = new MenuLabel(menu, this, disabledReason, new Vector2(size.x + 35f, size.y - 10f),
+                    default, false)
+                {
+                    label = { alignment = FLabelAlignment.Left, anchorY = 1f },
+                };
+
+                extInfoRect.pos = new Vector2(size.x + 25f, size.y - extInfoLabel.label.textRect.size.y - 20f);
+                extInfoRect.size = new Vector2(300f, extInfoLabel.label.textRect.size.y + 20f);
+                
+                subObjects.Add(extInfoRect);
+                subObjects.Add(extInfoLabel);
+            }
         }
 
         public override void Update()
@@ -274,6 +321,16 @@ public sealed class SlotSelector : ScrollingMenu
             
             hud.karmaMeter.pos = ScreenPos + new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 35.01f, size.y / 2 + 0.01f);
             hud.foodMeter.pos = hud.karmaMeter.pos + new Vector2(hud.karmaMeter.Radius + 20.01f, 0f);
+            
+            // Show info text on hover if we're disabled
+            if (isDisabled)
+            {
+                foreach (FSprite sprite in extInfoRect.sprites)
+                {
+                    sprite.isVisible = startButton.IsMouseOverMe;
+                }
+                extInfoLabel.label.isVisible = startButton.IsMouseOverMe;
+            }
 
             // Scroll to this element if we've selected it with controller / keyboard navigation
             if (sleep && !menu.manager.menuesMouseMode 

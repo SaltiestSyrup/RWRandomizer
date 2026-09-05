@@ -24,12 +24,12 @@ public static class MenuHelpers
             "White" => "multiplayerportrait01",
             "Yellow" => "multiplayerportrait11",
             "Red" => "multiplayerportrait21",
-            "Gourmand" => ModManager.MSC ? "multiplayerportrait41-gourmand" : null,
-            "Artificer" => ModManager.MSC ? "multiplayerportrait41-artificer" : null,
-            "Spear" => ModManager.MSC ? "multiplayerportrait41-spear" : null,
-            "Rivulet" => ModManager.MSC ? "multiplayerportrait41-rivulet" : null,
-            "Saint" => ModManager.MSC ? "multiplayerportrait41-saint" : null,
-            "Watcher" => ModManager.Watcher ? "multiplayerportrait41-watcher" : null,
+            "Gourmand" => ModManager.MSC ? "multiplayerportrait41-gourmand" : "multiplayerportrait02",
+            "Artificer" => ModManager.MSC ? "multiplayerportrait41-artificer" : "multiplayerportrait02",
+            "Spear" => ModManager.MSC ? "multiplayerportrait41-spear" : "multiplayerportrait02",
+            "Rivulet" => ModManager.MSC ? "multiplayerportrait41-rivulet" : "multiplayerportrait02",
+            "Saint" => ModManager.MSC ? "multiplayerportrait41-saint" : "multiplayerportrait02",
+            "Watcher" => ModManager.Watcher ? "multiplayerportrait41-watcher" : "multiplayerportrait02",
             _ => "multiplayerportrait02"
         };
     }
