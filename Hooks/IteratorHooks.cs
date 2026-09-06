@@ -194,8 +194,7 @@ namespace RainWorldRandomizer
             c.GotoNext(x =>
                 x.MatchLdsfld(typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk))));
             c.GotoNext(MoveType.After,
-                x => x.MatchLdsfld(
-                    typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk))));
+                x => x.MatchLdsfld(typeof(SSOracleBehavior.Action).GetField(nameof(SSOracleBehavior.Action.General_MarkTalk))));
 
             c.Emit(OpCodes.Ldarg_0);
             c.EmitDelegate(ForceGiveMark);
@@ -225,8 +224,13 @@ namespace RainWorldRandomizer
 
             // Force this check to always return false
             c.Index += 2;
-            c.Emit(OpCodes.Pop);
-            c.EmitDelegate(() => !Plugin.RandomizerActive);
+            c.EmitDelegate(ForceGiveMark);
+            return;
+
+            static bool ForceGiveMark(bool origVal)
+            {
+                return !Plugin.RandomizerActive && origVal;
+            }
         }
 
         /// <summary>
