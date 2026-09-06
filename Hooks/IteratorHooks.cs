@@ -181,7 +181,7 @@ namespace RainWorldRandomizer
             c.EmitDelegate(AllPlayersHaveRobot);
             return;
 
-            static bool AllPlayersHaveRobot(AncientBot foundRobot) => Plugin.RandomizerActive;
+            static bool AllPlayersHaveRobot(AncientBot foundRobot) => Plugin.RandomizerActive || foundRobot is not null;
         }
 
         /// <summary>
@@ -278,7 +278,7 @@ namespace RainWorldRandomizer
             
             static bool ShouldPebblesNotGiveMark(bool hasTheMark)
             {
-                return Plugin.RandoManager?.IsLocationGiven("Meet_FP") is true;
+                return Plugin.RandomizerActive ? Plugin.RandoManager?.IsLocationGiven("Meet_FP") is true : hasTheMark;
             }
 
             static SSOracleBehavior.Action ThrowOutIfNoRobo(SSOracleBehavior.Action origNextAction, SSOracleBehavior.SSOracleMeetArty self)
