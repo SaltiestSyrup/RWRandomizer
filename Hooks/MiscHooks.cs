@@ -324,8 +324,7 @@ namespace RainWorldRandomizer
                 x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
                 );
             // Tell check that we always have robo
-            c.Emit(OpCodes.Pop);
-            c.Emit(OpCodes.Ldc_I4_1);
+            c.EmitDelegate(SkipArtificerRobo);
 
             // --- Stop Saint intro from triggering when start den is randomized
 
@@ -340,7 +339,15 @@ namespace RainWorldRandomizer
             c.EmitDelegate(SkipSaintIntro);
             return;
 
-            static int SkipSaintIntro(int cycleNumber) => RandoOptions.RandomizeSpawnLocation ? 1 : cycleNumber;
+            static bool SkipArtificerRobo(bool origVal)
+            {
+                return Plugin.RandomizerActive || origVal;
+            }
+            
+            static int SkipSaintIntro(int cycleNumber)
+            {
+                return Plugin.RandomizerActive && RandoOptions.RandomizeSpawnLocation ? 1 : cycleNumber;
+            }
         }
 
         private static bool _hasSeenArtyStart;
@@ -356,8 +363,7 @@ namespace RainWorldRandomizer
                 x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
                 );
             // Skip cutscene if we saw it instead of if robo is present
-            c.Emit(OpCodes.Pop);
-            c.EmitDelegate(() => _hasSeenArtyStart);
+            c.EmitDelegate(SkipCutscene);
 
             // Jump further into method to dodge last call to Destroy()
             c.GotoNext(x => x.MatchLdsfld(typeof(CutsceneArtificer.Phase).GetField(nameof(CutsceneArtificer.Phase.End))));
@@ -370,11 +376,22 @@ namespace RainWorldRandomizer
             c.MoveAfterLabels();
             // Mark cutscene as seen
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate<Action<CutsceneArtificer>>(self =>
+            c.EmitDelegate(MarkSceneSeen);
+            return;
+
+            static bool SkipCutscene(bool origVal)
             {
-                _hasSeenArtyStart = true;
-                RainWorldGame.ForceSaveNewDenLocation(self.room.game, "GW_A24", true);
-            });
+                return Plugin.RandomizerActive ? _hasSeenArtyStart : origVal;
+            }
+
+            static void MarkSceneSeen(CutsceneArtificer self)
+            {
+                if (Plugin.RandomizerActive)
+                {
+                    _hasSeenArtyStart = true;
+                    RainWorldGame.ForceSaveNewDenLocation(self.room.game, "GW_A24", true);
+                }
+            }
         }
 
         /// <summary>
@@ -418,7 +435,10 @@ namespace RainWorldRandomizer
 
             static AbstractPhysicalObject.AbstractObjectType TreatSeedsAsCobs(AbstractPhysicalObject.AbstractObjectType prev)
             {
-                return ModManager.DLCShared && prev == DLCSharedEnums.AbstractObjectType.Seed ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
+                return Plugin.RandomizerActive 
+                       && ModManager.DLCShared 
+                       && prev == DLCSharedEnums.AbstractObjectType.Seed 
+                    ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
             }
         }
 
@@ -443,7 +463,7 @@ namespace RainWorldRandomizer
             c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
 
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate<Action<Spear>>((self) =>
+            c.EmitDelegate<Action<Spear>>(self =>
             {
                 IteratorHooks.EatenNeuron(self.thrownBy as Player);
             });
