@@ -13,7 +13,7 @@ namespace RainWorldRandomizer.Menu;
 public sealed class SlotSelector : ScrollingMenu
 {
     public SlotSelector(RWMenu menu, MenuObject owner, Vector2 pos) 
-        : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.5f, 0.75f))
+        : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.55f, 0.75f))
     {
         // Standalone slot entry
         // Archipelago slot entry
@@ -122,7 +122,7 @@ public sealed class SlotSelector : ScrollingMenu
     public class Slot : Entry, IOwnAHUD
     {
         protected const float PORTRAIT_SIZE = 94f;
-        protected const float PORTRAIT_OFFSET = 30f;
+        protected const float PORTRAIT_OFFSET = 48f;
 
         // We use a random sprite for Inv's illustration because silly
         private readonly string[] invSprites =
@@ -141,6 +141,8 @@ public sealed class SlotSelector : ScrollingMenu
         protected SimpleButton optionsButton;
         protected RoundedRect extInfoRect;
         protected MenuLabel extInfoLabel;
+        private FSprite iconMSC;
+        private FSprite iconWatcher;
         
         // Vars
         public int saveSlot;
@@ -245,6 +247,19 @@ public sealed class SlotSelector : ScrollingMenu
                 new Vector2(size.x - startButton.rad * 2 - 40f, size.y - 20f), default, true) 
                 { label = { alignment = FLabelAlignment.Right } };
             subObjects.Add(completionText);
+            
+            // --- Icons
+            if (saveFile.isDownpourDLC)
+            {
+                iconMSC = new FSprite("Symbol_MSC");
+                Container.AddChild(iconMSC);
+            }
+
+            if (saveFile.isWatcherDLC)
+            {
+                iconWatcher = new FSprite("Symbol_Watcher");
+                Container.AddChild(iconWatcher);
+            }
             
             // --- Bounding Box
             CreateBoundingBox();
@@ -360,6 +375,20 @@ public sealed class SlotSelector : ScrollingMenu
             startButton.menuLabel.label.alpha = alpha;
             optionsButton.menuLabel.label.alpha = alpha;
             optionsButton.buttonBehav.greyedOut = sleep;
+
+            if (iconMSC is not null)
+            {
+                iconMSC.x = DrawPos(timeStacker).x + 20f;
+                iconMSC.y = DrawPos(timeStacker).y + 60f;
+                iconMSC.alpha = alpha;
+            }
+
+            if (iconWatcher is not null)
+            {
+                iconWatcher.x = DrawPos(timeStacker).x + 24f;
+                iconWatcher.y = DrawPos(timeStacker).y + 40f;
+                iconWatcher.alpha = alpha;
+            }
 
             foreach (FSprite sprite in (FSprite[])[
                          ..deleteButton.roundedRect.sprites, 

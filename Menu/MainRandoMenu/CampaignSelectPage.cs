@@ -25,8 +25,8 @@ public sealed class CampaignSelectPage : PositionedMenuObject
         pageTitle.shader = menu.manager.rainWorld.Shaders["MenuText"];
         Container.AddChild(pageTitle);
         
-        slotSelector = new SlotSelector(menu, this, 
-            new Vector2(menu.manager.rainWorld.options.ScreenSize.x / 4f, 50f));
+        slotSelector = new SlotSelector(menu, this, default);
+        slotSelector.pos = new Vector2(menu.manager.rainWorld.options.ScreenSize.x / 2 - slotSelector.size.x / 2, 50f);
         subObjects.Add(slotSelector);
 
         startButton = new SimpleButton(menu, this, menu.Translate("NEW GAME"), "NEW_GAME",

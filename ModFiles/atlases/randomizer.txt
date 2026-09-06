@@ -60,6 +60,26 @@
 				"h": 28
 			}
 		},
+		"Symbol_Watcher.png": {
+			"frame": {
+				"x": 60,
+				"y": 0,
+				"w": 43,
+				"h": 17
+			},
+			"rotated": false,
+			"trimmed": false,
+			"sourceSize": {
+				"w": 43,
+				"h": 17
+			},
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 43,
+				"h": 17
+			}
+		},
 		"Symbol_PoisonSpear.png": {
 			"frame": {
 				"x": 0,
@@ -82,7 +102,7 @@
 		},
 		"Symbol_Echo.png": {
 			"frame": {
-				"x": 60,
+				"x": 103,
 				"y": 0,
 				"w": 17,
 				"h": 39
@@ -100,10 +120,30 @@
 				"h": 39
 			}
 		},
+		"Symbol_MSC.png": {
+			"frame": {
+				"x": 60,
+				"y": 17,
+				"w": 35,
+				"h": 17
+			},
+			"rotated": false,
+			"trimmed": false,
+			"sourceSize": {
+				"w": 35,
+				"h": 17
+			},
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 35,
+				"h": 17
+			}
+		},
 		"Symbol_KarmaFlower.png": {
 			"frame": {
-				"x": 77,
-				"y": 0,
+				"x": 32,
+				"y": 62,
 				"w": 19,
 				"h": 31
 			},
@@ -122,8 +162,8 @@
 		},
 		"Symbol_RippleAmoeba.png": {
 			"frame": {
-				"x": 32,
-				"y": 62,
+				"x": 60,
+				"y": 34,
 				"w": 24,
 				"h": 24
 			},
@@ -145,8 +185,8 @@
 		"app": "https://goofybox-studios.github.io/tools/texture_packer",
 		"image": "randomizer",
 		"size": {
-			"w": 96,
-			"h": 86
+			"w": 120,
+			"h": 93
 		}
 	}
 }
