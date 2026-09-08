@@ -38,7 +38,7 @@ https://rainworld.miraheze.org/wiki/File:Watcher_DLC_icon.png
 
 ---------------
 
-Custom logo used in thumbnail.png and thumbnail-steam.png is a derivative of the Archipelago logo, created in collaboration with multiple artists:
+Custom logo used in thumbnail.png and thumbnail-steam.png is a derivative of the original Archipelago logo (described below), created in collaboration with multiple artists:
 Artificer/Hunter: Amy
     [ https://www.instagram.com/a.wendesign ]
 Rivulet/Watcher: Kali
@@ -51,6 +51,9 @@ Spearmaster: 𝚁𝚒𝚟𝚎𝚛 𝚃𝚑𝚎 𝙶𝚛𝚎𝚖𝚕𝚒𝚗
     [ https://bsky.app/profile/riverthegremlin.bsky.social, https://riverthegremlin.tumblr.com/ ]
 Saint: speoyt
     [ https://www.instagram.com/cafecarrrr ]
+
+Symbol_Archipelago.png is a derivative of the original Archipelago logo (described below), created by M-Cool
+This sprite is licensed under Attribution-NonCommercial 4.0 International (https://creativecommons.org/licenses/by-nc/4.0/)
 
 Original Archipelago logo is created by Krista Corkos and Christopher Wilson
 The original logo is licensed under Attribution-NonCommercial 4.0 International (https://creativecommons.org/licenses/by-nc/4.0/)
