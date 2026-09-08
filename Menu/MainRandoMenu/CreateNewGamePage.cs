@@ -8,6 +8,7 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
 {
     // Elements
     public SelectOneButton[] modeButtons;
+    private NewStandaloneGameTab stTab;
     private NewArchipelagoGameTab apTab;
     
     // Vars
@@ -29,6 +30,9 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
             new Vector2(100f, 30f), modeButtons, 1);
         subObjects.Add(modeButtons[1]);
 
+        stTab = new NewStandaloneGameTab(menu, this, screenCenter);
+        subObjects.Add(stTab);
+        
         apTab = new NewArchipelagoGameTab(menu, this, screenCenter - new Vector2(0f, 1500f));
         subObjects.Add(apTab);
     }
@@ -60,10 +64,12 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
         switch (newMode)
         {
             case 0:
+                stTab.pos.y = screenCenter.y;
                 apTab.pos.y = screenCenter.y - 1500f;
                 apTab.Disable();
                 break;
             case 1:
+                stTab.pos.y = screenCenter.y - 1500f;
                 apTab.pos.y = screenCenter.y;
                 apTab.Enable();
                 break;
