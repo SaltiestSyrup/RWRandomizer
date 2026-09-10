@@ -45,7 +45,7 @@ public sealed class CampaignSelectPage : PositionedMenuObject
 
     public MenuObject GetFirstSelectable()
     {
-        return ((SlotSelector.Slot)slotSelector.GetEntryAtIndex(0)).startButton;
+        return ((SlotSelector.Slot)slotSelector.GetEntryAtIndex(0))?.startButton;
     }
 
     public override void GrafUpdate(float timeStacker)
