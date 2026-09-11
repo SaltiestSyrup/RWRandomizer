@@ -49,6 +49,48 @@ public class NewStandaloneGameTab : PositionedMenuObject, SelectOneButton.Select
             slugcatButtons[i] = new PortraitButton(menu, this, $"SLUG-{i}", buttonPos, 
                 slugcatButtons.ToArray<SelectOneButton>(), i, slugcatInfos[i].Item1, slugcatInfos[i].Item2);
             subObjects.Add(slugcatButtons[i]);
+
+            // Hardcoded selectables!!! Yay!!
+            switch (i)
+            {
+                case 0:
+                    slugcatButtons[i].nextSelectable[0] = slugcatButtons[i];
+                    slugcatButtons[i].nextSelectable[1] = ((CreateNewGamePage)owner).modeButtons[0];
+                    break;
+                case 1 or 2:
+                    slugcatButtons[i].nextSelectable[1] = ((CreateNewGamePage)owner).modeButtons[0];
+                    break;
+                case 3:
+                    slugcatButtons[i].nextSelectable[1] = slugcatButtons[0];
+                    break;
+                case 4 or 5 or 6:
+                    slugcatButtons[i].nextSelectable[1] = slugcatButtons[i - 4];
+                    slugcatButtons[i - 4].nextSelectable[3] = slugcatButtons[i];
+                    break;
+                case 7:
+                    slugcatButtons[i].nextSelectable[1] = slugcatButtons[2];
+                    break;
+                case 8:
+                    slugcatButtons[i].nextSelectable[1] = slugcatButtons[4];
+                    slugcatButtons[i].nextSelectable[3] = slugcatButtons[i];
+                    slugcatButtons[3].nextSelectable[3] = slugcatButtons[i];
+                    slugcatButtons[4].nextSelectable[3] = slugcatButtons[i];
+                    slugcatButtons[5].nextSelectable[3] = slugcatButtons[i];
+                    break;
+                case 9:
+                    slugcatButtons[i].nextSelectable[1] = slugcatButtons[5];
+                    slugcatButtons[i].nextSelectable[2] = slugcatButtons[i];
+                    slugcatButtons[i].nextSelectable[3] = slugcatButtons[i];
+                    slugcatButtons[6].nextSelectable[3] = slugcatButtons[i];
+                    slugcatButtons[7].nextSelectable[3] = slugcatButtons[i];
+                    break;
+            }
+
+            if (i > 0)
+            {
+                slugcatButtons[i].nextSelectable[0] = slugcatButtons[i - 1];
+                slugcatButtons[i - 1].nextSelectable[2] = slugcatButtons[i];
+            }
         }
     }
 
@@ -62,10 +104,6 @@ public class NewStandaloneGameTab : PositionedMenuObject, SelectOneButton.Select
         if (series.StartsWith("SLUG-") && currentSelection != to)
         {
             currentSelection = to;
-            for (int i = 0; i < slugcatButtons.Length; i++)
-            {
-                slugcatButtons[i].UpdateSelected(to == i);
-            }
         }
     }
     
@@ -82,21 +120,6 @@ public class NewStandaloneGameTab : PositionedMenuObject, SelectOneButton.Select
                 sprite = { scale = folderName == "content" ? 0.2f : 1f }
             };
             subObjects.Add(portrait);
-        }
-
-        public void UpdateSelected(bool selected)
-        {
-            bool greyedOut = buttonBehav.greyedOut;
-            if (selected)
-            {
-                portrait.color = Color.white;
-            }
-            else
-            {
-                portrait.color = greyedOut ? new Color(0.1f, 0.1f, 0.1f) : new Color(0.25f, 0.25f, 0.25f);
-            }
-
-            portrait.alpha = greyedOut ? 0.7f : 1f;
         }
     }
 }

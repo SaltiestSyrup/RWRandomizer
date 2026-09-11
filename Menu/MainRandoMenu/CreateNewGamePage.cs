@@ -35,6 +35,9 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
         
         apTab = new NewArchipelagoGameTab(menu, this, screenCenter - new Vector2(0f, 1500f));
         subObjects.Add(apTab);
+
+        modeButtons[0].nextSelectable[1] = modeButtons[0];
+        modeButtons[1].nextSelectable[1] = modeButtons[1];
     }
 
     public int GetCurrentlySelectedOfSeries(string series)
