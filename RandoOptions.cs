@@ -48,6 +48,7 @@ namespace RainWorldRandomizer
         
         internal static Configurable<bool> archipelagoPreventDLKarmaLoss;
         internal static Configurable<bool> archipelagoIgnoreMenuDL;
+        internal static Configurable<int> archipelagoDLGraceCounter;
         internal static Configurable<int> trapMinimumCooldown;
         internal static Configurable<int> trapMaximumCooldown;
         internal static Configurable<bool> colorPickupsWithHints;

@@ -43,9 +43,9 @@ public class NewStandaloneGameTab : PositionedMenuObject
             {
                 // X = (Portrait & Margin Width * Index Within Row) - ((Portrait & Margin Width / 2) * (Num in row - 1)) - (Portrait Width / 2)
                 // Y = Static Offset - (Portrait & Margin Width * Row)
-                < 3 => new Vector2(110f * i - 55f * 2 - 47f, 150f),
-                < 8 => new Vector2(110f * (i - 3) - 55f * 4 - 47f, 150f - 115f),
-                _ => new Vector2(110f * (i - 8) - 55f - 47f, 150f - 115f * 2f)
+                < 3 => new Vector2(110f * i - 55f * 2 - 47f, 120f),
+                < 8 => new Vector2(110f * (i - 3) - 55f * 4 - 47f, 120f - 115f),
+                _ => new Vector2(110f * (i - 8) - 55f - 47f, 120f - 115f * 2f)
             };
             slugcatButtons[i] = new PortraitButton(menu, this, $"SLUG-{slugcatInfos[i].Item1}", buttonPos, 
                 slugcatInfos[i].Item2, slugcatInfos[i].Item3);

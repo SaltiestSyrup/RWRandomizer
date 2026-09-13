@@ -18,6 +18,7 @@ namespace RainWorldRandomizer
         /// <summary>When True, the mod is waiting for a proper state to kill the player</summary>
         private static bool _deathPending;
         private static bool _lastDeathWasLink;
+        private static int _graceCounter;
 
         public static bool Active
         {
@@ -75,9 +76,24 @@ namespace RainWorldRandomizer
             player.mainBodyChunk.vel += RWCustom.Custom.RNV() * 12f;
             for (int k = 0; k < 20; k++)
             {
-                player.room.AddObject(new Spark(player.mainBodyChunk.pos, RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, new Color(1f, 1f, 1f), null, 30, 120));
+                player.room.AddObject(new Spark(player.mainBodyChunk.pos, 
+                    RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, 
+                    new Color(1f, 1f, 1f), null, 30, 120));
             }
             player.Die();
+        }
+
+        private static void FakeoutKill(Creature player)
+        {
+            // This is the same effect played when Pebbles kills the player
+            player.room.PlaySound(SoundID.SS_AI_Give_The_Mark_Boom, player.mainBodyChunk, false, 0.4f, 0.5f + UnityEngine.Random.value * 0.5f);
+            player.mainBodyChunk.vel += RWCustom.Custom.RNV() * 6f;
+            for (int k = 0; k < 20; k++)
+            {
+                player.room.AddObject(new Spark(player.mainBodyChunk.pos, 
+                    RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, 
+                    new Color(1f, 1f, 1f), null, 30, 120));
+            }
         }
 
         private static void OnReceiveDeath(DeathLink deathLink)
@@ -100,18 +116,16 @@ namespace RainWorldRandomizer
 
         private static void OnPlayerDie(On.RainWorldGame.orig_GoToDeathScreen orig, RainWorldGame self)
         {
-            if (!Active
-                || _lastDeathWasLink
-                || _receiveDeathCooldown > 0
-                || self.manager.upcomingProcess != null)
+            if (Active
+                && !_lastDeathWasLink
+                && _receiveDeathCooldown <= 0
+                && self.manager.upcomingProcess == null)
             {
-                orig(self);
-                return;
+                Plugin.Log.LogInfo("Sending DeathLink packet...");
+                _service.SendDeathLink(new DeathLink(ArchipelagoConnection.playerName));
             }
+            
             orig(self);
-
-            Plugin.Log.LogInfo("Sending DeathLink packet...");
-            _service.SendDeathLink(new DeathLink(ArchipelagoConnection.playerName));
         }
 
         private static void OnRainWorldGameUpdate(On.RainWorldGame.orig_Update orig, RainWorldGame self)
@@ -128,6 +142,7 @@ namespace RainWorldRandomizer
                 _deathPending = false;
 
                 // Secret chance to kill a slugpup instead
+                // Note: This applies before grace check
                 foreach (var creature in firstPlayer.room.abstractRoom.creatures)
                 {
                     if (creature.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.SlugNPC
@@ -139,14 +154,33 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                _lastDeathWasLink = true;
-                foreach (AbstractCreature abstractPlayer in self.AlivePlayers)
+                // If we are below grace threshold, increment grace and do fakeout kill.
+                // Else reset grace and kill for real.
+                if (_graceCounter < RandoOptions.archipelagoDLGraceCounter.Value - 1)
                 {
-                    // Make sure player is realized
-                    if (abstractPlayer.realizedCreature is Player player)
+                    _graceCounter++;
+                    foreach (AbstractCreature abstractPlayer in self.AlivePlayers)
                     {
-                        Plugin.Log.LogInfo("Deathlink Killing Player...");
-                        Kill(player);
+                        // Make sure player is realized
+                        if (abstractPlayer.realizedCreature is Player player)
+                        {
+                            Plugin.Log.LogInfo("DeathLink Pretending to Kill Player...");
+                            FakeoutKill(player);
+                        }
+                    }
+                }
+                else
+                {
+                    _graceCounter = 0;
+                    _lastDeathWasLink = true;
+                    foreach (AbstractCreature abstractPlayer in self.AlivePlayers)
+                    {
+                        // Make sure player is realized
+                        if (abstractPlayer.realizedCreature is Player player)
+                        {
+                            Plugin.Log.LogInfo("DeathLink Killing Player...");
+                            Kill(player);
+                        }
                     }
                 }
             }

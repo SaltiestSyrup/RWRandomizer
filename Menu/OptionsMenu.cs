@@ -77,6 +77,11 @@ namespace RainWorldRandomizer.Menu
             RandoOptions.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
                 new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
                     ["Ignore Menu DeathLinks"]));
+            
+            RandoOptions.archipelagoDLGraceCounter = config.Bind<int>("ArchipelagoDLGraceCounter", 0,
+                new ConfigurableInfo("How many DeathLinks need to be received before you are actually killed",
+                    new ConfigAcceptableRange<int>(0, 20), "",
+                    ["DeathLink Grace Counter"]));
 
             RandoOptions.trapMinimumCooldown = config.Bind<int>("TrapMinimumCooldown", 30,
                 new ConfigurableInfo("The minimum amount of time between trap triggers (in seconds)",
@@ -582,6 +587,9 @@ namespace RainWorldRandomizer.Menu
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoPreventDLKarmaLoss, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X + 30f, runningY));
+            runningY -= NEWLINE_DECREMENT;
+            deathLinkGroup.AddUpDown(RandoOptions.archipelagoDLGraceCounter, true, 
+                new(RIGHT_OPTION_X + 30f, runningY), 40f);
             runningY -= NEWLINE_DECREMENT * 1.5f;
             deathLinkGroup.AddToTab(tabIndex);
             optionGroups.Add(deathLinkGroup);
