@@ -322,14 +322,14 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                 options.Add("StartMinKarma", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.startMinKarma));
 
-                if (slugcat is not "Rivulet")
+                if (slugcat is not "Rivulet" && slugcat is not "Artificer" && slugcat is not "Spear")
                 {
                     options.Add("OpenSubmerged", new CheckBoxOption(menu, this,
                         new Vector2(EDGE_MARGIN, runningY -= 40f),
                         RandoOptions.allowSubmergedForOthers));
                 }
 
-                if (slugcat is not "Artificer")
+                if (slugcat is not "Artificer" && slugcat is not "Saint")
                 {
                     options.Add("OpenMetro", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                         RandoOptions.allowMetroForOthers));
@@ -585,7 +585,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                         RandoOptions.trapsDensity) },
                 });
 
-                if (menu.slugcat == "Hunter")
+                if (menu.slugcat == "Red")
                 {
                     options.Add("PercentHunter", new UpDownFloatOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                         RandoOptions.hunterCyclesDensity));

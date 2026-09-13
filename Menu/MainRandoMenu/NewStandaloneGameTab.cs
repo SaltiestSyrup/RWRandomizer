@@ -93,6 +93,9 @@ public class NewStandaloneGameTab : PositionedMenuObject
                 slugcatButtons[i - 1].nextSelectable[2] = slugcatButtons[i];
             }
         }
+
+        // Watcher disabled until implemented
+        slugcatButtons[8].GetButtonBehavior.greyedOut = true;
     }
 
     public override void Singal(MenuObject sender, string message)
@@ -131,11 +134,15 @@ public class NewStandaloneGameTab : PositionedMenuObject
             string folderName, string fileName) 
             : base(menu, owner, "", signalText, pos, new Vector2(94f, 94f))
         {
-            portrait = new MenuIllustration(menu, this, folderName, fileName, new Vector2(5f, 5f), true, false)
-            {
-                sprite = { scale = folderName == "content" ? 0.2f : 1f }
-            };
+            portrait = new MenuIllustration(menu, this, folderName, fileName, new Vector2(5f, 5f), true, false);
             subObjects.Add(portrait);
+        }
+
+        public override void Update()
+        {
+            base.Update();
+
+            portrait.color = buttonBehav.greyedOut ? new Color(0.2f, 0.2f, 0.2f) : Color.white;
         }
     }
 }

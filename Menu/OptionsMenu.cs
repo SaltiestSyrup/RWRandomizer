@@ -208,11 +208,11 @@ namespace RainWorldRandomizer.Menu
 
             RandoOptions.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
                 new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
-                    ["Open Submerged Superstructure"]));
+                    ["Open Submerged"]));
 
             RandoOptions.allowExteriorForInv = config.Bind<bool>("allowExteriorForInv", false, 
                 new ConfigurableInfo("By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty", null, "",
-                    ["Open Exterior for Inv"]));
+                    ["Open Exterior"]));
 
             RandoOptions.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", false,
                 new ConfigurableInfo("Include checks for eating every food in Gourmand's food quest. Other slugcats will only have checks for the foods they are able to eat", null, "",
@@ -224,7 +224,7 @@ namespace RainWorldRandomizer.Menu
 
             RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
                 new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized", null, "",
-                    ["Use Mass Rarefaction cell"]));
+                    ["Use Mass Rarefaction Cell"]));
 
             RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
                 new ConfigurableInfo("Include checks for collecting broadcast tokens in Spearmaster's campaign", null, "",
