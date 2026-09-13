@@ -112,7 +112,8 @@ public class RandomizerMenu : RWMenu
                 break;
             case "CONTINUE_GAME":
                 // TODO: Make this lead to a validation step which checks AP connections / DLC enabled
-                if (sender is SlotSelector.Slot slot)
+                SlotSelector.Slot slot = sender as SlotSelector.Slot ?? sender.owner as SlotSelector.Slot;
+                if (slot is not null)
                 {
                     ContinueGame(slot.saveSlot, new SlugcatStats.Name(slot.saveFile.slugcat), slot.saveFile.legacySaveSlot >= 0);
                 }

@@ -14,6 +14,13 @@ namespace RainWorldRandomizer.Menu;
 
 public static class MenuHelpers
 {
+    // We use a random sprite for Inv's illustration because silly
+    private static readonly string[] InvSprites =
+    [
+        "inv_neutral", "inv_agony", "inv_blush", "inv_tired", "inv_angy", 
+        "inv_emotion", "inv_dead", "inv_thonk", "inv_ditto", "inv_glitch"
+    ];
+    
     /// <summary>
     /// <see cref="CharacterSelectPage"/> has a similar method but does not make it static, so we have a manual helper function instead.
     /// </summary>
@@ -30,6 +37,7 @@ public static class MenuHelpers
             "Rivulet" => ModManager.MSC ? "multiplayerportrait41-rivulet" : "multiplayerportrait02",
             "Saint" => ModManager.MSC ? "multiplayerportrait41-saint" : "multiplayerportrait02",
             "Watcher" => ModManager.Watcher ? "multiplayerportrait41-watcher" : "multiplayerportrait02",
+            "Inv" => ModManager.MSC ? InvSprites[UnityEngine.Random.Range(0, InvSprites.Length)] : "multiplayerportrait02",
             _ => "multiplayerportrait02"
         };
     }

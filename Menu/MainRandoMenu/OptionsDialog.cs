@@ -24,6 +24,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
     private SelectOneButton[] tabButtons;
     private Tab[] tabs;
     private SimpleButton exitButton;
+    private SimpleButton finishButton;
     
     // Vars
     public readonly Mode myMode;
@@ -62,11 +63,20 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             { fillAlpha = 1f };
         pages[0].subObjects.Add(roundedRect);
         
-        exitButton = new SimpleButton(this, pages[0], "DONE", "CLOSE_OPTIONS",
+        finishButton = new SimpleButton(this, pages[0], "DONE", "CLOSE_OPTIONS_DONE",
             roundedRect.pos + new Vector2(size.x - 105f, 5f),
             new Vector2(100f, 30f));
-        backObject = exitButton;
-        pages[0].subObjects.Add(exitButton);
+        backObject = finishButton;
+        pages[0].subObjects.Add(finishButton);
+
+        if (mode == Mode.StandaloneNew)
+        {
+            exitButton = new SimpleButton(this, pages[0], "CANCEL", "CLOSE_OPTIONS_EXIT",
+                roundedRect.pos + new Vector2(size.x - 210f, 5f),
+                new Vector2(100f, 30f));
+            backObject = exitButton;
+            pages[0].subObjects.Add(exitButton);
+        }
         
         tabs = new Tab[3];
 
@@ -92,13 +102,20 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         tabButtons[2].nextSelectable[1] = tabButtons[2];
         tabButtons[2].nextSelectable[2] = tabButtons[2];
         tabButtons[2].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
-        tabs[0].SetSelectables(tabButtons[0], exitButton);
-        tabs[1].SetSelectables(tabButtons[1], exitButton);
-        tabs[2].SetSelectables(tabButtons[2], exitButton);
-        exitButton.nextSelectable[0] = exitButton;
-        exitButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();
-        exitButton.nextSelectable[2] = exitButton;
-        exitButton.nextSelectable[3] = exitButton;
+        tabs[0].SetSelectables(tabButtons[0], finishButton);
+        tabs[1].SetSelectables(tabButtons[1], finishButton);
+        tabs[2].SetSelectables(tabButtons[2], finishButton);
+        finishButton.nextSelectable[0] = exitButton ?? finishButton;
+        finishButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();
+        finishButton.nextSelectable[2] = finishButton;
+        finishButton.nextSelectable[3] = finishButton;
+        if (exitButton is not null)
+        {
+            exitButton.nextSelectable[0] = exitButton;
+            exitButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();;
+            exitButton.nextSelectable[2] = finishButton;
+            exitButton.nextSelectable[3] = exitButton;
+        }
     }
 
     public OptionsDialog(ProcessManager manager, Mode mode, SaveFile file, Action saveOptionsCallback = null) 
@@ -117,10 +134,14 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         base.Singal(sender, message);
         switch (message)
         {
-            case "CLOSE_OPTIONS":
+            case "CLOSE_OPTIONS_DONE":
                 PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
                 manager.StopSideProcess(this);
                 saveOptionsCallback?.Invoke();
+                break;
+            case "CLOSE_OPTIONS_EXIT":
+                PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
+                manager.StopSideProcess(this);
                 break;
         }
     }
@@ -136,7 +157,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         tabButtons[0].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
         tabButtons[1].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
         tabButtons[2].nextSelectable[3] = tabs[currentTab].GetFirstSelectable();
-        exitButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();
+        finishButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();
     }
 
     public void OutputToSaveFile(ref SaveFile file)
@@ -212,11 +233,6 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                     option.nextSelectable[3] = j == grouped[i].optionsInGroup.Count - 1
                         ? doneButton
                         : grouped[i].optionsInGroup[j + 1].GetSelectable();
-                    Plugin.Log.LogDebug($"{i}, {j}\n" +
-                                        $"\t{option.nextSelectable[0].GetHashCode()}\n" +
-                                        $"\t{option.nextSelectable[1].GetHashCode()}\n" +
-                                        $"\t{option.nextSelectable[2].GetHashCode()}\n" +
-                                        $"\t{option.nextSelectable[3].GetHashCode()}\n");
                 }
             }
         }
@@ -249,7 +265,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             subObjects.Add(slugcatLabel);
 
             // Checkbox toggle for creation, show chosen region otherwise
-            if (menu.myMode == Mode.StandaloneView)
+            if (menu.myMode == Mode.StandaloneNew)
             {
                 options.Add("RandomSpawn", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.randomizeSpawnLocation));
@@ -383,7 +399,9 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             
             // Return if not editing mode
             if (((OptionsDialog)menu).myMode is Mode.StandaloneView or Mode.ArchipelagoView) return;
-            
+
+            if (options.TryGetValue("RandomSpawn", out Option opt16))
+                save.options.randomizeSpawnLocation = opt16.ValueBool;
             if (options.TryGetValue("GateBehavior", out Option opt6)) 
                 save.options.gateBehavior = (RandoOptions.GateBehavior)opt6.ValueInt;
             if (options.TryGetValue("PPwSBehavior", out Option opt7)) 

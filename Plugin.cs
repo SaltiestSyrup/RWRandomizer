@@ -200,6 +200,16 @@ namespace RainWorldRandomizer
             orig(self);
             Futile.atlasManager.LoadAtlas("Atlases/randomizer");
             Futile.atlasManager.LoadImage("illustrations/randomizerpage");
+            Futile.atlasManager.LoadImage("illustrations/inv_neutral");
+            Futile.atlasManager.LoadImage("illustrations/inv_agony");
+            Futile.atlasManager.LoadImage("illustrations/inv_blush");
+            Futile.atlasManager.LoadImage("illustrations/inv_tired");
+            Futile.atlasManager.LoadImage("illustrations/inv_angy");
+            Futile.atlasManager.LoadImage("illustrations/inv_emotion");
+            Futile.atlasManager.LoadImage("illustrations/inv_dead");
+            Futile.atlasManager.LoadImage("illustrations/inv_thonk");
+            Futile.atlasManager.LoadImage("illustrations/inv_ditto");
+            Futile.atlasManager.LoadImage("illustrations/inv_glitch");
             // Texture2D texture2D = new(0, 0);
             // texture2D.LoadRawTextureData(File.ReadAllBytes(AssetManager.ResolveFilePath("illustrations/randomizerpage.png")));
             // texture2D.filterMode = FilterMode.Point;

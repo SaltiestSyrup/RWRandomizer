@@ -45,7 +45,7 @@ public sealed class SlotSelector : ScrollingMenu
             }
             else
             {
-                entries.Add(new Slot(menu, this, 
+                entries.Add(new StandaloneSlot(menu, this, 
                     new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(index)),
                     new Vector2(entryWidth, entryHeight), slot.Key, slot.Value));
             }
@@ -123,12 +123,6 @@ public sealed class SlotSelector : ScrollingMenu
     {
         protected const float PORTRAIT_SIZE = 94f;
         protected const float PORTRAIT_OFFSET = 48f;
-
-        // We use a random sprite for Inv's illustration because silly
-        private readonly string[] invSprites =
-        [
-            "agony_001", "blush_001", "sm1", "sm2", "sm3", "sm4", "sm5", "sm7", "sm8", "sm9", "sm10", "sm12"
-        ];
         
         // Elements
         public HUD.HUD hud;
@@ -187,20 +181,9 @@ public sealed class SlotSelector : ScrollingMenu
             this.saveFile = saveFile;
             
             // --- Portrait
-            string portrait = MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name(saveFile.slugcat));
-            // Portrait is blank if slugcat invalid or DLC not present
-            if (saveFile.slugcat == "Inv")
-            {
-                slugcatPortrait = new MenuIllustration(menu, this, "content", 
-                        invSprites[UnityEngine.Random.Range(0, invSprites.Length)], 
-                        new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true)
-                    { sprite = { scale = 0.2f } };
-            }
-            else
-            {
-                slugcatPortrait = new MenuIllustration(menu, this, "illustrations", portrait, 
-                    new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true);
-            }
+            slugcatPortrait = new MenuIllustration(menu, this, "illustrations", 
+                MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name(saveFile.slugcat)), 
+                new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true);
 
             subObjects.Add(slugcatPortrait);
             portraitBorder = new RoundedRect(menu, this, 
@@ -583,11 +566,13 @@ public sealed class SlotSelector : ScrollingMenu
             });
         }
     }
-    // private class StandaloneSlot : Slot
-    // {
-    //     public StandaloneSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size) : base(menu, owner, pos, size)
-    //     {
-    //          
-    //     }
-    // }
+    
+    private class StandaloneSlot : Slot
+    {
+        public StandaloneSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, int saveSlot, SaveFile saveFile) 
+            : base(menu, owner, pos, size, saveSlot, saveFile)
+        {
+            startButton.signalText = "CONTINUE_GAME";
+        }
+    }
 }

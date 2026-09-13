@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Menu;
 using UnityEngine;
@@ -5,21 +6,21 @@ using RWMenu = Menu.Menu;
 
 namespace RainWorldRandomizer.Menu;
 
-public class NewStandaloneGameTab : PositionedMenuObject, SelectOneButton.SelectOneButtonOwner
+public class NewStandaloneGameTab : PositionedMenuObject
 {
     // Determines the order and profile illustrations of each selectable slugcat
-    private readonly (string, string)[] slugcatInfos =
+    private readonly (string, string, string)[] slugcatInfos =
     [
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(SlugcatStats.Name.Yellow)),
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(SlugcatStats.Name.White)),
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(SlugcatStats.Name.Red)),
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Gourmand"))),
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Artificer"))),
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Spear"))),
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Rivulet"))),
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Saint"))),
-        ("illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Watcher"))),
-        ("content", ModManager.MSC ? "sm1" : "multiplayerportrait02"),
+        ("Yellow", "illustrations", MenuHelpers.GetSlugcatPortrait(SlugcatStats.Name.Yellow)),
+        ("White", "illustrations", MenuHelpers.GetSlugcatPortrait(SlugcatStats.Name.White)),
+        ("Red", "illustrations", MenuHelpers.GetSlugcatPortrait(SlugcatStats.Name.Red)),
+        ("Gourmand", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Gourmand"))),
+        ("Artificer", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Artificer"))),
+        ("Spear", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Spear"))),
+        ("Rivulet", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Rivulet"))),
+        ("Saint", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Saint"))),
+        ("Watcher", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Watcher"))),
+        ("Inv", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Inv"))),
     ];
     
     // Elements
@@ -46,8 +47,8 @@ public class NewStandaloneGameTab : PositionedMenuObject, SelectOneButton.Select
                 < 8 => new Vector2(110f * (i - 3) - 55f * 4 - 47f, 150f - 115f),
                 _ => new Vector2(110f * (i - 8) - 55f - 47f, 150f - 115f * 2f)
             };
-            slugcatButtons[i] = new PortraitButton(menu, this, $"SLUG-{i}", buttonPos, 
-                slugcatButtons.ToArray<SelectOneButton>(), i, slugcatInfos[i].Item1, slugcatInfos[i].Item2);
+            slugcatButtons[i] = new PortraitButton(menu, this, $"SLUG-{slugcatInfos[i].Item1}", buttonPos, 
+                slugcatInfos[i].Item2, slugcatInfos[i].Item3);
             subObjects.Add(slugcatButtons[i]);
 
             // Hardcoded selectables!!! Yay!!
@@ -94,26 +95,41 @@ public class NewStandaloneGameTab : PositionedMenuObject, SelectOneButton.Select
         }
     }
 
-    public int GetCurrentlySelectedOfSeries(string series)
+    public override void Singal(MenuObject sender, string message)
     {
-        return series.StartsWith("SLUG-") ? currentSelection : 0;
-    }
+        base.Singal(sender, message);
 
-    public void SetCurrentlySelectedOfSeries(string series, int to)
-    {
-        if (series.StartsWith("SLUG-") && currentSelection != to)
+        if (message.StartsWith("SLUG-")
+            && ExtEnumBase.TryParse(typeof(SlugcatStats.Name), message.Substring(5), false, out ExtEnumBase slugcat))
         {
-            currentSelection = to;
+            ((CreateNewGamePage)owner).chosenSlugcat = (SlugcatStats.Name)slugcat;
+            SaveFile file = new SaveFile
+            {
+                slugcat = slugcat.value,
+                isDownpourDLC = ModManager.MSC,
+                isWatcherDLC = ModManager.Watcher
+            };
+            ((RandomizerMenu)menu).optionsDialog = new OptionsDialog(menu.manager,
+                OptionsDialog.Mode.StandaloneNew, file,
+                () =>
+                {
+                    ((RandomizerMenu)menu).optionsDialog.OutputToSaveFile(ref file);
+                    RandoOptions.LoadedOptions = file.options;
+                    try { Singal(this, "START_NEW_GAME"); }
+                    catch (Exception e) { Plugin.Log.LogError(e); }
+                });
+            menu.PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
+            menu.manager.ShowDialog(((RandomizerMenu)menu).optionsDialog);
         }
     }
-    
-    private class PortraitButton : SelectOneButton
+
+    private class PortraitButton : SimpleButton
     {
         private MenuIllustration portrait;
         
         public PortraitButton(RWMenu menu, MenuObject owner, string signalText, Vector2 pos, 
-            SelectOneButton[] buttonArray, int buttonArrayIndex, string folderName, string fileName) 
-            : base(menu, owner, "", signalText, pos, new Vector2(94f, 94f), buttonArray, buttonArrayIndex)
+            string folderName, string fileName) 
+            : base(menu, owner, "", signalText, pos, new Vector2(94f, 94f))
         {
             portrait = new MenuIllustration(menu, this, folderName, fileName, new Vector2(5f, 5f), true, false)
             {
