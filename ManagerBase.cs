@@ -136,8 +136,6 @@ namespace RainWorldRandomizer
             Agility
         }
 
-        public ManagerBase() { }
-
         /// <summary>
         /// Called when the player starts the game from slugcat select menu.
         /// Use this to initialize values / generate the seed

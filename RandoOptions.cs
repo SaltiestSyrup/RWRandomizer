@@ -316,8 +316,6 @@ namespace RainWorldRandomizer
         }
     }
     
-    // TODO Create menu for making one for standalone
-    
     public struct OptionStruct()
     {
         public bool useSeed = false;

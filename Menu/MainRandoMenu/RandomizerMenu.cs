@@ -111,7 +111,6 @@ public class RandomizerMenu : RWMenu
                 UpdatePage(2);
                 break;
             case "CONTINUE_GAME":
-                // TODO: Make this lead to a validation step which checks AP connections / DLC enabled
                 SlotSelector.Slot slot = sender as SlotSelector.Slot ?? sender.owner as SlotSelector.Slot;
                 if (slot is not null)
                 {
@@ -180,8 +179,6 @@ public class RandomizerMenu : RWMenu
 
     public void UpdatePage(int newPage)
     {
-        // TODO: Auto default cursor selection
-        
         // Menu objects that persist across pages
         exitButton.RemoveSprites();
         pages[currentPage].RemoveSubObject(exitButton);

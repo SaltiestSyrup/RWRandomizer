@@ -90,7 +90,7 @@ namespace RainWorldRandomizer
                 && !Plugin.RandomizerActive)
             {
                 // If AP is connected, use AP manager
-                if (ArchipelagoConnection.SocketConnected) Plugin.RandoManager = new ManagerArchipelago();
+                if (ArchipelagoConnection.HasConnected) Plugin.RandoManager = new ManagerArchipelago();
 
                 // Default to vanilla manager
                 Plugin.RandoManager ??= new ManagerVanilla();
@@ -123,9 +123,9 @@ namespace RainWorldRandomizer
 
             if (ID == ProcessManager.ProcessID.MainMenu)
             {
-                // Vanilla manager does not exist outside of the scope of gameplay. TODO: Eventually, neither will any other manager
+                // Vanilla manager does not exist outside of the scope of gameplay.
                 ArchipelagoConnection.Disconnect(true);
-                if (Plugin.RandoManager is ManagerVanilla) Plugin.RandoManager = null;
+                Plugin.RandoManager = null;
                 if (Plugin.RandoManager is not null) Plugin.RandoManager.isRandomizerActive = false;
             }
 

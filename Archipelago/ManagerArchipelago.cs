@@ -451,40 +451,12 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            //IDToLocation.Clear();
-            //LocationToID.Clear();
             ClientNameToAPItem.Clear();
             APItemToClientName.Clear();
 
             APReadableNames names = JsonConvert.DeserializeObject<APReadableNames>(File.ReadAllText(path));
-
-            //foreach (var kvp in names.locations)
-            //{
-            //    LocationInfo loc = new LocationInfo(kvp.Key, false, false);
-            //    string display = $"{kvp.Value} | {loc.displayName}";
-            //    if (kvp.Value == loc.displayName)
-            //        Plugin.Log.LogDebug(display);
-            //    else
-            //        Plugin.Log.LogError(display);
-            //}
-
-            // Create alternate datapackage with client names
-            //try
-            //{
-            //    IDToLocation = names.locations.Keys.ToDictionary((clientName)
-            //        => ArchipelagoConnection.Session.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, names.locations[clientName]));
-            //    foreach (var kvp in IDToLocation) LocationToID.Add(kvp.Value, kvp.Key);
-            //}
-            //catch (ArgumentException)
-            //{
-            //    // Argument exception happens when GetLocationIdFromName() returns the same ID (-1) multiple times
-            //    Plugin.Log.LogError("Failed to load datapackage location IDs. Datapackage is either missing or client is connected to an incompatible AP world.");
-            //}
-
-            // Create translation from AP item names to client ones.
-            // Would prefer to map to the numerical AP item IDs, but MultiClient doesn't provide an easy way to convert item names to ID
             ClientNameToAPItem = names.items;
-            foreach (var kvp in ClientNameToAPItem) APItemToClientName.Add(kvp.Value, kvp.Key);
+            foreach (KeyValuePair<string, string> kvp in ClientNameToAPItem) APItemToClientName.Add(kvp.Value, kvp.Key);
         }
     }
 }
