@@ -46,7 +46,6 @@ public class RandomizerMenu : RWMenu
 
     public RandomizerMenu(ProcessManager manager) : base(manager, RandomizerEnums.ProcessID.RandomizerMenu)
     {
-        
         anchors = new Vector2(Custom.GetScreenOffsets()[0], Custom.GetScreenOffsets()[1]);
 
         pages = [
@@ -125,7 +124,9 @@ public class RandomizerMenu : RWMenu
                 CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat, false);
                 break;
             case "CONTINUE_FROM_LEGACY":
-                CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat, true);
+                SlugcatStats.Name slugcat = (sender.owner as CreateNewGamePage)?.chosenSlugcat
+                                            ?? new SlugcatStats.Name((sender.owner as SlotSelector.Slot)?.saveFile.slugcat);
+                CreateNewGame(slugcat, true);
                 break;
         }
     }

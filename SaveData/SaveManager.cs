@@ -49,41 +49,105 @@ namespace RainWorldRandomizer
         //     file.Close();
         // }
 
+        public static List<SaveFile> LoadAllLegacyStandaloneSaves()
+        {
+            //return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{seed}_{slotName}.json"))
+            // || File.Exists(Path.Combine(, $"ap_save_{seed}_{slotName}.json"));
+
+            List<string> fileNames = Directory
+                .EnumerateFiles(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath)
+                .ToList();
+            
+            // TODO DELETE SECOND PART AFTER BETA
+            if (ModManager.InstalledMods
+                .FirstOrDefault(m => m.id == "salty_syrup.check_randomizer")?.NewestPath is not null)
+            {
+                fileNames.AddRange(Directory
+                    .EnumerateFiles(ModManager.InstalledMods
+                        .FirstOrDefault(m => m.id == "salty_syrup.check_randomizer")!.NewestPath));
+            }
+            
+            List<SaveFile> saves = [];
+
+            foreach (string fileName in fileNames.Where(f => Path.GetFileName(f).StartsWith("saved_game_")
+                     && !Path.GetFileName(f).EndsWith("OLD.txt")))
+            {
+                try
+                {
+                    saves.Add(LoadLegacyStandaloneSavedGame(fileName));
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError($"Failed to parse legacy file:\n{e}");
+                }
+            }
+
+            return saves;
+        }
+
         // Meant for vanilla saves only
-        // public static Dictionary<string, Unlock> LoadSavedGame(SlugcatStats.Name slugcat, int saveSlot)
-        // {
-        //     Dictionary<string, Unlock> game = [];
-        //
-        //     string[] file = File.ReadAllLines(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
-        //
-        //     Plugin.RandoManager.customStartDen = Regex.Split(file[0], "->")[1]; // StartingDen->SU_S01
-        //     Plugin.RandoManager.currentSeed = file[1];
-        //     file = [.. file.Skip(2)];
-        //
-        //     foreach (string line in file)
-        //     {
-        //         string[] keyValue = Regex.Split(line, "->");
-        //
-        //         string[] unlockString = Regex.Split(keyValue[1]
-        //             .TrimStart('{')
-        //             .TrimEnd('}'), ",");
-        //
-        //         Unlock.UnlockType type = Unlock.UnlockType.Item;
-        //         if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), unlockString[0], true, out ExtEnumBase t))
-        //         {
-        //             type = (Unlock.UnlockType)t;
-        //         }
-        //
-        //         Unlock unlock = new(
-        //             type,
-        //             unlockString[1],
-        //             bool.Parse(unlockString[2]));
-        //
-        //         game.Add(keyValue[0], unlock);
-        //     }
-        //
-        //     return game;
-        // }
+        /// <summary>
+        /// Load the information from a legacy standalone file.
+        /// </summary>
+        /// <param name="filePath">The full path pointing to the legacy file.</param>
+        /// <returns>
+        /// A <see cref="SaveFile"/> parsed from the input file.
+        /// </returns>
+        public static SaveFile LoadLegacyStandaloneSavedGame(string filePath)
+        {
+            Dictionary<string, Unlock> game = [];
+
+            string[] split = Path.GetFileNameWithoutExtension(filePath).Split('_');
+            int slot = int.Parse(split[3]);
+            string slugcat = split[2];
+            string[] file = File.ReadAllLines(filePath);
+        
+            string startDen = Regex.Split(file[0], "->")[1]; // StartingDen->SU_S01
+            string seed = file[1];
+            file = [.. file.Skip(2)];
+        
+            foreach (string line in file)
+            {
+                string[] keyValue = Regex.Split(line, "->");
+        
+                string[] unlockString = Regex.Split(keyValue[1]
+                    .TrimStart('{')
+                    .TrimEnd('}'), ",");
+        
+                Unlock.UnlockType type = Unlock.UnlockType.Item;
+                if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), unlockString[0], true, out ExtEnumBase t))
+                {
+                    type = (Unlock.UnlockType)t;
+                }
+        
+                Unlock unlock = new(
+                    type,
+                    unlockString[1],
+                    bool.Parse(unlockString[2]));
+        
+                game.Add(keyValue[0], unlock);
+            }
+
+            return new SaveFile
+            {
+                // No choice but to trust the player will load with the right DLC,
+                // as the old file format does not store that info.
+                isDownpourDLC = ModManager.MSC,
+                isWatcherDLC = ModManager.Watcher,
+                slugcat = slugcat,
+                startingDen = startDen,
+                seed = seed,
+                legacySaveSlot = slot,
+                locationMap = game.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => new SaveFile.UnlockInfo
+                    {
+                        collected = kvp.Value.IsGiven,
+                        id = kvp.Value.ID,
+                        type = kvp.Value.Type.value
+                    })
+            };
+        }
 
         // public static void WriteItemQueueToFile(IEnumerable<Unlock.Item> items, IEnumerable<TrapsHandler.Trap> traps, SlugcatStats.Name slugcat, int saveSlot)
         // {
@@ -236,7 +300,6 @@ namespace RainWorldRandomizer
         {
             Plugin.Log.LogDebug($"Save slot {saveSlot} has file? {File.Exists(Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json"))}");
             return File.Exists(Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json"));
-            
         }
 
         /// <summary>
@@ -245,16 +308,9 @@ namespace RainWorldRandomizer
         public static bool HasLegacySave(string seed, string slotName)
         {
             // TODO DELETE SECOND PART AFTER BETA
-            Plugin.Log.LogDebug(ModManager.InstalledMods.FirstOrDefault(m => m.id == "salty_syrup.check_randomizer")?.NewestPath);
             return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{seed}_{slotName}.json"))
                 || File.Exists(Path.Combine(ModManager.InstalledMods.FirstOrDefault(m => 
                         m.id == "salty_syrup.check_randomizer")?.NewestPath ?? "", $"ap_save_{seed}_{slotName}.json"));
-        }
-
-        // TODO: Detection for existing standalone saves
-        public static bool HasLegacySave()
-        {
-            throw new NotImplementedException();
         }
 
         public static void DestroyLegacySave(string seed, string slotName, string slugcat, int saveSlot)
@@ -288,9 +344,35 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static void DestroyLegacySave()
+        public static void DestroyLegacySave(SlugcatStats.Name slugcat, int slot)
         {
-            throw new NotImplementedException();
+            string mainPath = ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath;
+            if (File.Exists(Path.Combine(mainPath, $"saved_game_{slugcat.value}_{slot}.txt")))
+            {
+                File.Move(Path.Combine(mainPath, $"saved_game_{slugcat.value}_{slot}.txt"), 
+                    Path.Combine(mainPath, $"saved_game_{slugcat.value}_{slot}_OLD.txt"));
+            }
+
+            if (File.Exists(Path.Combine(mainPath, $"item_delivery_{slugcat}_{slot}.txt")))
+            {
+                File.Move(Path.Combine(mainPath, $"item_delivery_{slugcat}_{slot}.txt"), 
+                    Path.Combine(mainPath, $"item_delivery_{slugcat}_{slot}_OLD.txt"));
+            }
+            
+            // TODO DELETE THIS AFTER BETA
+            string origModPath = ModManager.InstalledMods.FirstOrDefault(m => m.id == "salty_syrup.check_randomizer")?.NewestPath;
+            if (origModPath is null) return;
+            if (File.Exists(Path.Combine(origModPath, $"saved_game_{slugcat.value}_{slot}.txt")))
+            {
+                File.Move(Path.Combine(origModPath, $"saved_game_{slugcat.value}_{slot}.txt"), 
+                    Path.Combine(origModPath, $"saved_game_{slugcat.value}_{slot}_OLD.txt"));
+            }
+
+            if (File.Exists(Path.Combine(origModPath, $"item_delivery_{slugcat}_{slot}.txt")))
+            {
+                File.Move(Path.Combine(origModPath, $"item_delivery_{slugcat}_{slot}.txt"), 
+                    Path.Combine(origModPath, $"item_delivery_{slugcat}_{slot}_OLD.txt"));
+            }
         }
 
         public static long GetLastIndexFromLegacy(string seed, string slotName)

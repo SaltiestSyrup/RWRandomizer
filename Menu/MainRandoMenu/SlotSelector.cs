@@ -572,7 +572,7 @@ public sealed class SlotSelector : ScrollingMenu
         public StandaloneSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, int saveSlot, SaveFile saveFile) 
             : base(menu, owner, pos, size, saveSlot, saveFile)
         {
-            startButton.signalText = "CONTINUE_GAME";
+            startButton.signalText = saveFile.playtime > 0 ? "CONTINUE_GAME" : "CONTINUE_FROM_LEGACY";
         }
     }
 }

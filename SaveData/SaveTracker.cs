@@ -24,7 +24,6 @@ public class SaveTracker
     {
         get
         {
-            saveSlots ??= LoadSlotsFromFile();
             return saveSlots;
         }
     }
@@ -50,6 +49,13 @@ public class SaveTracker
                 Path.DirectorySeparatorChar,
             ]);
         }
+    }
+
+    public SaveTracker()
+    {
+        saveSlots = [];
+        LoadSlotsFromFile();
+        LoadLegacySlotsFromFile();
     }
 
     /// <summary>
@@ -79,13 +85,12 @@ public class SaveTracker
         return true;
     }
 
-    private static Dictionary<int, SaveFile> LoadSlotsFromFile()
+    private void LoadSlotsFromFile()
     {
         string path = PersistentDataDir;
-        Dictionary<int, SaveFile> slots = [];
         if (!Directory.Exists(path))
         {
-            return slots;
+            return;
         }
 
         foreach (string fileName in Directory.EnumerateFiles(path))
@@ -93,12 +98,27 @@ public class SaveTracker
             if (int.TryParse(Path.GetFileNameWithoutExtension(fileName).Substring(4), out int slot)
                 && SaveManager.TryReadFromFile(slot, out SaveFile save))
             {
-                slots[slot] = save;
+                saveSlots[slot] = save;
             }
         }
-        
-        return slots;
     }
+
+    private void LoadLegacySlotsFromFile()
+    {
+        List<SaveFile> legacyFiles = SaveManager.LoadAllLegacyStandaloneSaves();
+        foreach (SaveFile saveFile in legacyFiles)
+        {
+            if (TryGetNextSaveSlot(saveFile.legacySaveSlot, out int slot))
+            {
+                SaveSlots[slot] = saveFile;
+            }
+            else
+            {
+                Plugin.Log.LogError($"Failed to find new slot number for importing standalone legacy file.\n" +
+                                    $"{new System.Diagnostics.StackTrace()}");
+            }
+        }
+    } 
 
     private record struct SaveSlotIdentifier(int slotNumber, string slugcatName)
     {

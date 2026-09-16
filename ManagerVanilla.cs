@@ -68,6 +68,7 @@ namespace RainWorldRandomizer
                 DebugBulkGeneration(500);
             }
 
+            // Continue existing game
             if (continueSaved)
             {
                 // Add all gates to status dict
@@ -81,7 +82,7 @@ namespace RainWorldRandomizer
                 try
                 {
                     Plugin.Log.LogInfo("Continuing randomizer game...");
-                    InitSavedGame(storyGameCharacter, Plugin.Singleton.rainWorld.options.saveSlot);
+                    InitSavedGame(storyGameCharacter, SaveTracker.CurrentRandomizerSlot);
                 }
                 catch (Exception e)
                 {
@@ -91,6 +92,37 @@ namespace RainWorldRandomizer
                     return;
                 }
             }
+            // Load fresh legacy slot 
+            else if (SaveTracker.ActiveLegacySlot >= 0)
+            {
+                try
+                {
+                    SaveFile file = SaveManager
+                        .LoadLegacyStandaloneSavedGame(
+                            Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, 
+                                $"saved_game_{currentSlugcat.value}_{SaveTracker.OrigSaveSlot}.txt"));
+                    randomizerKey = file.locationMap.ToDictionary(kvp => kvp.Key, kvp =>
+                        new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true, out ExtEnumBase t) 
+                                ? (Unlock.UnlockType)t : Unlock.UnlockType.Item, 
+                            kvp.Value.id, kvp.Value.collected));
+                    locations = [.. randomizerKey.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.IsGiven, false))];
+                    customStartDen = file.startingDen;
+                    currentSeed = file.seed;
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError($"Failed to load saved game. \n{e}");
+                    isRandomizerActive = false;
+                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("Randomizer failed to load legacy file", Color.red));
+                    return;
+                }
+                
+                (itemDeliveryQueue, pendingTrapQueue) = 
+                    SaveManager.LoadItemQueue(currentSlugcat, SaveTracker.OrigSaveSlot);
+            
+                lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
+            }
+            // Generate new game
             else
             {
                 Plugin.Log.LogInfo("Starting new randomizer game...");
@@ -344,6 +376,11 @@ namespace RainWorldRandomizer
         public override void SaveGame(bool saveCurrentState)
         {
             SaveManager.WriteToFile(Plugin.Singleton.rainWorld, this, saveCurrentState);
+
+            if (SaveTracker.ActiveLegacySlot >= 0)
+            {
+                SaveManager.DestroyLegacySave(currentSlugcat, SaveTracker.OrigSaveSlot);
+            }
         }
     }
 }
