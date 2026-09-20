@@ -89,7 +89,10 @@ public sealed class SlotSelector : ScrollingMenu
                         entries.Remove(slot);
                         SaveManager.DeleteFile(menu.manager.rainWorld, slot.saveSlot);
                         SetNavigation();
-                        menu.selectedObject = nextSelectable[2]; // Should be the new game button
+                        // Update the new game button so it's not looking for ghost objects
+                        menu.selectedObject = nextSelectable[2];
+                        nextSelectable[2].nextSelectable[0] = ((Slot)GetEntryAtIndex(0))?.startButton ?? nextSelectable[2];
+                        nextSelectable[2].nextSelectable[1] = ((Slot)GetEntryAtIndex(0))?.startButton ?? nextSelectable[2];
                     }, () => { })
                 {
                     descriptionLabel = { label = { color = new HSLColor(1f, 0.80f, 0.35f).rgb } }
