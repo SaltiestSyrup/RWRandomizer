@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Menu;
 using UnityEngine;
 using RWMenu = Menu.Menu;
@@ -31,9 +30,6 @@ public class NewStandaloneGameTab : PositionedMenuObject
     
     public NewStandaloneGameTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
     {
-        // grid of slugcat portrait buttons
-        // pressing one opens their options page
-        // can quit out or press a hold button to start the game with chosen options
         slugcatButtons = new PortraitButton[slugcatInfos.Length];
         for (int i = 0; i < slugcatInfos.Length; i++)
         {

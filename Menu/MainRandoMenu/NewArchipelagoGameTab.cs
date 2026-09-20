@@ -1,8 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Menu;
-using Menu.Remix;
-using Menu.Remix.MixedUI;
 using UnityEngine;
 using RWMenu = Menu.Menu;
 
@@ -159,6 +157,7 @@ public class NewArchipelagoGameTab(RWMenu menu, MenuObject owner, Vector2 pos) :
             },
             () =>
             {
+                // Signals to RandomizerMenu to start the game
                 try { Singal(this, "START_NEW_GAME"); }
                 catch (Exception e) { Plugin.Log.LogError(e); }
             });

@@ -21,6 +21,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         StandaloneNew, StandaloneView, ArchipelagoNew, ArchipelagoView
     }
     
+    // Elements
     private SelectOneButton[] tabButtons;
     private Tab[] tabs;
     private SimpleButton exitButton;
@@ -46,6 +47,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
         darkSprite.alpha = 0.8f;
         
+        // --- Tab Buttons
         tabButtons = new SelectOneButton[3];
         
         tabButtons[0] = new SelectOneButton(this, pages[0], "GENERAL", "OPTAB-GENERAL", 
@@ -59,16 +61,19 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             { fadeAlpha = 4f };
         pages[0].subObjects.AddRange(tabButtons);
         
+        // --- Background
         roundedRect = new RoundedRect(this, pages[0], centerScreen - size / 2f, size, true) 
             { fillAlpha = 1f };
         pages[0].subObjects.Add(roundedRect);
         
+        // --- Done Button
         finishButton = new SimpleButton(this, pages[0], "DONE", "CLOSE_OPTIONS_DONE",
             roundedRect.pos + new Vector2(size.x - 105f, 5f),
             new Vector2(100f, 30f));
         backObject = finishButton;
         pages[0].subObjects.Add(finishButton);
 
+        // --- Cancel Button (if applicable)
         if (mode == Mode.StandaloneNew)
         {
             exitButton = new SimpleButton(this, pages[0], "CANCEL", "CLOSE_OPTIONS_EXIT",
@@ -78,6 +83,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             pages[0].subObjects.Add(exitButton);
         }
         
+        // --- Tab Content
         tabs = new Tab[3];
 
         tabs[0] = new GeneralTab(this, pages[0], roundedRect.pos, slugcat);
@@ -89,7 +95,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         tabs[2] = new ItemsTab(this, pages[0], roundedRect.pos - new Vector2(0f, 2000f));
         pages[0].subObjects.Add(tabs[2]);
 
-        // Set Selectables
+        // --- Set Selectables
         tabButtons[0].nextSelectable[0] = tabButtons[0];
         tabButtons[0].nextSelectable[1] = tabButtons[0];
         tabButtons[0].nextSelectable[2] = tabButtons[1];
@@ -112,7 +118,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         if (exitButton is not null)
         {
             exitButton.nextSelectable[0] = exitButton;
-            exitButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();;
+            exitButton.nextSelectable[1] = tabs[currentTab].GetFirstSelectable();
             exitButton.nextSelectable[2] = finishButton;
             exitButton.nextSelectable[3] = exitButton;
         }
@@ -181,10 +187,24 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         }
     }
 
+    /// <summary>
+    /// Base class for option tab content containers
+    /// </summary>
     private abstract class Tab(RWMenu menu, MenuObject owner, Vector2 pos) : PositionedMenuObject(menu, owner, pos)
     {
+        /// <summary>
+        /// Dict matching all the option menu objects with string identifiers
+        /// </summary>
         protected Dictionary<string, Option> options;
+        /// <summary>
+        /// Set the values of the options based on a <see cref="SaveFile"/>
+        /// </summary>
+        /// <param name="save"><see cref="SaveFile"/> to populate from</param>
         public abstract void PopulateFromSaveFile(SaveFile save);
+        /// <summary>
+        /// Update the option values of a <see cref="SaveFile"/> with what the player has set
+        /// </summary>
+        /// <param name="save">Reference to the save file to update</param>
         public abstract void OutputToSaveFile(ref SaveFile save);
 
         public MenuObject GetFirstSelectable()
@@ -192,6 +212,11 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             return options.FirstOrDefault().Value?.GetSelectable();
         }
 
+        /// <summary>
+        /// Define how the controller should navigate this tab
+        /// </summary>
+        /// <param name="myTabButton">This tab's respective button, for the top options to lead to</param>
+        /// <param name="doneButton">The done button for the bottom options to lead to</param>
         public virtual void SetSelectables(MenuObject myTabButton, MenuObject doneButton)
         {
             // Group the options by their x position, so we can assign selectables by vertical column
@@ -561,13 +586,6 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         {
             float runningY = menu.size.y - 80f;
             float rightRowX = menu.size.x / 2f + CENTER_MARGIN / 2f;
-            
-            // MenuLabel baseGameLabel = new MenuLabel(menu, this, "Base Game",
-            //     new Vector2(((Dialog)menu).size.x * 0.25f, ((Dialog)menu).size.y - 40f), default, true)
-            // {
-            //     // label = { color = Color.blue }
-            // };
-            // subObjects.Add(baseGameLabel);
 
             options = new Dictionary<string, Option>();
 
@@ -687,15 +705,18 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         }
     }
     
+    /// <summary>
+    /// Pairs text labels with option entry fields, and makes it easier to fetch option values
+    /// </summary>
     private abstract class Option : PositionedMenuObject
     {
         protected MenuTabWrapper tabWrapper;
-        protected UIelementWrapper labelWrapper;
         protected UIelementWrapper fieldWrapper;
+
+        private MenuLabel label;
+        protected UIconfig field;
         
-        protected MenuLabel label;
-        public UIconfig field;
-        
+        // Each option class overrides some of these depending on what kind of option it is
         public virtual bool ValueBool { get; set; }
         public virtual int ValueInt { get; set; }
         public virtual float ValueFloat { get; set; }

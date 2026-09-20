@@ -15,9 +15,6 @@ public sealed class SlotSelector : ScrollingMenu
     public SlotSelector(RWMenu menu, MenuObject owner, Vector2 pos) 
         : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.55f, 0.75f))
     {
-        // Standalone slot entry
-        // Archipelago slot entry
-
         entryWidth = 0.95f * size.x;
         entryHeight = 0.22f * size.y;
         roundedRect.fillAlpha = 0.9f;
@@ -79,6 +76,7 @@ public sealed class SlotSelector : ScrollingMenu
         base.Singal(sender, message);
         switch (message)
         {
+            // Called by the delete buttons on each slot
             case "DELETE_SAVE":
                 DialogConfirm confirmation = new DialogConfirm(
                     "Are you sure you want to permanently delete this saved game?\nThis action cannot be undone.",
@@ -91,15 +89,12 @@ public sealed class SlotSelector : ScrollingMenu
                         entries.Remove(slot);
                         SaveManager.DeleteFile(menu.manager.rainWorld, slot.saveSlot);
                         SetNavigation();
+                        menu.selectedObject = nextSelectable[2]; // Should be the new game button
                     }, () => { })
                 {
                     descriptionLabel = { label = { color = new HSLColor(1f, 0.80f, 0.35f).rgb } }
                 };
                 menu.manager.ShowDialog(confirmation);
-                break;
-            case "OPTIONS":
-                
-                // subObjects.Add(new OptionsDialog(menu, this, new Vector2(size.x / 2f - 400f, size.y / 2f - 200f), new Vector2(800f, 500f)));
                 break;
         }
     }
@@ -401,6 +396,7 @@ public sealed class SlotSelector : ScrollingMenu
             base.Singal(sender, message);
             switch (message)
             {
+                // This slot's options button signals here
                 case "OPTIONS":
                     if ((menu as RandomizerMenu) is not RandomizerMenu randomizerMenu
                         || sender.owner != this) break;
@@ -469,6 +465,7 @@ public sealed class SlotSelector : ScrollingMenu
             logoBadge = new FSprite("Symbol_Archipelago");
             Container.AddChild(logoBadge);
 
+            // Signal to ourselves
             startButton.signalText = "CONTINUE_GAME_AP";
         }
 
@@ -479,6 +476,7 @@ public sealed class SlotSelector : ScrollingMenu
             
             if (loadingSpinner is not null) loadingSpinner.pos = ScreenPos + new Vector2(size.x + 70f, size.y / 2f);
             
+            // If connect task was running and has now completed
             if (connectTask?.IsCompleted ?? false)
             {
                 loadingSpinner?.RemoveFromContainer();
@@ -488,11 +486,11 @@ public sealed class SlotSelector : ScrollingMenu
                 // If success, populate options UI. Else show error dialog
                 if (ArchipelagoConnection.SocketConnected)
                 {
+                    // Signals to RandomizerMenu
                     Singal(this, "CONTINUE_GAME");
                 }
                 else
                 {
-                    // Notify dialogs need a delegate passed to initialize for some reason, so pass empty lambda
                     menu.manager.ShowDialog(new DialogNotify(connectTask.Result, menu.manager, () => { }));
                 }
                 
@@ -526,12 +524,16 @@ public sealed class SlotSelector : ScrollingMenu
             base.Singal(sender, message);
             switch (message)
             {
+                // Signal comes from this slot when play is pressed
                 case "CONTINUE_GAME_AP":
                     StartAsyncConnection();
                     break;
             }
         }
         
+        /// <summary>
+        /// Try to connect to the server with this slot's stored connection info
+        /// </summary>
         private void StartAsyncConnection()
         {
             ((RandomizerMenu)menu)._freezeMenuFunctions = true;

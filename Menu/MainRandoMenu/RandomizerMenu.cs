@@ -91,6 +91,7 @@ public class RandomizerMenu : RWMenu
         base.Singal(sender, message);
         switch (message)
         {
+            // Called from our exit button
             case "EXIT":
                 if (pagesMoving) break;
                 switch (currentPage)
@@ -105,10 +106,12 @@ public class RandomizerMenu : RWMenu
                         break;
                 }
                 break;
+            // Called from our new game button
             case "NEW_GAME":
                 MovePage(false);
                 UpdatePage(2);
                 break;
+            // Called from a menu slot when we're continuing a saved game 
             case "CONTINUE_GAME":
                 SlotSelector.Slot slot = sender as SlotSelector.Slot ?? sender.owner as SlotSelector.Slot;
                 if (slot is not null)
@@ -120,9 +123,12 @@ public class RandomizerMenu : RWMenu
                     Plugin.Log.LogError("Failed to determine slot to begin game with");
                 }
                 break;
+            // Called from either standalone or AP menus to trigger starting the game
             case "START_NEW_GAME":
                 CreateNewGame(((CreateNewGamePage)sender.owner).chosenSlugcat, false);
                 break;
+            // Called from AP new game menu if a legacy game was found and player chose to use it,
+            // or a standalone slot if it was detected as a not yet loaded legacy slot
             case "CONTINUE_FROM_LEGACY":
                 SlugcatStats.Name slugcat = (sender.owner as CreateNewGamePage)?.chosenSlugcat
                                             ?? new SlugcatStats.Name((sender.owner as SlotSelector.Slot)?.saveFile.slugcat);
@@ -166,7 +172,7 @@ public class RandomizerMenu : RWMenu
         base.GrafUpdate(timeStacker);
     }
 
-    public void MovePage(bool moveLeft)
+    private void MovePage(bool moveLeft)
     {
         if (pagesMoving) return;
         pagesMoving = true;
@@ -178,7 +184,7 @@ public class RandomizerMenu : RWMenu
         PlaySound(SoundID.MENU_Next_Slugcat);
     }
 
-    public void UpdatePage(int newPage)
+    private void UpdatePage(int newPage)
     {
         // Menu objects that persist across pages
         exitButton.RemoveSprites();
@@ -210,11 +216,6 @@ public class RandomizerMenu : RWMenu
         currentPage = newPage;
     }
 
-    private void MoveToNewGameScreen()
-    {
-        
-    }
-
     private void CreateNewGame(SlugcatStats.Name slugcat, bool fromLegacy)
     {
         SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
@@ -225,6 +226,7 @@ public class RandomizerMenu : RWMenu
             return;
         }
 
+        // For legacy files, remember which randomizer slot number this should be rather than switching to it
         if (fromLegacy)
         {
             SaveTracker.ActiveLegacySlot = newSlot;
@@ -244,6 +246,7 @@ public class RandomizerMenu : RWMenu
         SaveTracker.OrigSaveSlot = manager.rainWorld.options.saveSlot;
         SaveTracker.CustomSlotActive = true;
 
+        // For legacy files, remember which randomizer slot number this should be rather than switching to it
         if (fromLegacy)
         {
             SaveTracker.ActiveLegacySlot = slot;
@@ -270,6 +273,7 @@ public class RandomizerMenu : RWMenu
 
             progressionIsLoading = null;
         
+            // Jolly Co-op stuff
             if (ModManager.CoopAvailable)
             {
                 Custom.Log("JollyCoop Player Count is:", manager.rainWorld.options.JollyPlayerCount.ToString());
