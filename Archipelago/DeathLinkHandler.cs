@@ -110,7 +110,9 @@ namespace RainWorldRandomizer
             {
                 string deathMessage = deathLink.Cause ?? $"{deathLink.Source} has died!";
                 Plugin.Singleton.notifQueue.Enqueue(new MessageText(
-                    [deathMessage, $" ({RandoOptions.archipelagoDLGraceCounter.Value - _graceCounter - 1})"],
+                    [deathMessage, RandoOptions.archipelagoDLGraceCounter.Value > 0 
+                        ? $" ({RandoOptions.archipelagoDLGraceCounter.Value - _graceCounter - 1})" 
+                        : ""],
                     [Color.white, Color.red]));
                 _receiveDeathCooldown = 40; // 1 second
                 _deathPending = true;
