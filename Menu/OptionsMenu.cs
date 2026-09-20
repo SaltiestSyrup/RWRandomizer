@@ -14,11 +14,15 @@ namespace RainWorldRandomizer.Menu
     {
         /// <summary>X offset for options on the left side of the screen</summary>
         private const float LEFT_OPTION_X = 20f;
+
         /// <summary>X offset for options on the right side of the screen</summary>
         private const float RIGHT_OPTION_X = 320f;
+
         private const float GROUP_SIZE_X = 260f;
+
         /// <summary>Y offset for options to start at</summary>
         private const float FIRST_LINE_Y = 550f;
+
         /// <summary>How far to decrement Y for a new line</summary>
         private const float NEWLINE_DECREMENT = 35f;
 
@@ -33,7 +37,9 @@ namespace RainWorldRandomizer.Menu
         public OptionsMenu()
         {
             RandoOptions.itemDeliveryMethod = config.Bind<string>("itemDeliveryMethod", "Menu Only",
-                new ConfigurableInfo("Additional options for object retrieval. They can be stored in slugcats stomach, or automatically spawned in shelters", null, "",
+                new ConfigurableInfo(
+                    "Additional options for object retrieval. They can be stored in slugcats stomach, or automatically spawned in shelters",
+                    null, "",
                     ["Item delivery method"]));
 
             RandoOptions.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
@@ -45,7 +51,8 @@ namespace RainWorldRandomizer.Menu
                     ["Disable token text"]));
 
             RandoOptions.legacyNotifications = config.Bind<bool>("LegacyNotifications", false,
-                new ConfigurableInfo("Use bottom of screen 'tutorial' text for notifications instead of chat feature", null, "",
+                new ConfigurableInfo("Use bottom of screen 'tutorial' text for notifications instead of chat feature",
+                    null, "",
                     ["Enable legacy notifications"]));
 
             RandoOptions.useGateMap = config.Bind<bool>("UseGateMap", true,
@@ -69,32 +76,42 @@ namespace RainWorldRandomizer.Menu
             // RandoOptions.archipelagoPassword = config.Bind<string>("ArchipelagoPassword", "",
             //     new ConfigurableInfo("Password for server connection (Optional)", null, "",
             //         ["Password"]));
-            
+
             RandoOptions.archipelagoPreventDLKarmaLoss = config.Bind<bool>("ArchipelagoPreventDLKarmaLoss", false,
-                new ConfigurableInfo("Whether deaths received from DeathLink should ignore the normal karma loss mechanics", null, "",
+                new ConfigurableInfo(
+                    "Whether deaths received from DeathLink should ignore the normal karma loss mechanics", null, "",
                     ["Prevent DeathLink Karma Loss"]));
 
             RandoOptions.archipelagoIgnoreMenuDL = config.Bind<bool>("ArchipelagoIgnoreMenuDL", true,
-                new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored", null, "",
+                new ConfigurableInfo("Whether DeathLinks sent in between gameplay are postponed or completely ignored",
+                    null, "",
                     ["Ignore Menu DeathLinks"]));
-            
+
             RandoOptions.archipelagoDLGraceCounter = config.Bind<int>("ArchipelagoDLGraceCounter", 0,
                 new ConfigurableInfo("How many DeathLinks need to be received before you are actually killed",
                     new ConfigAcceptableRange<int>(0, 20), "",
                     ["DeathLink Grace Counter"]));
 
+            RandoOptions.archipelagoPupsBlockDL = config.Bind<float>("ArchipelagoPupsBlockDL", 0.2f,
+                new ConfigurableInfo(
+                    "The chance that a pup will get killed instead of you when a DeathLink is received",
+                    new ConfigAcceptableRange<float>(0f, 1f), "",
+                    ["Slugpups Block DeathLinks"]));
+
             RandoOptions.trapMinimumCooldown = config.Bind<int>("TrapMinimumCooldown", 30,
                 new ConfigurableInfo("The minimum amount of time between trap triggers (in seconds)",
-                new ConfigAcceptableRange<int>(1, 600), "",
+                    new ConfigAcceptableRange<int>(1, 600), "",
                     ["Minimum Trap Cooldown"]));
 
             RandoOptions.trapMaximumCooldown = config.Bind<int>("TrapMaximumCooldown", 90,
-                new ConfigurableInfo("The maximum amount of time between trap triggers (in seconds)", 
+                new ConfigurableInfo("The maximum amount of time between trap triggers (in seconds)",
                     new ConfigAcceptableRange<int>(1, 600), "",
                     ["Maximum Trap Cooldown"]));
 
             RandoOptions.colorPickupsWithHints = config.Bind<bool>("ColorPickupsWithHints", true,
-                new ConfigurableInfo("Display colors on many locations in game that hint at their contents. Magenta = Progression, Cyan = Filler, Blue = Useful or Trap", null, "",
+                new ConfigurableInfo(
+                    "Display colors on many locations in game that hint at their contents. Magenta = Progression, Cyan = Filler, Blue = Useful or Trap",
+                    null, "",
                     ["Location Hint Colors"]));
 
             RandoOptions.filterRelevantItemLogs = config.Bind<bool>("FilterRelevantItemLogs", false,
@@ -106,7 +123,7 @@ namespace RainWorldRandomizer.Menu
                     ["Don't Notify Chat Messages"]));
 
             RandoOptions.textClientCosmeticConfig = config.Bind<string>("_TextClient", "");
-            ConnectInfoEntry.HostNameConfig = config.Bind<string>("_HostName", "archipelago.gg", 
+            ConnectInfoEntry.HostNameConfig = config.Bind<string>("_HostName", "archipelago.gg",
                 new ConfigurableInfo("", null, "", ["Host Name"]));
             ConnectInfoEntry.PortConfig = config.Bind<int>("_Port", 0,
                 new ConfigurableInfo("", null, "", ["Port"]));
@@ -116,11 +133,12 @@ namespace RainWorldRandomizer.Menu
                 new ConfigurableInfo("", null, "", ["Password"]));
 
             #region Obsolete Configurables
-            #pragma warning disable CS0612 // Type or member is obsolete
+
+#pragma warning disable CS0612 // Type or member is obsolete
             RandoOptions.chosenSlugcat = config.Bind<string>("ChosenSlugcat", "White",
                 new ConfigurableInfo("The slugcat campaign you will be playing", null, "",
                     ["Slugcat"]));
-            
+
             RandoOptions.useSeed = config.Bind<bool>("useSeed", false,
                 new ConfigurableInfo("Whether the randomizer will use a set seed or a generated one", null, "",
                     ["Use seed"]));
@@ -162,22 +180,27 @@ namespace RainWorldRandomizer.Menu
                     ["Karma Flowers"]));
 
             RandoOptions.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
-                new ConfigurableInfo("Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages", null, "",
+                new ConfigurableInfo(
+                    "Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages",
+                    null, "",
                     ["Passage Tokens"]));
 
             RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
-                new ConfigurableInfo("The percentage amount of filler items that will increase the remaining cycles when playing as Hunter." +
+                new ConfigurableInfo(
+                    "The percentage amount of filler items that will increase the remaining cycles when playing as Hunter." +
                     "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
                     new ConfigAcceptableRange<float>(0, 1), "",
                     ["Percent Hunter Cycles"]));
 
             RandoOptions.trapsDensity = config.Bind<float>("trapsDensity", 0.2f,
-                new ConfigurableInfo("The percentage amount of filler items that will be trap effects. Set to 0 to disable traps entirely",
+                new ConfigurableInfo(
+                    "The percentage amount of filler items that will be trap effects. Set to 0 to disable traps entirely",
                     new ConfigAcceptableRange<float>(0, 1), "",
                     ["Percent Traps"]));
 
             RandoOptions.numDamageIncreases = config.Bind<int>("numDamageIncreases", 6,
-                new ConfigurableInfo("The amount of permanent damage upgrade items to add to the pool. Each item collected gives an additive +20% damage to thrown spears",
+                new ConfigurableInfo(
+                    "The amount of permanent damage upgrade items to add to the pool. Each item collected gives an additive +20% damage to thrown spears",
                     new ConfigAcceptableRange<int>(0, 10), "",
                     ["Damage Upgrades"]));
 
@@ -186,45 +209,55 @@ namespace RainWorldRandomizer.Menu
                     ["Randomize Starting Region"]));
 
             RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
-                new ConfigurableInfo("Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
+                new ConfigurableInfo(
+                    "Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
                     "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
                     ["Minimum Starting Karma"]));
 
             RandoOptions.extraKarmaIncreases = config.Bind<int>("extraKarmaIncreases", 2,
-                new ConfigurableInfo("How many extra karma items above the minimum required will be placed in the world",
+                new ConfigurableInfo(
+                    "How many extra karma items above the minimum required will be placed in the world",
                     new ConfigAcceptableRange<int>(0, 10), "",
                     ["Extra Karma Increases"]));
 
             RandoOptions.gateBehavior = config.Bind<string>("GateBehavior", "Only Key",
                 new ConfigurableInfo("What the requirement for travelling through gates should be", null, "",
                     ["Gate Behavior"]));
-            
+
             RandoOptions.ppwsBehavior = config.Bind<string>("PPwSBehavior", "Bypassed",
-                new ConfigurableInfo("Affects which passages can be obtained before Survivor. Disabled and Enabled mirror Remix setting behavior, Bypassed allows all passages to be obtained before Survivor", null, "",
+                new ConfigurableInfo(
+                    "Affects which passages can be obtained before Survivor. Disabled and Enabled mirror Remix setting behavior, Bypassed allows all passages to be obtained before Survivor",
+                    null, "",
                     ["PPwS Behavior"]));
-            
+
             RandoOptions.echoBehavior = config.Bind<string>("EchoBehavior", "Vanilla",
                 new ConfigurableInfo("Affects the conditions for echo spawning before 5 maximum karma", null, "",
                     ["Echo Behavior"]));
-            
+
             RandoOptions.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
                 new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (When possible)", null, "",
                     ["Open Metropolis"]));
 
             RandoOptions.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
-                new ConfigurableInfo("Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
+                new ConfigurableInfo(
+                    "Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
                     ["Open Submerged"]));
 
-            RandoOptions.allowExteriorForInv = config.Bind<bool>("allowExteriorForInv", false, 
-                new ConfigurableInfo("By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty", null, "",
+            RandoOptions.allowExteriorForInv = config.Bind<bool>("allowExteriorForInv", false,
+                new ConfigurableInfo(
+                    "By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty",
+                    null, "",
                     ["Open Exterior"]));
 
             RandoOptions.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", false,
-                new ConfigurableInfo("Include checks for eating every food in Gourmand's food quest. Other slugcats will only have checks for the foods they are able to eat", null, "",
+                new ConfigurableInfo(
+                    "Include checks for eating every food in Gourmand's food quest. Other slugcats will only have checks for the foods they are able to eat",
+                    null, "",
                     ["Food Quest"]));
 
             RandoOptions.useExpandedFoodQuestChecks = config.Bind<bool>("useExpandedFoodQuestChecks", false,
-                new ConfigurableInfo("Extends food quest checks to include almost all edible creatures and objects", null, "",
+                new ConfigurableInfo("Extends food quest checks to include almost all edible creatures and objects",
+                    null, "",
                     ["Food Quest Expanded"]));
 
             RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
@@ -232,7 +265,8 @@ namespace RainWorldRandomizer.Menu
                     ["Use Mass Rarefaction Cell"]));
 
             RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
-                new ConfigurableInfo("Include checks for collecting broadcast tokens in Spearmaster's campaign", null, "",
+                new ConfigurableInfo("Include checks for collecting broadcast tokens in Spearmaster's campaign", null,
+                    "",
                     ["Spearmaster Broadcasts"]));
 
             RandoOptions.expeditionPerks = new Configurable<bool>[8];
@@ -267,23 +301,28 @@ namespace RainWorldRandomizer.Menu
             RandoOptions.expeditionPerks[7] = config.Bind<bool>("IncludeAgility", false,
                 new ConfigurableInfo("Add the Agility perk to the item pool", null, "",
                     ["Agility"]));
-            
+
             RandoOptions.useSpreadRotChecks = config.Bind<bool>("SpreadRotChecks", false,
-                new ConfigurableInfo("Include checks for spreading rot to each region in the Watcher campaign", null, "",
+                new ConfigurableInfo("Include checks for spreading rot to each region in the Watcher campaign", null,
+                    "",
                     ["Spreading Rot"]));
-            
+
             RandoOptions.useWeaverChecks = config.Bind<bool>("WeaverChecks", false,
                 new ConfigurableInfo("Include checks for each of the 4 encounters with the Weaver", null, "",
                     ["Weaver Encounters"]));
-            
+
             RandoOptions.weaverItems = config.Bind<bool>("WeaverItems", false,
-                new ConfigurableInfo("Adds 4 progressive Weaver items to the item pool, instead of incrementing from encounters", null, "",
+                new ConfigurableInfo(
+                    "Adds 4 progressive Weaver items to the item pool, instead of incrementing from encounters", null,
+                    "",
                     ["Weaver Encounters"]));
-            
+
             RandoOptions.spinningTopKeys = config.Bind<bool>("SpinningTopKeys", false,
-                new ConfigurableInfo("The warps that Spinning Top opens will require keys to traverse. If this is disabled, you can always travel through these warps", null, "",
+                new ConfigurableInfo(
+                    "The warps that Spinning Top opens will require keys to traverse. If this is disabled, you can always travel through these warps",
+                    null, "",
                     ["Spinning Top Keys"]));
-            
+
             RandoOptions.daemonKeys = config.Bind<bool>("DaemonKeys", false,
                 new ConfigurableInfo("The warps to Daemon will require keys to traverse", null, "",
                     ["Daemon Keys"]));
@@ -294,13 +333,16 @@ namespace RainWorldRandomizer.Menu
                     ["Regions to Rot"]));
 
             RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
-                new ConfigurableInfo("Enable Archipelago mode. Standalone settings will be ignored in favor of .yaml settings", null, "",
+                new ConfigurableInfo(
+                    "Enable Archipelago mode. Standalone settings will be ignored in favor of .yaml settings", null, "",
                     ["Enable Archipelago"]));
-            
+
             RandoOptions.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
-                new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here", null, "",
+                new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here",
+                    null, "",
                     ["Enable DeathLink"]));
-            #pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning restore CS0612 // Type or member is obsolete
+
             #endregion
         }
 
@@ -308,28 +350,21 @@ namespace RainWorldRandomizer.Menu
         {
             base.Initialize();
 
-            List<OpTab> _tabs = 
-            [ 
-                new OpTab(this, Translate("Base")) 
+            List<OpTab> _tabs =
+            [
+                new OpTab(this, Translate("Base"))
                 {
                     colorButton = baseTabColor,
+                },
+                new OpTab(this, Translate("Archipelago"))
+                {
+                    colorButton = archipelagoTabColor,
                 }
             ];
-            if (ModManager.MSC)
-            {
-                _tabs.Add(new OpTab(this, Translate("Downpour"))
-                {
-                    colorButton = downpourTabColor,
-                });
-            }
-            _tabs.Add(new OpTab(this, Translate("Archipelago"))
-            {
-                colorButton = archipelagoTabColor,
-            });
+
             Tabs = [.. _tabs];
 
             PopulateBaseTab();
-            PopulateDownpourTab();
             PopulateArchipelagoTab();
         }
 
@@ -340,71 +375,6 @@ namespace RainWorldRandomizer.Menu
 
             OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Standalone Options"));
             Tabs[tabIndex].AddItems(standaloneConfigsLabel);
-            runningY -= NEWLINE_DECREMENT;
-
-            // Seed
-            // OptionGroup seedGroup = new(this, "Seed", new(10f, 10f));
-            // OpCheckBox useSeedCheckbox = seedGroup.AddCheckBox(RandoOptions.useSeed, new(LEFT_OPTION_X, runningY));
-            //
-            // OpTextBox seedText = new(RandoOptions.seed, new Vector2(125f, runningY), 100f)
-            // {
-            //     description = Translate(RandoOptions.seed.info.description),
-            // };
-            // seedGroup.AddElements(seedText);
-            // runningY -= NEWLINE_DECREMENT * 1.5f;
-
-            // Make the seed field be active only when useSeed is selected
-            // void UseSeedChange() => seedText.greyedOut = seedGroup.Disabled || !useSeedCheckbox.GetValueBool();
-            //
-            // seedText.OnUpdate += UseSeedChange; // Can't get the box to start greyed, just set on Update
-            // seedGroup.AddToTab(tabIndex);
-            // optionGroups.Add(seedGroup);
-
-            // Misc Generation
-            // OptionGroup miscGroup = new(this, "Misc_Generation", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            // miscGroup.AddCheckBox(RandoOptions.randomizeSpawnLocation, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // miscGroup.AddCheckBox(RandoOptions.startMinKarma, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // miscGroup.AddUpDown(RandoOptions.extraKarmaIncreases, true, new(LEFT_OPTION_X, runningY), 50f);
-            // runningY -= NEWLINE_DECREMENT * 1.5f;
-            // miscGroup.AddToTab(tabIndex);
-            // optionGroups.Add(miscGroup);
-
-            // Checks
-            // OptionGroup checksGroup = new(this, "Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            // checksGroup.AddCheckBox(RandoOptions.useSandboxTokenChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.usePearlChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.useEchoChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.usePassageChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.useSpecialChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.useShelterChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.useKarmaFlowerChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT * 1.5f;
-            // checksGroup.AddToTab(tabIndex);
-            // optionGroups.Add(checksGroup);
-
-            // Filler Items
-            // OptionGroup fillerGroup = new(this, "Filler_Items", new(10f, 10f), new(RIGHT_OPTION_X - LEFT_OPTION_X + GROUP_SIZE_X, 0f));
-            // fillerGroup.AddCheckBox(RandoOptions.givePassageUnlocks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // fillerGroup.AddUpDown(RandoOptions.hunterCyclesDensity, false, new(LEFT_OPTION_X, runningY), 60f);
-            // runningY -= NEWLINE_DECREMENT;
-            // fillerGroup.AddUpDown(RandoOptions.trapsDensity, false, new(LEFT_OPTION_X, runningY), 60f);
-            // runningY += NEWLINE_DECREMENT * 2; // new column
-            // fillerGroup.AddUpDown(RandoOptions.numDamageIncreases, true, new(RIGHT_OPTION_X, runningY), 60f);
-
-            // fillerGroup.AddToTab(tabIndex);
-            // optionGroups.Add(fillerGroup);
-            //
-            // // Populate group set for disbling when AP
-            // standaloneExclusiveGroups.AddRange([seedGroup, miscGroup, checksGroup, fillerGroup]);
 
             // ----- Right side configs -----
             runningY = FIRST_LINE_Y;
@@ -415,9 +385,11 @@ namespace RainWorldRandomizer.Menu
 
             OptionGroup globalGroup = new(this, "Global", new(10f, 10f), new(GROUP_SIZE_X, 0f));
 
-            OpComboBox2 itemDeliveryComboBox = new(RandoOptions.itemDeliveryMethod, new(RIGHT_OPTION_X, runningY), 125f, ["Stomach", "Shelter", "Both", "Menu Only"]);
-            OpLabel itemDeliveryLabel = new(RIGHT_OPTION_X + 135f, runningY, Translate(RandoOptions.itemDeliveryMethod.info.Tags[0] as string))
-            { bumpBehav = itemDeliveryComboBox.bumpBehav };
+            OpComboBox2 itemDeliveryComboBox = new(RandoOptions.itemDeliveryMethod, new(RIGHT_OPTION_X, runningY), 125f,
+                ["Stomach", "Shelter", "Both", "Menu Only"]);
+            OpLabel itemDeliveryLabel = new(RIGHT_OPTION_X + 135f, runningY,
+                    Translate(RandoOptions.itemDeliveryMethod.info.Tags[0] as string))
+                { bumpBehav = itemDeliveryComboBox.bumpBehav };
             globalGroup.AddElements(itemDeliveryComboBox, itemDeliveryLabel);
 
             runningY -= NEWLINE_DECREMENT;
@@ -433,9 +405,11 @@ namespace RainWorldRandomizer.Menu
             optionGroups.Add(globalGroup);
 
             OptionGroup trapGroup = new(this, "Traps", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            OpUpdown trapMinUpDown = trapGroup.AddUpDown(RandoOptions.trapMinimumCooldown, true, new(RIGHT_OPTION_X, runningY), 60f);
+            OpUpdown trapMinUpDown = trapGroup.AddUpDown(RandoOptions.trapMinimumCooldown, true,
+                new(RIGHT_OPTION_X, runningY), 60f);
             runningY -= NEWLINE_DECREMENT;
-            OpUpdown trapMaxUpDown = trapGroup.AddUpDown(RandoOptions.trapMaximumCooldown, true, new(RIGHT_OPTION_X, runningY), 60f);
+            OpUpdown trapMaxUpDown = trapGroup.AddUpDown(RandoOptions.trapMaximumCooldown, true,
+                new(RIGHT_OPTION_X, runningY), 60f);
             runningY -= NEWLINE_DECREMENT;
             trapGroup.AddToTab(tabIndex);
             optionGroups.Add(trapGroup);
@@ -457,66 +431,6 @@ namespace RainWorldRandomizer.Menu
             };
         }
 
-        public void PopulateDownpourTab()
-        {
-            if (!ModManager.MSC) return;
-
-            int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Downpour"));
-            // float runningY = FIRST_LINE_Y;
-
-            // OpLabel standaloneConfigsLabel = new(LEFT_OPTION_X + 15f, runningY, Translate("Checks and Regions"));
-            // Tabs[tabIndex].AddItems(standaloneConfigsLabel);
-            // runningY -= NEWLINE_DECREMENT;
-
-            // Open optional regions
-            // OptionGroup unlockRegionsGroup = new(this, "MSC_Regions", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            // unlockRegionsGroup.AddCheckBox(RandoOptions.allowMetroForOthers, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // unlockRegionsGroup.AddCheckBox(RandoOptions.allowSubmergedForOthers, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // unlockRegionsGroup.AddCheckBox(RandoOptions.allowExteriorForInv, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT * 1.5f;
-
-            // Check types
-            // OptionGroup checksGroup = new(this, "MSC_Checks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-
-            // OpComboBox2 foodQuestComboBox = new(RandoOptions.useFoodQuestChecks, new(LEFT_OPTION_X, runningY), 125f,
-            //     ["Disabled", "Enabled", "Gourmand Only"]);
-            // OpLabel foodQuestLabel = new(LEFT_OPTION_X + 135f, runningY, Translate(RandoOptions.useFoodQuestChecks.info.Tags[0] as string))
-            // { bumpBehav = foodQuestComboBox.bumpBehav };
-            // checksGroup.AddElements(foodQuestComboBox, foodQuestLabel);
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.useExpandedFoodQuestChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.useDevTokenChecks, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.useEnergyCell, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT;
-            // checksGroup.AddCheckBox(RandoOptions.useSMTokens, new(LEFT_OPTION_X, runningY));
-            // runningY -= NEWLINE_DECREMENT * 1.5f;
-
-            // runningY = FIRST_LINE_Y;
-            //
-            // OpLabel expeditionConfigsLabel = new(RIGHT_OPTION_X + 15f, runningY, Translate("Expedition Perks"));
-            // Tabs[tabIndex].AddItems(expeditionConfigsLabel);
-            // runningY -= NEWLINE_DECREMENT;
-
-            // OptionGroup expeditionPerksGroup = new(this, "MSC_Perks", new(10f, 10f), new(GROUP_SIZE_X, 0f));
-            // foreach (Configurable<bool> perk in RandoOptions.expeditionPerks)
-            // {
-            //     expeditionPerksGroup.AddCheckBox(perk, new(RIGHT_OPTION_X, runningY));
-            //     runningY -= NEWLINE_DECREMENT;
-            // }
-
-            // Add to tab
-            // unlockRegionsGroup.AddToTab(tabIndex);
-            // checksGroup.AddToTab(tabIndex);
-            // expeditionPerksGroup.AddToTab(tabIndex);
-            //
-            // optionGroups.AddRange([unlockRegionsGroup, checksGroup, expeditionPerksGroup]);
-            // standaloneExclusiveGroups.AddRange([unlockRegionsGroup, checksGroup, expeditionPerksGroup]);
-        }
-
         public void PopulateArchipelagoTab()
         {
             int tabIndex = Tabs.IndexOf(Tabs.First(t => t.name == "Archipelago"));
@@ -535,46 +449,6 @@ namespace RainWorldRandomizer.Menu
                 "Rain World save slot, as it will be using the story campaign for saving data still.");
             Tabs[tabIndex].AddItems(explanationLabel);
 
-            // OpCheckBox APCheckBox = AddCheckBox(RandoOptions.archipelago, new(LEFT_OPTION_X, runningY), tabIndex);
-            // runningY -= NEWLINE_DECREMENT * 1.5f;
-
-            // OptionGroup connectionGroup = new(this, "AP_Connection", new(10f, 10f));
-            // OpTextBox hostNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoHostName, new(LEFT_OPTION_X, runningY), 200f);
-            // runningY -= NEWLINE_DECREMENT;
-            // OpTextBox portTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPort, new(LEFT_OPTION_X, runningY), 55f);
-            // runningY -= NEWLINE_DECREMENT;
-            // OpTextBox slotNameTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoSlotName, new(LEFT_OPTION_X, runningY), 200f);
-            // slotNameTextBox.allowSpace = true;
-            // runningY -= NEWLINE_DECREMENT;
-            // OpTextBox passwordTextBox = connectionGroup.AddTextBox(RandoOptions.archipelagoPassword, new(LEFT_OPTION_X, runningY), 200f);
-            // passwordTextBox.allowSpace = true;
-            // runningY -= NEWLINE_DECREMENT;
-
-            // Force infinite length on important information fields
-            // hostNameTextBox.maxLength = int.MaxValue;
-            // slotNameTextBox.maxLength = int.MaxValue;
-            // passwordTextBox.maxLength = int.MaxValue;
-
-            // OpSimpleButton connectButton = new(new Vector2(LEFT_OPTION_X, runningY), new Vector2(60f, 20f), "Connect")
-            // {
-            //     description = "Attempt to connect to the Archipelago server"
-            // };
-            // OpSimpleButton disconnectButton = new(new Vector2(LEFT_OPTION_X + 80f, runningY), new Vector2(80f, 20f), "Disconnect")
-            // {
-            //     description = "Disconnect from the current session"
-            // };
-            // connectionGroup.AddElements(connectButton, disconnectButton);
-            // runningY -= NEWLINE_DECREMENT;
-            // connectionGroup.AddToTab(tabIndex);
-            // optionGroups.Add(connectionGroup);
-
-            // ----- Status Information -----
-            // OptionGroup statusGroup = new(this, "AP_Status", new(10f, 10f), new(GROUP_SIZE_X, runningY - 60f));
-            // OpLabelLong connectResultLabel = new(new Vector2(LEFT_OPTION_X, 60f), new Vector2(GROUP_SIZE_X, runningY - 60f), "");
-            // statusGroup.AddElements(connectResultLabel);
-            // statusGroup.AddToTab(tabIndex);
-            // optionGroups.Add(statusGroup);
-
             // ----- Right side Configurables -----
             runningY = FIRST_LINE_Y;
 
@@ -588,8 +462,11 @@ namespace RainWorldRandomizer.Menu
             runningY -= NEWLINE_DECREMENT;
             deathLinkGroup.AddCheckBox(RandoOptions.archipelagoIgnoreMenuDL, new(RIGHT_OPTION_X + 30f, runningY));
             runningY -= NEWLINE_DECREMENT;
-            deathLinkGroup.AddUpDown(RandoOptions.archipelagoDLGraceCounter, true, 
+            deathLinkGroup.AddUpDown(RandoOptions.archipelagoDLGraceCounter, true,
                 new(RIGHT_OPTION_X + 30f, runningY), 40f);
+            runningY -= NEWLINE_DECREMENT;
+            deathLinkGroup.AddUpDown(RandoOptions.archipelagoPupsBlockDL, false,
+                new(RIGHT_OPTION_X + 30f, runningY), 60f);
             runningY -= NEWLINE_DECREMENT * 1.5f;
             deathLinkGroup.AddToTab(tabIndex);
             optionGroups.Add(deathLinkGroup);
@@ -603,10 +480,6 @@ namespace RainWorldRandomizer.Menu
             runningY -= NEWLINE_DECREMENT * 1.7f;
             qolGroup.AddToTab(tabIndex);
             optionGroups.Add(qolGroup);
-
-            // Slot data information
-            runningY = Mathf.Min(runningY, 322.5f);
-            
         }
 
         private void AskToClearSaveFiles(UIfocusable trigger)
@@ -664,6 +537,7 @@ namespace RainWorldRandomizer.Menu
             public Vector2 customSize = customSize;
 
             private bool _disabled = false;
+
             public bool Disabled
             {
                 get { return _disabled; }
@@ -671,11 +545,15 @@ namespace RainWorldRandomizer.Menu
                 {
                     _disabled = value;
                     // Grey out each focusable element
-                    elements.ForEach(e => { if (e is UIfocusable f) f.greyedOut = value; });
+                    elements.ForEach(e =>
+                    {
+                        if (e is UIfocusable f) f.greyedOut = value;
+                    });
                 }
             }
 
             private Color _color = MenuColorEffect.rgbMediumGrey;
+
             public Color Color
             {
                 get { return _color; }
@@ -694,6 +572,7 @@ namespace RainWorldRandomizer.Menu
                     if (element is UIfocusable f) f.greyedOut = Disabled;
                     ApplyColorToElement(element, Color);
                 }
+
                 this.elements.AddRange(elements);
             }
 
@@ -803,11 +682,13 @@ namespace RainWorldRandomizer.Menu
         {
             public const int BG_SPRITE_INDEX_RANGE = 9;
 
-            public OpComboBox2(Configurable<string> config, Vector2 pos, float width, string[] array) : base(config, pos, width, array)
+            public OpComboBox2(Configurable<string> config, Vector2 pos, float width, string[] array) : base(config,
+                pos, width, array)
             {
             }
 
-            public OpComboBox2(Configurable<string> config, Vector2 pos, float width, List<ListItem> list) : base(config, pos, width, list)
+            public OpComboBox2(Configurable<string> config, Vector2 pos, float width, List<ListItem> list) : base(
+                config, pos, width, list)
             {
             }
 

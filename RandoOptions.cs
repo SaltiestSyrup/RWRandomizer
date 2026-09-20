@@ -1,17 +1,32 @@
 ﻿using System;
-using MoreSlugcats;
 using System.Linq;
 
 namespace RainWorldRandomizer
 {
     public static class RandoOptions
     {
-        public enum FoodQuestBehavior { Disabled, Enabled, Expanded }
-        public enum PPwSBehavior { Disabled, Enabled, Bypassed }
+        public enum FoodQuestBehavior
+        {
+            Disabled,
+            Enabled,
+            Expanded
+        }
+
+        public enum PPwSBehavior
+        {
+            Disabled,
+            Enabled,
+            Bypassed
+        }
+
         public enum EchoLowKarmaDifficulty
         {
-            Impossible, WithFlower, MaxKarma, Vanilla
+            Impossible,
+            WithFlower,
+            MaxKarma,
+            Vanilla
         }
+
         public enum GateBehavior
         {
             OnlyKey, // Only keys matter, karma not required
@@ -19,6 +34,7 @@ namespace RainWorldRandomizer
             KeyOrKarma, // Key allows bypassing karma requirement
             OnlyKarma // Keys not needed, normal gate behavior
         }
+
         public enum CompletionCondition
         {
             Ascension, // The basic void sea ending
@@ -35,9 +51,9 @@ namespace RainWorldRandomizer
             Weaver, // Watcher sealing all warp points and having their final encounter with the Weaver
             TrueEnding, // Watcher activating the pillars in Daemon and ascending
         }
-        
+
         internal static OptionStruct LoadedOptions = new();
-        
+
         // Base
         internal static Configurable<string> itemDeliveryMethod;
         internal static Configurable<bool> disableNotificationQueue;
@@ -45,10 +61,12 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> legacyNotifications;
 
         internal static Configurable<bool> useGateMap;
-        
+
         internal static Configurable<bool> archipelagoPreventDLKarmaLoss;
         internal static Configurable<bool> archipelagoIgnoreMenuDL;
         internal static Configurable<int> archipelagoDLGraceCounter;
+        internal static Configurable<float> archipelagoPupsBlockDL;
+
         internal static Configurable<int> trapMinimumCooldown;
         internal static Configurable<int> trapMaximumCooldown;
         internal static Configurable<bool> colorPickupsWithHints;
@@ -58,6 +76,7 @@ namespace RainWorldRandomizer
         internal static Configurable<string> textClientCosmeticConfig;
 
         #region Run Configurables
+
         internal static Configurable<string> chosenSlugcat;
         internal static Configurable<bool> useSeed;
         internal static Configurable<string> seed;
@@ -97,10 +116,11 @@ namespace RainWorldRandomizer
         internal static Configurable<bool> spinningTopKeys;
         internal static Configurable<bool> daemonKeys;
         internal static Configurable<int> rottedRegionTarget;
-        
+
         // Archipelago
         [Obsolete] internal static Configurable<bool> archipelago;
         internal static Configurable<bool> archipelagoDeathLinkOverride;
+
         #endregion
 
         // Base
@@ -315,7 +335,7 @@ namespace RainWorldRandomizer
             return LoadedOptions.goalCondition is CompletionCondition.Weaver or CompletionCondition.TrueEnding;
         }
     }
-    
+
     public struct OptionStruct()
     {
         public bool useSeed = false;
@@ -350,7 +370,7 @@ namespace RainWorldRandomizer
         public bool useEnergyCell = false;
         public bool useSMTokens = true;
         public bool[] expeditionPerks = new bool[8];
-        
+
         // Watcher
         public bool spinningTopKeys = true;
         public bool daemonKeys = true;
@@ -364,7 +384,7 @@ namespace RainWorldRandomizer
         public bool archipelagoDeathLink = false;
         public RandoOptions.CompletionCondition goalCondition = 0;
 
-        #pragma warning disable CS0612 // Type or member is obsolete
+#pragma warning disable CS0612 // Type or member is obsolete
         public static OptionStruct FromConfigurables()
         {
             return new OptionStruct
@@ -408,6 +428,6 @@ namespace RainWorldRandomizer
                 archipelagoDeathLink = RandoOptions.archipelagoDeathLinkOverride.Value,
             };
         }
-        #pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning restore CS0612 // Type or member is obsolete
     }
 }

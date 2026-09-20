@@ -12,37 +12,37 @@ namespace RainWorldRandomizer.Menu;
 
 public sealed class SlotSelector : ScrollingMenu
 {
-    public SlotSelector(RWMenu menu, MenuObject owner, Vector2 pos) 
+    public SlotSelector(RWMenu menu, MenuObject owner, Vector2 pos)
         : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.55f, 0.75f))
     {
         entryWidth = 0.95f * size.x;
         entryHeight = 0.22f * size.y;
         roundedRect.fillAlpha = 0.9f;
-        
+
         // Remove unneeded elements
         scrollDownButton.RemoveSprites();
         scrollUpButton.RemoveSprites();
-        
+
         PopulateEntries();
     }
 
     protected override void PopulateEntries()
     {
         int index = 0;
-        foreach (KeyValuePair<int, SaveFile> slot 
+        foreach (KeyValuePair<int, SaveFile> slot
                  in ((RandomizerMenu)menu).saveTracker.SaveSlots
                  .OrderBy(s => s.Value.lastPlayed)
                  .Reverse())
         {
             if (slot.Value.isArchipelago)
             {
-                entries.Add(new ArchipelagoSlot(menu, this, 
+                entries.Add(new ArchipelagoSlot(menu, this,
                     new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(index)),
                     new Vector2(entryWidth, entryHeight), slot.Key, slot.Value));
             }
             else
             {
-                entries.Add(new StandaloneSlot(menu, this, 
+                entries.Add(new StandaloneSlot(menu, this,
                     new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(index)),
                     new Vector2(entryWidth, entryHeight), slot.Key, slot.Value));
             }
@@ -53,7 +53,7 @@ public sealed class SlotSelector : ScrollingMenu
                 entries[index].nextSelectable[1] = entries[index - 1];
                 entries[index - 1].nextSelectable[3] = entries[index];
             }
-            
+
             subObjects.Add(entries[index]);
             index++;
         }
@@ -68,7 +68,6 @@ public sealed class SlotSelector : ScrollingMenu
 
     public override void SetCurrentlySelectedOfSeries(string series, int to)
     {
-        
     }
 
     public override void Singal(MenuObject sender, string message)
@@ -80,7 +79,7 @@ public sealed class SlotSelector : ScrollingMenu
             case "DELETE_SAVE":
                 DialogConfirm confirmation = new DialogConfirm(
                     "Are you sure you want to permanently delete this saved game?\nThis action cannot be undone.",
-                    new Vector2(480f, 200f), menu.manager, 
+                    new Vector2(480f, 200f), menu.manager,
                     () =>
                     {
                         Slot slot = (Slot)sender.owner;
@@ -91,8 +90,10 @@ public sealed class SlotSelector : ScrollingMenu
                         SetNavigation();
                         // Update the new game button so it's not looking for ghost objects
                         menu.selectedObject = nextSelectable[2];
-                        nextSelectable[2].nextSelectable[0] = ((Slot)GetEntryAtIndex(0))?.startButton ?? nextSelectable[2];
-                        nextSelectable[2].nextSelectable[1] = ((Slot)GetEntryAtIndex(0))?.startButton ?? nextSelectable[2];
+                        nextSelectable[2].nextSelectable[0] =
+                            ((Slot)GetEntryAtIndex(0))?.startButton ?? nextSelectable[2];
+                        nextSelectable[2].nextSelectable[1] =
+                            ((Slot)GetEntryAtIndex(0))?.startButton ?? nextSelectable[2];
                     }, () => { })
                 {
                     descriptionLabel = { label = { color = new HSLColor(1f, 0.80f, 0.35f).rgb } }
@@ -101,7 +102,7 @@ public sealed class SlotSelector : ScrollingMenu
                 break;
         }
     }
-    
+
     // Assigning how directional inputs navigate the menu needs to be done outside constructor,
     // after all elements are created.  
     public void SetNavigation()
@@ -112,16 +113,16 @@ public sealed class SlotSelector : ScrollingMenu
             // 0 = left, 1 = up, 2 = right, 3 = down
             filteredEntries[i].nextSelectable[1] = i > 0 ? filteredEntries[i - 1] : null;
             filteredEntries[i].nextSelectable[3] = i < filteredEntries.Count - 1 ? filteredEntries[i + 1] : null;
-            
+
             slot.SetNavigation();
         }
     }
-    
+
     public class Slot : Entry, IOwnAHUD
     {
         protected const float PORTRAIT_SIZE = 94f;
         protected const float PORTRAIT_OFFSET = 48f;
-        
+
         // Elements
         public HUD.HUD hud;
         protected MenuIllustration slugcatPortrait;
@@ -135,13 +136,13 @@ public sealed class SlotSelector : ScrollingMenu
         protected MenuLabel extInfoLabel;
         private FSprite iconMSC;
         private FSprite iconWatcher;
-        
+
         // Vars
         public int saveSlot;
         public SaveFile saveFile;
         private bool isDisabled;
         private string disabledReason = "";
-        
+
         public int CurrentFood
         {
             get { return 3; }
@@ -166,69 +167,72 @@ public sealed class SlotSelector : ScrollingMenu
         {
             get { return false; }
         }
-        
+
         public int MapOwnerRoom
         {
             get { return -1; }
         }
-    
-        
-        public Slot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, int saveSlot, SaveFile saveFile) : base(menu, owner, pos, size)
+
+
+        public Slot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, int saveSlot, SaveFile saveFile) : base(
+            menu, owner, pos, size)
         {
             this.saveSlot = saveSlot;
             this.saveFile = saveFile;
-            
+
             // --- Portrait
-            slugcatPortrait = new MenuIllustration(menu, this, "illustrations", 
-                MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name(saveFile.slugcat)), 
+            slugcatPortrait = new MenuIllustration(menu, this, "illustrations",
+                MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name(saveFile.slugcat)),
                 new Vector2(PORTRAIT_SIZE / 2f + PORTRAIT_OFFSET, size.y / 2), true, true);
 
             subObjects.Add(slugcatPortrait);
-            portraitBorder = new RoundedRect(menu, this, 
-                new Vector2(PORTRAIT_OFFSET, (size.y - PORTRAIT_SIZE) / 2), 
+            portraitBorder = new RoundedRect(menu, this,
+                new Vector2(PORTRAIT_OFFSET, (size.y - PORTRAIT_SIZE) / 2),
                 Vector2.one * PORTRAIT_SIZE, false);
             subObjects.Add(portraitBorder);
-            
+
             // --- HUD stuff
             FContainer[] hudContainers = [new(), new()];
             Container.AddChild(hudContainers[0]);
             Container.AddChild(hudContainers[1]);
             hud = new HUD.HUD(hudContainers, menu.manager.rainWorld, this);
-            hud.AddPart(new KarmaMeter(hud, hudContainers[1], 
-                saveFile.ripple > 0 ? new IntVector2((int)((saveFile.ripple - 1f) * 2f), 100) 
+            hud.AddPart(new KarmaMeter(hud, hudContainers[1],
+                saveFile.ripple > 0
+                    ? new IntVector2((int)((saveFile.ripple - 1f) * 2f), 100)
                     : new IntVector2(saveFile.karma, saveFile.maxKarma), false));
             hud.AddPart(new FoodMeter(hud, saveFile.maxFood.x, saveFile.maxFood.y));
             hud.foodMeter.NewShowCount(saveFile.food);
-            
+
             // --- Start Button
-            startButton = new HoldButton(menu, this, "PLAY", "", 
+            startButton = new HoldButton(menu, this, "PLAY", "",
                 new Vector2(size.x - 60f, size.y / 2), 100f)
             {
                 rad = 35f
             };
-            
+
             subObjects.Add(startButton);
-            
+
             // --- Options Button
             optionsButton = new SimpleButton(menu, this, "OPTIONS", "OPTIONS",
                 new Vector2(size.x - startButton.rad * 2 - 145f, 10f), new Vector2(100f, 30f));
             subObjects.Add(optionsButton);
-            
+
             // --- Labels
             TimeSpan time = TimeSpan.FromMilliseconds(saveFile.playtime);
-            cycleText = new MenuLabel(menu, this, $"Cycle {saveFile.cycle} ({(int)time.TotalHours:D2}h:{time.Minutes:D2}m:{time.Seconds:D2}s)", 
-                new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 10f, 25f), default, true) 
+            cycleText = new MenuLabel(menu, this,
+                    $"Cycle {saveFile.cycle} ({(int)time.TotalHours:D2}h:{time.Minutes:D2}m:{time.Seconds:D2}s)",
+                    new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 10f, 25f), default, true)
                 { label = { alignment = FLabelAlignment.Left } };
             subObjects.Add(cycleText);
 
             int checksComplete = saveFile.locationMap.Count(l => l.Value.collected);
             int totalChecks = saveFile.locationMap.Count;
-            completionText = new MenuLabel(menu, this, 
-                $"{Mathf.RoundToInt((float)checksComplete / totalChecks * 100)}% ({checksComplete}/{totalChecks})", 
-                new Vector2(size.x - startButton.rad * 2 - 40f, size.y - 20f), default, true) 
+            completionText = new MenuLabel(menu, this,
+                    $"{Mathf.RoundToInt((float)checksComplete / totalChecks * 100)}% ({checksComplete}/{totalChecks})",
+                    new Vector2(size.x - startButton.rad * 2 - 40f, size.y - 20f), default, true)
                 { label = { alignment = FLabelAlignment.Right } };
             subObjects.Add(completionText);
-            
+
             // --- Icons
             if (saveFile.isDownpourDLC)
             {
@@ -241,13 +245,13 @@ public sealed class SlotSelector : ScrollingMenu
                 iconWatcher = new FSprite("Symbol_Watcher");
                 Container.AddChild(iconWatcher);
             }
-            
+
             // --- Bounding Box
             CreateBoundingBox();
-            
+
             // --- Delete Button
             // Made last because it needs to be drawn on top of bounding box
-            deleteButton = new SymbolButton(menu, this, "Menu_Symbol_Clear_All", "DELETE_SAVE", 
+            deleteButton = new SymbolButton(menu, this, "Menu_Symbol_Clear_All", "DELETE_SAVE",
                 new Vector2(2f, size.y - 26f))
             {
                 rectColor = new HSLColor(1f, 0.80f, 0.35f),
@@ -257,15 +261,16 @@ public sealed class SlotSelector : ScrollingMenu
                 }
             };
             subObjects.Add(deleteButton);
-            
+
             // --- Disabled Info Box
             // Disable starting the game if this is a legacy file that can't be loaded currently
             if (saveFile.legacySaveSlot >= 0 && menu.manager.rainWorld.options.saveSlot != saveFile.legacySaveSlot)
             {
                 isDisabled = true;
-                disabledReason = $"- This is a legacy file. The save slot this was\n created under (Slot #{saveFile.legacySaveSlot + 1}) must be active to play.";
+                disabledReason =
+                    $"- This is a legacy file. The save slot this was\n created under (Slot #{saveFile.legacySaveSlot + 1}) must be active to play.";
             }
-            
+
             // Disable starting the game if the DLCs do not match
             if (saveFile.isDownpourDLC ^ ModManager.MSC || saveFile.isWatcherDLC ^ ModManager.Watcher)
             {
@@ -275,12 +280,12 @@ public sealed class SlotSelector : ScrollingMenu
                                   $"\n    More Slugcats Expansion: {(saveFile.isDownpourDLC ? "ENABLED" : "DISABLED")}" +
                                   $"\n    The Watcher: {(saveFile.isWatcherDLC ? "ENABLED" : "DISABLED")}";
             }
-            
+
             if (isDisabled)
             {
                 startButton.GetButtonBehavior.greyedOut = true;
-                extInfoRect = new RoundedRect(menu, this, 
-                    default, 
+                extInfoRect = new RoundedRect(menu, this,
+                    default,
                     default, true)
                 {
                     fillAlpha = 1f
@@ -293,7 +298,7 @@ public sealed class SlotSelector : ScrollingMenu
 
                 extInfoRect.pos = new Vector2(size.x + 25f, size.y - extInfoLabel.label.textRect.size.y - 20f);
                 extInfoRect.size = new Vector2(300f, extInfoLabel.label.textRect.size.y + 20f);
-                
+
                 subObjects.Add(extInfoRect);
                 subObjects.Add(extInfoLabel);
             }
@@ -311,13 +316,14 @@ public sealed class SlotSelector : ScrollingMenu
                 hud.foodMeter.initPlopCircle = -1;
                 hud.foodMeter.initPlopDelay = 0;
             }
-            
+
             hud.Update();
             hud.karmaMeter.fade = fade; // Doesn't fade fully unless set after update
-            
-            hud.karmaMeter.pos = ScreenPos + new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 35.01f, size.y / 2 + 0.01f);
+
+            hud.karmaMeter.pos =
+                ScreenPos + new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 35.01f, size.y / 2 + 0.01f);
             hud.foodMeter.pos = hud.karmaMeter.pos + new Vector2(hud.karmaMeter.Radius + 20.01f, 0f);
-            
+
             // Show info text on hover if we're disabled
             if (isDisabled)
             {
@@ -325,27 +331,29 @@ public sealed class SlotSelector : ScrollingMenu
                 {
                     sprite.isVisible = startButton.IsMouseOverMe;
                 }
+
                 extInfoLabel.label.isVisible = startButton.IsMouseOverMe;
             }
 
             // Scroll to this element if we've selected it with controller / keyboard navigation
-            if (sleep && !menu.manager.menuesMouseMode 
+            if (sleep && !menu.manager.menuesMouseMode
                       && (startButton.Selected || optionsButton.Selected || deleteButton.Selected))
             {
                 SlotSelector scrollMenu = (SlotSelector)owner;
                 int myIndex = scrollMenu.IndexOf(this);
-                scrollMenu.ScrollPos = myIndex < scrollMenu.ScrollPos 
-                    ? myIndex : myIndex - scrollMenu.MaxVisibleItems + 1;
+                scrollMenu.ScrollPos = myIndex < scrollMenu.ScrollPos
+                    ? myIndex
+                    : myIndex - scrollMenu.MaxVisibleItems + 1;
             }
         }
 
         public override void GrafUpdate(float timeStacker)
         {
             base.GrafUpdate(timeStacker);
-            
+
             float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.6f);
             float alpha = Mathf.Pow(smoothedFade, 2f);
-            
+
             hud.Draw(timeStacker);
 
             if (slugcatPortrait is not null) slugcatPortrait.alpha = alpha;
@@ -371,11 +379,13 @@ public sealed class SlotSelector : ScrollingMenu
                 iconWatcher.alpha = alpha;
             }
 
-            foreach (FSprite sprite in (FSprite[])[
-                         ..deleteButton.roundedRect.sprites, 
+            foreach (FSprite sprite in (FSprite[])
+                     [
+                         ..deleteButton.roundedRect.sprites,
                          ..portraitBorder.sprites,
                          ..optionsButton.roundedRect.sprites,
-                         ..optionsButton.selectRect.sprites])
+                         ..optionsButton.selectRect.sprites
+                     ])
             {
                 sprite.alpha = alpha;
                 sprite.isVisible = !sleep; //fade > 0;
@@ -392,6 +402,8 @@ public sealed class SlotSelector : ScrollingMenu
         {
             base.RemoveSprites();
             hud.ClearAllSprites();
+            Container.RemoveChild(iconMSC);
+            Container.RemoveChild(iconWatcher);
         }
 
         public override void Singal(MenuObject sender, string message)
@@ -403,9 +415,9 @@ public sealed class SlotSelector : ScrollingMenu
                 case "OPTIONS":
                     if ((menu as RandomizerMenu) is not RandomizerMenu randomizerMenu
                         || sender.owner != this) break;
-                    
+
                     randomizerMenu.optionsDialog = new OptionsDialog(menu.manager,
-                        saveFile.isArchipelago ? OptionsDialog.Mode.ArchipelagoView : OptionsDialog.Mode.StandaloneView, 
+                        saveFile.isArchipelago ? OptionsDialog.Mode.ArchipelagoView : OptionsDialog.Mode.StandaloneView,
                         saveFile, () =>
                         {
                             randomizerMenu.optionsDialog.OutputToSaveFile(ref saveFile);
@@ -427,7 +439,9 @@ public sealed class SlotSelector : ScrollingMenu
             menu.PlaySound(soundID);
         }
 
-        public void FoodCountDownDone() { }
+        public void FoodCountDownDone()
+        {
+        }
 
         public void SetNavigation()
         {
@@ -453,15 +467,16 @@ public sealed class SlotSelector : ScrollingMenu
         private MenuLabel slotNameText;
         private AtlasAnimator loadingSpinner;
         private FSprite logoBadge;
-        
+
         // Vars
         private Task<string> connectTask;
-        
-        public ArchipelagoSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, int saveSlot, SaveFile saveFile) 
+
+        public ArchipelagoSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, int saveSlot,
+            SaveFile saveFile)
             : base(menu, owner, pos, size, saveSlot, saveFile)
         {
             slotNameText = new MenuLabel(menu, this, saveFile.connectionInfo.slotName,
-                new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 10f, size.y - 20f), default, true)
+                    new Vector2(portraitBorder.pos.x + PORTRAIT_SIZE + 10f, size.y - 20f), default, true)
                 { label = { alignment = FLabelAlignment.Left } };
             subObjects.Add(slotNameText);
 
@@ -476,9 +491,9 @@ public sealed class SlotSelector : ScrollingMenu
         {
             base.Update();
             loadingSpinner?.Update();
-            
+
             if (loadingSpinner is not null) loadingSpinner.pos = ScreenPos + new Vector2(size.x + 70f, size.y / 2f);
-            
+
             // If connect task was running and has now completed
             if (connectTask?.IsCompleted ?? false)
             {
@@ -496,7 +511,7 @@ public sealed class SlotSelector : ScrollingMenu
                 {
                     menu.manager.ShowDialog(new DialogNotify(connectTask.Result, menu.manager, () => { }));
                 }
-                
+
                 connectTask = null;
             }
         }
@@ -507,7 +522,7 @@ public sealed class SlotSelector : ScrollingMenu
 
             logoBadge.x = DrawPos(timeStacker).x + 16f;
             logoBadge.y = DrawPos(timeStacker).y + 16f;
-            
+
             float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
             float alpha = Mathf.Pow(smoothedFade, 2f);
 
@@ -521,7 +536,7 @@ public sealed class SlotSelector : ScrollingMenu
             loadingSpinner?.RemoveFromContainer();
             Container.RemoveChild(logoBadge);
         }
-        
+
         public override void Singal(MenuObject sender, string message)
         {
             base.Singal(sender, message);
@@ -533,16 +548,16 @@ public sealed class SlotSelector : ScrollingMenu
                     break;
             }
         }
-        
+
         /// <summary>
         /// Try to connect to the server with this slot's stored connection info
         /// </summary>
         private void StartAsyncConnection()
         {
             ((RandomizerMenu)menu)._freezeMenuFunctions = true;
-            
-            loadingSpinner = new AtlasAnimator(0, 
-                ScreenPos + new Vector2(size.x + 50f, size.y / 2f), 
+
+            loadingSpinner = new AtlasAnimator(0,
+                ScreenPos + new Vector2(size.x + 50f, size.y / 2f),
                 "sleep", "sleep", 20, true, false)
             {
                 animSpeed = 0.25f,
@@ -557,7 +572,7 @@ public sealed class SlotSelector : ScrollingMenu
                 try
                 {
                     return ArchipelagoConnection.Connect(
-                        saveFile.connectionInfo.hostName, 
+                        saveFile.connectionInfo.hostName,
                         saveFile.connectionInfo.port,
                         saveFile.connectionInfo.slotName,
                         saveFile.connectionInfo.password);
@@ -571,10 +586,10 @@ public sealed class SlotSelector : ScrollingMenu
             });
         }
     }
-    
+
     private class StandaloneSlot : Slot
     {
-        public StandaloneSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, int saveSlot, SaveFile saveFile) 
+        public StandaloneSlot(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, int saveSlot, SaveFile saveFile)
             : base(menu, owner, pos, size, saveSlot, saveFile)
         {
             startButton.signalText = saveFile.playtime > 0 ? "CONTINUE_GAME" : "CONTINUE_FROM_LEGACY";

@@ -15,8 +15,10 @@ namespace RainWorldRandomizer
 
         /// <summary>Cooldown to ensure we don't send a packet for a received death</summary>
         private static int _receiveDeathCooldown;
+
         /// <summary>When True, the mod is waiting for a proper state to kill the player</summary>
         private static bool _deathPending;
+
         private static bool _lastDeathWasLink;
         private static int _graceCounter;
 
@@ -72,26 +74,29 @@ namespace RainWorldRandomizer
         private static void Kill(Creature player)
         {
             // This is the same effect played when Pebbles kills the player
-            player.room.PlaySound(SoundID.SS_AI_Give_The_Mark_Boom, player.mainBodyChunk, false, 1f, 0.5f + UnityEngine.Random.value * 0.5f);
+            player.room.PlaySound(SoundID.SS_AI_Give_The_Mark_Boom, player.mainBodyChunk, false, 1f,
+                0.5f + UnityEngine.Random.value * 0.5f);
             player.mainBodyChunk.vel += RWCustom.Custom.RNV() * 12f;
             for (int k = 0; k < 20; k++)
             {
-                player.room.AddObject(new Spark(player.mainBodyChunk.pos, 
-                    RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, 
+                player.room.AddObject(new Spark(player.mainBodyChunk.pos,
+                    RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f,
                     new Color(1f, 1f, 1f), null, 30, 120));
             }
+
             player.Die();
         }
 
         private static void FakeoutKill(Creature player)
         {
             // This is the same effect played when Pebbles kills the player
-            player.room.PlaySound(SoundID.SS_AI_Give_The_Mark_Boom, player.mainBodyChunk, false, 0.4f, 0.5f + UnityEngine.Random.value * 0.5f);
+            player.room.PlaySound(SoundID.SS_AI_Give_The_Mark_Boom, player.mainBodyChunk, false, 0.4f,
+                0.5f + UnityEngine.Random.value * 0.5f);
             player.mainBodyChunk.vel += RWCustom.Custom.RNV() * 6f;
             for (int k = 0; k < 20; k++)
             {
-                player.room.AddObject(new Spark(player.mainBodyChunk.pos, 
-                    RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f, 
+                player.room.AddObject(new Spark(player.mainBodyChunk.pos,
+                    RWCustom.Custom.RNV() * UnityEngine.Random.value * 40f,
                     new Color(1f, 1f, 1f), null, 30, 120));
             }
         }
@@ -104,13 +109,16 @@ namespace RainWorldRandomizer
                 || Plugin.Singleton.rainWorld.processManager.currentMainLoop is RainWorldGame)
             {
                 string deathMessage = deathLink.Cause ?? $"{deathLink.Source} has died!";
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText(deathMessage));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                    [deathMessage, $" ({RandoOptions.archipelagoDLGraceCounter.Value - _graceCounter - 1})"],
+                    [Color.white, Color.red]));
                 _receiveDeathCooldown = 40; // 1 second
                 _deathPending = true;
             }
             else
             {
-                Plugin.Log.LogInfo($"Ignoring DeathLink as main process is {Plugin.Singleton.rainWorld.processManager.currentMainLoop.GetType().Name}");
+                Plugin.Log.LogInfo(
+                    $"Ignoring DeathLink as main process is {Plugin.Singleton.rainWorld.processManager.currentMainLoop.GetType().Name}");
             }
         }
 
@@ -124,7 +132,7 @@ namespace RainWorldRandomizer
                 Plugin.Log.LogInfo("Sending DeathLink packet...");
                 _service.SendDeathLink(new DeathLink(ArchipelagoConnection.playerName));
             }
-            
+
             orig(self);
         }
 
@@ -141,21 +149,7 @@ namespace RainWorldRandomizer
             {
                 _deathPending = false;
 
-                // Secret chance to kill a slugpup instead
-                // Note: This applies before grace check
-                foreach (var creature in firstPlayer.room.abstractRoom.creatures)
-                {
-                    if (creature.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.SlugNPC
-                        && creature.state.alive
-                        && UnityEngine.Random.value < 0.2f)
-                    {
-                        Kill(creature.realizedCreature);
-                        return;
-                    }
-                }
-
                 // If we are below grace threshold, increment grace and do fakeout kill.
-                // Else reset grace and kill for real.
                 if (_graceCounter < RandoOptions.archipelagoDLGraceCounter.Value - 1)
                 {
                     _graceCounter++;
@@ -169,6 +163,17 @@ namespace RainWorldRandomizer
                         }
                     }
                 }
+                // Else if we find a pup to kill and RNG check passes
+                else if (firstPlayer.room.abstractRoom.creatures
+                             .FirstOrDefault(crit =>
+                                 crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.SlugNPC
+                                 && crit.state.alive
+                                 && UnityEngine.Random.value < RandoOptions.archipelagoPupsBlockDL.Value)
+                         is AbstractCreature slugpup)
+                {
+                    Kill(slugpup.realizedCreature);
+                }
+                // Else reset grace and kill for real.
                 else
                 {
                     _graceCounter = 0;
@@ -201,7 +206,7 @@ namespace RainWorldRandomizer
                 x => x.MatchLdarg(0),
                 x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.karma))),
                 x => x.MatchLdcI4(1)
-                );
+            );
 
             c.EmitDelegate<Func<int, int>>((orig) =>
             {
