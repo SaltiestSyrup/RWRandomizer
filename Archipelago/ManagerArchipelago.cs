@@ -15,6 +15,7 @@ namespace RainWorldRandomizer
 
         // Mapping AP item names to the string IDs the mod uses for items
         public static Dictionary<string, string> ClientNameToAPItem = [];
+
         // Have name comparisons ignore case for backwards compat with 1.5 
         public static Dictionary<string, string> APItemToClientName = new(StringComparer.InvariantCultureIgnoreCase);
 
@@ -24,7 +25,8 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Tried to start AP campaign without first connecting to server");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText("Archipelago failed to start: Not connected to a server", UnityEngine.Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(
+                    new MessageText("Archipelago failed to start: Not connected to a server", UnityEngine.Color.red));
             }
 
             base.StartNewGameSession(storyGameCharacter, continueSaved);
@@ -36,26 +38,30 @@ namespace RainWorldRandomizer
             if (storyGameCharacter != ArchipelagoConnection.Slugcat)
             {
                 Plugin.Log.LogError("Selected campaign does not match archipelago options." +
-                    $"\n Chosen campaign: {storyGameCharacter}" +
-                    $"\n Chosen AP option: {ArchipelagoConnection.Slugcat}");
+                                    $"\n Chosen campaign: {storyGameCharacter}" +
+                                    $"\n Chosen AP option: {ArchipelagoConnection.Slugcat}");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText("Archipelago failed to start: Selected campaign does not match archipelago options.", UnityEngine.Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                    "Archipelago failed to start: Selected campaign does not match archipelago options.",
+                    UnityEngine.Color.red));
                 return;
             }
 
             // Load save file
             SaveManager.ClearScoutedLocationCache();
-            
+
             try
             {
-                if (continueSaved) 
+                if (continueSaved)
                     LoadSave(SaveTracker.CurrentRandomizerSlot);
                 else CreateNewSave();
             }
             catch (Exception e)
             {
                 Plugin.Log.LogError(e);
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText("Archipelago failed to load or create save game. Some features may not function properly.", UnityEngine.Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                    "Archipelago failed to load or create save game. Some features may not function properly.",
+                    UnityEngine.Color.red));
             }
 
             // Ask for fresh items list if there isn't one waiting
@@ -69,7 +75,9 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Failed to initialize randomizer.");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Randomizer failed to initialize. Check logs for details.", UnityEngine.Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(
+                    new MessageText($"Randomizer failed to initialize. Check logs for details.",
+                        UnityEngine.Color.red));
                 return;
             }
 
@@ -111,7 +119,7 @@ namespace RainWorldRandomizer
             }
 
             RandoOptions.LoadedOptions = file.options;
-            
+
             // SaveManager.APSave save = SaveManager.LoadAPSave(saveId);
             ArchipelagoConnection.lastItemIndex = file.lastItemIndex;
             locations = [.. file.locationMap.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.collected, true))];
@@ -120,18 +128,18 @@ namespace RainWorldRandomizer
             SyncLocations();
 
             itemDeliveryQueue = [];
-            foreach (Unlock.Item item in file.pendingFiller.Select(f => 
+            foreach (Unlock.Item item in file.pendingFiller.Select(f =>
                          Unlock.IDToItem(f.id, f.type == nameof(DataPearl.AbstractDataPearl.DataPearlType))))
             {
                 itemDeliveryQueue.Enqueue(item);
             }
-            
+
             pendingTrapQueue = [];
             foreach (TrapsHandler.Trap item in file.pendingTraps.Select(t => new TrapsHandler.Trap(t)))
             {
                 pendingTrapQueue.Enqueue(item);
             }
-            
+
             lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
 
             Plugin.Log.LogInfo($"Loaded save game {saveSlot}");
@@ -167,13 +175,13 @@ namespace RainWorldRandomizer
             if (SaveManager.HasLegacySave(ArchipelagoConnection.generationSeed,
                     ArchipelagoConnection.ConnectedSlotName))
             {
-                (itemDeliveryQueue, pendingTrapQueue) = 
+                (itemDeliveryQueue, pendingTrapQueue) =
                     SaveManager.LoadItemQueue(currentSlugcat, SaveTracker.OrigSaveSlot);
-                
+
                 lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
-                
-                SaveManager.DestroyLegacySave(ArchipelagoConnection.generationSeed, 
-                    ArchipelagoConnection.ConnectedSlotName, currentSlugcat.value, 
+
+                SaveManager.DestroyLegacySave(ArchipelagoConnection.generationSeed,
+                    ArchipelagoConnection.ConnectedSlotName, currentSlugcat.value,
                     SaveTracker.OrigSaveSlot);
             }
 
@@ -189,7 +197,7 @@ namespace RainWorldRandomizer
                 if (ArchipelagoConnection.Session.Locations.AllLocationsChecked.Contains(loc.archipelagoID))
                     loc.MarkCollected();
                 else if (ArchipelagoConnection.Session.Locations.AllMissingLocations.Contains(loc.archipelagoID)
-                    && loc.Collected)
+                         && loc.Collected)
                     offlineLocs.Add(loc.archipelagoID);
             }
 
@@ -204,9 +212,11 @@ namespace RainWorldRandomizer
         {
             if (ArchipelagoConnection.waitingItemPackets.Count == 0) return;
 
-            Archipelago.MultiClient.Net.Packets.ReceivedItemsPacket itemPacket = ArchipelagoConnection.waitingItemPackets.Dequeue();
+            Archipelago.MultiClient.Net.Packets.ReceivedItemsPacket itemPacket =
+                ArchipelagoConnection.waitingItemPackets.Dequeue();
 
-            Plugin.Log.LogInfo($"Received items packet:");//. Index: {itemPacket.Index} | Last index: {ArchipelagoConnection.lastItemIndex} | Item count: {itemPacket.Items.Length}");
+            Plugin.Log.LogInfo(
+                $"Received items packet:"); //. Index: {itemPacket.Index} | Last index: {ArchipelagoConnection.lastItemIndex} | Item count: {itemPacket.Items.Length}");
 
             bool isNewInventory = false;
             if (itemPacket.Index == 0)
@@ -344,7 +354,8 @@ namespace RainWorldRandomizer
                     case "Dial_Warp":
                         _givenRippleEggWarp = true;
                         if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
-                            Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility = true;
+                            Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility =
+                                true;
                         break;
                     case "Weaver_Increment":
                         _weaverIncrements++;
@@ -368,11 +379,7 @@ namespace RainWorldRandomizer
             }
 
             // Populate region mapping for display purposes
-            foreach (string region in Region.GetFullRegionOrder())
-            {
-                if (!Plugin.ProperRegionMap.ContainsKey(region))
-                    Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(slugcat), region));
-            }
+            Plugin.SetupProperRegionMap(slugcat);
 
             return true;
         }
@@ -431,7 +438,7 @@ namespace RainWorldRandomizer
                         loc.MarkCollected();
                 }
             }
-            
+
             SaveManager.WriteToFile(Plugin.Singleton.rainWorld, this, saveCurrentState);
         }
 
@@ -443,7 +450,8 @@ namespace RainWorldRandomizer
 
         public static void LoadAPLocationDicts()
         {
-            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_names_map.json");
+            string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath,
+                $"ap_names_map.json");
 
             if (!File.Exists(path))
             {

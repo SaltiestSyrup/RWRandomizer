@@ -12,17 +12,21 @@ namespace RainWorldRandomizer.Generation
 {
     public class VanillaGenerator
     {
-        public const float OTHER_PROG_PLACEMENT_CHANCE = 0.2f;
+        private const float OTHER_PROG_PLACEMENT_CHANCE = 0.2f;
+
         /// <summary> Constant storing the ID for the Passage region </summary>
-        public const string PASSAGE_REG = "Passages";
+        private const string PASSAGE_REG = "Passages";
+
         /// <summary> Constant storing the ID for the Food Quest region </summary>
-        public const string FOODQUEST_REG = "FoodQuest";
+        private const string FOODQUEST_REG = "FoodQuest";
+
         /// <summary> Constant storing the ID for the Special region </summary>
-        public const string SPECIAL_REG = "Special";
+        private const string SPECIAL_REG = "Special";
+
         /// <summary>
         /// Constant storing the ID for the dummy start region used with non-random starts
         /// </summary>
-        public const string START_REG = "StartDummy";
+        private const string START_REG = "StartDummy";
 
         private SlugcatStats.Name slugcat;
         private SlugcatStats.Timeline timeline;
@@ -37,7 +41,9 @@ namespace RainWorldRandomizer.Generation
             Complete,
             FailedGen
         }
+
         public GenerationStep CurrentStage { get; private set; }
+
         public bool InProgress
         {
             get
@@ -97,11 +103,23 @@ namespace RainWorldRandomizer.Generation
             Stopwatch sw = Stopwatch.StartNew();
 
             InitializeState();
+            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds} ms");
+            float lastTime = sw.ElapsedMilliseconds;
             ApplyRuleOverrides();
+            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
+            lastTime = sw.ElapsedMilliseconds;
             DefineStartConditions();
+            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
+            lastTime = sw.ElapsedMilliseconds;
             FinalizeState();
+            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
+            lastTime = sw.ElapsedMilliseconds;
             BalanceItems();
+            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
+            lastTime = sw.ElapsedMilliseconds;
             PlaceProgression();
+            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
+            lastTime = sw.ElapsedMilliseconds;
             PlaceFiller();
             generationLog.AppendLine("Generation complete!");
             generationLog.AppendLine($"Gen time: {sw.ElapsedMilliseconds} ms");
@@ -117,7 +135,10 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("INITIALIZE STATE");
             CurrentStage = GenerationStep.InitializingState;
-            state = new State(slugcat, timeline, RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
+            state = new State(slugcat, timeline,
+                RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
+
+            Stopwatch sw = Stopwatch.StartNew();
 
             // Load Tokens
             if (RandoOptions.UseSandboxTokenChecks)
@@ -131,20 +152,28 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
+            generationLog.AppendLine($"1 | {sw.ElapsedMilliseconds}");
+
             // Regions loop
             bool regionKitEchoes = RandoOptions.UseEchoChecks && RegionKitCompatibility.Enabled;
-            bool doPearlLocations = RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
-            bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear && RandoOptions.UseSMBroadcasts;
-            List<string> slugcatRegions = [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
+            bool doPearlLocations =
+                RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
+            bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear &&
+                                   RandoOptions.UseSMBroadcasts;
+            List<string> slugcatRegions =
+                [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
             // Add Metropolis to region list if option set
             if (ModManager.MSC && RandoOptions.ForceOpenMetropolis) slugcatRegions.Add("LC");
             // Remove regions from logic
-            foreach (var region in CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedRegions)
+            foreach (KeyValuePair<string, CustomLogicBuilder.RulePatch> region
+                     in CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedRegions
+                         .Where(region => region.Value.Collapse()?.IsPossible(state) is not (false or null)))
             {
-                if (region.Value.Collapse()?.IsPossible(state) is false or null) continue;
                 slugcatRegions.Remove(region.Key);
                 generationLog.AppendLine($"Removed region {region.Key}");
             }
+
+            generationLog.AppendLine($"2 | {sw.ElapsedMilliseconds}");
 
             foreach (string regionShort in Region.GetFullRegionOrder())
             {
@@ -169,7 +198,8 @@ namespace RainWorldRandomizer.Generation
                         if (Plugin.Singleton.rainWorld.regionDataPearlsAccessibility[regionLower][i].Contains(slugcat)
                             && Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value != "")
                         {
-                            regionLocations.Add(new($"Pearl-{Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value}-{regionShort}",
+                            regionLocations.Add(new(
+                                $"Pearl-{Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value}-{regionShort}",
                                 Location.Type.Pearl, new()));
                         }
                     }
@@ -192,30 +222,37 @@ namespace RainWorldRandomizer.Generation
                 {
                     foreach (ChatlogData.ChatlogID token in Plugin.Singleton.rainWorld.regionGreyTokens[regionLower])
                     {
-                        regionLocations.Add(new Location($"Broadcast-{token.value}-{regionShort}", Location.Type.Token, new()));
+                        regionLocations.Add(new Location($"Broadcast-{token.value}-{regionShort}", Location.Type.Token,
+                            new()));
                     }
                 }
 
                 // Create Dev token locations
-                if (ModManager.MSC && RandoOptions.UseDevTokenChecks && TokenCachePatcher.regionDevTokens.ContainsKey(regionLower))
+                if (ModManager.MSC && RandoOptions.UseDevTokenChecks &&
+                    TokenCachePatcher.regionDevTokens.ContainsKey(regionLower))
                 {
                     for (int i = 0; i < TokenCachePatcher.regionDevTokens[regionLower].Count; i++)
                     {
                         if (TokenCachePatcher.regionDevTokensAccessibility[regionLower][i].Contains(slugcat))
                         {
-                            regionLocations.Add(new Location($"DevToken-{TokenCachePatcher.regionDevTokens[regionLower][i]}", Location.Type.Token, new()));
+                            regionLocations.Add(new Location(
+                                $"DevToken-{TokenCachePatcher.regionDevTokens[regionLower][i]}", Location.Type.Token,
+                                new()));
                         }
                     }
                 }
 
                 // Create Karma flower locations
-                if (slugcat != SlugcatStats.Name.Red && RandoOptions.UseKarmaFlowerChecks && TokenCachePatcher.regionKarmaFlowers.ContainsKey(regionLower))
+                if (slugcat != SlugcatStats.Name.Red && RandoOptions.UseKarmaFlowerChecks &&
+                    TokenCachePatcher.regionKarmaFlowers.ContainsKey(regionLower))
                 {
                     for (int i = 0; i < TokenCachePatcher.regionKarmaFlowers[regionLower].Count; i++)
                     {
                         if (TokenCachePatcher.regionKarmaFlowersAccessibility[regionLower][i].Contains(slugcat))
                         {
-                            regionLocations.Add(new Location($"Flower-{TokenCachePatcher.regionKarmaFlowers[regionLower][i]}", Location.Type.Flower, new()));
+                            regionLocations.Add(new Location(
+                                $"Flower-{TokenCachePatcher.regionKarmaFlowers[regionLower][i]}", Location.Type.Flower,
+                                new()));
                         }
                     }
                 }
@@ -230,7 +267,9 @@ namespace RainWorldRandomizer.Generation
                         // Create Shelter locations
                         if (RandoOptions.UseShelterChecks)
                         {
-                            regionLocations.Add(new Location($"Shelter-{TokenCachePatcher.regionShelters[regionLower][i]}", Location.Type.Shelter, new()));
+                            regionLocations.Add(new Location(
+                                $"Shelter-{TokenCachePatcher.regionShelters[regionLower][i]}", Location.Type.Shelter,
+                                new()));
                         }
                     }
                 }
@@ -241,6 +280,8 @@ namespace RainWorldRandomizer.Generation
                     shelters = shelters
                 };
             }
+
+            generationLog.AppendLine($"3 | {sw.ElapsedMilliseconds}");
 
             // Create Gate items
             foreach (string karmaLock in Plugin.Singleton.rainWorld.progression.karmaLocks)
@@ -259,17 +300,21 @@ namespace RainWorldRandomizer.Generation
                 {
                     // If this region does not exist in the timeline
                     // and is not an alias of an existing region, skip the gate
-                    string properRegionShort = Plugin.ProperRegionMap.TryGetValue(regionShort, out string alias) ? alias : regionShort;
+                    string properRegionShort =
+                        Plugin.ProperRegionMap[slugcat].TryGetValue(regionShort, out string alias)
+                            ? alias
+                            : regionShort;
                     skipThisGate |= !allRegions.ContainsKey(properRegionShort);
 
                     // If this gate is impossible to reach for the current slugcat, skip it
-                    skipThisGate |= TokenCachePatcher.GetRoomAccessibility(regionShort).TryGetValue(gate.ToLowerInvariant(), out List<SlugcatStats.Name> accessibleTo)
-                        && !accessibleTo.Contains(slugcat);
+                    skipThisGate |= TokenCachePatcher.GetRoomAccessibility(regionShort)
+                                        .TryGetValue(gate.ToLowerInvariant(), out List<SlugcatStats.Name> accessibleTo)
+                                    && !accessibleTo.Contains(slugcat);
                 }
 
                 if (skipThisGate) continue;
-                regionShorts[0] = Plugin.ProperRegionMap[regionShorts[0]];
-                regionShorts[1] = Plugin.ProperRegionMap[regionShorts[1]];
+                regionShorts[0] = Plugin.ProperRegionMap[slugcat][regionShorts[0]];
+                regionShorts[1] = Plugin.ProperRegionMap[slugcat][regionShorts[1]];
 
                 // Create connection
                 // Gates defined as always open are given free passage,
@@ -288,14 +333,20 @@ namespace RainWorldRandomizer.Generation
                 itemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
             }
 
+            generationLog.AppendLine($"4 | {sw.ElapsedMilliseconds}");
+
             Dictionary<string, AccessRule> passageRules = CreatePassageRules();
             if (RandoOptions.GivePassageItems)
             {
-                itemsToPlace.AddRange([.. passageRules.Select(kv => new Item(kv.Key, Item.Type.Passage, Item.Importance.Filler))]);
+                itemsToPlace.AddRange([
+                    .. passageRules.Select(kv => new Item(kv.Key, Item.Type.Passage, Item.Importance.Filler))
+                ]);
             }
+
             if (RandoOptions.UsePassageChecks)
             {
-                HashSet<Location> locs = [.. passageRules.Select(kv => new Location($"Passage-{kv.Key}", Location.Type.Passage, kv.Value))];
+                HashSet<Location> locs =
+                    [.. passageRules.Select(kv => new Location($"Passage-{kv.Key}", Location.Type.Passage, kv.Value))];
                 allRegions[PASSAGE_REG] = new RandoRegion(PASSAGE_REG, locs);
             }
 
@@ -315,6 +366,8 @@ namespace RainWorldRandomizer.Generation
                     }
                 }
             }
+
+            generationLog.AppendLine($"5 | {sw.ElapsedMilliseconds}");
 
             // Create Karma items
             int karmaInPool = 8 - (RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
@@ -345,7 +398,8 @@ namespace RainWorldRandomizer.Generation
                         }
 
                         AccessRule rule;
-                        if (rules.Count > 1) rule = new CompoundAccessRule([.. rules], CompoundAccessRule.CompoundOperation.Any);
+                        if (rules.Count > 1)
+                            rule = new CompoundAccessRule([.. rules], CompoundAccessRule.CompoundOperation.Any);
                         else rule = rules[0];
 
                         allGourmRules.Add(rule);
@@ -370,12 +424,15 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
+            generationLog.AppendLine($"6 | {sw.ElapsedMilliseconds}");
+
             // Create Special locations
             if (RandoOptions.UseSpecialChecks)
             {
                 HashSet<Location> specialLocs = [];
 
-                specialLocs.Add(new Location("Eat_Neuron", Location.Type.Story, new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)));
+                specialLocs.Add(new Location("Eat_Neuron", Location.Type.Story,
+                    new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer)));
 
                 switch (slugcat.value)
                 {
@@ -394,7 +451,8 @@ namespace RainWorldRandomizer.Generation
                         break;
                     // Hunter Saves LttM, which is a seperate check
                     case "Red":
-                        allRegions["SL"].allLocations.Add(new("Save_LttM", Location.Type.Story, new("Object-NSHSwarmer")));
+                        allRegions["SL"].allLocations
+                            .Add(new("Save_LttM", Location.Type.Story, new("Object-NSHSwarmer")));
                         allRegions["SL"].allLocations.Add(new("Meet_LttM", Location.Type.Story, new("The_Mark")));
                         allRegions["SS"].allLocations.Add(new("Meet_FP", Location.Type.Story, new()));
                         break;
@@ -409,11 +467,14 @@ namespace RainWorldRandomizer.Generation
                         {
                             allRegions["RM"].allLocations.Add(new("Kill_FP", Location.Type.Story, new()));
                         }
+
                         break;
                     // Saint has 2 seperate checks for ascending
                     case "Saint":
-                        allRegions["SL"].allLocations.Add(new("Ascend_LttM", Location.Type.Story, new KarmaAccessRule(10)));
-                        allRegions["CL"].allLocations.Add(new("Ascend_FP", Location.Type.Story, new KarmaAccessRule(10)));
+                        allRegions["SL"].allLocations
+                            .Add(new("Ascend_LttM", Location.Type.Story, new KarmaAccessRule(10)));
+                        allRegions["CL"].allLocations
+                            .Add(new("Ascend_FP", Location.Type.Story, new KarmaAccessRule(10)));
                         break;
                 }
 
@@ -431,7 +492,8 @@ namespace RainWorldRandomizer.Generation
             {
                 case "Red":
                     itemsToPlace.Add(new Item("Object-NSHSwarmer", Item.Type.Object, Item.Importance.Progression));
-                    itemsToPlace.Add(new Item("PearlObject-Red_stomach", Item.Type.Object, Item.Importance.Progression));
+                    itemsToPlace.Add(new Item("PearlObject-Red_stomach", Item.Type.Object,
+                        Item.Importance.Progression));
                     break;
                 case "Artificer":
                     itemsToPlace.Add(new Item("IdDrone", Item.Type.Other, Item.Importance.Progression));
@@ -443,9 +505,11 @@ namespace RainWorldRandomizer.Generation
                         itemsToPlace.Add(new Item("Longer_Cycles", Item.Type.Other, Item.Importance.Progression));
                         itemsToPlace.Add(new Item("Disconnect_Pebbles", Item.Type.Other, Item.Importance.Filler));
                     }
+
                     break;
                 case "Spear":
-                    itemsToPlace.Add(new Item("PearlObject-Spearmasterpearl", Item.Type.Object, Item.Importance.Progression));
+                    itemsToPlace.Add(new Item("PearlObject-Spearmasterpearl", Item.Type.Object,
+                        Item.Importance.Progression));
                     itemsToPlace.Add(new Item("RewriteSpearPearl", Item.Type.Other, Item.Importance.Progression));
                     break;
             }
@@ -489,13 +553,15 @@ namespace RainWorldRandomizer.Generation
                 RandoRegion baseRegion = state.AllRegions.FirstOrDefault(r => r.ID == subBlueprint.baseRegion);
                 if (baseRegion is null)
                 {
-                    generationLog.AppendLine($"Skipping creating subregion in non-existing region {subBlueprint.baseRegion}");
+                    generationLog.AppendLine(
+                        $"Skipping creating subregion in non-existing region {subBlueprint.baseRegion}");
                     continue;
                 }
 
                 // Defined subregion locations / connections with invalid or not present IDs are simply ignored
                 HashSet<Location> locs = [.. state.AllLocations.Where(l => subBlueprint.locations.Contains(l.ID))];
-                HashSet<Connection> connections = [.. state.AllConnections.Where(l => subBlueprint.connections.Contains(l.ID))];
+                HashSet<Connection> connections =
+                    [.. state.AllConnections.Where(l => subBlueprint.connections.Contains(l.ID))];
                 HashSet<string> shelters = [.. state.AllShelters.Where(s => subBlueprint.shelters.Contains(s))];
 
                 state.DefineSubRegion(baseRegion, subBlueprint.ID, locs, connections, shelters, subBlueprint.rules);
@@ -509,7 +575,8 @@ namespace RainWorldRandomizer.Generation
                 RandoRegion regionB = state.AllRegions.FirstOrDefault(r => r.ID == connectionBlueprint.regions[1]);
                 if (regionA is null || regionB is null)
                 {
-                    generationLog.AppendLine($"Skipping creation of connection to non-existing region {connectionBlueprint.regions[0]} or {connectionBlueprint.regions[1]}");
+                    generationLog.AppendLine(
+                        $"Skipping creation of connection to non-existing region {connectionBlueprint.regions[0]} or {connectionBlueprint.regions[1]}");
                     continue;
                 }
 
@@ -546,43 +613,54 @@ namespace RainWorldRandomizer.Generation
 
             if (state.RegionFromID(PASSAGE_REG) is not null)
             {
-                connectionsToAdd.Add(new("TO_PASSAGES", [startRegion, state.RegionFromID(PASSAGE_REG)], new AccessRule()));
+                connectionsToAdd.Add(new("TO_PASSAGES", [startRegion, state.RegionFromID(PASSAGE_REG)],
+                    new AccessRule()));
             }
+
             if (state.RegionFromID(SPECIAL_REG) is not null)
             {
-                connectionsToAdd.Add(new("TO_SPECIAL", [startRegion, state.RegionFromID(SPECIAL_REG)], new AccessRule()));
+                connectionsToAdd.Add(
+                    new("TO_SPECIAL", [startRegion, state.RegionFromID(SPECIAL_REG)], new AccessRule()));
             }
+
             if (state.RegionFromID(FOODQUEST_REG) is not null)
             {
-                connectionsToAdd.Add(new("TO_FOOD_QUEST", [startRegion, state.RegionFromID(FOODQUEST_REG)], new AccessRule()));
+                connectionsToAdd.Add(new("TO_FOOD_QUEST", [startRegion, state.RegionFromID(FOODQUEST_REG)],
+                    new AccessRule()));
             }
 
             if (RandoOptions.RandomizeSpawnLocation)
             {
                 // From state, find a random region that has at least one location, one shelter, and one connection that the player could leave with.
                 // Additionally filter out regions manually set to not be start regions
-                List<RandoRegion> contenderRegions = [.. state.AllRegions.Where(r =>
-                    r.allLocations.Count > 0
-                    && r.shelters.Count > 0
-                    && r.connections.Count > 0
-                    && r.connections.All(c => c.TravelPossible(state, r))
-                    && !CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedStarts.Contains(r.ID))];
+                List<RandoRegion> contenderRegions =
+                [
+                    .. state.AllRegions.Where(r =>
+                        r.allLocations.Count > 0
+                        && r.shelters.Count > 0
+                        && r.connections.Count > 0
+                        && r.connections.All(c => c.TravelPossible(state, r))
+                        && !CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedStarts.Contains(r.ID))
+                ];
                 RandoRegion chosenRegion = contenderRegions[randomState.Next(0, contenderRegions.Count)];
                 // Choose a random shelter within the chosen region
                 customStartDen = chosenRegion.shelters.ElementAt(randomState.Next(0, chosenRegion.shelters.Count));
                 connectionsToAdd.Add(new("START_PATH", [startRegion, chosenRegion], new AccessRule()));
 
-                generationLog.AppendLine($"Chosen {chosenRegion.ID} as random starting region, in shelter {customStartDen}");
+                generationLog.AppendLine(
+                    $"Chosen {chosenRegion.ID} as random starting region, in shelter {customStartDen}");
             }
             else
             {
                 // Find the default starting den within state's regions
                 RandoRegion destination = state.RegionOfShelter(Constants.SlugcatDefaultStartingDen[slugcat])
-                    ?? throw new GenerationFailureException($"Failed to define starting region for {slugcat}, no region has shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
+                                          ?? throw new GenerationFailureException(
+                                              $"Failed to define starting region for {slugcat}, no region has shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
                 customStartDen = Constants.SlugcatDefaultStartingDen[slugcat];
                 connectionsToAdd.Add(new("START_PATH", [startRegion, destination], new AccessRule()));
 
-                generationLog.AppendLine($"Starting in default region {Constants.SlugcatStartingRegion[slugcat]}, in shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
+                generationLog.AppendLine(
+                    $"Starting in default region {Constants.SlugcatStartingRegion[slugcat]}, in shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
             }
 
             // Finalize connections
@@ -607,7 +685,8 @@ namespace RainWorldRandomizer.Generation
                 {
                     if (!region.IsPossibleToReach(state))
                     {
-                        generationLog.AppendLine($"Purged locations and connections for impossible subregion {region.ID}");
+                        generationLog.AppendLine(
+                            $"Purged locations and connections for impossible subregion {region.ID}");
                         state.PurgeRegion(region);
                         anyPurged = true;
                     }
@@ -632,6 +711,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     generationLog.AppendLine($"\t{region}");
                 }
+
                 generationLog.AppendLine();
             }
         }
@@ -647,7 +727,8 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("BALANCE ITEMS");
             CurrentStage = GenerationStep.BalancingItems;
-            generationLog.AppendLine($"Item balancing start with {state.AllLocations.Count} locations and {itemsToPlace.Count} items");
+            generationLog.AppendLine(
+                $"Item balancing start with {state.AllLocations.Count} locations and {itemsToPlace.Count} items");
 
             // Manage case where there are not enough locations for the amount of items in pool
             while (state.AllLocations.Count < itemsToPlace.Count)
@@ -688,7 +769,8 @@ namespace RainWorldRandomizer.Generation
                 {
                     if (perksToAdd[i])
                     {
-                        itemsToAdd.Add(new(((ManagerBase.ExpeditionPerks)i).ToString(), Item.Type.ExpPerk, Item.Importance.Filler));
+                        itemsToAdd.Add(new(((ManagerBase.ExpeditionPerks)i).ToString(), Item.Type.ExpPerk,
+                            Item.Importance.Filler));
                     }
                 }
             }
@@ -704,7 +786,7 @@ namespace RainWorldRandomizer.Generation
                     damageUpsAdded++;
                 }
                 else if (slugcat == SlugcatStats.Name.Red
-                    && hunterCyclesAdded < state.AllLocations.Count * RandoOptions.HunterCycleIncreaseDensity)
+                         && hunterCyclesAdded < state.AllLocations.Count * RandoOptions.HunterCycleIncreaseDensity)
                 {
                     // Add cycle increases for Hunter
                     itemsToAdd.Add(new Item("HunterCycles", Item.Type.Other, Item.Importance.Filler));
@@ -728,7 +810,8 @@ namespace RainWorldRandomizer.Generation
                 itemsToPlace.AddRange(itemsToAdd);
             }
 
-            generationLog.AppendLine($"Item balancing ended with {state.AllLocations.Count} locations and {itemsToPlace.Count} items");
+            generationLog.AppendLine(
+                $"Item balancing ended with {state.AllLocations.Count} locations and {itemsToPlace.Count} items");
         }
 
         /// <summary>
@@ -767,8 +850,9 @@ namespace RainWorldRandomizer.Generation
 
                             // If there is a Connection associated with this gate ID
                             // and exactly one side is currently reachable, then consider this gate placeable.
-                            if (state.AllConnections.Any(c => c.ID == i.id && c.ConnectedStatus == Connection.ConnectedLevel.OneReached))
-                            //(state.HasRegion(Plugin.ProperRegionMap[gate[1]]) ^ state.HasRegion(Plugin.ProperRegionMap[gate[2]]))
+                            if (state.AllConnections.Any(c =>
+                                    c.ID == i.id && c.ConnectedStatus == Connection.ConnectedLevel.OneReached))
+                                //(state.HasRegion(Plugin.ProperRegionMap[gate[1]]) ^ state.HasRegion(Plugin.ProperRegionMap[gate[2]]))
                             {
                                 placeableGates.Add(i);
                             }
@@ -779,26 +863,31 @@ namespace RainWorldRandomizer.Generation
                         }
                     }
                 }
+
                 // Determine which type of prog to place
                 bool useOtherProgThisCycle;
                 if (placeableOtherProg.Count == 0) useOtherProgThisCycle = false;
                 else if (placeableGates.Count == 0) useOtherProgThisCycle = true;
                 // If we have locations to spare, chance to place less important "misc" progression
-                else useOtherProgThisCycle = state.AvailableLocations.Count > 5 && randomState.NextDouble() < OTHER_PROG_PLACEMENT_CHANCE;
+                else
+                    useOtherProgThisCycle = state.AvailableLocations.Count > 5 &&
+                                            randomState.NextDouble() < OTHER_PROG_PLACEMENT_CHANCE;
                 List<Item> placeableProg = useOtherProgThisCycle ? placeableOtherProg : placeableGates;
 
                 // Check if we have failed
                 if (state.AvailableLocations.Count == 0 || placeableProg.Count == 0)
                 {
                     string errorMessage = $"Ran out of " +
-                        $"{(placeableProg.Count == 0 ? "placeable progression" : "possible locations")}.";
+                                          $"{(placeableProg.Count == 0 ? "placeable progression" : "possible locations")}.";
                     generationLog.AppendLine($"ERROR: {errorMessage}");
 
                     generationLog.AppendLine("Failed to connect to:");
                     foreach (RandoRegion region in state.UnreachedRegions)
                     {
-                        generationLog.AppendLine($"\t{(Plugin.RegionNamesMap.TryGetValue(region.ID, out string name) ? name : region.ID)}");
+                        generationLog.AppendLine(
+                            $"\t{(Plugin.RegionNamesMap.TryGetValue(region.ID, out string name) ? name : region.ID)}");
                     }
+
                     CurrentStage = GenerationStep.FailedGen;
                     throw new GenerationFailureException(errorMessage);
                 }
@@ -819,10 +908,8 @@ namespace RainWorldRandomizer.Generation
             generationLog.AppendLine("PROGRESSION STEP 2");
 
             // Place the remaining progression items indiscriminately
-            List<Item> placeableProg2 = [.. itemsToPlace.Where((i) =>
-            {
-                return i.importance == Item.Importance.Progression;
-            })];
+            List<Item> placeableProg2 =
+                [.. itemsToPlace.Where((i) => { return i.importance == Item.Importance.Progression; })];
             do
             {
                 // Detect possible failure
@@ -835,6 +922,7 @@ namespace RainWorldRandomizer.Generation
                     {
                         generationLog.AppendLine($"\t{loc.ID}; {loc.accessRule}");
                     }
+
                     CurrentStage = GenerationStep.FailedGen;
                     throw new GenerationFailureException("Ran out of possible locations");
                 }
@@ -853,8 +941,7 @@ namespace RainWorldRandomizer.Generation
 
                 itemsToPlace.Remove(chosenItem);
                 generationLog.AppendLine($"Placed progression \"{chosenItem.id}\" at {chosenLocation.ID}");
-            }
-            while (placeableProg2.Count > 0);
+            } while (placeableProg2.Count > 0);
 
             if (state.UnreachedLocations.Count > 0)
             {
@@ -864,10 +951,10 @@ namespace RainWorldRandomizer.Generation
                 {
                     generationLog.AppendLine($"\t{loc.ID}; {loc.accessRule}");
                 }
+
                 CurrentStage = GenerationStep.FailedGen;
                 throw new GenerationFailureException("Failed to reach all locations");
             }
-
         }
 
         /// <summary>
@@ -909,6 +996,7 @@ namespace RainWorldRandomizer.Generation
                     Plugin.Log.LogWarning($"Tried to place double location: {placement.Key.ID}");
                 }
             }
+
             return output;
         }
 
@@ -946,6 +1034,7 @@ namespace RainWorldRandomizer.Generation
                         Plugin.Log.LogError($"ItemToUnlock could not find matching UnlockType for {item.id}");
                         return null;
                     }
+
                     break;
             }
 
@@ -953,10 +1042,12 @@ namespace RainWorldRandomizer.Generation
             {
                 return new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id.Substring(7)));
             }
+
             if (outputType == Unlock.UnlockType.ItemPearl)
             {
                 return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id.Substring(12), true));
             }
+
             return new Unlock(outputType, item.id);
         }
 
@@ -964,8 +1055,11 @@ namespace RainWorldRandomizer.Generation
         {
             Dictionary<string, AccessRule> passageRules = [];
 
-            bool motherUnlocked = ModManager.MSC && (Plugin.Singleton.rainWorld.progression.miscProgressionData.beaten_Gourmand_Full || MoreSlugcats.MoreSlugcats.chtUnlockSlugpups.Value);
-            bool canFindSlugpups = slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Red || (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
+            bool motherUnlocked = ModManager.MSC &&
+                                  (Plugin.Singleton.rainWorld.progression.miscProgressionData.beaten_Gourmand_Full ||
+                                   MoreSlugcats.MoreSlugcats.chtUnlockSlugpups.Value);
+            bool canFindSlugpups = slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Red ||
+                                   (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
 
             foreach (string passage in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
             {
@@ -1004,6 +1098,7 @@ namespace RainWorldRandomizer.Generation
                         {
                             if (slugcat == SlugcatStats.Name.Yellow) continue;
                         }
+
                         break;
                 }
 
@@ -1025,9 +1120,11 @@ namespace RainWorldRandomizer.Generation
                         break;
                     case "Pilgrim":
                         accessRule = new CompoundAccessRule(
-                            [.. SlugcatStats.SlugcatStoryRegions(slugcat)
-                                .Where(r => World.CheckForRegionGhost(slugcat, r))
-                                .Select(r => new RegionAccessRule(r))],
+                            [
+                                .. SlugcatStats.SlugcatStoryRegions(slugcat)
+                                    .Where(r => World.CheckForRegionGhost(slugcat, r))
+                                    .Select(r => new RegionAccessRule(r))
+                            ],
                             CompoundAccessRule.CompoundOperation.All);
                         break;
                     case "Survivor":
@@ -1043,8 +1140,10 @@ namespace RainWorldRandomizer.Generation
                         break;
                     case "Traveller":
                         accessRule = new CompoundAccessRule(
-                            [.. SlugcatStats.SlugcatStoryRegions(slugcat)
-                                .Select(r => new RegionAccessRule(r))],
+                            [
+                                .. SlugcatStats.SlugcatStoryRegions(slugcat)
+                                    .Select(r => new RegionAccessRule(r))
+                            ],
                             CompoundAccessRule.CompoundOperation.All);
                         break;
                     case "Chieftain":
@@ -1065,10 +1164,10 @@ namespace RainWorldRandomizer.Generation
                     case "Monk":
                         accessRule = new CompoundAccessRule(
                             [
-                                survivorRule, 
+                                survivorRule,
                                 new CompoundAccessRule(AccessRuleConstants.MonkFoods,
                                     CompoundAccessRule.CompoundOperation.AtLeast, 3)
-                            ], 
+                            ],
                             CompoundAccessRule.CompoundOperation.All);
                         break;
                     case "Nomad":
@@ -1106,10 +1205,12 @@ namespace RainWorldRandomizer.Generation
                                 CompoundAccessRule.CompoundOperation.AtLeast, 4)
                         ];
                         if (slugcat == SlugcatStats.Name.White || slugcat == SlugcatStats.Name.Yellow
-                            || (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
+                                                               || (ModManager.MSC && slugcat ==
+                                                                   MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
                         {
                             rules.Add(new RegionAccessRule("SL"));
                         }
+
                         accessRule = new CompoundAccessRule([.. rules],
                             CompoundAccessRule.CompoundOperation.All);
                         break;
@@ -1123,9 +1224,13 @@ namespace RainWorldRandomizer.Generation
 
         public class GenerationFailureException : Exception
         {
-            public GenerationFailureException() : base() { }
+            public GenerationFailureException() : base()
+            {
+            }
 
-            public GenerationFailureException(string error) : base(error) { }
+            public GenerationFailureException(string error) : base(error)
+            {
+            }
         }
     }
 }

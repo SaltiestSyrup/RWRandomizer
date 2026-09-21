@@ -15,6 +15,7 @@ namespace RainWorldRandomizer
     [BepInDependency("rwmodding.coreorg.rk", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("franklygd.extendedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("aissurtievos.improvedcollectiblestracker", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("slime-cubed.devconsole", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
@@ -26,11 +27,14 @@ namespace RainWorldRandomizer
 
         public static Plugin Singleton;
         public static ManagerBase RandoManager = null;
+
         private static List<LogicAddon> _logicAddons = [];
+
         // A map of every region to its display name
         public static Dictionary<string, string> RegionNamesMap = [];
+
         // A map of the 'correct' region acronyms for each region depending on current slugcat
-        public static Dictionary<string, string> ProperRegionMap = [];
+        public static Dictionary<SlugcatStats.Name, Dictionary<string, string>> ProperRegionMap = [];
         public static Dictionary<string, RegionGate.GateRequirement[]> DefaultGateRequirements = [];
 
         public static bool RandomizerActive
@@ -47,12 +51,17 @@ namespace RainWorldRandomizer
         {
             get { return RandoManager as ManagerArchipelago; }
         }
-        
+
         public static ManagerVanilla VanillaManager
         {
             get { return RandoManager as ManagerVanilla; }
         }
-        
+
+        public static ModManager.Mod Mod
+        {
+            get { return ModManager.ActiveMods.First(m => m.id == PLUGIN_GUID); }
+        }
+
         /// <summary>Whether there are any third-party regions.</summary>
         public static bool AnyThirdPartyRegions
         {
@@ -64,7 +73,7 @@ namespace RainWorldRandomizer
                         "CC", "CL", "DM", "DS", "GW", "HI", "HR", "LC", "LF", "LM", "MS",
                         "OE", "RM", "SB", "SH", "SI", "SL", "SS", "SU", "UG", "UW", "VS",
                         "WVWA", "WVWB", "WRRA", "WPGA", "WARA", "WARB", "WARC", "WARD",
-                        "WARE", "WARF",  "WARG", "WMPA", "WAUA", "WBLA", "WPTA", "WRFA",
+                        "WARE", "WARF", "WARG", "WMPA", "WAUA", "WBLA", "WPTA", "WRFA",
                         "WRFB", "WRSA", "WSKA", "WSKB", "WSKC", "WSKD", "WTDA", "WTDB",
                         "WORA", "WDSR", "WGWR", "WHIR", "WSSR", "WSUR",
                     ])
@@ -73,12 +82,13 @@ namespace RainWorldRandomizer
         }
 
         private OptionsMenu options;
+
         // Queue of pending notifications to be sent to the player in-game
         public Queue<MessageText> notifQueue = new();
-        
+
         public RainWorld rainWorld;
         private WeakReference<RainWorldGame> _game = new(null);
-        
+
         public RainWorldGame Game
         {
             get { return _game.TryGetTarget(out RainWorldGame g) ? g : null; }
@@ -188,13 +198,13 @@ namespace RainWorldRandomizer
                 Log.LogError(e);
             }
         }
-        
+
         public void UnloadResources(On.RainWorld.orig_UnloadResources orig, RainWorld self)
         {
             orig(self);
             Futile.atlasManager.UnloadAtlas("Atlases/randomizer");
         }
-        
+
         public void LoadResources(On.RainWorld.orig_LoadModResources orig, RainWorld self)
         {
             orig(self);
@@ -220,7 +230,9 @@ namespace RainWorldRandomizer
             if (AssetBundle.GetAllLoadedAssetBundles().Any(a => a.name == "rando")) return;
 
             AssetBundle assetBundle = AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("AssetBundles/rando"));
-            self.Shaders.Add("Rando.WarpTear", FShader.CreateShader("Rando.WarpTear", assetBundle.LoadAsset<Shader>("Assets/Shaders/RandoWarpTear.shader")));
+            self.Shaders.Add("Rando.WarpTear",
+                FShader.CreateShader("Rando.WarpTear",
+                    assetBundle.LoadAsset<Shader>("Assets/Shaders/RandoWarpTear.shader")));
         }
 
         public void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -280,6 +292,9 @@ namespace RainWorldRandomizer
             // Make the logic time
             CustomLogicBuilder.DefineLogic();
             foreach (LogicAddon addon in _logicAddons) addon.DefineLogic();
+
+            if (DevConsoleCompatibility.Enabled)
+                DevConsoleCompatibility.RegisterCommands();
         }
 
         public static void AddLogicAddon(LogicAddon addon) => _logicAddons.Add(addon);
@@ -313,7 +328,8 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
-                    return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null,
+                    return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl,
+                        null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
                         itemPearlType);
                 }
@@ -323,10 +339,12 @@ namespace RainWorldRandomizer
                 // Normal objects that need special treatment
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DataPearl)
                 {
-                    return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null,
+                    return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl,
+                        null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
                         DataPearl.AbstractDataPearl.DataPearlType.Misc);
                 }
+
                 // Various spear types are all still "Spear"
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.Spear)
                 {
@@ -337,64 +355,79 @@ namespace RainWorldRandomizer
                         poison = item.id is "PoisonSpear" ? 1 : 0,
                         poisonHue = UnityEngine.Random.value,
                         // Whether the spear is a hell spear is solely determined by whether it has a hue assigned
-                        hue = item.id is "HellSpear" ? Mathf.Lerp(0.35f, 0.6f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)) : 0f
+                        hue = item.id is "HellSpear"
+                            ? Mathf.Lerp(0.35f, 0.6f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f))
+                            : 0f
                     };
                 }
+
                 if (ModManager.DLCShared && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
                 {
                     return new LillyPuck.AbstractLillyPuck(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
                 }
+
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.WaterNut)
                 {
                     return new WaterNut.AbstractWaterNut(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false);
                 }
+
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DangleFruit)
                 {
                     return new DangleFruit.AbstractDangleFruit(world, null,
-                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, item.id == "RotFruit", null);
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1,
+                        item.id == "RotFruit", null);
                 }
+
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.SporePlant)
                 {
                     return new SporePlant.AbstractSporePlant(world, null,
-                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false, true);
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false,
+                        true);
                 }
+
                 if (ModManager.Watcher && itemObjectType == AbstractPhysicalObject.AbstractObjectType.GraffitiBomb)
                 {
                     return new GraffitiBomb.AbstractGraffitiBomb(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
                 }
+
                 // Handles all generic consumables
                 if (AbstractConsumable.IsTypeConsumable(itemObjectType))
                 {
                     return new AbstractConsumable(world, itemObjectType, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
                 }
+
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.VultureMask)
                 {
                     EntityID newID = world.game.GetNewID();
                     return new VultureMask.AbstractVultureMask(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), newID, newID.RandomSeed, false);
                 }
+
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.BubbleGrass)
                 {
                     return new BubbleGrass.AbstractBubbleGrass(world, null,
-                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 1f, -1, -1, null)
-                    { isConsumed = false };
+                            new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 1f, -1, -1, null)
+                        { isConsumed = false };
                 }
+
                 if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.EggBugEgg)
                 {
                     return new EggBugEgg.AbstractBugEgg(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
                         Mathf.Lerp(-0.15f, 0.1f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)));
                 }
+
                 if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.FireEgg)
                 {
                     return new FireEgg.AbstractBugEgg(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
                         Mathf.Lerp(0.35f, 0.6f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)));
                 }
+
                 if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.JokeRifle)
                 {
                     return new JokeRifle.AbstractRifle(world, null,
@@ -404,7 +437,7 @@ namespace RainWorldRandomizer
 
                 // Default case
                 return new AbstractPhysicalObject(world, itemObjectType, null,
-                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID());
+                    new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID());
             }
 
             Log.LogError($"Item type \"{item.type}\" is not a valid object type");
@@ -420,13 +453,14 @@ namespace RainWorldRandomizer
             bool hasKeyForGate = RandoManager.IsGateOpen(gateName) ?? false;
             RegionGate.GateRequirement[] newRequirements =
                 DefaultGateRequirements.TryGetValue(gateName, out RegionGate.GateRequirement[] v)
-                ? (RegionGate.GateRequirement[])v.Clone()
-                : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
+                    ? (RegionGate.GateRequirement[])v.Clone()
+                    : [RegionGate.GateRequirement.OneKarma, RegionGate.GateRequirement.OneKarma];
             RegionGate.GateRequirement[] origRequirements = (RegionGate.GateRequirement[])newRequirements.Clone();
 
             // Change default Metropolis gate karma
-            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis 
-                && RandoManager.currentSlugcat != MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis
+                                              && RandoManager.currentSlugcat !=
+                                              MoreSlugcatsEnums.SlugcatStatsName.Artificer)
             {
                 origRequirements[0] = RegionGate.GateRequirement.FiveKarma;
                 newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
@@ -461,6 +495,7 @@ namespace RainWorldRandomizer
                         newRequirements[0] = RegionGate.GateRequirement.DemoLock;
                         newRequirements[1] = RegionGate.GateRequirement.DemoLock;
                     }
+
                     break;
                 case RandoOptions.GateBehavior.KeyAndKarma:
                     if (!hasKeyForGate)
@@ -468,6 +503,7 @@ namespace RainWorldRandomizer
                         newRequirements[0] = RegionGate.GateRequirement.DemoLock;
                         newRequirements[1] = RegionGate.GateRequirement.DemoLock;
                     }
+
                     break;
                 case RandoOptions.GateBehavior.KeyOrKarma:
                     if (hasKeyForGate)
@@ -475,6 +511,7 @@ namespace RainWorldRandomizer
                         newRequirements[0] = RegionGate.GateRequirement.OneKarma;
                         newRequirements[1] = RegionGate.GateRequirement.OneKarma;
                     }
+
                     break;
                 case RandoOptions.GateBehavior.OnlyKarma:
                     // Nothing to be done here, use vanilla mechanics
@@ -491,10 +528,12 @@ namespace RainWorldRandomizer
             // Ensure proper Metro gate behavior for Arty
             if (ModManager.MSC)
             {
-                if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[0] = origRequirements[0];
-                if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock) newRequirements[1] = origRequirements[1];
-                if (gateName == "GATE_SB_OE" 
-                    && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand 
+                if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock)
+                    newRequirements[0] = origRequirements[0];
+                if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock)
+                    newRequirements[1] = origRequirements[1];
+                if (gateName == "GATE_SB_OE"
+                    && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand
                     && !RandoManager.GivenMark)
                 {
                     newRequirements[0] = MoreSlugcatsEnums.GateRequirement.OELock;
@@ -560,8 +599,12 @@ namespace RainWorldRandomizer
             string[] gateSplit = Regex.Split(gate, "_");
             if (gateSplit.Length < 3) return gate;
 
-            string properAcro1 = ProperRegionMap.ContainsKey(gateSplit[1]) ? ProperRegionMap[gateSplit[1]] : "";
-            string properAcro2 = ProperRegionMap.ContainsKey(gateSplit[2]) ? ProperRegionMap[gateSplit[2]] : "";
+            string properAcro1 = ProperRegionMap[slugcat].ContainsKey(gateSplit[1])
+                ? ProperRegionMap[slugcat][gateSplit[1]]
+                : "";
+            string properAcro2 = ProperRegionMap[slugcat].ContainsKey(gateSplit[2])
+                ? ProperRegionMap[slugcat][gateSplit[2]]
+                : "";
             string name1 = RegionNamesMap.TryGetValue(properAcro1, out var reg1) ? reg1 : "nullRegion";
             string name2 = RegionNamesMap.TryGetValue(properAcro2, out var reg2) ? reg2 : "nullRegion";
             string output = gate switch
@@ -570,11 +613,11 @@ namespace RainWorldRandomizer
                 "GATE_UW_SS" => "Five Pebbles <-> Underhang",
                 _ => $"{name1} <-> {name2}",
             };
-            if (Constants.OneWayGates.ContainsKey(gate))
+            if (Constants.OneWayGates.TryGetValue(gate, out bool oneWay))
             {
                 output = $"{name1}" +
-                    $" {(Constants.OneWayGates[gate] ? "<-" : "->")} " +
-                    $"{name2}";
+                         $" {(oneWay ? "<-" : "->")} " +
+                         $"{name2}";
             }
 
             return output;
@@ -593,6 +636,27 @@ namespace RainWorldRandomizer
             }
 
             return output;
+        }
+
+        /// <summary>
+        /// Populate the proper region map for a given slugcat.
+        /// This operation is extremely costly, avoid calling until a loading screen or something when this is needed.
+        /// </summary>
+        public static void SetupProperRegionMap(SlugcatStats.Name slugcat)
+        {
+            // It's the GetProperRegionAcronym that's the costly part.
+            // It loops through the entire world folder and reads in every single equivalences file.
+            // This combined with needing to do it once for each region makes this function
+            // take up to 5 seconds with both DLCs enabled.
+            if (ProperRegionMap.ContainsKey(slugcat)) return;
+
+            ProperRegionMap[slugcat] = [];
+            foreach (string region in Region.GetFullRegionOrder()
+                         .Where(region => !ProperRegionMap[slugcat].ContainsKey(region)))
+            {
+                ProperRegionMap[slugcat][region] =
+                    Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(slugcat), region);
+            }
         }
     }
 }

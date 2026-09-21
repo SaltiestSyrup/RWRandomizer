@@ -47,6 +47,11 @@ namespace RainWorldRandomizer.Generation
             return null;
         }
 
+        public static List<SlugcatStats.Name> GetPlayableSlugcats()
+        {
+            return slugcatLogicPackages.Keys.ToList();
+        }
+
         /// <summary>
         /// Modify the access rule for a single location
         /// </summary>

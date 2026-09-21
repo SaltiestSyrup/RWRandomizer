@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Random = UnityEngine.Random;
 
 namespace RainWorldRandomizer
 {
@@ -429,5 +430,48 @@ namespace RainWorldRandomizer
             };
         }
 #pragma warning restore CS0612 // Type or member is obsolete
+
+        public static OptionStruct FromRandom()
+        {
+            return new OptionStruct
+            {
+                useSandboxTokenChecks = RandomBool(),
+                usePearlChecks = RandomBool(),
+                useEchoChecks = RandomBool(),
+                usePassageChecks = RandomBool(),
+                useSpecialChecks = RandomBool(),
+                useShelterChecks = RandomBool(),
+                useDevTokenChecks = RandomBool(),
+                useKarmaFlowerChecks = RandomBool(),
+                useSMTokens = RandomBool(),
+                givePassageUnlocks = RandomBool(),
+                hunterCyclesDensity = Random.Range(0f, 1f),
+                trapsDensity = Random.Range(0f, 1f),
+                numDamageIncreases = Random.Range(0, 11),
+                extraKarmaIncreases = Random.Range(0, 11),
+                gateBehavior = (RandoOptions.GateBehavior)Random.Range(0, 4),
+                PPwSBehavior = (RandoOptions.PPwSBehavior)Random.Range(0, 3),
+                echoDifficulty = (RandoOptions.EchoLowKarmaDifficulty)Random.Range(0, 4),
+                foodQuestBehavior = (RandoOptions.FoodQuestBehavior)Random.Range(0, 3),
+                randomizeSpawnLocation = RandomBool(),
+                startMinKarma = RandomBool(),
+                allowMetroForOthers = RandomBool(),
+                allowSubmergedForOthers = RandomBool(),
+                allowExteriorForInv = RandomBool(),
+                useEnergyCell = RandomBool(),
+                expeditionPerks =
+                [
+                    RandomBool(), RandomBool(), RandomBool(), RandomBool(),
+                    RandomBool(), RandomBool(), RandomBool(), RandomBool()
+                ],
+                spinningTopKeys = RandomBool(),
+                daemonKeys = RandomBool(),
+                rottedRegionTarget = Random.Range(1, 22),
+                weaverRandomized = RandomBool(),
+                weaverChecks = RandomBool(),
+            };
+
+            static bool RandomBool() => Random.value < 0.5f;
+        }
     }
 }

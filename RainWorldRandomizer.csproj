@@ -1,197 +1,204 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D8FC649B-C820-4601-A163-E75691FCA85E}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RainWorldRandomizer</RootNamespace>
-    <AssemblyName>RainWorldRandomizer</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-    <TargetFrameworkProfile />
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>portable</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <LangVersion>12.0</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>portable</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <LangVersion>12.0</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>
-    </DocumentationFile>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Workshop|AnyCPU'">
-    <OutputPath>bin\Workshop\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <LangVersion>12.0</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup>
-    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="Archipelago.MultiClient.Net, Version=6.7.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Archipelago.MultiClient.Net.6.7.1\lib\net45\Archipelago.MultiClient.Net.dll</HintPath>
-    </Reference>
-    <Reference Include="BepInEx">
-      <HintPath>bin\References\BepInEx.dll</HintPath>
-    </Reference>
-    <Reference Include="ExtendedCollectiblesTracker">
-      <HintPath>bin\References\ExtendedCollectiblesTracker.dll</HintPath>
-    </Reference>
-    <Reference Include="HOOKS-Assembly-CSharp">
-      <HintPath>bin\References\HOOKS-Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="ImprovedCollectiblesTracker">
-      <HintPath>bin\References\ImprovedCollectiblesTracker.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil">
-      <HintPath>bin\References\Mono.Cecil.dll</HintPath>
-    </Reference>
-    <Reference Include="MonoMod.RuntimeDetour">
-      <HintPath>bin\References\MonoMod.RuntimeDetour.dll</HintPath>
-    </Reference>
-    <Reference Include="MonoMod.Utils">
-      <HintPath>bin\References\MonoMod.Utils.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Archipelago.MultiClient.Net.6.7.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="PUBLIC-Assembly-CSharp">
-      <HintPath>bin\References\PUBLIC-Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="RegionKit">
-      <HintPath>bin\References\RegionKit.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-    <Reference Include="UnityEngine">
-      <HintPath>bin\References\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>bin\References\UnityEngine.AssetBundleModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>bin\References\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.InputLegacyModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\References\UnityEngine.InputLegacyModule.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Archipelago\ArchipelagoConnection.cs" />
-    <Compile Include="Hooks\CollectTokenHandler.cs" />
-    <Compile Include="Constants.cs" />
-    <Compile Include="Generation\Connection.cs" />
-    <Compile Include="Generation\CustomLogicBuilder.cs" />
-    <Compile Include="Generation\LogicAddon.cs" />
-    <Compile Include="Generation\InvCompat.cs" />
-    <Compile Include="Generation\RandoRegion.cs" />
-    <Compile Include="Hooks\FlowerCheckHandler.cs" />
-    <Compile Include="Generation\AccessRule.cs" />
-    <Compile Include="Hooks\LocationColorizer.cs" />
-    <Compile Include="Hooks\TokenCachePatcher.cs" />
-    <Compile Include="LocationInfo.cs" />
-    <Compile Include="Menu\BorderlessSymbolButton.cs" />
-    <Compile Include="Menu\ChatLog.cs" />
-    <Compile Include="Menu\ConnectionStatusDisplay.cs" />
-    <Compile Include="Menu\CurrentBuffsDisplay.cs" />
-    <Compile Include="Menu\DialogMultiSelect.cs" />
-    <Compile Include="Menu\GateMapDisplay.cs" />
-    <Compile Include="Menu\GatesDisplay.cs" />
-    <Compile Include="Menu\MainRandoMenu\ConnectInfoEntry.cs" />
-    <Compile Include="Menu\MainRandoMenu\CreateNewGamePage.cs" />
-    <Compile Include="Menu\MainRandoMenu\NewArchipelagoGameTab.cs" />
-    <Compile Include="Menu\MainRandoMenu\NewStandaloneGameTab.cs" />
-    <Compile Include="Menu\MainRandoMenu\OptionsDialog.cs" />
-    <Compile Include="Menu\MainRandoMenu\RandomizerMenu.cs" />
-    <Compile Include="Menu\MainRandoMenu\CampaignSelectPage.cs" />
-    <Compile Include="Menu\MainRandoMenu\SlotSelector.cs" />
-    <Compile Include="Menu\MenuHelpers.cs" />
-    <Compile Include="Menu\PassageHomeButton.cs" />
-    <Compile Include="Menu\PendingItemsDisplay.cs" />
-    <Compile Include="Menu\ScrollingMenu.cs" />
-    <Compile Include="Menu\SpoilerMenu.cs" />
-    <Compile Include="Menu\TextClientMenu.cs" />
-    <Compile Include="Generation\Item.cs" />
-    <Compile Include="Generation\Location.cs" />
-    <Compile Include="Generation\State.cs" />
-    <Compile Include="Generation\VanillaGenerator.cs" />
-    <Compile Include="Hooks\SleepScreenHooks.cs" />
-    <Compile Include="ModCompat\CustomRegionCompatability.cs" />
-    <Compile Include="Archipelago\DeathLinkHandler.cs" />
-    <Compile Include="ModCompat\ExtCollectibleTrackerComptability.cs" />
-    <Compile Include="Menu\FakeEndgameToken.cs" />
-    <Compile Include="Hooks\GameLoopHooks.cs" />
-    <Compile Include="Archipelago\ManagerArchipelago.cs" />
-    <Compile Include="ManagerVanilla.cs" />
-    <Compile Include="ManagerBase.cs" />
-    <Compile Include="Hooks\PlayerHooks.cs" />
-    <Compile Include="Hooks\SpearmasterCutscenes.cs" />
-    <Compile Include="Hooks\IteratorHooks.cs" />
-    <Compile Include="Menu\OptionsMenu.cs" />
-    <Compile Include="ModCompat\ImprovedCollectibleTrackerCompat.cs" />
-    <Compile Include="RandoOptions.cs" />
-    <Compile Include="RandomizerEnums.cs" />
-    <Compile Include="Hooks\MiscHooks.cs" />
-    <Compile Include="Plugin.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ModCompat\RegionKitCompatibility.cs" />
-    <Compile Include="SaveData\SaveDataHooks.cs" />
-    <Compile Include="SaveData\SaveManager.cs" />
-    <Compile Include="SaveData\SaveTracker.cs" />
-    <Compile Include="Menu\MenuHooks.cs" />
-    <Compile Include="TrapsHandler.cs" />
-    <Compile Include="Unlock.cs" />
-    <Compile Include="WatcherIntegration\CheckDetection.cs" />
-    <Compile Include="WatcherIntegration\Completion.cs" />
-    <Compile Include="WatcherIntegration\DynamicWarpTargeting.cs" />
-    <Compile Include="WatcherIntegration\EntryPoint.cs" />
-    <Compile Include="WatcherIntegration\MiscChanges.cs" />
-    <Compile Include="WatcherIntegration\RoomSpecificScript.cs" />
-    <Compile Include="WatcherIntegration\StaticKey.cs" />
-    <Compile Include="WatcherIntegration\StaticWarps.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>sh ../postbuild.sh $(TargetDir) $(SolutionName)
-exit 0</PostBuildEvent>
-  </PropertyGroup>
-  <Import Project="packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net48.targets" Condition="Exists('packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net48.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
     <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <ProjectGuid>{D8FC649B-C820-4601-A163-E75691FCA85E}</ProjectGuid>
+        <OutputType>Library</OutputType>
+        <AppDesignerFolder>Properties</AppDesignerFolder>
+        <RootNamespace>RainWorldRandomizer</RootNamespace>
+        <AssemblyName>RainWorldRandomizer</AssemblyName>
+        <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+        <FileAlignment>512</FileAlignment>
+        <Deterministic>true</Deterministic>
+        <TargetFrameworkProfile/>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net48.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net48.targets'))" />
-  </Target>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>portable</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\Debug\</OutputPath>
+        <DefineConstants>TRACE;DEBUG</DefineConstants>
+        <LangVersion>12.0</LangVersion>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <DebugType>portable</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\Release\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <LangVersion>12.0</LangVersion>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <DocumentationFile>
+        </DocumentationFile>
+        <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Workshop|AnyCPU'">
+        <OutputPath>bin\Workshop\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <Optimize>true</Optimize>
+        <DebugType>pdbonly</DebugType>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <LangVersion>12.0</LangVersion>
+        <ErrorReport>prompt</ErrorReport>
+    </PropertyGroup>
+    <PropertyGroup>
+        <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="Archipelago.MultiClient.Net, Version=6.7.1.0, Culture=neutral, processorArchitecture=MSIL">
+            <HintPath>packages\Archipelago.MultiClient.Net.6.7.1\lib\net45\Archipelago.MultiClient.Net.dll</HintPath>
+        </Reference>
+        <Reference Include="BepInEx">
+            <HintPath>bin\References\BepInEx.dll</HintPath>
+        </Reference>
+        <Reference Include="DevConsole">
+            <HintPath>bin\References\DevConsole.dll</HintPath>
+        </Reference>
+        <Reference Include="ExtendedCollectiblesTracker">
+            <HintPath>bin\References\ExtendedCollectiblesTracker.dll</HintPath>
+        </Reference>
+        <Reference Include="HOOKS-Assembly-CSharp">
+            <HintPath>bin\References\HOOKS-Assembly-CSharp.dll</HintPath>
+        </Reference>
+        <Reference Include="ImprovedCollectiblesTracker">
+            <HintPath>bin\References\ImprovedCollectiblesTracker.dll</HintPath>
+        </Reference>
+        <Reference Include="Mono.Cecil">
+            <HintPath>bin\References\Mono.Cecil.dll</HintPath>
+        </Reference>
+        <Reference Include="MonoMod.RuntimeDetour">
+            <HintPath>bin\References\MonoMod.RuntimeDetour.dll</HintPath>
+        </Reference>
+        <Reference Include="MonoMod.Utils">
+            <HintPath>bin\References\MonoMod.Utils.dll</HintPath>
+        </Reference>
+        <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+            <HintPath>packages\Archipelago.MultiClient.Net.6.7.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+        </Reference>
+        <Reference Include="PUBLIC-Assembly-CSharp">
+            <HintPath>bin\References\PUBLIC-Assembly-CSharp.dll</HintPath>
+        </Reference>
+        <Reference Include="RegionKit">
+            <HintPath>bin\References\RegionKit.dll</HintPath>
+        </Reference>
+        <Reference Include="System"/>
+        <Reference Include="System.Core"/>
+        <Reference Include="System.Xml.Linq"/>
+        <Reference Include="System.Data.DataSetExtensions"/>
+        <Reference Include="Microsoft.CSharp"/>
+        <Reference Include="System.Data"/>
+        <Reference Include="System.Net.Http"/>
+        <Reference Include="System.Xml"/>
+        <Reference Include="UnityEngine">
+            <HintPath>bin\References\UnityEngine.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.AssetBundleModule">
+            <HintPath>bin\References\UnityEngine.AssetBundleModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>bin\References\UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.InputLegacyModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+            <SpecificVersion>False</SpecificVersion>
+            <HintPath>bin\References\UnityEngine.InputLegacyModule.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Archipelago\ArchipelagoConnection.cs"/>
+        <Compile Include="Generation\Fuzzer.cs"/>
+        <Compile Include="Generation\GenerationHelpers.cs"/>
+        <Compile Include="Hooks\CollectTokenHandler.cs"/>
+        <Compile Include="Constants.cs"/>
+        <Compile Include="Generation\Connection.cs"/>
+        <Compile Include="Generation\CustomLogicBuilder.cs"/>
+        <Compile Include="Generation\LogicAddon.cs"/>
+        <Compile Include="Generation\InvCompat.cs"/>
+        <Compile Include="Generation\RandoRegion.cs"/>
+        <Compile Include="Hooks\FlowerCheckHandler.cs"/>
+        <Compile Include="Generation\AccessRule.cs"/>
+        <Compile Include="Hooks\LocationColorizer.cs"/>
+        <Compile Include="Hooks\TokenCachePatcher.cs"/>
+        <Compile Include="LocationInfo.cs"/>
+        <Compile Include="Menu\BorderlessSymbolButton.cs"/>
+        <Compile Include="Menu\ChatLog.cs"/>
+        <Compile Include="Menu\ConnectionStatusDisplay.cs"/>
+        <Compile Include="Menu\CurrentBuffsDisplay.cs"/>
+        <Compile Include="Menu\DialogMultiSelect.cs"/>
+        <Compile Include="Menu\GateMapDisplay.cs"/>
+        <Compile Include="Menu\GatesDisplay.cs"/>
+        <Compile Include="Menu\MainRandoMenu\ConnectInfoEntry.cs"/>
+        <Compile Include="Menu\MainRandoMenu\CreateNewGamePage.cs"/>
+        <Compile Include="Menu\MainRandoMenu\NewArchipelagoGameTab.cs"/>
+        <Compile Include="Menu\MainRandoMenu\NewStandaloneGameTab.cs"/>
+        <Compile Include="Menu\MainRandoMenu\OptionsDialog.cs"/>
+        <Compile Include="Menu\MainRandoMenu\RandomizerMenu.cs"/>
+        <Compile Include="Menu\MainRandoMenu\CampaignSelectPage.cs"/>
+        <Compile Include="Menu\MainRandoMenu\SlotSelector.cs"/>
+        <Compile Include="Menu\MenuHelpers.cs"/>
+        <Compile Include="Menu\PassageHomeButton.cs"/>
+        <Compile Include="Menu\PendingItemsDisplay.cs"/>
+        <Compile Include="Menu\ScrollingMenu.cs"/>
+        <Compile Include="Menu\SpoilerMenu.cs"/>
+        <Compile Include="Menu\TextClientMenu.cs"/>
+        <Compile Include="Generation\Item.cs"/>
+        <Compile Include="Generation\Location.cs"/>
+        <Compile Include="Generation\State.cs"/>
+        <Compile Include="Generation\VanillaGenerator.cs"/>
+        <Compile Include="Hooks\SleepScreenHooks.cs"/>
+        <Compile Include="ModCompat\CustomRegionCompatability.cs"/>
+        <Compile Include="Archipelago\DeathLinkHandler.cs"/>
+        <Compile Include="ModCompat\DevConsoleCompatibility.cs"/>
+        <Compile Include="ModCompat\ExtCollectibleTrackerComptability.cs"/>
+        <Compile Include="Menu\FakeEndgameToken.cs"/>
+        <Compile Include="Hooks\GameLoopHooks.cs"/>
+        <Compile Include="Archipelago\ManagerArchipelago.cs"/>
+        <Compile Include="ManagerVanilla.cs"/>
+        <Compile Include="ManagerBase.cs"/>
+        <Compile Include="Hooks\PlayerHooks.cs"/>
+        <Compile Include="Hooks\SpearmasterCutscenes.cs"/>
+        <Compile Include="Hooks\IteratorHooks.cs"/>
+        <Compile Include="Menu\OptionsMenu.cs"/>
+        <Compile Include="ModCompat\ImprovedCollectibleTrackerCompat.cs"/>
+        <Compile Include="RandoOptions.cs"/>
+        <Compile Include="RandomizerEnums.cs"/>
+        <Compile Include="Hooks\MiscHooks.cs"/>
+        <Compile Include="Plugin.cs"/>
+        <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="ModCompat\RegionKitCompatibility.cs"/>
+        <Compile Include="SaveData\SaveDataHooks.cs"/>
+        <Compile Include="SaveData\SaveManager.cs"/>
+        <Compile Include="SaveData\SaveTracker.cs"/>
+        <Compile Include="Menu\MenuHooks.cs"/>
+        <Compile Include="TrapsHandler.cs"/>
+        <Compile Include="Unlock.cs"/>
+        <Compile Include="WatcherIntegration\CheckDetection.cs"/>
+        <Compile Include="WatcherIntegration\Completion.cs"/>
+        <Compile Include="WatcherIntegration\DynamicWarpTargeting.cs"/>
+        <Compile Include="WatcherIntegration\EntryPoint.cs"/>
+        <Compile Include="WatcherIntegration\MiscChanges.cs"/>
+        <Compile Include="WatcherIntegration\RoomSpecificScript.cs"/>
+        <Compile Include="WatcherIntegration\StaticKey.cs"/>
+        <Compile Include="WatcherIntegration\StaticWarps.cs"/>
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="app.config"/>
+        <None Include="packages.config"/>
+    </ItemGroup>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+    <PropertyGroup>
+        <PostBuildEvent>sh ../postbuild.sh $(TargetDir) $(SolutionName)
+            exit 0
+        </PostBuildEvent>
+    </PropertyGroup>
+    <Import Project="packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net48.targets" Condition="Exists('packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net48.targets')"/>
+    <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+        <PropertyGroup>
+            <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
+        </PropertyGroup>
+        <Error Condition="!Exists('packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net48.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net48.targets'))"/>
+    </Target>
 </Project>

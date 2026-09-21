@@ -34,14 +34,16 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogWarning("Selected incompatible save, disabling randomizer");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText($"WARNING: This campaign is not currently supported by Check Randomizer. It will not be active for this session.", Color.red));
+                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                    $"WARNING: This campaign is not currently supported by Check Randomizer. It will not be active for this session.",
+                    Color.red));
                 return;
             }
 
-            Plugin.ProperRegionMap.Clear();
-
             // Reset tracking variables
-            _currentMaxKarma = RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(storyGameCharacter);
+            _currentMaxKarma = RandoOptions.StartMinimumKarma
+                ? 0
+                : SlugcatStats.SlugcatStartingKarma(storyGameCharacter);
             _hunterBonusCyclesGiven = 0;
             _givenNeuronGlow = false;
             _givenMark = false;
@@ -51,11 +53,8 @@ namespace RainWorldRandomizer
             _givenSpearPearlRewrite = false;
             customStartDen = "";
 
-            // Init alternate region mapping
-            foreach (string region in Region.GetFullRegionOrder())
-            {
-                Plugin.ProperRegionMap.Add(region, Region.GetProperRegionAcronym(SlugcatStats.SlugcatToTimeline(storyGameCharacter), region));
-            }
+            Plugin.SetupProperRegionMap(storyGameCharacter);
+
             // Init passage list
             foreach (string passage in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
             {
@@ -88,7 +87,8 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Log.LogError($"Failed to load saved game. \n{e}");
                     isRandomizerActive = false;
-                    Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Randomizer failed to find valid save for current file", Color.red));
+                    Plugin.Singleton.notifQueue.Enqueue(
+                        new MessageText($"Randomizer failed to find valid save for current file", Color.red));
                     return;
                 }
             }
@@ -99,11 +99,13 @@ namespace RainWorldRandomizer
                 {
                     SaveFile file = SaveManager
                         .LoadLegacyStandaloneSavedGame(
-                            Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, 
+                            Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath,
                                 $"saved_game_{currentSlugcat.value}_{SaveTracker.OrigSaveSlot}.txt"));
                     randomizerKey = file.locationMap.ToDictionary(kvp => kvp.Key, kvp =>
-                        new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true, out ExtEnumBase t) 
-                                ? (Unlock.UnlockType)t : Unlock.UnlockType.Item, 
+                        new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true,
+                                out ExtEnumBase t)
+                                ? (Unlock.UnlockType)t
+                                : Unlock.UnlockType.Item,
                             kvp.Value.id, kvp.Value.collected));
                     locations = [.. randomizerKey.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.IsGiven, false))];
                     customStartDen = file.startingDen;
@@ -113,13 +115,14 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Log.LogError($"Failed to load saved game. \n{e}");
                     isRandomizerActive = false;
-                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("Randomizer failed to load legacy file", Color.red));
+                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("Randomizer failed to load legacy file",
+                        Color.red));
                     return;
                 }
-                
-                (itemDeliveryQueue, pendingTrapQueue) = 
+
+                (itemDeliveryQueue, pendingTrapQueue) =
                     SaveManager.LoadItemQueue(currentSlugcat, SaveTracker.OrigSaveSlot);
-            
+
                 lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
             }
             // Generate new game
@@ -129,12 +132,16 @@ namespace RainWorldRandomizer
 
                 if (!TokenCachePatcher.hasLoadedCache)
                 {
-                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("Failed to start randomizer, token cache data missing or corrupt. Try reloading mods to update cache", Color.red));
+                    Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                        "Failed to start randomizer, token cache data missing or corrupt. Try reloading mods to update cache",
+                        Color.red));
                     return;
                 }
 
                 VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
-                    RandoOptions.UseSetSeed ? RandoOptions.SetSeed : UnityEngine.Random.Range(0, int.MaxValue).ToString());
+                    RandoOptions.UseSetSeed
+                        ? RandoOptions.SetSeed
+                        : UnityEngine.Random.Range(0, int.MaxValue).ToString());
 
                 Exception generationException = null;
                 bool timedOut = false;
@@ -156,7 +163,8 @@ namespace RainWorldRandomizer
                     // Existing gates that didn't have an item placed start open
                     foreach (string gate in generator.AllGates)
                     {
-                        if (!gatesStatus.ContainsKey(gate)) gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate));
+                        if (!gatesStatus.ContainsKey(gate))
+                            gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate));
                     }
 
                     // Write new save game
@@ -180,8 +188,10 @@ namespace RainWorldRandomizer
                     }
                     else
                     {
-                        Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Randomizer failed to generate. More details found in BepInEx/LogOutput.log", Color.red));
+                        Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                            $"Randomizer failed to generate. More details found in BepInEx/LogOutput.log", Color.red));
                     }
+
                     return;
                 }
             }
@@ -201,14 +211,20 @@ namespace RainWorldRandomizer
             Plugin.Log.LogDebug("Starting bulk generation test");
             for (int i = 0; i < howMany; i++)
             {
-                generators[i] = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), UnityEngine.Random.Range(0, int.MaxValue).ToString());
+                generators[i] = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
+                    UnityEngine.Random.Range(0, int.MaxValue).ToString());
                 genTask[i] = generators[i].BeginGeneration();
             }
 
             // Only gen for up to 30 seconds
             // Try block here to stop WaitAll from throwing innner task's exceptions
-            try { Task.WaitAll(genTask, 30000); }
-            catch { }
+            try
+            {
+                Task.WaitAll(genTask, 30000);
+            }
+            catch
+            {
+            }
 
             sw.Stop();
 
@@ -228,11 +244,14 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
-                    Plugin.Log.LogError($"Generation was timed out before completion during stage: {generators[j].CurrentStage}");
+                    Plugin.Log.LogError(
+                        $"Generation was timed out before completion during stage: {generators[j].CurrentStage}");
                     //Plugin.Log.LogDebug(generators[j].generationLog);
                 }
             }
-            Plugin.Log.LogDebug($"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tAvg time: {sw.ElapsedMilliseconds / howMany} ms");
+
+            Plugin.Log.LogDebug(
+                $"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tAvg time: {sw.ElapsedMilliseconds / howMany} ms");
         }
 
         public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
@@ -243,10 +262,11 @@ namespace RainWorldRandomizer
             }
 
             RandoOptions.LoadedOptions = file.options;
-            
+
             randomizerKey = file.locationMap.ToDictionary(kvp => kvp.Key, kvp =>
-                new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true, out ExtEnumBase t) 
-                        ? (Unlock.UnlockType)t : Unlock.UnlockType.Item, 
+                new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true, out ExtEnumBase t)
+                        ? (Unlock.UnlockType)t
+                        : Unlock.UnlockType.Item,
                     kvp.Value.id, kvp.Value.collected));
             locations = [.. randomizerKey.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.IsGiven, false))];
 
@@ -258,14 +278,18 @@ namespace RainWorldRandomizer
                     case "Gate":
                         if (gatesStatus.ContainsKey(item.ID))
                         {
-                            gatesStatus[item.ID] = gatesStatus[item.ID] || item.IsGiven; // If the gate was already opened by an identical unlock, keep it open
+                            gatesStatus[item.ID] =
+                                gatesStatus[item.ID] ||
+                                item.IsGiven; // If the gate was already opened by an identical unlock, keep it open
                         }
+
                         break;
                     case "Token":
                         if (passageTokensStatus.ContainsKey(new WinState.EndgameID(item.ID)))
                         {
                             passageTokensStatus[new WinState.EndgameID(item.ID)] = item.IsGiven;
                         }
+
                         break;
                     case "Karma":
                         if (item.IsGiven) IncreaseKarma();
@@ -294,6 +318,7 @@ namespace RainWorldRandomizer
                             _givenLongerCycles = true;
                             _givenPebblesOff = true;
                         }
+
                         break;
                     case "Longer_Cycles":
                         if (item.IsGiven) _givenLongerCycles = true;
@@ -308,18 +333,18 @@ namespace RainWorldRandomizer
             }
 
             itemDeliveryQueue = [];
-            foreach (Unlock.Item item in file.pendingFiller.Select(f => 
+            foreach (Unlock.Item item in file.pendingFiller.Select(f =>
                          Unlock.IDToItem(f.id, f.type == nameof(DataPearl.AbstractDataPearl.DataPearlType))))
             {
                 itemDeliveryQueue.Enqueue(item);
             }
-            
+
             pendingTrapQueue = [];
             foreach (TrapsHandler.Trap item in file.pendingTraps.Select(t => new TrapsHandler.Trap(t)))
             {
                 pendingTrapQueue.Enqueue(item);
             }
-            
+
             lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
         }
 
