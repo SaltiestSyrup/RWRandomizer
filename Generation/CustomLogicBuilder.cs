@@ -422,12 +422,12 @@ namespace RainWorldRandomizer.Generation
                 [
                     new CompoundAccessRule(
                     [
-                        new OptionAccessRule("UseEnergyCell"),
+                        new OptionAccessRule(nameof(OptionStruct.useEnergyCell)),
                         new AccessRule("Object-EnergyCell")
                     ], CompoundAccessRule.CompoundOperation.All),
                     new CompoundAccessRule(
                     [
-                        new OptionAccessRule("UseEnergyCell", true),
+                        new OptionAccessRule(nameof(OptionStruct.useEnergyCell), true),
                         new RegionAccessRule("RM")
                     ], CompoundAccessRule.CompoundOperation.All),
                 ], CompoundAccessRule.CompoundOperation.Any),
@@ -471,7 +471,7 @@ namespace RainWorldRandomizer.Generation
             // Metropolis can be accessed if the option is enabled
             AddConnectionRule("GATE_UW_LC",
                 new RulePatch(null),
-                new RulePatch(new OptionAccessRule("ForceOpenMetropolis"), OverlapMethod.AndPrevious),
+                new RulePatch(new OptionAccessRule(nameof(OptionStruct.allowMetroForOthers)), OverlapMethod.AndPrevious),
                 SelectionMethod.Blacklist,
                 MoreSlugcatsEnums.SlugcatStatsName.Artificer);
 
@@ -490,7 +490,7 @@ namespace RainWorldRandomizer.Generation
             // Submerged can be accessed if the option is enabled
             AddConnectionRule("GATE_MS_SL",
                 new RulePatch(null),
-                new RulePatch(new OptionAccessRule("ForceOpenSubmerged"), OverlapMethod.AndPrevious),
+                new RulePatch(new OptionAccessRule(nameof(OptionStruct.allowSubmergedForOthers)), OverlapMethod.AndPrevious),
                 SelectionMethod.Blacklist,
                 MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
 
@@ -527,7 +527,7 @@ namespace RainWorldRandomizer.Generation
 
             // Remove Submerged unless option is enabled
             AddBlacklistedRegion("MS",
-                new RulePatch(new OptionAccessRule("ForceOpenSubmerged", true)),
+                new RulePatch(new OptionAccessRule(nameof(OptionStruct.allowSubmergedForOthers), true)),
                 SelectionMethod.Blacklist,
                 MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
         }

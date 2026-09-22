@@ -46,7 +46,7 @@ namespace RainWorldRandomizer.Generation
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
 
-            // Travelling up the wall isn't in logic for Inv. Also covers the one-way path to Pebbles' access shaft
+            // Traveling up the wall isn't in logic for Inv. Also covers the one-way path to Pebbles' access shaft
             AddSubregion(new SubregionBlueprint("UWWall", "UWInvWall",
                     ["Pearl-UW", "Echo-UW", "Shelter-UW_S03"],
                     ["GATE_SS_UW", "GATE_UW_LC"],
@@ -57,7 +57,7 @@ namespace RainWorldRandomizer.Generation
 
             // Blacklist The Exterior altogether if allow setting not checked
             AddBlacklistedRegion("UW",
-                new RulePatch(new OptionAccessRule("AllowExteriorForInv", true)),
+                new RulePatch(new OptionAccessRule(nameof(OptionStruct.allowExteriorForInv), true)),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
         }

@@ -36,8 +36,7 @@ public static class Fuzzer
         for (int i = 0; i < numGens; i++)
         {
             SlugcatStats.Name slug = slugcat ?? GetRandomSlugcat();
-            generators[i] = new VanillaGenerator(slug, SlugcatStats.SlugcatToTimeline(slug),
-                Random.Range(0, int.MaxValue).ToString());
+            generators[i] = new VanillaGenerator(slug, SlugcatStats.SlugcatToTimeline(slug), OptionStruct.FromRandom());
             genTask[i] = generators[i].BeginGeneration();
         }
 

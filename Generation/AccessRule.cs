@@ -313,25 +313,27 @@ namespace RainWorldRandomizer.Generation
     /// </summary>
     public class OptionAccessRule : AccessRule
     {
-        private readonly PropertyInfo optionProperty;
+        private readonly FieldInfo optionField;
         private readonly bool inverted;
 
         /// <summary>
-        /// Set location possiblity based on if <paramref name="optionName"/> is enabled.
-        /// Will throw an <see cref="ArgumentException"/> if <paramref name="optionName"/> does not exactly match a static <see cref="bool"/> property in <see cref="RandoOptions"/>
+        /// Set location possibility based on if <paramref name="optionName"/> is enabled.
         /// </summary>
+        /// <param name="optionName">The exact name of a field in <see cref="OptionStruct"/></param>
         /// <param name="inverted">If true, will instead check if option is disabled</param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentException">if <paramref name="optionName"/> is not a
+        /// <see cref="bool"/> property in <see cref="OptionStruct"/></exception>
         public OptionAccessRule(string optionName, bool inverted = false)
         {
             ReqName = $"Option-{optionName}";
             this.inverted = inverted;
 
-            optionProperty = typeof(RandoOptions).GetProperty(optionName, BindingFlags.Public | BindingFlags.Static, null, typeof(bool), [], null);
+            optionField = typeof(OptionStruct).GetField(optionName);
 
-            if (optionProperty == null)
+            if (optionField == null || optionField.FieldType != typeof(bool))
             {
-                throw new ArgumentException("Given option does not exist in Options class", "optionName");
+                throw new ArgumentException(
+                    "Given option does not exist in Options class or does not refer to a boolean", optionName);
             }
         }
 
@@ -342,7 +344,7 @@ namespace RainWorldRandomizer.Generation
             // This should always succeed due to check in constructor, but catch exception just in case
             try
             {
-                bool optionSet = (bool)optionProperty.GetValue(null);
+                bool optionSet = (bool)optionField.GetValue(state.options);
                 return inverted ? !optionSet : optionSet;
             }
             catch (Exception e)

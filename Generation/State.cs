@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace RainWorldRandomizer.Generation
 {
-    public class State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, int startKarma)
+    public class State(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, OptionStruct options)
     {
         /// <summary>
         /// Every possible location.
@@ -44,7 +44,8 @@ namespace RainWorldRandomizer.Generation
 
         public SlugcatStats.Name Slugcat => slugcat;
         public SlugcatStats.Timeline Timeline => timeline;
-        private int karmaItems = startKarma;
+        public OptionStruct options = options;
+        private int karmaItems = options.startMinKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat);
         /// <summary>
         /// Translation between amount of karma items aquired and the max karma it would display as
         /// </summary>

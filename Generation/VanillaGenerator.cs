@@ -10,7 +10,7 @@ using Random = System.Random;
 
 namespace RainWorldRandomizer.Generation
 {
-    public class VanillaGenerator
+    public class VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, OptionStruct options)
     {
         private const float OTHER_PROG_PLACEMENT_CHANCE = 0.2f;
 
@@ -28,9 +28,6 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         private const string START_REG = "StartDummy";
 
-        private SlugcatStats.Name slugcat;
-        private SlugcatStats.Timeline timeline;
-
         public enum GenerationStep
         {
             NotStarted,
@@ -42,7 +39,29 @@ namespace RainWorldRandomizer.Generation
             FailedGen
         }
 
-        public GenerationStep CurrentStage { get; private set; }
+        private Task generationThread;
+        public StringBuilder generationLog = new();
+
+        public OptionStruct options = options;
+
+        // Using inferior System.Random because it's instanced rather than static.
+        // UnityEngine.Random doesn't play well with threads
+        private Random randomState = new(options.useSeed
+            ? options.seed.GetHashCode()
+            : UnityEngine.Random.Range(0, int.MaxValue));
+
+        private State state;
+        private List<Item> itemsToPlace = [];
+        public string customStartDen = "";
+        public string generationSeed = options.seed;
+
+        private Dictionary<string, RandoRegion> allRegions = [];
+        public HashSet<string> AllGates { get; private set; } = [];
+        public HashSet<string> UnplacedGates { get; private set; } = [];
+        public HashSet<string> AllPassages { get; private set; } = [];
+        public Dictionary<Location, Item> RandomizedGame { get; private set; } = [];
+
+        public GenerationStep CurrentStage { get; private set; } = GenerationStep.NotStarted;
 
         public bool InProgress
         {
@@ -53,44 +72,8 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
-        private Task generationThread;
-        private Random randomState;
-
-        private State state;
-        private List<Item> itemsToPlace = [];
-        private Dictionary<string, RandoRegion> allRegions = [];
-        public HashSet<string> AllGates { get; private set; }
-        public HashSet<string> UnplacedGates { get; private set; }
-        public HashSet<string> AllPassages { get; private set; }
-        public Dictionary<Location, Item> RandomizedGame { get; private set; }
-
-        public StringBuilder generationLog = new();
-        public string customStartDen = "";
-        public string generationSeed;
-        public bool logVerbose;
-
-
-        public VanillaGenerator(SlugcatStats.Name slugcat, SlugcatStats.Timeline timeline, string generationSeed = "")
+        public Task BeginGeneration()
         {
-            this.slugcat = slugcat;
-            this.timeline = timeline;
-            CurrentStage = GenerationStep.NotStarted;
-
-            AllGates = [];
-            UnplacedGates = [];
-            AllPassages = [];
-            RandomizedGame = [];
-
-            // Initialize RNG
-            // Using inferior System.Random because it's instanced rather than static.
-            // UnityEngine.Random doesn't play well with threads
-            this.generationSeed = generationSeed;
-            randomState = new Random(generationSeed.GetHashCode()); //new Random(generationSeed);
-        }
-
-        public Task BeginGeneration(bool logVerbose = false)
-        {
-            this.logVerbose = logVerbose;
             generationThread = new Task(Generate);
             generationThread.Start();
             return generationThread;
@@ -103,23 +86,11 @@ namespace RainWorldRandomizer.Generation
             Stopwatch sw = Stopwatch.StartNew();
 
             InitializeState();
-            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds} ms");
-            float lastTime = sw.ElapsedMilliseconds;
             ApplyRuleOverrides();
-            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
-            lastTime = sw.ElapsedMilliseconds;
             DefineStartConditions();
-            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
-            lastTime = sw.ElapsedMilliseconds;
             FinalizeState();
-            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
-            lastTime = sw.ElapsedMilliseconds;
             BalanceItems();
-            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
-            lastTime = sw.ElapsedMilliseconds;
             PlaceProgression();
-            generationLog.AppendLine($"Time in stage: {sw.ElapsedMilliseconds - lastTime} ms");
-            lastTime = sw.ElapsedMilliseconds;
             PlaceFiller();
             generationLog.AppendLine("Generation complete!");
             generationLog.AppendLine($"Gen time: {sw.ElapsedMilliseconds} ms");
@@ -135,35 +106,30 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("INITIALIZE STATE");
             CurrentStage = GenerationStep.InitializingState;
-            state = new State(slugcat, timeline,
-                RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
-
-            Stopwatch sw = Stopwatch.StartNew();
+            state = new State(slugcat, timeline, options);
 
             // Load Tokens
-            if (RandoOptions.UseSandboxTokenChecks)
+            if (options.useSandboxTokenChecks)
             {
-                lock (CollectTokenHandler.availableTokens)
+                lock (CollectTokenHandler.AvailableTokens)
                 {
-                    if (CollectTokenHandler.tokensLoadedFor != slugcat)
+                    if (!CollectTokenHandler.AvailableTokens.ContainsKey(slugcat))
                     {
                         CollectTokenHandler.LoadAvailableTokens(Plugin.Singleton.rainWorld, slugcat);
                     }
                 }
             }
 
-            generationLog.AppendLine($"1 | {sw.ElapsedMilliseconds}");
-
             // Regions loop
-            bool regionKitEchoes = RandoOptions.UseEchoChecks && RegionKitCompatibility.Enabled;
+            bool regionKitEchoes = options.useEchoChecks && RegionKitCompatibility.Enabled;
             bool doPearlLocations =
-                RandoOptions.UsePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
+                options.usePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
             bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear &&
-                                   RandoOptions.UseSMBroadcasts;
+                                   options.useSMTokens;
             List<string> slugcatRegions =
                 [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
             // Add Metropolis to region list if option set
-            if (ModManager.MSC && RandoOptions.ForceOpenMetropolis) slugcatRegions.Add("LC");
+            if (ModManager.MSC && options.allowMetroForOthers) slugcatRegions.Add("LC");
             // Remove regions from logic
             foreach (KeyValuePair<string, CustomLogicBuilder.RulePatch> region
                      in CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedRegions
@@ -172,8 +138,6 @@ namespace RainWorldRandomizer.Generation
                 slugcatRegions.Remove(region.Key);
                 generationLog.AppendLine($"Removed region {region.Key}");
             }
-
-            generationLog.AppendLine($"2 | {sw.ElapsedMilliseconds}");
 
             foreach (string regionShort in Region.GetFullRegionOrder())
             {
@@ -206,10 +170,10 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 // Create Token locations
-                if (RandoOptions.UseSandboxTokenChecks
-                    && CollectTokenHandler.availableTokens.ContainsKey(regionShort))
+                if (options.useSandboxTokenChecks
+                    && CollectTokenHandler.AvailableTokens[slugcat].ContainsKey(regionShort))
                 {
-                    foreach (string token in CollectTokenHandler.availableTokens[regionShort])
+                    foreach (string token in CollectTokenHandler.AvailableTokens[slugcat][regionShort])
                     {
                         string name = $"Token-{token}";
                         if (token.Split('-').Length == 1) name += $"-{regionShort}";
@@ -228,7 +192,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 // Create Dev token locations
-                if (ModManager.MSC && RandoOptions.UseDevTokenChecks &&
+                if (ModManager.MSC && options.useDevTokenChecks &&
                     TokenCachePatcher.regionDevTokens.ContainsKey(regionLower))
                 {
                     for (int i = 0; i < TokenCachePatcher.regionDevTokens[regionLower].Count; i++)
@@ -243,7 +207,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 // Create Karma flower locations
-                if (slugcat != SlugcatStats.Name.Red && RandoOptions.UseKarmaFlowerChecks &&
+                if (slugcat != SlugcatStats.Name.Red && options.useKarmaFlowerChecks &&
                     TokenCachePatcher.regionKarmaFlowers.ContainsKey(regionLower))
                 {
                     for (int i = 0; i < TokenCachePatcher.regionKarmaFlowers[regionLower].Count; i++)
@@ -265,7 +229,7 @@ namespace RainWorldRandomizer.Generation
                     {
                         shelters.Add(TokenCachePatcher.regionShelters[regionLower][i]);
                         // Create Shelter locations
-                        if (RandoOptions.UseShelterChecks)
+                        if (options.useShelterChecks)
                         {
                             regionLocations.Add(new Location(
                                 $"Shelter-{TokenCachePatcher.regionShelters[regionLower][i]}", Location.Type.Shelter,
@@ -280,8 +244,6 @@ namespace RainWorldRandomizer.Generation
                     shelters = shelters
                 };
             }
-
-            generationLog.AppendLine($"3 | {sw.ElapsedMilliseconds}");
 
             // Create Gate items
             foreach (string karmaLock in Plugin.Singleton.rainWorld.progression.karmaLocks)
@@ -333,17 +295,15 @@ namespace RainWorldRandomizer.Generation
                 itemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
             }
 
-            generationLog.AppendLine($"4 | {sw.ElapsedMilliseconds}");
-
             Dictionary<string, AccessRule> passageRules = CreatePassageRules();
-            if (RandoOptions.GivePassageItems)
+            if (options.givePassageUnlocks)
             {
                 itemsToPlace.AddRange([
                     .. passageRules.Select(kv => new Item(kv.Key, Item.Type.Passage, Item.Importance.Filler))
                 ]);
             }
 
-            if (RandoOptions.UsePassageChecks)
+            if (options.usePassageChecks)
             {
                 HashSet<Location> locs =
                     [.. passageRules.Select(kv => new Location($"Passage-{kv.Key}", Location.Type.Passage, kv.Value))];
@@ -351,7 +311,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Echo locations
-            if (RandoOptions.UseEchoChecks)
+            if (options.useEchoChecks)
             {
                 foreach (string echo in ExtEnumBase.GetNames(typeof(GhostWorldPresence.GhostID)))
                 {
@@ -367,18 +327,16 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
-            generationLog.AppendLine($"5 | {sw.ElapsedMilliseconds}");
-
             // Create Karma items
-            int karmaInPool = 8 - (RandoOptions.StartMinimumKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
-            karmaInPool += RandoOptions.ExtraKarmaIncreases;
+            int karmaInPool = 8 - (options.startMinKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
+            karmaInPool += options.extraKarmaIncreases;
             for (int i = 0; i < karmaInPool; i++)
             {
                 itemsToPlace.Add(new Item("Karma", Item.Type.Karma, Item.Importance.Progression));
             }
 
             // Create Food Quest locations
-            if (ModManager.MSC && RandoOptions.UseFoodQuest)
+            if (ModManager.MSC && options.foodQuestBehavior >= RandoOptions.FoodQuestBehavior.Enabled)
             {
                 List<AccessRule> allGourmRules = [];
                 HashSet<Location> foodQuestLocs = [];
@@ -416,7 +374,7 @@ namespace RainWorldRandomizer.Generation
 
                 allRegions.Add(FOODQUEST_REG, new(FOODQUEST_REG, foodQuestLocs));
 
-                if (RandoOptions.UsePassageChecks && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)
+                if (options.usePassageChecks && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)
                 {
                     Location gourmPassage = new("Passage-Gourmand", Location.Type.Passage,
                         new CompoundAccessRule([.. allGourmRules], CompoundAccessRule.CompoundOperation.All));
@@ -424,10 +382,8 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
-            generationLog.AppendLine($"6 | {sw.ElapsedMilliseconds}");
-
             // Create Special locations
-            if (RandoOptions.UseSpecialChecks)
+            if (options.useSpecialChecks)
             {
                 HashSet<Location> specialLocs = [];
 
@@ -463,13 +419,13 @@ namespace RainWorldRandomizer.Generation
                     // Rivulet does a murder in RM, seperate check
                     case "Rivulet":
                         allRegions["SL"].allLocations.Add(new("Meet_LttM", Location.Type.Story, new("The_Mark")));
-                        if (RandoOptions.UseEnergyCell)
+                        if (options.useEnergyCell)
                         {
                             allRegions["RM"].allLocations.Add(new("Kill_FP", Location.Type.Story, new()));
                         }
 
                         break;
-                    // Saint has 2 seperate checks for ascending
+                    // Saint has 2 separate checks for ascending
                     case "Saint":
                         allRegions["SL"].allLocations
                             .Add(new("Ascend_LttM", Location.Type.Story, new KarmaAccessRule(10)));
@@ -499,7 +455,7 @@ namespace RainWorldRandomizer.Generation
                     itemsToPlace.Add(new Item("IdDrone", Item.Type.Other, Item.Importance.Progression));
                     break;
                 case "Rivulet":
-                    if (RandoOptions.UseEnergyCell)
+                    if (options.useEnergyCell)
                     {
                         itemsToPlace.Add(new Item("Object-EnergyCell", Item.Type.Object, Item.Importance.Progression));
                         itemsToPlace.Add(new Item("Longer_Cycles", Item.Type.Other, Item.Importance.Progression));
@@ -629,7 +585,7 @@ namespace RainWorldRandomizer.Generation
                     new AccessRule()));
             }
 
-            if (RandoOptions.RandomizeSpawnLocation)
+            if (options.randomizeSpawnLocation)
             {
                 // From state, find a random region that has at least one location, one shelter, and one connection that the player could leave with.
                 // Additionally filter out regions manually set to not be start regions
@@ -704,16 +660,16 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Log all logic
-            if (logVerbose)
-            {
-                generationLog.AppendLine("Full logic:");
-                foreach (RandoRegion region in state.AllRegions)
-                {
-                    generationLog.AppendLine($"\t{region}");
-                }
-
-                generationLog.AppendLine();
-            }
+            // if (logVerbose)
+            // {
+            //     generationLog.AppendLine("Full logic:");
+            //     foreach (RandoRegion region in state.AllRegions)
+            //     {
+            //         generationLog.AppendLine($"\t{region}");
+            //     }
+            //
+            //     generationLog.AppendLine();
+            // }
         }
 
         /// <summary>
@@ -760,7 +716,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             List<Item> itemsToAdd = [];
-            bool[] perksToAdd = RandoOptions.ExpeditionPerks;
+            bool[] perksToAdd = options.expeditionPerks;
 
             // If there is space in item pool, add whichever perks we have selected in options
             if (state.AllLocations.Count >= itemsToPlace.Count + perksToAdd.Count(b => b))
@@ -780,19 +736,19 @@ namespace RainWorldRandomizer.Generation
             int damageUpsAdded = 0;
             while (state.AllLocations.Count > itemsToPlace.Count + itemsToAdd.Count)
             {
-                if (damageUpsAdded < RandoOptions.TotalDamageIncreases)
+                if (damageUpsAdded < options.numDamageIncreases)
                 {
                     itemsToAdd.Add(new Item("DamageUpgrade", Item.Type.Other, Item.Importance.Filler));
                     damageUpsAdded++;
                 }
                 else if (slugcat == SlugcatStats.Name.Red
-                         && hunterCyclesAdded < state.AllLocations.Count * RandoOptions.HunterCycleIncreaseDensity)
+                         && hunterCyclesAdded < state.AllLocations.Count * options.hunterCyclesDensity)
                 {
                     // Add cycle increases for Hunter
                     itemsToAdd.Add(new Item("HunterCycles", Item.Type.Other, Item.Importance.Filler));
                     hunterCyclesAdded++;
                 }
-                else if (trapsAdded < state.AllLocations.Count * RandoOptions.TrapsDensity)
+                else if (trapsAdded < state.AllLocations.Count * options.trapsDensity)
                 {
                     // Add trap items
                     itemsToAdd.Add(Item.RandomTrapItem(ref randomState));

@@ -8,8 +8,7 @@ namespace RainWorldRandomizer
 {
     public static class CollectTokenHandler
     {
-        public static SlugcatStats.Name tokensLoadedFor = null;
-        public static Dictionary<string, string[]> availableTokens = [];
+        public static Dictionary<SlugcatStats.Name, Dictionary<string, string[]>> AvailableTokens = [];
 
         public static void ApplyHooks()
         {
@@ -53,7 +52,7 @@ namespace RainWorldRandomizer
         /// </summary>
         public static void LoadAvailableTokens(RainWorld rainWorld, SlugcatStats.Name slugcat)
         {
-            availableTokens.Clear();
+            AvailableTokens[slugcat] = [];
             List<string> allRegions = Region.GetFullRegionOrder();
 
             foreach (var region in allRegions)
@@ -63,7 +62,8 @@ namespace RainWorldRandomizer
 
                 foreach (var token in rainWorld.regionBlueTokens[regionLower])
                 {
-                    if (rainWorld.regionBlueTokensAccessibility[regionLower][rainWorld.regionBlueTokens[regionLower].IndexOf(token)].Contains(slugcat))
+                    if (rainWorld.regionBlueTokensAccessibility[regionLower]
+                        [rainWorld.regionBlueTokens[regionLower].IndexOf(token)].Contains(slugcat))
                     {
                         idsToAdd.Add(token.value);
                     }
@@ -71,7 +71,8 @@ namespace RainWorldRandomizer
 
                 foreach (var token in rainWorld.regionGoldTokens[regionLower])
                 {
-                    if (rainWorld.regionGoldTokensAccessibility[regionLower][rainWorld.regionGoldTokens[regionLower].IndexOf(token)].Contains(slugcat))
+                    if (rainWorld.regionGoldTokensAccessibility[regionLower]
+                        [rainWorld.regionGoldTokens[regionLower].IndexOf(token)].Contains(slugcat))
                     {
                         idsToAdd.Add($"L-{token.value}");
                     }
@@ -79,7 +80,8 @@ namespace RainWorldRandomizer
 
                 foreach (var token in rainWorld.regionRedTokens[regionLower])
                 {
-                    if (rainWorld.regionRedTokensAccessibility[regionLower][rainWorld.regionRedTokens[regionLower].IndexOf(token)].Contains(slugcat))
+                    if (rainWorld.regionRedTokensAccessibility[regionLower]
+                        [rainWorld.regionRedTokens[regionLower].IndexOf(token)].Contains(slugcat))
                     {
                         idsToAdd.Add($"S-{token.value}");
                     }
@@ -87,15 +89,15 @@ namespace RainWorldRandomizer
 
                 foreach (var token in rainWorld.regionGreenTokens[regionLower])
                 {
-                    if (rainWorld.regionGreenTokensAccessibility[regionLower][rainWorld.regionGreenTokens[regionLower].IndexOf(token)].Contains(slugcat))
+                    if (rainWorld.regionGreenTokensAccessibility[regionLower]
+                        [rainWorld.regionGreenTokens[regionLower].IndexOf(token)].Contains(slugcat))
                     {
                         idsToAdd.Add(token.value);
                     }
                 }
 
-                availableTokens.Add(region, [.. idsToAdd]);
+                AvailableTokens[slugcat].Add(region, [.. idsToAdd]);
             }
-            tokensLoadedFor = slugcat;
         }
 
         /// <summary>
@@ -109,7 +111,8 @@ namespace RainWorldRandomizer
             // Prevent TextPrompt from being issued.
             if (RandoOptions.DisableTokenPopUps) self.anythingUnlocked = false;
 
-            string tokenString = TokenToLocationName(self.placedObj.data as CollectToken.CollectTokenData, self.room.abstractRoom.name);
+            string tokenString = TokenToLocationName(self.placedObj.data as CollectToken.CollectTokenData,
+                self.room.abstractRoom.name);
             Plugin.RandoManager.GiveLocation(tokenString);
         }
 
@@ -126,14 +129,15 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 x => x.MatchLdfld(typeof(RoomSettings).GetField(nameof(RoomSettings.placedObjects))),
                 x => x.MatchLdloc(out localVarIndex)
-                );
+            );
 
             // sandbox
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
-                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), [typeof(string), typeof(bool)]))
-                );
+                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected),
+                        [typeof(string), typeof(bool)]))
+            );
 
             InjectHasTokenCheck();
 
@@ -141,18 +145,20 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
-                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), [typeof(MultiplayerUnlocks.SlugcatUnlockID)]))
-                );
+                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected),
+                        [typeof(MultiplayerUnlocks.SlugcatUnlockID)]))
+            );
 
             InjectHasTokenCheck();
 
             // broadcasts
             ILLabel broadcastJump = null;
-            c.GotoNext(x => x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.chatlogsRead))));
+            c.GotoNext(x =>
+                x.MatchLdfld(typeof(DeathPersistentSaveData).GetField(nameof(DeathPersistentSaveData.chatlogsRead))));
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchBrfalse(out broadcastJump)
-                );
+            );
 
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldloc, localVarIndex);
@@ -163,8 +169,9 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(PlayerProgression.MiscProgressionData)
-                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected), [typeof(MultiplayerUnlocks.SafariUnlockID)]))
-                );
+                    .GetMethod(nameof(PlayerProgression.MiscProgressionData.GetTokenCollected),
+                        [typeof(MultiplayerUnlocks.SafariUnlockID)]))
+            );
 
             InjectHasTokenCheck();
 
@@ -176,16 +183,18 @@ namespace RainWorldRandomizer
                 MoveType.After,
                 x => x.MatchCallOrCallvirt(typeof(Options).GetMethod(nameof(Options.DeveloperCommentaryLocalized))),
                 x => x.MatchBrfalse(out devJumpFalse)
-                );
+            );
             devJumpTrue = c.MarkLabel();
 
             // After checking if object is dev token at 2C70
             c.GotoPrev(
                 MoveType.After,
-                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.PlacedObjectType).GetField(nameof(MoreSlugcatsEnums.PlacedObjectType.DevToken))),
+                x => x.MatchLdsfld(
+                    typeof(MoreSlugcatsEnums.PlacedObjectType).GetField(nameof(MoreSlugcatsEnums.PlacedObjectType
+                        .DevToken))),
                 x => x.MatchCallOrCallvirt(out _),
                 x => x.MatchBrfalse(out _)
-                );
+            );
 
             // After we know this is a dev token, check if it is randomized and not found.
             // Ignore developer commentary setting and localization check
@@ -205,12 +214,14 @@ namespace RainWorldRandomizer
                 c.Emit(OpCodes.Ldloc, localVarIndex);
                 c.EmitDelegate(AlreadyHasToken);
             }
-            
+
             static bool AlreadyHasToken(Room room, int index)
             {
                 if (!Plugin.RandomizerActive) // To get unmodified behavior, return false if dev token else true
                     return room.roomSettings.placedObjects[index].type != MoreSlugcatsEnums.PlacedObjectType.DevToken;
-                string tokenString = TokenToLocationName(room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData, room.abstractRoom.name);
+                string tokenString =
+                    TokenToLocationName(room.roomSettings.placedObjects[index].data as CollectToken.CollectTokenData,
+                        room.abstractRoom.name);
                 return Plugin.RandoManager.IsLocationGiven(tokenString) is true or null;
             }
         }
@@ -225,8 +236,9 @@ namespace RainWorldRandomizer
             // Get devToken property at 0010
             c.GotoNext(
                 MoveType.After,
-                x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.devToken)).GetGetMethod())
-                );
+                x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.devToken))
+                    .GetGetMethod())
+            );
 
             // If it never reads as a dev token it won't destroy it
             c.EmitDelegate(OverwriteDevToken);
@@ -236,8 +248,9 @@ namespace RainWorldRandomizer
             // Get devToken property at 1040
             c.GotoNext(
                 MoveType.After,
-                x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.devToken)).GetGetMethod())
-                );
+                x => x.MatchCallOrCallvirt(typeof(CollectToken).GetProperty(nameof(CollectToken.devToken))
+                    .GetGetMethod())
+            );
 
             c.EmitDelegate(ExtendTokenRange);
             return;
@@ -254,8 +267,11 @@ namespace RainWorldRandomizer
             if (!Plugin.RandomizerActive) return orig(self);
             if (self.room.game.StoryCharacter is null) return false;
 
-            bool isInv = ModManager.MSC && self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
-            bool shouldBeAvailable = (self.placedObj.data as CollectToken.CollectTokenData).availableToPlayers.Contains(self.room.game.StoryCharacter);
+            bool isInv = ModManager.MSC &&
+                         self.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel;
+            bool shouldBeAvailable =
+                (self.placedObj.data as CollectToken.CollectTokenData).availableToPlayers.Contains(self.room.game
+                    .StoryCharacter);
             return orig(self) || (shouldBeAvailable && (isInv || self.devToken));
         }
 
@@ -267,8 +283,9 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdloc(out localIndex),
-                x => x.MatchCallOrCallvirt(typeof(SlugcatStats).GetMethod(nameof(SlugcatStats.HiddenOrUnplayableSlugcat)))
-                );
+                x => x.MatchCallOrCallvirt(
+                    typeof(SlugcatStats).GetMethod(nameof(SlugcatStats.HiddenOrUnplayableSlugcat)))
+            );
 
             c.Emit(OpCodes.Ldloc, localIndex);
             c.EmitDelegate(HiddenOrUnplayableAndNotInv);
@@ -277,7 +294,8 @@ namespace RainWorldRandomizer
             static bool HiddenOrUnplayableAndNotInv(bool isHiddenOrUnplayable, SlugcatStats.Name slugcat)
             {
                 if (!Plugin.RandomizerActive) return isHiddenOrUnplayable;
-                return isHiddenOrUnplayable && (!ModManager.MSC || slugcat != MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
+                return isHiddenOrUnplayable &&
+                       (!ModManager.MSC || slugcat != MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
             }
         }
 
@@ -289,16 +307,20 @@ namespace RainWorldRandomizer
             ILCursor c = new(il);
 
             // Prevent stun and mushroom effect (branch interception at 0026).
-            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(ExtEnum<ChatlogData.ChatlogID>).GetMethod("op_Inequality")));
+            c.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(typeof(ExtEnum<ChatlogData.ChatlogID>).GetMethod("op_Inequality")));
             c.EmitDelegate(PreventStun);
 
             // Prevent chatlog from being displayed (branch interception at 00b1).
-            c.GotoNext(MoveType.Before, x => x.MatchLdcI4(60));  // 00aa
+            c.GotoNext(MoveType.Before, x => x.MatchLdcI4(60)); // 00aa
             c.EmitDelegate(PreventChatlog);
             return;
-            
-            static bool PreventStun(bool prev) => Plugin.RandomizerActive ? prev && !RandoOptions.DisableTokenPopUps : prev;
-            static int PreventChatlog(int prev) => Plugin.RandomizerActive && RandoOptions.DisableTokenPopUps ? 59 : prev;
+
+            static bool PreventStun(bool prev) =>
+                Plugin.RandomizerActive ? prev && !RandoOptions.DisableTokenPopUps : prev;
+
+            static int PreventChatlog(int prev) =>
+                Plugin.RandomizerActive && RandoOptions.DisableTokenPopUps ? 59 : prev;
         }
 
         /// <summary>
@@ -309,10 +331,10 @@ namespace RainWorldRandomizer
             ILCursor c = new(il);
 
             // Prevent the `for` loop from running (branch interception at 0038).
-            c.GotoNext(MoveType.Before, x => x.MatchConvI4());  // 0037
+            c.GotoNext(MoveType.Before, x => x.MatchConvI4()); // 0037
             c.EmitDelegate(PreventStop);
             return;
-            
+
             static int PreventStop(int prev) => Plugin.RandomizerActive && RandoOptions.DisableTokenPopUps ? 0 : prev;
         }
 

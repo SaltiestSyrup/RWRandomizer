@@ -62,11 +62,6 @@ namespace RainWorldRandomizer
                 passageTokensStatus.Add(new(passage), false);
             }
 
-            if (Input.GetKey("o"))
-            {
-                DebugBulkGeneration(500);
-            }
-
             // Continue existing game
             if (continueSaved)
             {
@@ -138,16 +133,13 @@ namespace RainWorldRandomizer
                     return;
                 }
 
-                VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
-                    RandoOptions.UseSetSeed
-                        ? RandoOptions.SetSeed
-                        : UnityEngine.Random.Range(0, int.MaxValue).ToString());
+                VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), RandoOptions.LoadedOptions);
 
                 Exception generationException = null;
                 bool timedOut = false;
                 try
                 {
-                    timedOut = !generator.BeginGeneration(true).Wait(10000);
+                    timedOut = !generator.BeginGeneration().Wait(10000);
                 }
                 catch (Exception e)
                 {
@@ -197,61 +189,6 @@ namespace RainWorldRandomizer
             }
 
             isRandomizerActive = true;
-        }
-
-        public void DebugBulkGeneration(int howMany)
-        {
-            VanillaGenerator[] generators = new VanillaGenerator[howMany];
-            Task[] genTask = new Task[howMany];
-            int numSucceeded = 0;
-            int numFailed = 0;
-
-            Stopwatch sw = Stopwatch.StartNew();
-
-            Plugin.Log.LogDebug("Starting bulk generation test");
-            for (int i = 0; i < howMany; i++)
-            {
-                generators[i] = new VanillaGenerator(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
-                    UnityEngine.Random.Range(0, int.MaxValue).ToString());
-                genTask[i] = generators[i].BeginGeneration();
-            }
-
-            // Only gen for up to 30 seconds
-            // Try block here to stop WaitAll from throwing innner task's exceptions
-            try
-            {
-                Task.WaitAll(genTask, 30000);
-            }
-            catch
-            {
-            }
-
-            sw.Stop();
-
-            for (int j = 0; j < howMany; j++)
-            {
-                if (genTask[j].Exception != null)
-                {
-                    Plugin.Log.LogError($"Generation failure with Exception:");
-                    Plugin.Log.LogError(genTask[j].Exception);
-                    Plugin.Log.LogDebug($"Log for failed gen:");
-                    Plugin.Log.LogDebug(generators[j].generationLog);
-                    numFailed++;
-                }
-                else if (generators[j].CurrentStage == VanillaGenerator.GenerationStep.Complete)
-                {
-                    numSucceeded++;
-                }
-                else
-                {
-                    Plugin.Log.LogError(
-                        $"Generation was timed out before completion during stage: {generators[j].CurrentStage}");
-                    //Plugin.Log.LogDebug(generators[j].generationLog);
-                }
-            }
-
-            Plugin.Log.LogDebug(
-                $"Bulk gen complete; \n\tSucceeded: {numSucceeded}\n\tFailed: {numFailed}\n\tRate: {(float)numSucceeded / howMany * 100}%\n\tAvg time: {sw.ElapsedMilliseconds / howMany} ms");
         }
 
         public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
