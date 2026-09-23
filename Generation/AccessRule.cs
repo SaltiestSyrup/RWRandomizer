@@ -29,6 +29,7 @@ namespace RainWorldRandomizer.Generation
         /// Allows for quick checking of the type of rule this is without using Type checking
         /// </summary>
         public AccessRuleType Type { get; protected set; } = AccessRuleType.Wildcard;
+
         /// <summary>
         /// Name of the rule, what is searched for within State
         /// </summary>
@@ -56,6 +57,16 @@ namespace RainWorldRandomizer.Generation
             if (ReqName is IMPOSSIBLE_ID) return "Impossible";
             return $"Has item {ReqName}";
         }
+
+        /// <summary>
+        /// Create a blank rule with no requirement
+        /// </summary>
+        public static AccessRule Empty() => new();
+
+        /// <summary>
+        /// Create a rule with an impossible condition
+        /// </summary>
+        public static AccessRule Impossible() => new(IMPOSSIBLE_ID);
     }
 
     /// <summary>
@@ -163,7 +174,8 @@ namespace RainWorldRandomizer.Generation
                 .Any(r =>
                 {
                     string regLower = r.ID.ToLowerInvariant();
-                    if (!TokenCachePatcher.regionCreatures.TryGetValue(regLower, out List<CreatureTemplate.Type> critList)) return false;
+                    if (!TokenCachePatcher.regionCreatures.TryGetValue(regLower,
+                            out List<CreatureTemplate.Type> critList)) return false;
                     int index = critList.IndexOf(creature);
                     if (index < 0) return false;
                     return TokenCachePatcher.regionCreaturesAccessibility[regLower][index].Contains(state.Slugcat);
@@ -202,7 +214,8 @@ namespace RainWorldRandomizer.Generation
                 .Any(r =>
                 {
                     string regLower = r.ID.ToLowerInvariant();
-                    if (!TokenCachePatcher.regionObjects.TryGetValue(regLower, out List<AbstractPhysicalObject.AbstractObjectType> objList)) return false;
+                    if (!TokenCachePatcher.regionObjects.TryGetValue(regLower,
+                            out List<AbstractPhysicalObject.AbstractObjectType> objList)) return false;
                     int index = objList.IndexOf(item);
                     if (index < 0) return false;
                     return TokenCachePatcher.regionObjectsAccessibility[regLower][index].Contains(state.Slugcat);
@@ -369,7 +382,10 @@ namespace RainWorldRandomizer.Generation
     /// <param name="rules">Array of rules that this rule will reference</param>
     /// <param name="operation">The type of operation used to determine if given rules are met</param>
     /// <param name="valAmount">Optional value utilized by some operations</param>
-    public class CompoundAccessRule(AccessRule[] rules, CompoundAccessRule.CompoundOperation operation, int valAmount = 0) : AccessRule
+    public class CompoundAccessRule(
+        AccessRule[] rules,
+        CompoundAccessRule.CompoundOperation operation,
+        int valAmount = 0) : AccessRule
     {
         public enum CompoundOperation
         {
@@ -377,10 +393,12 @@ namespace RainWorldRandomizer.Generation
             /// All of the rules must be satisfied
             /// </summary>
             All,
+
             /// <summary>
             /// At least one of the rules must be satisfied
             /// </summary>
             Any,
+
             /// <summary>
             /// At least <see cref="valAmount"/> of the rules must be satisfied
             /// </summary>
@@ -408,7 +426,8 @@ namespace RainWorldRandomizer.Generation
             {
                 CompoundOperation.All => accessRules.All(r => r.IsPossible(state)),
                 CompoundOperation.Any => accessRules.Any(r => r.IsPossible(state)),
-                CompoundOperation.AtLeast => accessRules.Sum((r) => { return r.IsPossible(state) ? 1 : 0; }) >= valAmount,
+                CompoundOperation.AtLeast => accessRules.Sum((r) => { return r.IsPossible(state) ? 1 : 0; }) >=
+                                             valAmount,
                 _ => false,
             };
         }
@@ -437,10 +456,11 @@ namespace RainWorldRandomizer.Generation
     /// Shorthand for a rule allowing any of the given slugcats to be used
     /// </summary>
     /// <param name="invert">If true, will instead pass if slugcat is none of those listed</param>
-    public class MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats, bool invert = false) 
+    public class MultiSlugcatAccessRule(SlugcatStats.Name[] slugcats, bool invert = false)
         : CompoundAccessRule([.. slugcats.Select((scug) => new SlugcatAccessRule(scug, invert))],
             invert ? CompoundOperation.All : CompoundOperation.Any)
-    { }
+    {
+    }
 
     public static class AccessRuleConstants
     {
@@ -468,7 +488,7 @@ namespace RainWorldRandomizer.Generation
                 new CreatureAccessRule(CreatureTemplate.Type.VultureGrub),
                 new CreatureAccessRule(CreatureTemplate.Type.Hazer),
             ];
-            List<AccessRule> monk = 
+            List<AccessRule> monk =
             [
                 new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.DangleFruit),
                 new ObjectAccessRule(AbstractPhysicalObject.AbstractObjectType.WaterNut),
@@ -497,6 +517,7 @@ namespace RainWorldRandomizer.Generation
                     MoreSlugcatsEnums.SlugcatStatsName.Spear
                 ]);
             }
+
             if (ModManager.DLCShared)
             {
                 monk.AddRange(

@@ -121,11 +121,6 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Regions loop
-            bool regionKitEchoes = options.useEchoChecks && RegionKitCompatibility.Enabled;
-            bool doPearlLocations =
-                options.usePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow);
-            bool spearBroadcasts = ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear &&
-                                   options.useSMTokens;
             List<string> slugcatRegions =
                 [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
             // Add Metropolis to region list if option set
@@ -139,107 +134,55 @@ namespace RainWorldRandomizer.Generation
                 generationLog.AppendLine($"Removed region {region.Key}");
             }
 
-            foreach (string regionShort in Region.GetFullRegionOrder())
+            foreach (string regionShort in Region.GetFullRegionOrder().Where(slugcatRegions.Contains))
             {
                 HashSet<Location> regionLocations = [];
 
-                // Filter out slugcat inaccessible regions unless there is a special rule defined
-                if (!slugcatRegions.Contains(regionShort)) continue;
-
-                string regionLower = regionShort.ToLowerInvariant();
-
                 // Add Echoes from RegionKit if present
-                if (regionKitEchoes && RegionKitCompatibility.RegionHasEcho(regionShort, slugcat))
+                if (LocationHelpers.MakeEchoOrSpinningTopLocation(slugcat, regionShort) is Location loc)
                 {
-                    regionLocations.Add(new($"Echo-{regionShort}", Location.Type.Echo, new()));
+                    regionLocations.Add(loc);
                 }
 
                 // Create Pearl locations
-                if (doPearlLocations && Plugin.Singleton.rainWorld.regionDataPearls.ContainsKey(regionLower))
+                if (options.usePearlChecks && (ModManager.MSC || slugcat != SlugcatStats.Name.Yellow))
                 {
-                    for (int i = 0; i < Plugin.Singleton.rainWorld.regionDataPearls[regionLower].Count; i++)
-                    {
-                        if (Plugin.Singleton.rainWorld.regionDataPearlsAccessibility[regionLower][i].Contains(slugcat)
-                            && Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value != "")
-                        {
-                            regionLocations.Add(new(
-                                $"Pearl-{Plugin.Singleton.rainWorld.regionDataPearls[regionLower][i].value}-{regionShort}",
-                                Location.Type.Pearl, new()));
-                        }
-                    }
+                    regionLocations.UnionWith(LocationHelpers.MakePearlLocations(slugcat, regionShort));
                 }
 
                 // Create Token locations
-                if (options.useSandboxTokenChecks
-                    && CollectTokenHandler.AvailableTokens[slugcat].ContainsKey(regionShort))
+                if (options.useSandboxTokenChecks)
                 {
-                    foreach (string token in CollectTokenHandler.AvailableTokens[slugcat][regionShort])
-                    {
-                        string name = $"Token-{token}";
-                        if (token.Split('-').Length == 1) name += $"-{regionShort}";
-                        regionLocations.Add(new Location(name, Location.Type.Token, new()));
-                    }
+                    regionLocations.UnionWith(LocationHelpers.MakeTokenLocations(slugcat, regionShort));
                 }
 
                 // Create Broadcast locations
-                if (spearBroadcasts && Plugin.Singleton.rainWorld.regionGreyTokens.ContainsKey(regionLower))
+                if (ModManager.MSC
+                    && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Spear
+                    && options.useSMTokens)
                 {
-                    foreach (ChatlogData.ChatlogID token in Plugin.Singleton.rainWorld.regionGreyTokens[regionLower])
-                    {
-                        regionLocations.Add(new Location($"Broadcast-{token.value}-{regionShort}", Location.Type.Token,
-                            new()));
-                    }
+                    regionLocations.UnionWith(LocationHelpers.MakeBroadcastLocations(slugcat, regionShort));
                 }
 
                 // Create Dev token locations
-                if (ModManager.MSC && options.useDevTokenChecks &&
-                    TokenCachePatcher.regionDevTokens.ContainsKey(regionLower))
+                if (ModManager.MSC && options.useDevTokenChecks)
                 {
-                    for (int i = 0; i < TokenCachePatcher.regionDevTokens[regionLower].Count; i++)
-                    {
-                        if (TokenCachePatcher.regionDevTokensAccessibility[regionLower][i].Contains(slugcat))
-                        {
-                            regionLocations.Add(new Location(
-                                $"DevToken-{TokenCachePatcher.regionDevTokens[regionLower][i]}", Location.Type.Token,
-                                new()));
-                        }
-                    }
+                    regionLocations.UnionWith(LocationHelpers.MakeDevTokenLocations(slugcat, regionShort));
                 }
 
                 // Create Karma flower locations
-                if (slugcat != SlugcatStats.Name.Red && options.useKarmaFlowerChecks &&
-                    TokenCachePatcher.regionKarmaFlowers.ContainsKey(regionLower))
+                if (slugcat != SlugcatStats.Name.Red && options.useKarmaFlowerChecks)
                 {
-                    for (int i = 0; i < TokenCachePatcher.regionKarmaFlowers[regionLower].Count; i++)
-                    {
-                        if (TokenCachePatcher.regionKarmaFlowersAccessibility[regionLower][i].Contains(slugcat))
-                        {
-                            regionLocations.Add(new Location(
-                                $"Flower-{TokenCachePatcher.regionKarmaFlowers[regionLower][i]}", Location.Type.Flower,
-                                new()));
-                        }
-                    }
+                    regionLocations.UnionWith(LocationHelpers.MakeKarmaFlowerLocations(slugcat, regionShort));
                 }
 
                 // Find shelters
-                HashSet<string> shelters = [];
-                for (int i = 0; i < TokenCachePatcher.regionShelters[regionLower].Count; i++)
-                {
-                    if (TokenCachePatcher.regionSheltersAccessibility[regionLower][i].Contains(timeline))
-                    {
-                        shelters.Add(TokenCachePatcher.regionShelters[regionLower][i]);
-                        // Create Shelter locations
-                        if (options.useShelterChecks)
-                        {
-                            regionLocations.Add(new Location(
-                                $"Shelter-{TokenCachePatcher.regionShelters[regionLower][i]}", Location.Type.Shelter,
-                                new()));
-                        }
-                    }
-                }
+                (HashSet<string> shelters, HashSet<Location> locs) =
+                    LocationHelpers.MakeShelters(timeline, regionShort, options.useShelterChecks);
+                regionLocations.UnionWith(locs);
 
                 // Create region
-                allRegions[regionShort] = new(regionShort, regionLocations)
+                allRegions[regionShort] = new RandoRegion(regionShort, regionLocations)
                 {
                     shelters = shelters
                 };
@@ -250,31 +193,27 @@ namespace RainWorldRandomizer.Generation
             {
                 string gate = Regex.Split(karmaLock, " : ")[0];
                 string[] split = Regex.Split(gate, "_");
-                if (split.Length < 3) continue; // Ignore abnormal gates
+                if (split.Length < 3) continue; // Ignore gates that don't follow the pattern "GATE_[R1]_[R2]"
                 string[] regionShorts = [split[1], split[2]];
 
                 // Skip if gate already accounted for
                 if (AllGates.Contains(gate)) continue;
-                // Gates that have to always be open to avoid softlocks
-
-                bool skipThisGate = false;
-                foreach (string regionShort in regionShorts)
-                {
-                    // If this region does not exist in the timeline
-                    // and is not an alias of an existing region, skip the gate
-                    string properRegionShort =
-                        Plugin.ProperRegionMap[slugcat].TryGetValue(regionShort, out string alias)
+                
+                if (regionShorts.Any(regionShort =>
+                        // If this region does not exist in the timeline
+                        // and is not an alias of an existing region, skip the gate
+                        !allRegions.ContainsKey(Plugin.ProperRegionMap[slugcat]
+                            .TryGetValue(regionShort, out string alias)
                             ? alias
-                            : regionShort;
-                    skipThisGate |= !allRegions.ContainsKey(properRegionShort);
-
-                    // If this gate is impossible to reach for the current slugcat, skip it
-                    skipThisGate |= TokenCachePatcher.GetRoomAccessibility(regionShort)
-                                        .TryGetValue(gate.ToLowerInvariant(), out List<SlugcatStats.Name> accessibleTo)
-                                    && !accessibleTo.Contains(slugcat);
+                            : regionShort)
+                        // If this side of the gate is impossible to reach for the current slugcat, skip it
+                        || (TokenCachePatcher.GetRoomAccessibility(regionShort)
+                                .TryGetValue(gate.ToLowerInvariant(), out List<SlugcatStats.Name> accessibleTo)
+                            && !accessibleTo.Contains(slugcat))))
+                {
+                    continue;
                 }
-
-                if (skipThisGate) continue;
+                
                 regionShorts[0] = Plugin.ProperRegionMap[slugcat][regionShorts[0]];
                 regionShorts[1] = Plugin.ProperRegionMap[slugcat][regionShorts[1]];
 
@@ -291,8 +230,10 @@ namespace RainWorldRandomizer.Generation
                 AllGates.Add(gate);
 
                 // Don't create items for gates that are always open
-                if (Constants.ForceOpenGates.Contains(gate)) continue;
-                itemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
+                if (!Constants.ForceOpenGates.Contains(gate))
+                {
+                    itemsToPlace.Add(new Item(gate, Item.Type.Gate, Item.Importance.Progression));
+                }
             }
 
             Dictionary<string, AccessRule> passageRules = CreatePassageRules();
@@ -308,23 +249,6 @@ namespace RainWorldRandomizer.Generation
                 HashSet<Location> locs =
                     [.. passageRules.Select(kv => new Location($"Passage-{kv.Key}", Location.Type.Passage, kv.Value))];
                 allRegions[PASSAGE_REG] = new RandoRegion(PASSAGE_REG, locs);
-            }
-
-            // Create Echo locations
-            if (options.useEchoChecks)
-            {
-                foreach (string echo in ExtEnumBase.GetNames(typeof(GhostWorldPresence.GhostID)))
-                {
-                    // No worry for duplicates from the RegionKit check,
-                    // as the HashSet should ignore duplicate additions
-                    if (!echo.Equals("NoGhost")
-                        && World.CheckForRegionGhost(slugcat, echo)
-                        && allRegions.ContainsKey(echo))
-                    {
-                        Location echoLoc = new($"Echo-{echo}", Location.Type.Echo, new());
-                        allRegions[echo].allLocations.Add(echoLoc);
-                    }
-                }
             }
 
             // Create Karma items

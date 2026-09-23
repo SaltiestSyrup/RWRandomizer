@@ -110,7 +110,7 @@
     <ItemGroup>
         <Compile Include="Archipelago\ArchipelagoConnection.cs"/>
         <Compile Include="Generation\Fuzzer.cs"/>
-        <Compile Include="Generation\GenerationHelpers.cs"/>
+        <Compile Include="Generation\LocationHelpers.cs"/>
         <Compile Include="Hooks\CollectTokenHandler.cs"/>
         <Compile Include="Constants.cs"/>
         <Compile Include="Generation\Connection.cs"/>
