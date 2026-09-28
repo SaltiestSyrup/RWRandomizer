@@ -402,8 +402,8 @@ public sealed class SlotSelector : ScrollingMenu
         {
             base.RemoveSprites();
             hud.ClearAllSprites();
-            Container.RemoveChild(iconMSC);
-            Container.RemoveChild(iconWatcher);
+            if (iconMSC is not null) Container.RemoveChild(iconMSC);
+            if (iconWatcher is not null) Container.RemoveChild(iconWatcher);
         }
 
         public override void Singal(MenuObject sender, string message)
