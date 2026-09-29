@@ -109,6 +109,19 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Archipelago\ArchipelagoConnection.cs"/>
+        <Compile Include="Generation\AccessRules\AccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\AccessRuleConstants.cs"/>
+        <Compile Include="Generation\AccessRules\CompoundAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\CreatureAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\EchoAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\GateAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\KarmaAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\MultiSlugcatAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\ObjectAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\OptionAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\RegionAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\SlugcatAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\TimelineAccessRule.cs"/>
         <Compile Include="Generation\Fuzzer.cs"/>
         <Compile Include="Generation\LocationHelpers.cs"/>
         <Compile Include="Hooks\CollectTokenHandler.cs"/>
@@ -119,7 +132,6 @@
         <Compile Include="Generation\InvCompat.cs"/>
         <Compile Include="Generation\RandoRegion.cs"/>
         <Compile Include="Hooks\FlowerCheckHandler.cs"/>
-        <Compile Include="Generation\AccessRule.cs"/>
         <Compile Include="Hooks\LocationColorizer.cs"/>
         <Compile Include="Hooks\TokenCachePatcher.cs"/>
         <Compile Include="LocationInfo.cs"/>
