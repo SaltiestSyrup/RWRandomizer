@@ -4,11 +4,20 @@ using System.Linq;
 
 namespace RainWorldRandomizer.Generation
 {
-    public class RandoRegion(string ID, HashSet<Location> locations) : IEquatable<RandoRegion>
+    public class RandoRegion(string id, HashSet<Location> locations) : IEquatable<RandoRegion>
     {
-        public string ID = ID;
+        /// <summary> Constant storing the ID for the Passage region </summary>
+        public const string PASSAGE_REG = "Passages";
+
+        /// <summary> Constant storing the ID for the Food Quest region </summary>
+        public const string FOODQUEST_REG = "FoodQuest";
+
+        /// <summary> Constant storing the ID for the Special region </summary>
+        public const string SPECIAL_REG = "Special";
+        
+        public readonly string ID = id;
         /// <summary> True if this region isn't a normal in-game region ID </summary>
-        public bool isSpecial = !Region.GetFullRegionOrder().Contains(ID);
+        public bool isSpecial = !Region.GetFullRegionOrder().Contains(id);
         public bool hasReached = false;
         public bool allLocationsReached = false;
 
@@ -22,11 +31,7 @@ namespace RainWorldRandomizer.Generation
         /// <param name="state">The current randomizer state</param>
         public bool IsPossibleToReach(State state)
         {
-            foreach (Connection con in connections)
-            {
-                if (con.TravelPossible(state, con.OtherSide(this))) return true;
-            }
-            return false;
+            return connections.Any(con => con.TravelPossible(state, con.OtherSide(this)));
         }
 
         public override string ToString()
@@ -46,8 +51,7 @@ namespace RainWorldRandomizer.Generation
 
         public override bool Equals(object obj)
         {
-            if (obj is null || obj is not RandoRegion loc) return false;
-            return Equals(loc);
+            return obj is RandoRegion loc && Equals(loc);
         }
 
         public override int GetHashCode()
@@ -57,7 +61,7 @@ namespace RainWorldRandomizer.Generation
 
         public bool Equals(RandoRegion other)
         {
-            return ID.Equals(other.ID);
+            return other != null && ID.Equals(other.ID);
         }
     }
 
@@ -65,12 +69,12 @@ namespace RainWorldRandomizer.Generation
     /// Instructions for creating a subregion during generation.
     /// See <see cref="State.DefineSubRegion"/> for more details on subregions
     /// </summary>
-    public struct SubregionBlueprint(string baseRegion, string ID, string[] locations, string[] connections, string[] shelters, (AccessRule, AccessRule) rules)
+    public struct SubregionBlueprint(string baseRegion, string id, string[] locations, string[] connections, string[] shelters, (AccessRule, AccessRule) rules)
     {
         /// <summary>
         /// ID of this subregion
         /// </summary>
-        public string ID = ID;
+        public string ID = id;
         /// <summary>
         /// The region this subregion is a part of
         /// </summary>

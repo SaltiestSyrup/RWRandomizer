@@ -123,6 +123,7 @@
         <Compile Include="Generation\AccessRules\SlugcatAccessRule.cs"/>
         <Compile Include="Generation\AccessRules\TimelineAccessRule.cs"/>
         <Compile Include="Generation\Fuzzer.cs"/>
+        <Compile Include="Generation\ItemHelpers.cs"/>
         <Compile Include="Generation\LocationHelpers.cs"/>
         <Compile Include="Hooks\CollectTokenHandler.cs"/>
         <Compile Include="Constants.cs"/>
