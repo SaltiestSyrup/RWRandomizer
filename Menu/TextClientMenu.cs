@@ -12,10 +12,11 @@ namespace RainWorldRandomizer.Menu;
 public sealed class TextClientMenu : ScrollingMenu
 {
     private const int MAX_MESSAGES = 100;
-    
+
     // Holds the last [MAX_MESSAGES] messages, which are rendered on pause.
     // We do not remember the whole history. Because memory.
     private static Queue<MessageText> StoredMessages = new(MAX_MESSAGES);
+
     // Holds messages to be added while the client is open.
     // Appended to on message receive, cleared on 
     private static Queue<MessageText> LiveUpdateQueue = new();
@@ -25,13 +26,11 @@ public sealed class TextClientMenu : ScrollingMenu
     private OpTextBox textBox;
     private MenuTabWrapper tabWrapper;
     private UIelementWrapper textBoxWrapper;
-    
-    public TextClientMenu(RWMenu menu, MenuObject owner, Vector2 pos) 
+
+    public TextClientMenu(RWMenu menu, MenuObject owner, Vector2 pos)
         : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.3f, 0.75f))
     {
         entryHeight = 0.02f * size.y;
-        ScrollPos = LastPossibleScroll;
-        floatScrollPos = ScrollPos;
         LiveUpdateQueue.Clear();
 
         // Hack to give the text box a solid black background
@@ -42,10 +41,10 @@ public sealed class TextClientMenu : ScrollingMenu
         {
             fillAlpha = 1f
         };
-        
+
         // Text box wrapper
         tabWrapper = new MenuTabWrapper(menu, this);
-        
+
         // Text box
         textBox = new OpTextBox(RandoOptions.textClientCosmeticConfig,
             new Vector2(0.01f, -30f),
@@ -55,17 +54,21 @@ public sealed class TextClientMenu : ScrollingMenu
         };
         textBox.OnKeyDown += TextBoxKeyDown;
         textBox.OnUpdate += TextBoxUpdate;
-        
+
         textBoxWrapper = new UIelementWrapper(tabWrapper, textBox);
-        
+
         subObjects.Add(textBoxBackground);
         subObjects.Add(tabWrapper);
-        
+
         // Remove unneeded elements
         scrollDownButton.RemoveSprites();
         scrollUpButton.RemoveSprites();
-        
+
         PopulateEntries();
+
+        // Scroll to bottom
+        ScrollPos = LastPossibleScroll;
+        floatScrollPos = ScrollPos;
     }
 
     protected override void PopulateEntries()
@@ -77,28 +80,32 @@ public sealed class TextClientMenu : ScrollingMenu
             foreach (MessageText storedMessage in StoredMessages)
                 messages.AddRange(new FormattedMessage(storedMessage, entryWidth).SplitByLine());
         }
-        
+
         // Add entries. Each line of text is an entry
         for (int i = 0; i < messages.Count; i++)
         {
-            entries.Add(new TextClientEntry(menu, this, 
+            entries.Add(new TextClientEntry(menu, this,
                 new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(i)),
                 new Vector2(entryWidth, entryHeight),
                 messages[i]));
             subObjects.Add(entries[i]);
         }
-        
+
         filteredEntries = entries;
     }
 
-    protected override void FilterEntries(int filter) { }
+    protected override void FilterEntries(int filter)
+    {
+    }
 
     public override int GetCurrentlySelectedOfSeries(string series)
     {
         return 0;
     }
 
-    public override void SetCurrentlySelectedOfSeries(string series, int to) { }
+    public override void SetCurrentlySelectedOfSeries(string series, int to)
+    {
+    }
 
     public override void Update()
     {
@@ -150,7 +157,7 @@ public sealed class TextClientMenu : ScrollingMenu
         int prevEntryCount = entries.Count;
         for (int i = prevEntryCount; i < prevEntryCount + lines.Length; i++)
         {
-            entries.Add(new TextClientEntry(menu, this, 
+            entries.Add(new TextClientEntry(menu, this,
                 new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(i)),
                 new Vector2(entryWidth, entryHeight),
                 lines[i - prevEntryCount]));
@@ -187,7 +194,7 @@ public sealed class TextClientMenu : ScrollingMenu
         tabWrapper.RemoveSprites();
         RemoveSprites();
     }
-    
+
     public static void StoreMessage(MessageText message)
     {
         lock (StoredMessages)
@@ -209,8 +216,9 @@ public sealed class TextClientMenu : ScrollingMenu
     private sealed class TextClientEntry : Entry
     {
         private MenuLabel[] labels;
-        
-        public TextClientEntry(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, FormattedMessage message) : base(menu, owner, pos, size)
+
+        public TextClientEntry(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, FormattedMessage message) :
+            base(menu, owner, pos, size)
         {
             // Holds multiple labels to allow multiple colors in a line
             labels = new MenuLabel[message.textList.Count];
@@ -218,9 +226,9 @@ public sealed class TextClientMenu : ScrollingMenu
             for (int i = 0; i < message.textList.Count; i++)
             {
                 if (i > 0) curOffset += labels[i - 1].label.textRect.width + 1f;
-                
-                labels[i] = new MenuLabel(menu, this, message.textList[i], 
-                    new Vector2(curOffset + 5.01f, 0.01f), 
+
+                labels[i] = new MenuLabel(menu, this, message.textList[i],
+                    new Vector2(curOffset + 5.01f, 0.01f),
                     default, false);
                 labels[i].label.color = message.colorList[i];
                 labels[i].label.alignment = FLabelAlignment.Left;
@@ -231,7 +239,7 @@ public sealed class TextClientMenu : ScrollingMenu
         public override void GrafUpdate(float timeStacker)
         {
             base.GrafUpdate(timeStacker);
-            
+
             float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
             float alpha = Mathf.Pow(smoothedFade, 2f);
 
