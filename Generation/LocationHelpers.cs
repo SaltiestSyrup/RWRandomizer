@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using MoreSlugcats;
+using Watcher;
 
 namespace RainWorldRandomizer.Generation;
 
@@ -8,6 +9,13 @@ public static class LocationHelpers
 {
     public static Location MakeEchoOrSpinningTopLocation(SlugcatStats.Name slugcat, string regionShort)
     {
+        if (slugcat.IsWatcher())
+        {
+            return RWCustom.Custom.rainWorld.regionSpinningTopRooms.ContainsKey(regionShort)
+                ? new Location($"SpinningTop-{regionShort}", Location.Type.Echo, AccessRule.Empty())
+                : null;
+        }
+
         if ((RegionKitCompatibility.Enabled && RegionKitCompatibility.RegionHasEcho(regionShort, slugcat))
             || World.CheckForRegionGhost(slugcat, regionShort))
         {
@@ -272,6 +280,28 @@ public static class LocationHelpers
                 output["SL"] = [new Location("Ascend_LttM", Location.Type.Story, new KarmaAccessRule(10))];
                 output["CL"] = [new Location("Ascend_FP", Location.Type.Story, new KarmaAccessRule(10))];
                 break;
+            case "Watcher":
+                output["WORA"] =
+                [
+                    new Location("Prince-1", Location.Type.Story, new RippleAccessRule(3)),
+                    new Location("Prince-2", Location.Type.Story, new RippleAccessRule(5)),
+                    new Location("Prince-3", Location.Type.Story, new RippleAccessRule(7)),
+                    new Location("Prince-4", Location.Type.Story, new RippleAccessRule(9)),
+                    new Location("Meet_Ripple_Elder", Location.Type.Story, AccessRule.Empty())
+                ];
+
+                AccessRule weaverRule = new CompoundAccessRule(
+                    [..AccessRuleConstants.Regions, AccessRuleConstants.CanDynamicWarp],
+                    CompoundAccessRule.CompoundOperation.All);
+
+                output["WRSA"] =
+                [
+                    new Location("Weaver-1", Location.Type.Story, weaverRule),
+                    new Location("Weaver-2", Location.Type.Story, weaverRule),
+                    new Location("Weaver-3", Location.Type.Story, weaverRule),
+                    new Location("Weaver-4", Location.Type.Story, weaverRule),
+                ];
+                break;
         }
 
         return output;
@@ -433,5 +463,10 @@ public static class LocationHelpers
         }
 
         return passageRules;
+    }
+
+    private static bool IsWatcher(this SlugcatStats.Name slugcat)
+    {
+        return ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher;
     }
 }

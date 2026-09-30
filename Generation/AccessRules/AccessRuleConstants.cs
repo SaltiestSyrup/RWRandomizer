@@ -13,6 +13,8 @@ public static class AccessRuleConstants
     public static AccessRule[] MonkFoods;
     public static AccessRule[] Regions;
 
+    public static AccessRule CanDynamicWarp;
+
     /// <summary>
     /// Initialize constant helpers for creating AccessRules. 
     /// Called after <see cref="StaticWorld.InitStaticWorld"/> (Post mod loading)
@@ -81,5 +83,9 @@ public static class AccessRuleConstants
         {
             Regions[i] = new RegionAccessRule(regionStrings[i]);
         }
+
+        CanDynamicWarp = new CompoundAccessRule(
+            [new RippleAccessRule(3), new AccessRule("Dial_Warp")],
+            CompoundAccessRule.CompoundOperation.Any);
     }
 }

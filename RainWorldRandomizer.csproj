@@ -120,6 +120,7 @@
         <Compile Include="Generation\AccessRules\ObjectAccessRule.cs"/>
         <Compile Include="Generation\AccessRules\OptionAccessRule.cs"/>
         <Compile Include="Generation\AccessRules\RegionAccessRule.cs"/>
+        <Compile Include="Generation\AccessRules\RippleAccessRule.cs"/>
         <Compile Include="Generation\AccessRules\SlugcatAccessRule.cs"/>
         <Compile Include="Generation\AccessRules\TimelineAccessRule.cs"/>
         <Compile Include="Generation\Fuzzer.cs"/>

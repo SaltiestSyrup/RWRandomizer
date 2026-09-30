@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Random = System.Random;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -10,10 +11,12 @@ namespace RainWorldRandomizer.Generation
         /// Every possible location.
         /// </summary>
         public HashSet<Location> AllLocations { get; private set; }
+
         /// <summary>
         /// All locations with unsatisfied requirements. Must be empty at end of generation.
         /// </summary>
         public HashSet<Location> UnreachedLocations { get; private set; }
+
         /// <summary>
         /// All locations that are currently in logic and have not been placed
         /// </summary>
@@ -23,10 +26,12 @@ namespace RainWorldRandomizer.Generation
         /// Every region in this state. May be added to during custom rule application.
         /// </summary>
         public HashSet<RandoRegion> AllRegions { get; private set; }
+
         /// <summary>
         /// All regions not yet accessible. Must be empty at end of generation.
         /// </summary>
         public HashSet<RandoRegion> UnreachedRegions { get; private set; }
+
         /// <summary>
         /// All regions currently in logic.
         /// </summary>
@@ -42,23 +47,43 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public HashSet<string> AllShelters { get; private set; }
 
-        public SlugcatStats.Name Slugcat => slugcat;
-        public SlugcatStats.Timeline Timeline => timeline;
+        public SlugcatStats.Name Slugcat
+        {
+            get { return slugcat; }
+        }
+
+        public SlugcatStats.Timeline Timeline
+        {
+            get { return timeline; }
+        }
+
         public OptionStruct options = options;
         private int karmaItems = options.startMinKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat);
+        private int rippleItems = 0;
+
         /// <summary>
-        /// Translation between amount of karma items aquired and the max karma it would display as
+        /// Translation between amount of karma items acquired and the max karma it would display as
         /// </summary>
         public int MaxKarma
         {
             get
             {
-                if (karmaItems <= 4) return karmaItems + 1;
-                if (karmaItems <= 8) return karmaItems + 2;
-                return 10;
+                return karmaItems switch
+                {
+                    <= 4 => karmaItems + 1,
+                    <= 8 => karmaItems + 2,
+                    _ => 10
+                };
             }
         }
+
+        public int MaxRipple
+        {
+            get { return Math.Min(rippleItems + 1, 9); }
+        }
+
         public HashSet<string> SpecialProg { get; private set; } = [];
+
         //public HashSet<string> Regions { get; private set; } = [];
         public HashSet<string> Gates { get; private set; } = [];
         public HashSet<CreatureTemplate.Type> Creatures { get; private set; } = [];
@@ -84,7 +109,7 @@ namespace RainWorldRandomizer.Generation
                     // once BOTH conditions are met and one of their regions is reachable.
                     // This mostly applies to sandbox tokens, which normally have no additional
                     // requirements so rules stay the same
-                    if (AllLocations.Contains(loc))
+                    if (!AllLocations.Add(loc))
                     {
                         Location oldLoc = AllLocations.First(l => l.ID == loc.ID);
                         AccessRule mergedRule = new CompoundAccessRule(
@@ -92,9 +117,7 @@ namespace RainWorldRandomizer.Generation
                             CompoundAccessRule.CompoundOperation.All);
 
                         loc.accessRule = mergedRule;
-                        oldLoc = loc;
                     }
-                    else AllLocations.Add(loc);
                 }
             }
 
@@ -111,6 +134,7 @@ namespace RainWorldRandomizer.Generation
         /// <param name="newID">The new ID the subregion will have</param>
         /// <param name="locations">The locations from the base region to take. Must be a subset of <paramref name="baseRegion"/>'s locations</param>
         /// <param name="connections">The connections from the base region to take. Must be a subset of <paramref name="baseRegion"/>'s connections</param>
+        /// <param name="shelters">The shelters from the base region to take. Must be a subset of <paramref name="baseRegion"/>'s shelters</param>
         /// <param name="rules">The <see cref="AccessRule"/>s of the connection from the base region to the new subregion</param>
         /// <returns>The newly created subregion</returns>
         /// <exception cref="ArgumentException">
@@ -120,9 +144,12 @@ namespace RainWorldRandomizer.Generation
         public RandoRegion DefineSubRegion(RandoRegion baseRegion, string newID, HashSet<Location> locations,
             HashSet<Connection> connections, HashSet<string> shelters, (AccessRule, AccessRule) rules)
         {
-            if (!locations.IsSubsetOf(baseRegion.allLocations)) throw new ArgumentException("Locations must be a subset of region locations", "locations");
-            if (!connections.IsSubsetOf(baseRegion.connections)) throw new ArgumentException("Connections must be a subset of region connections", "connections");
-            if (!shelters.IsSubsetOf(baseRegion.shelters)) throw new ArgumentException("Shelters must be a subset of region shelters", "shelters");
+            if (!locations.IsSubsetOf(baseRegion.allLocations))
+                throw new ArgumentException("Locations must be a subset of region locations", nameof(locations));
+            if (!connections.IsSubsetOf(baseRegion.connections))
+                throw new ArgumentException("Connections must be a subset of region connections", nameof(connections));
+            if (!shelters.IsSubsetOf(baseRegion.shelters))
+                throw new ArgumentException("Shelters must be a subset of region shelters", nameof(shelters));
 
             // Remove elements of orig region
             baseRegion.allLocations.ExceptWith(locations);
@@ -154,13 +181,13 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Directly mark a region as accessible to this state
         /// </summary>
-        /// <param name="ID">A region ID to search for</param>
-        public void AddRegion(string ID) => AddRegion(AllRegions.First(r => r.ID == ID));
+        /// <param name="id">A region ID to search for</param>
+        public void AddRegion(string id) => AddRegion(AllRegions.First(r => r.ID == id));
 
         /// <summary>
         /// Directly mark a region as accessible to this state
         /// </summary>
-        /// <param name="ID">A region within this state</param>
+        /// <param name="region">A region within this state</param>
         public void AddRegion(RandoRegion region)
         {
             UnreachedRegions.Remove(region);
@@ -192,16 +219,17 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Finds a region within state by ID
         /// </summary>
-        /// <param name="ID"></param>
+        /// <param name="id"></param>
         /// <returns>The found region, or null if not found</returns>
-        public RandoRegion RegionFromID(string ID) => AllRegions.FirstOrDefault(r => r.ID == ID);
+        public RandoRegion RegionFromID(string id) => AllRegions.FirstOrDefault(r => r.ID == id);
 
         /// <summary>
         /// Finds the region that contains the given shelter
         /// </summary>
         /// <param name="shelter"></param>
         /// <returns>The region in this state containing the shelter, null if not found</returns>
-        public RandoRegion RegionOfShelter(string shelter) => AllRegions.FirstOrDefault(r => r.shelters.Contains(shelter.ToUpperInvariant()));
+        public RandoRegion RegionOfShelter(string shelter) =>
+            AllRegions.FirstOrDefault(r => r.shelters.Contains(shelter.ToUpperInvariant()));
 
         /// <summary>
         /// Check if a given region ID is accessible to state
@@ -256,6 +284,7 @@ namespace RainWorldRandomizer.Generation
                 con.Destroy();
                 AllConnections.Remove(con);
             }
+
             foreach (Location loc in region.allLocations)
             {
                 // If this location exists in multiple places, don't purge it
@@ -285,7 +314,8 @@ namespace RainWorldRandomizer.Generation
                 if (!region.allLocationsReached)
                 {
                     // Find and set status of all newly reached locations
-                    HashSet<Location> newRegionLocs = [.. region.allLocations.Where(r => !r.hasReached && r.CanReach(this))];
+                    HashSet<Location> newRegionLocs =
+                        [.. region.allLocations.Where(r => !r.hasReached && r.CanReach(this))];
                     foreach (Location loc in newRegionLocs) loc.hasReached = true;
 
                     if (region.allLocations.All(r => r.hasReached)) region.allLocationsReached = true;
@@ -353,6 +383,7 @@ namespace RainWorldRandomizer.Generation
                     Objects.Add(TokenCachePatcher.regionObjects[regionLower][i]);
                 }
             }
+
             for (int j = 0; j < TokenCachePatcher.regionCreatures[regionLower].Count; j++)
             {
                 if (TokenCachePatcher.regionCreaturesAccessibility[regionLower][j].Contains(Slugcat))

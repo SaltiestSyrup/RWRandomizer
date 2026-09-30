@@ -128,7 +128,7 @@ namespace RainWorldRandomizer.Generation
             {
                 HashSet<Location> regionLocations = [];
 
-                // Add Echoes from RegionKit if present
+                // Create Echo locations
                 if (LocationHelpers.MakeEchoOrSpinningTopLocation(slugcat, regionShort) is Location loc)
                 {
                     regionLocations.Add(loc);
