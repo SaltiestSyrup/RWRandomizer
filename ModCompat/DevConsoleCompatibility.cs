@@ -46,7 +46,6 @@ public static class DevConsoleCompatibility
                 GameConsole.WriteLine(Fuzzer.DebugBulkGeneration(numGens));
             }
         });
-        Plugin.Log.LogDebug(CustomLogicBuilder.GetPlayableSlugcats().Select(s => s.value).ToArray().Length);
         cmdBuilder.AutoComplete([
             null, CustomLogicBuilder.GetPlayableSlugcats().Select(s => s.value).ToArray()
         ]);

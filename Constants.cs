@@ -395,6 +395,8 @@ namespace RainWorldRandomizer
             // Add Constant entries that require Watcher
             if (ModManager.Watcher)
             {
+                CompatibleSlugcats.Add(WatcherEnums.SlugcatStatsName.Watcher);
+                
                 SlugcatFoodQuestAccessibility.Add(WatcherEnums.SlugcatStatsName.Watcher,
                 [
                     true, true, true, true, false, true, true, false, true, false, false,
@@ -408,7 +410,7 @@ namespace RainWorldRandomizer
                     true, true, true, true, true, true, true,
                 ]);
 
-                SlugcatDefaultStartingDen.Add(WatcherEnums.SlugcatStatsName.Watcher, "HI_WS01");
+                SlugcatDefaultStartingDen.Add(WatcherEnums.SlugcatStatsName.Watcher, "WSKB_C15");
             }
 
             // Infer starting regions from starting dens

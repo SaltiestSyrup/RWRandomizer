@@ -3,7 +3,6 @@ using MoreSlugcats;
 using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -267,6 +266,7 @@ namespace RainWorldRandomizer
 
             // Don't even need to save this, it's stored in the addon list
             if (ModManager.MSC) _ = new InvCompat();
+            if (ModManager.Watcher) _ = new WatcherCompat();
         }
 
         /// <summary>

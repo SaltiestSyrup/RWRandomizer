@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Watcher;
 using Random = System.Random;
 
 namespace RainWorldRandomizer.Generation
@@ -179,7 +180,10 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Gate items
-            (HashSet<string>, List<Item>) gatesTuple = ItemHelpers.MakeGateItems(slugcat, allRegions);
+            (HashSet<string>, List<Item>) gatesTuple = 
+                ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher 
+                    ? ItemHelpers.MakeWarpConnections(allRegions)
+                    : ItemHelpers.MakeGateConnections(slugcat, allRegions);
             AllGates.UnionWith(gatesTuple.Item1);
             itemsToPlace.AddRange(gatesTuple.Item2);
 
@@ -377,11 +381,20 @@ namespace RainWorldRandomizer.Generation
             else
             {
                 // Find the default starting den within state's regions
-                RandoRegion destination = state.RegionOfShelter(Constants.SlugcatDefaultStartingDen[slugcat])
-                                          ?? throw new GenerationFailureException(
-                                              $"Failed to define starting region for {slugcat}, no region has shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
+                RandoRegion destination;
+                if (ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher)
+                {
+                    // TODO: Find a more elegant way to get Watcher starting region 
+                    destination = state.RegionFromID("WSKB");
+                }
+                else
+                {
+                    destination = state.RegionOfShelter(Constants.SlugcatDefaultStartingDen[slugcat])
+                                              ?? throw new GenerationFailureException(
+                                                  $"Failed to define starting region for {slugcat}, no region has shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
+                }
                 customStartDen = Constants.SlugcatDefaultStartingDen[slugcat];
-                connectionsToAdd.Add(new("START_PATH", [startRegion, destination], new AccessRule()));
+                connectionsToAdd.Add(new Connection("START_PATH", [startRegion, destination], new AccessRule()));
 
                 generationLog.AppendLine(
                     $"Starting in default region {Constants.SlugcatStartingRegion[slugcat]}, in shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
@@ -428,16 +441,13 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Log all logic
-            // if (logVerbose)
-            // {
-            //     generationLog.AppendLine("Full logic:");
-            //     foreach (RandoRegion region in state.AllRegions)
-            //     {
-            //         generationLog.AppendLine($"\t{region}");
-            //     }
-            //
-            //     generationLog.AppendLine();
-            // }
+            generationLog.AppendLine("Full logic:");
+            foreach (RandoRegion region in state.AllRegions)
+            {
+                generationLog.AppendLine($"\t{region}");
+            }
+            
+            generationLog.AppendLine();
         }
 
         /// <summary>

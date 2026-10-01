@@ -91,7 +91,7 @@ public class NewStandaloneGameTab : PositionedMenuObject
         }
 
         // Watcher disabled until implemented
-        slugcatButtons[8].GetButtonBehavior.greyedOut = true;
+        // slugcatButtons[8].GetButtonBehavior.greyedOut = true;
     }
 
     public override void Singal(MenuObject sender, string message)

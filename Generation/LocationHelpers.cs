@@ -331,7 +331,8 @@ public static class LocationHelpers
             switch (passage)
             {
                 case "Survivor":
-                    accessRule = survivorRule;
+                    // Watcher gets Survivor for free
+                    accessRule = slugcat.IsWatcher() ? AccessRule.Empty() : survivorRule;
                     break;
                 case "Monk":
                 case "Saint":
@@ -378,6 +379,7 @@ public static class LocationHelpers
                     accessRule = new CreatureAccessRule(CreatureTemplate.Type.Scavenger);
                     break;
                 case "Traveller":
+                    if (slugcat.IsWatcher()) continue;
                     accessRule = new CompoundAccessRule(
                         [
                             .. SlugcatStats.SlugcatStoryRegions(slugcat)
@@ -430,10 +432,12 @@ public static class LocationHelpers
                         CompoundAccessRule.CompoundOperation.AtLeast, 5);
                     break;
                 case "Nomad":
+                    if (slugcat.IsWatcher()) continue;
                     accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
                         CompoundAccessRule.CompoundOperation.AtLeast, 4);
                     break;
                 case "Pilgrim":
+                    if (slugcat.IsWatcher()) continue;
                     accessRule = new CompoundAccessRule(
                         [
                             .. SlugcatStats.SlugcatStoryRegions(slugcat)
@@ -452,6 +456,7 @@ public static class LocationHelpers
                         accessRule = new CompoundAccessRule(AccessRuleConstants.Regions,
                             CompoundAccessRule.CompoundOperation.AtLeast, 5);
                     }
+                    else continue;
 
                     break;
                 case "Gourmand":
