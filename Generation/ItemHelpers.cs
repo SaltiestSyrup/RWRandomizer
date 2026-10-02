@@ -96,6 +96,9 @@ public static class ItemHelpers
                     Item.Importance.Progression));
                 items.Add(new Item("RewriteSpearPearl", Item.Type.Other, Item.Importance.Progression));
                 break;
+            case "Watcher":
+                items.Add(new Item("Dial_Warp", Item.Type.Other, Item.Importance.Progression));
+                break;
         }
 
         return items;
@@ -163,7 +166,7 @@ public static class ItemHelpers
         // Spinning Top warps
         foreach (string stWarp in Custom.rainWorld.regionSpinningTopRooms.SelectMany(kvp => kvp.Value))
         {
-            WarpConnection data = WarpConnection.FromST((stWarp.Split(':')));
+            WarpConnection data = WarpConnection.FromST(stWarp.Split(':'));
             if (!regions.ContainsKey(data.startReg) || !regions.ContainsKey(data.destReg))
             {
                 continue;
@@ -197,9 +200,9 @@ public static class ItemHelpers
     private static string DetermineNullWarpDest(string startReg, bool ripple)
     {
         return startReg switch
-        { 
+        {
             "WARA" => ripple ? "WAUA" : "WRSA",
-            "WSSR" => "WORA",
+            "WSSR" or "WSUR" or "WDSR" or "WGWR" or "WHIR" => "WORA",
             _ => ripple ? "WRSA" : "NULL"
         };
     }
@@ -236,11 +239,12 @@ public static class ItemHelpers
             WarpConnection warp = new WarpConnection
             {
                 startReg = split[0].Split('_')[0].ToUpperInvariant(),
-                ripple = false,
                 oneWay = true,
                 destReg = split[2].Split('_')[0].ToUpperInvariant()
             };
             
+            warp.ripple = warp.startReg.Equals("WARA");
+
             if (warp.destReg.Equals("NULL")) warp.destReg = DetermineNullWarpDest(warp.startReg, warp.ripple);
 
             return warp;

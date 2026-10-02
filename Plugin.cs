@@ -252,6 +252,7 @@ namespace RainWorldRandomizer
 
             Constants.InitializeConstants();
             CustomRegionCompatability.Init();
+            _logicAddons.Clear();
         }
 
         public void PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)

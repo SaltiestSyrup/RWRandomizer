@@ -18,7 +18,8 @@ public static class PlantUMLVisualizer
             .Distinct()
             .ToList()
             .ForEach(str => builder.AppendLine(str));
-        
+
+        builder.AppendLine("hide WRSA");
         builder.AppendLine("@enduml");
         
         string path = $"{Plugin.Mod.basePath}/generationLogs/gen.puml";

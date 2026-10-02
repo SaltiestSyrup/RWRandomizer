@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 
 namespace RainWorldRandomizer.Generation
 {
@@ -31,8 +30,7 @@ namespace RainWorldRandomizer.Generation
 
         public override bool Equals(object obj)
         {
-            if (obj is null || obj is not Location loc) return false;
-            return Equals(loc);
+            return obj is Location loc && Equals(loc);
         }
 
         public override int GetHashCode()

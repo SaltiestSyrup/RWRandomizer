@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RWCustom;
 using Watcher;
 using Random = System.Random;
 
@@ -17,7 +18,7 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Constant storing the ID for the dummy start region used with non-random starts
         /// </summary>
-        private const string START_REG = "StartDummy";
+        public const string START_REG = "START";
 
         public enum GenerationStep
         {
@@ -100,6 +101,7 @@ namespace RainWorldRandomizer.Generation
             generationLog.AppendLine("INITIALIZE STATE");
             CurrentStage = GenerationStep.InitializingState;
             state = new State(slugcat, timeline, options);
+            bool isWatcher = ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher;
 
             // Load Tokens
             if (options.useSandboxTokenChecks)
@@ -113,13 +115,16 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
+            // Define start region
+            allRegions.Add(START_REG, new RandoRegion(START_REG, []));
+
             // Regions loop
             List<string> slugcatRegions =
                 [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
             // Add Metropolis to region list if option set
             if (ModManager.MSC && options.allowMetroForOthers) slugcatRegions.Add("LC");
             // Daemon isn't a story or optional region for some reason
-            if (ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher) slugcatRegions.Add("WRSA");
+            if (isWatcher) slugcatRegions.Add("WRSA");
             // Remove regions from logic
             foreach (KeyValuePair<string, CustomLogicBuilder.RulePatch> region
                      in CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedRegions
@@ -176,6 +181,16 @@ namespace RainWorldRandomizer.Generation
                     LocationHelpers.MakeShelters(timeline, regionShort, options.useShelterChecks);
                 regionLocations.UnionWith(locs);
 
+                // Replace shelters with warp destination rooms for Watcher
+                // (they determine where random start can be placed)
+                if (isWatcher)
+                {
+                    shelters = Custom.rainWorld.regionDynamicWarpTargets.TryGetValue(regionShort.ToLowerInvariant(),
+                        out List<string> targetRooms)
+                        ? targetRooms.Select(r => r.Split(':')[0]).ToHashSet()
+                        : [];
+                }
+
                 // Create region
                 allRegions[regionShort] = new RandoRegion(regionShort, regionLocations)
                 {
@@ -185,7 +200,7 @@ namespace RainWorldRandomizer.Generation
 
             // Create Gate items
             (HashSet<string>, List<Item>) gatesTuple =
-                ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher
+                isWatcher
                     ? ItemHelpers.MakeWarpConnections(allRegions)
                     : ItemHelpers.MakeGateConnections(slugcat, allRegions);
             AllGates.UnionWith(gatesTuple.Item1);
@@ -208,7 +223,7 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Karma items
-            int karmaInPool = ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher
+            int karmaInPool = isWatcher
                 ? 12
                 : 8 - (options.startMinKarma
                     ? 0
@@ -217,7 +232,7 @@ namespace RainWorldRandomizer.Generation
             for (int i = 0; i < karmaInPool; i++)
             {
                 itemsToPlace.Add(new Item(
-                    ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher ? "Ripple" : "Karma",
+                    isWatcher ? "Ripple" : "Karma",
                     Item.Type.Karma, Item.Importance.Progression));
             }
 
@@ -346,24 +361,27 @@ namespace RainWorldRandomizer.Generation
         /// <exception cref="GenerationFailureException">Thrown if non-randomized starting den is invalid</exception>
         private void DefineStartConditions()
         {
-            RandoRegion startRegion = new(START_REG, []);
+            RandoRegion startRegion = allRegions[START_REG];
             List<Connection> connectionsToAdd = [];
 
             if (state.RegionFromID(RandoRegion.PASSAGE_REG) is not null)
             {
-                connectionsToAdd.Add(new("TO_PASSAGES", [startRegion, state.RegionFromID(RandoRegion.PASSAGE_REG)],
+                connectionsToAdd.Add(new Connection("TO_PASSAGES",
+                    [startRegion, state.RegionFromID(RandoRegion.PASSAGE_REG)],
                     new AccessRule()));
             }
 
             if (state.RegionFromID(RandoRegion.SPECIAL_REG) is not null)
             {
-                connectionsToAdd.Add(
-                    new("TO_SPECIAL", [startRegion, state.RegionFromID(RandoRegion.SPECIAL_REG)], new AccessRule()));
+                connectionsToAdd.Add(new Connection("TO_SPECIAL",
+                    [startRegion, state.RegionFromID(RandoRegion.SPECIAL_REG)],
+                    new AccessRule()));
             }
 
             if (state.RegionFromID(RandoRegion.FOODQUEST_REG) is not null)
             {
-                connectionsToAdd.Add(new("TO_FOOD_QUEST", [startRegion, state.RegionFromID(RandoRegion.FOODQUEST_REG)],
+                connectionsToAdd.Add(new Connection("TO_FOOD_QUEST",
+                    [startRegion, state.RegionFromID(RandoRegion.FOODQUEST_REG)],
                     new AccessRule()));
             }
 
@@ -414,8 +432,8 @@ namespace RainWorldRandomizer.Generation
             // Finalize connections
             connectionsToAdd.ForEach(c => c.Create());
 
-            state.AllRegions.Add(startRegion);
-            state.UnreachedRegions.Add(startRegion);
+            // state.AllRegions.Add(startRegion);
+            // state.UnreachedRegions.Add(startRegion);
             state.AllConnections.UnionWith(connectionsToAdd);
         }
 

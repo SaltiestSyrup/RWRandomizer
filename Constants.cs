@@ -68,7 +68,7 @@ namespace RainWorldRandomizer
         [
             "GATE_OE_SU", "GATE_SL_MS"
         ];
-        
+
         public static List<string> UnkeyableWarps =
         [
             "WORA-WSSR", "WORA-WSUR", "WGWR-WORA", "WHIR-WORA", "WDSR-WORA", "WARA-WRSA", "WORA-WORA"
@@ -207,42 +207,48 @@ namespace RainWorldRandomizer
 
             SlugcatFoodQuestAccessibility.AddRange(new Dictionary<SlugcatStats.Name, bool[]>
             {
-                { SlugcatStats.Name.White,
-                [
-                    true, true, true, true, false, true, true, false, true, false, false,
-                    true, false, true, false, false, true, true, true, false, true, true,
-                    true, true, true, true,
-                    false, false, false, false, false, false, false, false,
-                    false, false, false,
-                    false, false, false,
-                    false, false, false, false, false, false, false,
-                    false, false, false, false, false,
-                    false, false, false, false, false, false, false,
-                ]},
-                { SlugcatStats.Name.Yellow,
-                [
-                    true, true, true, true, false, true, true, false, true, false, false,
-                    true, false, true, false, false, true, true, true, false, true, true,
-                    true, true, true, true,
-                    false, false, false, false, false, false, false, false,
-                    false, false, false,
-                    false, false, false,
-                    false, false, false, false, false, false, false,
-                    false, false, false, false, false,
-                    false, false, false, false, false, false, false,
-                ]},
-                { SlugcatStats.Name.Red,
-                [
-                    true, true, true, true, true, true, true, true, true, true, true,
-                    true, true, true, true, true, true, true, true, true, true, true,
-                    true, true, true, true,
-                    true, true, true, true, true, true, true, true,
-                    true, true, true,
-                    true, true, true,
-                    true, true, true, true, true, true, true,
-                    false, false, false, false, false,
-                    false, false, false, false, false, false, false,
-                ]},
+                {
+                    SlugcatStats.Name.White,
+                    [
+                        true, true, true, true, false, true, true, false, true, false, false,
+                        true, false, true, false, false, true, true, true, false, true, true,
+                        true, true, true, true,
+                        false, false, false, false, false, false, false, false,
+                        false, false, false,
+                        false, false, false,
+                        false, false, false, false, false, false, false,
+                        false, false, false, false, false,
+                        false, false, false, false, false, false, false,
+                    ]
+                },
+                {
+                    SlugcatStats.Name.Yellow,
+                    [
+                        true, true, true, true, false, true, true, false, true, false, false,
+                        true, false, true, false, false, true, true, true, false, true, true,
+                        true, true, true, true,
+                        false, false, false, false, false, false, false, false,
+                        false, false, false,
+                        false, false, false,
+                        false, false, false, false, false, false, false,
+                        false, false, false, false, false,
+                        false, false, false, false, false, false, false,
+                    ]
+                },
+                {
+                    SlugcatStats.Name.Red,
+                    [
+                        true, true, true, true, true, true, true, true, true, true, true,
+                        true, true, true, true, true, true, true, true, true, true, true,
+                        true, true, true, true,
+                        true, true, true, true, true, true, true, true,
+                        true, true, true,
+                        true, true, true,
+                        true, true, true, true, true, true, true,
+                        false, false, false, false, false,
+                        false, false, false, false, false, false, false,
+                    ]
+                },
             });
 
             SlugcatDefaultStartingDen.AddRange(new Dictionary<SlugcatStats.Name, string>
@@ -266,67 +272,77 @@ namespace RainWorldRandomizer
 
                 SlugcatFoodQuestAccessibility.AddRange(new Dictionary<SlugcatStats.Name, bool[]>
                 {
-                    { MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
-                    [
-                        true, true, true, true, true, true, true, true, true, true, true,
-                        true, true, true, true, true, true, true, true, true, true, true,
-                        true, true, true, true,
-                        true, true, true, true, true, true, true, true,
-                        true, true, true,
-                        true, true, true,
-                        true, true, true, true, true, true, true,
-                        false, false, false, false, false,
-                        false, false, false, false, false, false, false,
-                    ]},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Artificer,
-                    [
-                        true, true, true, true, true, true, true, true, false, true, true,
-                        true, true, true, true, true, true, true, true, true, true, true,
-                        true, true, true, true,
-                        true, true, true, true, true, true, true, true,
-                        true, true, true,
-                        true, true, true,
-                        true, true, true, true, true, true, true,
-                        false, false, false, false, false,
-                        false, false, false, false, false, false, false,
-                    ]},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Spear,
-                    [
-                        false, false, true, true, true, false, false, true, false, true, true,
-                        true, true, false, true, true, true, true, false, true, false, true,
-                        true, true, true, true,
-                        true, true, true, true, true, true, true, true,
-                        true, true, true,
-                        true, true, true,
-                        true, true, true, true, true, true, true,
-                        true, true, true, true, false,
-                        false, false, false, false, false, false, false,
-                    ]},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
-                    [
-                        true, true, true, true, false, true, true, false, true, false, false,
-                        true, false, true, false, false, true, true, true, false, true, true,
-                        true, true, true, true,
-                        false, false, false, false, false, false, false, false,
-                        false, false, false,
-                        false, false, false,
-                        false, false, false, false, false, false, false,
-                        false, false, false, false, false,
-                        false, false, false, false, false, false, false,
-                    ]},
-                    { MoreSlugcatsEnums.SlugcatStatsName.Saint,
-                    [
-                        true, true, false, true, false, true, false, false, true, false, false,
-                        false, false, true, false, false, true, false, true, false, true, false,
-                        false, false, false,
-                        false, false, false, false,
-                        false, false, false, false, false, false, false, false,
-                        false, false, false,
-                        false, false, false,
-                        false, false, false, false, false, false, false,
-                        false, false, false, false, true,
-                        false, false, false, false, false, false, false,
-                    ]}
+                    {
+                        MoreSlugcatsEnums.SlugcatStatsName.Gourmand,
+                        [
+                            true, true, true, true, true, true, true, true, true, true, true,
+                            true, true, true, true, true, true, true, true, true, true, true,
+                            true, true, true, true,
+                            true, true, true, true, true, true, true, true,
+                            true, true, true,
+                            true, true, true,
+                            true, true, true, true, true, true, true,
+                            false, false, false, false, false,
+                            false, false, false, false, false, false, false,
+                        ]
+                    },
+                    {
+                        MoreSlugcatsEnums.SlugcatStatsName.Artificer,
+                        [
+                            true, true, true, true, true, true, true, true, false, true, true,
+                            true, true, true, true, true, true, true, true, true, true, true,
+                            true, true, true, true,
+                            true, true, true, true, true, true, true, true,
+                            true, true, true,
+                            true, true, true,
+                            true, true, true, true, true, true, true,
+                            false, false, false, false, false,
+                            false, false, false, false, false, false, false,
+                        ]
+                    },
+                    {
+                        MoreSlugcatsEnums.SlugcatStatsName.Spear,
+                        [
+                            false, false, true, true, true, false, false, true, false, true, true,
+                            true, true, false, true, true, true, true, false, true, false, true,
+                            true, true, true, true,
+                            true, true, true, true, true, true, true, true,
+                            true, true, true,
+                            true, true, true,
+                            true, true, true, true, true, true, true,
+                            true, true, true, true, false,
+                            false, false, false, false, false, false, false,
+                        ]
+                    },
+                    {
+                        MoreSlugcatsEnums.SlugcatStatsName.Rivulet,
+                        [
+                            true, true, true, true, false, true, true, false, true, false, false,
+                            true, false, true, false, false, true, true, true, false, true, true,
+                            true, true, true, true,
+                            false, false, false, false, false, false, false, false,
+                            false, false, false,
+                            false, false, false,
+                            false, false, false, false, false, false, false,
+                            false, false, false, false, false,
+                            false, false, false, false, false, false, false,
+                        ]
+                    },
+                    {
+                        MoreSlugcatsEnums.SlugcatStatsName.Saint,
+                        [
+                            true, true, false, true, false, true, false, false, true, false, false,
+                            false, false, true, false, false, true, false, true, false, true, false,
+                            false, false, false,
+                            false, false, false, false,
+                            false, false, false, false, false, false, false, false,
+                            false, false, false,
+                            false, false, false,
+                            false, false, false, false, false, false, false,
+                            false, false, false, false, true,
+                            false, false, false, false, false, false, false,
+                        ]
+                    }
                 });
 
                 // Order must match APWorld.
@@ -355,8 +371,17 @@ namespace RainWorldRandomizer
                     new(null, [DLCSharedEnums.CreatureTemplateType.Yeek]),
                     new(null, [CreatureTemplate.Type.DropBug]),
                     new(null, [CreatureTemplate.Type.MirosBird]),
-                    new(null, [CreatureTemplate.Type.Scavenger, DLCSharedEnums.CreatureTemplateType.ScavengerElite, MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing]),
-                    new(null, [CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs, DLCSharedEnums.CreatureTemplateType.TerrorLongLegs, MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy]),
+                    new(null,
+                    [
+                        CreatureTemplate.Type.Scavenger, DLCSharedEnums.CreatureTemplateType.ScavengerElite,
+                        MoreSlugcatsEnums.CreatureTemplateType.ScavengerKing
+                    ]),
+                    new(null,
+                    [
+                        CreatureTemplate.Type.DaddyLongLegs, CreatureTemplate.Type.BrotherLongLegs,
+                        DLCSharedEnums.CreatureTemplateType.TerrorLongLegs,
+                        MoreSlugcatsEnums.CreatureTemplateType.HunterDaddy
+                    ]),
                     new(null, [CreatureTemplate.Type.PoleMimic]),
                     new(null, [CreatureTemplate.Type.TentaclePlant]),
                     new(null, [CreatureTemplate.Type.BigEel]),
@@ -392,29 +417,8 @@ namespace RainWorldRandomizer
                 });
             }
 
-            // Add Constant entries that require Watcher
-            if (ModManager.Watcher)
-            {
-                CompatibleSlugcats.Add(WatcherEnums.SlugcatStatsName.Watcher);
-                
-                SlugcatFoodQuestAccessibility.Add(WatcherEnums.SlugcatStatsName.Watcher,
-                [
-                    true, true, true, true, false, true, true, false, true, false, false,
-                    true, false, true, false, false, true, false, true, false, true, true,
-                    true, true, true, true,
-                    false, false, false, false, false, false, false, false,
-                    false, false, false,
-                    false, false, false,
-                    false, false, false, false, false, false, false,
-                    false, false, false, false, false,
-                    true, true, true, true, true, true, true,
-                ]);
-
-                SlugcatDefaultStartingDen.Add(WatcherEnums.SlugcatStatsName.Watcher, "WSKB_C15");
-            }
-
             // Infer starting regions from starting dens
-            foreach (var pair in SlugcatDefaultStartingDen)
+            foreach (KeyValuePair<SlugcatStats.Name, string> pair in SlugcatDefaultStartingDen)
             {
                 SlugcatStartingRegion.Add(pair.Key, pair.Value.Split('_')[0]);
             }

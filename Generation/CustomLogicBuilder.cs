@@ -19,8 +19,10 @@ namespace RainWorldRandomizer.Generation
         {
             /// <summary>Completely replace old rule with this one</summary>
             Overwrite,
+
             /// <summary>Combine old rule and this one with an AND condition</summary>
             AndPrevious,
+
             /// <summary>Combine old rule and this one with an OR condition</summary>
             OrPrevious
         }
@@ -58,7 +60,8 @@ namespace RainWorldRandomizer.Generation
         /// <param name="selectionMethod">Whether defined slugcats should be treated as a whitelist or a blacklist</param>
         /// <param name="slugcats">Slugcats this will apply to. If <paramref name="selectionMethod"/> is Blacklist, will apply to every slugcat except those listed.
         /// If none are listed, will apply to all slugcats</param>
-        public static void AddLocationRule(string locationID, RulePatch newRule, SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
+        public static void AddLocationRule(string locationID, RulePatch newRule,
+            SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
         {
             foreach (var package in slugcatLogicPackages)
             {
@@ -108,7 +111,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     package.Value.connectionRules[connectionID] =
                         (package.Value.connectionRules[connectionID].Item1 + newLeftRule,
-                        package.Value.connectionRules[connectionID].Item2 + newRightRule);
+                            package.Value.connectionRules[connectionID].Item2 + newRightRule);
                 }
                 else
                 {
@@ -123,7 +126,8 @@ namespace RainWorldRandomizer.Generation
         /// <param name="selectionMethod">Whether defined slugcats should be treated as a whitelist or a blacklist</param>
         /// <param name="slugcats">Slugcats this will apply to. If <paramref name="selectionMethod"/> is Blacklist, will apply to every slugcat except those listed.
         /// If none are listed, will apply to all slugcats</param>
-        public static void AddSubregion(SubregionBlueprint subregion, SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
+        public static void AddSubregion(SubregionBlueprint subregion,
+            SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
         {
             foreach (var package in slugcatLogicPackages)
             {
@@ -144,12 +148,14 @@ namespace RainWorldRandomizer.Generation
         /// <summary>
         /// Create a new connnection
         /// </summary>
+        /// <param name="connection"></param>
         /// <param name="selectionMethod">Whether defined slugcats should be treated as a whitelist or a blacklist</param>
         /// <param name="slugcats">Slugcats this will apply to. If <paramref name="selectionMethod"/> is Blacklist, will apply to every slugcat except those listed.
         /// If none are listed, will apply to all slugcats</param>
-        public static void AddConnection(ConnectionBlueprint connection, SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
+        public static void AddConnection(ConnectionBlueprint connection,
+            SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
         {
-            foreach (var package in slugcatLogicPackages)
+            foreach (KeyValuePair<SlugcatStats.Name, LogicPackage> package in slugcatLogicPackages)
             {
                 switch (selectionMethod)
                 {
@@ -173,7 +179,8 @@ namespace RainWorldRandomizer.Generation
         /// <param name="selectionMethod">Whether defined slugcats should be treated as a whitelist or a blacklist</param>
         /// <param name="slugcats">Slugcats this will apply to. If <paramref name="selectionMethod"/> is Blacklist, will apply to every slugcat except those listed.
         /// If none are listed, will apply to all slugcats</param>
-        public static void AddBlacklistedStart(string regionID, SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
+        public static void AddBlacklistedStart(string regionID,
+            SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
         {
             foreach (var package in slugcatLogicPackages)
             {
@@ -201,7 +208,8 @@ namespace RainWorldRandomizer.Generation
         /// <param name="selectionMethod">Whether defined slugcats should be treated as a whitelist or a blacklist</param>
         /// <param name="slugcats">Slugcats this will apply to. If <paramref name="selectionMethod"/> is Blacklist, will apply to every slugcat except those listed.
         /// If none are listed, will apply to all slugcats</param>
-        public static void AddBlacklistedRegion(string regionID, RulePatch rule, SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
+        public static void AddBlacklistedRegion(string regionID, RulePatch rule,
+            SelectionMethod selectionMethod = SelectionMethod.Blacklist, params SlugcatStats.Name[] slugcats)
         {
             foreach (var package in slugcatLogicPackages)
             {
@@ -250,7 +258,10 @@ namespace RainWorldRandomizer.Generation
             /// </summary>
             /// <param name="rule">The rule that will be applied on top of an existing rule. Leave as null to make this patch do nothing</param>
             /// <param name="overlapMethod">How the rule will be added to the original</param>
-            public RulePatch(AccessRule rule, OverlapMethod overlapMethod = OverlapMethod.Overwrite) : this([rule], [overlapMethod]) { }
+            public RulePatch(AccessRule rule, OverlapMethod overlapMethod = OverlapMethod.Overwrite) : this([rule],
+                [overlapMethod])
+            {
+            }
 
             /// <summary>
             /// Create with multiple patches defined
@@ -274,8 +285,10 @@ namespace RainWorldRandomizer.Generation
 
                     baseRule = overlapMethods[i] switch
                     {
-                        OverlapMethod.AndPrevious => new CompoundAccessRule([baseRule, rules[i]], CompoundAccessRule.CompoundOperation.All),
-                        OverlapMethod.OrPrevious => new CompoundAccessRule([baseRule, rules[i]], CompoundAccessRule.CompoundOperation.Any),
+                        OverlapMethod.AndPrevious => new CompoundAccessRule([baseRule, rules[i]],
+                            CompoundAccessRule.CompoundOperation.All),
+                        OverlapMethod.OrPrevious => new CompoundAccessRule([baseRule, rules[i]],
+                            CompoundAccessRule.CompoundOperation.Any),
                         _ => rules[i]
                     };
                 }
@@ -296,11 +309,14 @@ namespace RainWorldRandomizer.Generation
 
                     rules[0] = overlapMethods[i] switch
                     {
-                        OverlapMethod.AndPrevious => new CompoundAccessRule([rules[0], rules[i]], CompoundAccessRule.CompoundOperation.All),
-                        OverlapMethod.OrPrevious => new CompoundAccessRule([rules[0], rules[i]], CompoundAccessRule.CompoundOperation.Any),
+                        OverlapMethod.AndPrevious => new CompoundAccessRule([rules[0], rules[i]],
+                            CompoundAccessRule.CompoundOperation.All),
+                        OverlapMethod.OrPrevious => new CompoundAccessRule([rules[0], rules[i]],
+                            CompoundAccessRule.CompoundOperation.Any),
                         _ => rules[i]
                     };
                 }
+
                 return rules[0];
             }
 
@@ -326,16 +342,18 @@ namespace RainWorldRandomizer.Generation
         {
             // Cannot climb SB Ravine
             AddSubregion(new SubregionBlueprint("SB", "SBRavine",
-                    ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0", "Shelter-SB_S09"],
-                    ["GATE_LF_SB"],
-                    ["SB_S09"],
-                    (new(AccessRule.IMPOSSIBLE_ID), new())));
+                ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0", "Shelter-SB_S09"],
+                ["GATE_LF_SB"],
+                ["SB_S09"],
+                (new(AccessRule.IMPOSSIBLE_ID), new())));
 
             // The Exterior is split in half at UW_D06 pre-MSC, as there are no grapple worms for crossing
             // You *could* bring a grapple worm from Chimney but that's too out of the way to be in logic
             AddSubregion(new SubregionBlueprint("UW", "UWWall",
-                    ["Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard", "Shelter-UW_S01",
-                        "Shelter-UW_S03", "Shelter-UW_S04"],
+                    [
+                        "Pearl-UW", "Echo-UW", "Token-L-UW", "Token-YellowLizard", "Shelter-UW_S01",
+                        "Shelter-UW_S03", "Shelter-UW_S04"
+                    ],
                     ["GATE_SS_UW", "GATE_CC_UW"],
                     ["UW_S01", "UW_S03", "UW_S04"],
                     (new(), new(AccessRule.IMPOSSIBLE_ID))),
@@ -349,7 +367,8 @@ namespace RainWorldRandomizer.Generation
 
             // Token cache fails to filter this pearl to only Past GW
             AddLocationRule("Pearl-MS",
-                new RulePatch(new TimelineAccessRule(SlugcatStats.Timeline.Artificer, TimelineAccessRule.TimelineOperation.AtOrBefore)));
+                new RulePatch(new TimelineAccessRule(SlugcatStats.Timeline.Artificer,
+                    TimelineAccessRule.TimelineOperation.AtOrBefore)));
 
             // Artificer can't reach underwater GW token
             AddLocationRule("Token-BrotherLongLegs",
@@ -367,19 +386,22 @@ namespace RainWorldRandomizer.Generation
 
             // Cannot climb SB Ravine
             AddSubregion(new SubregionBlueprint("SB", "SBRavine",
-                    ["Echo-SB", "Pearl-SB_ravine-SB", "Broadcast-Chatlog_SB0-SB", "Shelter-SB_S09"],
-                    ["GATE_LF_SB"],
-                    ["SB_S09"],
-                    (new(AccessRule.IMPOSSIBLE_ID), new())));
+                ["Echo-SB", "Pearl-SB_ravine-SB", "Broadcast-Chatlog_SB0-SB", "Shelter-SB_S09"],
+                ["GATE_LF_SB"],
+                ["SB_S09"],
+                (new(AccessRule.IMPOSSIBLE_ID), new())));
 
             // The Exterior is split in half at UW_C02 during Rivulet's time, they have a hard time crossing it
             AddSubregion(new SubregionBlueprint("UW", "UWWall",
-                    ["Pearl-UW-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard-UW",
-                        "Broadcast-Chatlog_Broadcast0-UW", "Shelter-UW_S01", "Shelter-UW_S03",
-                        "Shelter-UW_S04", "DevToken-UW_H01", "DevToken_UW_F01"],
-                    ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
-                    ["UW_S01", "UW_S03", "UW_S04"],
-                    (new TimelineAccessRule(SlugcatStats.Timeline.Yellow, TimelineAccessRule.TimelineOperation.AtOrBefore), new())));
+                [
+                    "Pearl-UW-UW", "Echo-UW", "Token-S-UW", "Token-L-UW", "Token-YellowLizard-UW",
+                    "Broadcast-Chatlog_Broadcast0-UW", "Shelter-UW_S01", "Shelter-UW_S03",
+                    "Shelter-UW_S04", "DevToken-UW_H01", "DevToken_UW_F01"
+                ],
+                ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
+                ["UW_S01", "UW_S03", "UW_S04"],
+                (new TimelineAccessRule(SlugcatStats.Timeline.Yellow, TimelineAccessRule.TimelineOperation.AtOrBefore),
+                    new())));
 
             // Only Saint is considered able to climb up into Outskirts filtration
             AddSubregion(new SubregionBlueprint("SU", "SU_Filt",
@@ -392,14 +414,16 @@ namespace RainWorldRandomizer.Generation
 
             // The Precipice is completely disconnected from Shoreline
             AddSubregion(new SubregionBlueprint("SL", "SLPrecipice",
-                    ["Shelter-SL_S13", "DevToken-SL_BRIDGE01"],
-                    ["GATE_UW_SL"],
-                    ["SL_S13"],
-                    (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID))));
+                ["Shelter-SL_S13", "DevToken-SL_BRIDGE01"],
+                ["GATE_UW_SL"],
+                ["SL_S13"],
+                (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID))));
 
             SubregionBlueprint bitterAerie = new("MS", "MSBitterAerie",
-                ["Token-S-MS", "Token-MirosVulture-MS", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10",
-                    "Shelter-MS_BITTERSHELTER", "DevToken-MS_SEWERBRIDGE", "DevToken-MS_X02", "DevToken-MS_BITTEREDGE"],
+                [
+                    "Token-S-MS", "Token-MirosVulture-MS", "Echo-MS", "Shelter-MS_S07", "Shelter-MS_S10",
+                    "Shelter-MS_BITTERSHELTER", "DevToken-MS_SEWERBRIDGE", "DevToken-MS_X02", "DevToken-MS_BITTEREDGE"
+                ],
                 ["GATE_SL_MS"],
                 ["MS_S07", "MS_S10", "MS_BITTERSHELTER"],
                 (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)));
@@ -471,7 +495,8 @@ namespace RainWorldRandomizer.Generation
             // Metropolis can be accessed if the option is enabled
             AddConnectionRule("GATE_UW_LC",
                 new RulePatch(null),
-                new RulePatch(new OptionAccessRule(nameof(OptionStruct.allowMetroForOthers)), OverlapMethod.AndPrevious),
+                new RulePatch(new OptionAccessRule(nameof(OptionStruct.allowMetroForOthers)),
+                    OverlapMethod.AndPrevious),
                 SelectionMethod.Blacklist,
                 MoreSlugcatsEnums.SlugcatStatsName.Artificer);
 
@@ -490,7 +515,8 @@ namespace RainWorldRandomizer.Generation
             // Submerged can be accessed if the option is enabled
             AddConnectionRule("GATE_MS_SL",
                 new RulePatch(null),
-                new RulePatch(new OptionAccessRule(nameof(OptionStruct.allowSubmergedForOthers)), OverlapMethod.AndPrevious),
+                new RulePatch(new OptionAccessRule(nameof(OptionStruct.allowSubmergedForOthers)),
+                    OverlapMethod.AndPrevious),
                 SelectionMethod.Blacklist,
                 MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
 
