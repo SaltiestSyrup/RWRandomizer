@@ -211,8 +211,18 @@ namespace RainWorldRandomizer.Generation
         /// </summary>
         public void AddOtherProgItem(string itemName)
         {
-            if (itemName.Equals("Karma")) karmaItems++;
-            else SpecialProg.Add(itemName);
+            switch (itemName)
+            {
+                case "Karma":
+                    karmaItems++;
+                    break;
+                case "Ripple":
+                    rippleItems++;
+                    break;
+                default:
+                    SpecialProg.Add(itemName);
+                    break;
+            }
             RecalculateState();
         }
 

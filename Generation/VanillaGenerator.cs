@@ -118,6 +118,8 @@ namespace RainWorldRandomizer.Generation
                 [.. SlugcatStats.SlugcatStoryRegions(slugcat), .. SlugcatStats.SlugcatOptionalRegions(slugcat)];
             // Add Metropolis to region list if option set
             if (ModManager.MSC && options.allowMetroForOthers) slugcatRegions.Add("LC");
+            // Daemon isn't a story or optional region for some reason
+            if (ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher) slugcatRegions.Add("WRSA");
             // Remove regions from logic
             foreach (KeyValuePair<string, CustomLogicBuilder.RulePatch> region
                      in CustomLogicBuilder.GetLogicForSlugcat(slugcat).blacklistedRegions
@@ -182,8 +184,8 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Gate items
-            (HashSet<string>, List<Item>) gatesTuple = 
-                ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher 
+            (HashSet<string>, List<Item>) gatesTuple =
+                ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher
                     ? ItemHelpers.MakeWarpConnections(allRegions)
                     : ItemHelpers.MakeGateConnections(slugcat, allRegions);
             AllGates.UnionWith(gatesTuple.Item1);
@@ -206,11 +208,17 @@ namespace RainWorldRandomizer.Generation
             }
 
             // Create Karma items
-            int karmaInPool = 8 - (options.startMinKarma ? 0 : SlugcatStats.SlugcatStartingKarma(slugcat));
+            int karmaInPool = ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher
+                ? 12
+                : 8 - (options.startMinKarma
+                    ? 0
+                    : SlugcatStats.SlugcatStartingKarma(slugcat));
             karmaInPool += options.extraKarmaIncreases;
             for (int i = 0; i < karmaInPool; i++)
             {
-                itemsToPlace.Add(new Item("Karma", Item.Type.Karma, Item.Importance.Progression));
+                itemsToPlace.Add(new Item(
+                    ModManager.Watcher && slugcat == WatcherEnums.SlugcatStatsName.Watcher ? "Ripple" : "Karma",
+                    Item.Type.Karma, Item.Importance.Progression));
             }
 
             // Create Food Quest locations
@@ -392,9 +400,10 @@ namespace RainWorldRandomizer.Generation
                 else
                 {
                     destination = state.RegionOfShelter(Constants.SlugcatDefaultStartingDen[slugcat])
-                                              ?? throw new GenerationFailureException(
-                                                  $"Failed to define starting region for {slugcat}, no region has shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
+                                  ?? throw new GenerationFailureException(
+                                      $"Failed to define starting region for {slugcat}, no region has shelter {Constants.SlugcatDefaultStartingDen[slugcat]}");
                 }
+
                 customStartDen = Constants.SlugcatDefaultStartingDen[slugcat];
                 connectionsToAdd.Add(new Connection("START_PATH", [startRegion, destination], new AccessRule()));
 
@@ -448,7 +457,7 @@ namespace RainWorldRandomizer.Generation
             {
                 generationLog.AppendLine($"\t{region}");
             }
-            
+
             generationLog.AppendLine();
         }
 
