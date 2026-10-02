@@ -106,11 +106,11 @@ public static class ItemHelpers
         HashSet<string> warpNames = [];
         List<Item> warpItems = [];
         List<WarpConnection> hangingConnections = [];
-        
+
         // Normal static warps
         foreach (string warp in Custom.rainWorld.regionWarpRooms.SelectMany(kvp => kvp.Value))
         {
-            WarpConnection data = new WarpConnection(warp.Split(':'));
+            WarpConnection data = WarpConnection.FromStatic(warp.Split(':'));
             if (!regions.ContainsKey(data.startReg) || !regions.ContainsKey(data.destReg))
             {
                 continue;
@@ -120,27 +120,27 @@ public static class ItemHelpers
             string itemName = $"Warp-{warpID}";
             bool forceOpen = Constants.UnkeyableWarps.Contains(warpID);
             Connection connection;
-            
+
             // This is a one-way warp, create the connection
             if (data.oneWay)
             {
-                connection = new Connection(itemName, 
+                connection = new Connection(itemName,
                     [
                         regions[data.startReg],
                         regions[data.destReg]
-                    ], 
-                    (forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, data.ripple), 
+                    ],
+                    (forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, data.ripple),
                         AccessRule.Impossible()));
             }
             // We found the second half of a two-way warp pair, create it
             else if (hangingConnections.FirstOrDefault(con => con.MatchPair(data)) is WarpConnection other)
             {
-                connection = new Connection(itemName, 
+                connection = new Connection(itemName,
                     [
                         regions[data.startReg],
                         regions[data.destReg]
-                    ], 
-                    (forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, data.ripple), 
+                    ],
+                    (forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, data.ripple),
                         forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, other.ripple)));
                 hangingConnections.Remove(other);
             }
@@ -150,7 +150,7 @@ public static class ItemHelpers
                 hangingConnections.Add(data);
                 continue;
             }
-            
+
             // Finalize the connection if we made one
             connection.Create();
             warpNames.Add(itemName);
@@ -159,26 +159,73 @@ public static class ItemHelpers
                 warpItems.Add(new Item(itemName, Item.Type.Gate, Item.Importance.Progression));
             }
         }
-        
+
         // Spinning Top warps
-        // foreach (string stWarp in Custom.rainWorld.regionSpinningTopRooms.SelectMany(kvp => kvp.Value))
-        // {
-        //     
-        // }
+        foreach (string stWarp in Custom.rainWorld.regionSpinningTopRooms.SelectMany(kvp => kvp.Value))
+        {
+            WarpConnection data = WarpConnection.FromST((stWarp.Split(':')));
+            if (!regions.ContainsKey(data.startReg) || !regions.ContainsKey(data.destReg))
+            {
+                continue;
+            }
+
+            string warpID = string.Join("-", new[] { data.startReg, data.destReg }.OrderBy(x => x));
+            string itemName = $"Warp-{warpID}";
+            bool forceOpen = Constants.UnkeyableWarps.Contains(warpID);
+
+            Connection connection = new(
+                itemName,
+                [
+                    regions[data.startReg],
+                    regions[data.destReg]
+                ],
+                (forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, data.ripple),
+                    AccessRule.Impossible()));
+
+            // Finalize the connection
+            connection.Create();
+            warpNames.Add(itemName);
+            if (!forceOpen)
+            {
+                warpItems.Add(new Item(itemName, Item.Type.Gate, Item.Importance.Progression));
+            }
+        }
 
         return (warpNames, warpItems);
     }
 
-    private class WarpConnection(string[] split)
+    private class WarpConnection()
     {
-        public string startReg = split[0].Split('_')[0].ToUpperInvariant();
-        public bool ripple = split[1] == "1";
-        public bool oneWay = split[2] == "1";
-        public string destReg = split[3].Split('_')[0].ToUpperInvariant();
+        public string startReg;
+        public bool ripple;
+        public bool oneWay;
+        public string destReg;
 
         public bool MatchPair(WarpConnection other)
         {
             return startReg.Equals(other.destReg) && destReg.Equals(other.startReg);
+        }
+
+        public static WarpConnection FromStatic(string[] split)
+        {
+            return new WarpConnection
+            {
+                startReg = split[0].Split('_')[0].ToUpperInvariant(),
+                ripple = split[1] == "1",
+                oneWay = split[2] == "1",
+                destReg = split[3].Split('_')[0].ToUpperInvariant()
+            };
+        }
+
+        public static WarpConnection FromST(string[] split)
+        {
+            return new WarpConnection
+            {
+                startReg = split[0].Split('_')[0].ToUpperInvariant(),
+                ripple = false,
+                oneWay = true,
+                destReg = split[2].Split('_')[0].ToUpperInvariant()
+            };
         }
     }
 }
