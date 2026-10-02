@@ -127,6 +127,7 @@
         <Compile Include="Generation\Fuzzer.cs"/>
         <Compile Include="Generation\ItemHelpers.cs"/>
         <Compile Include="Generation\LocationHelpers.cs"/>
+        <Compile Include="Generation\PlantUMLVisualizer.cs" />
         <Compile Include="Generation\WatcherCompat.cs" />
         <Compile Include="Hooks\CollectTokenHandler.cs"/>
         <Compile Include="Constants.cs"/>

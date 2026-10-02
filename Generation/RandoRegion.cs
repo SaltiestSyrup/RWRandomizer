@@ -34,6 +34,11 @@ namespace RainWorldRandomizer.Generation
             return connections.Any(con => con.TravelPossible(state, con.OtherSide(this)));
         }
 
+        public string[] ToPlantUML()
+        {
+            return [$"class \"{ID}\"", ..connections.Select(c => c.ToPlantUML())];
+        }
+
         public override string ToString()
         {
             string[] output =

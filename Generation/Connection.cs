@@ -101,6 +101,16 @@ namespace RainWorldRandomizer.Generation
             regions[1].connections.Remove(this);
         }
 
+        public string ToPlantUML()
+        {
+            string arrow;
+            if (requirements.Item1.ReqName == AccessRule.IMPOSSIBLE_ID) arrow = "<--";
+            else if (requirements.Item2.ReqName == AccessRule.IMPOSSIBLE_ID) arrow = "-->";
+            else arrow = "<-->";
+            
+            return $"\"{regions[0].ID}\" {arrow} \"{regions[1].ID}\"";
+        }
+        
         public override string ToString()
         {
             return $"{ID} connects {regions[0].ID} and {regions[1].ID}";

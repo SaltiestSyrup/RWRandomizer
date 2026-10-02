@@ -63,6 +63,8 @@ namespace RainWorldRandomizer.Generation
             }
         }
 
+        public State GetState() => state;
+
         public Task BeginGeneration()
         {
             generationThread = new Task(Generate);

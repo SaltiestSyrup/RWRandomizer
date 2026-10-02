@@ -52,6 +52,13 @@ public static class Fuzzer
 
         sw.Stop();
 
+        if (numGens == 1)
+        {
+            SaveLogToFile(0, generators[0].generationLog.ToString());
+            PlantUMLVisualizer.MakePlantUML(generators[0].GetState());
+            return "Gen Completed";
+        }
+
         for (int j = 0; j < numGens; j++)
         {
             if (genTask[j].Exception != null)
