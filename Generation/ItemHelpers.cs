@@ -194,6 +194,16 @@ public static class ItemHelpers
         return (warpNames, warpItems);
     }
 
+    private static string DetermineNullWarpDest(string startReg, bool ripple)
+    {
+        return startReg switch
+        { 
+            "WARA" => ripple ? "WAUA" : "WRSA",
+            "WSSR" => "WORA",
+            _ => ripple ? "WRSA" : "NULL"
+        };
+    }
+
     private class WarpConnection()
     {
         public string startReg;
@@ -208,24 +218,32 @@ public static class ItemHelpers
 
         public static WarpConnection FromStatic(string[] split)
         {
-            return new WarpConnection
+            WarpConnection warp = new WarpConnection
             {
                 startReg = split[0].Split('_')[0].ToUpperInvariant(),
                 ripple = split[1] == "1",
                 oneWay = split[2] == "1",
                 destReg = split[3].Split('_')[0].ToUpperInvariant()
             };
+
+            if (warp.destReg.Equals("NULL")) warp.destReg = DetermineNullWarpDest(warp.startReg, warp.ripple);
+
+            return warp;
         }
 
         public static WarpConnection FromST(string[] split)
         {
-            return new WarpConnection
+            WarpConnection warp = new WarpConnection
             {
                 startReg = split[0].Split('_')[0].ToUpperInvariant(),
                 ripple = false,
                 oneWay = true,
                 destReg = split[2].Split('_')[0].ToUpperInvariant()
             };
+            
+            if (warp.destReg.Equals("NULL")) warp.destReg = DetermineNullWarpDest(warp.startReg, warp.ripple);
+
+            return warp;
         }
     }
 }

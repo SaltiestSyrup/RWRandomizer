@@ -71,7 +71,7 @@ namespace RainWorldRandomizer
         
         public static List<string> UnkeyableWarps =
         [
-            "WORA-WSSR", "WORA-WSUR", "WGWR-WORA", "WHIR-WORA", "WDSR-WORA", "WARA-WRSA"
+            "WORA-WSSR", "WORA-WSUR", "WGWR-WORA", "WHIR-WORA", "WDSR-WORA", "WARA-WRSA", "WORA-WORA"
         ];
 
         public static string[] SpinningTopWarps =
