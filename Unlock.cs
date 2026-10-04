@@ -63,9 +63,10 @@ namespace RainWorldRandomizer
             public static readonly UnlockType ExpeditionPerk = new("ExpeditionPerk", true);
             public static readonly UnlockType IdDrone = new("IdDrone", true);
             public static readonly UnlockType DisconnectFP = new("DisconnectFP", true);
-            public static readonly UnlockType Longer_Cycles = new("Longer_Cycles", true);
-            public static readonly UnlockType Disconnect_Pebbles = new("Disconnect_Pebbles", true);
+            public static readonly UnlockType LongerCycles = new("Longer_Cycles", true);
+            public static readonly UnlockType DisconnectPebbles = new("Disconnect_Pebbles", true);
             public static readonly UnlockType RewriteSpearPearl = new("RewriteSpearPearl", true);
+            public static readonly UnlockType DialWarp = new("Dial_Warp", true);
         }
 
         public Unlock(UnlockType type, string ID, bool isGiven = false)
@@ -125,6 +126,7 @@ namespace RainWorldRandomizer
                         Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID));
                         item = IDToItem(ID);
                     }
+
                     break;
                 case "ItemPearl":
                     if (item != null)
@@ -138,6 +140,7 @@ namespace RainWorldRandomizer
                         Plugin.RandoManager.lastItemDeliveryQueue.Enqueue(IDToItem(ID, true));
                         item = IDToItem(ID, true);
                     }
+
                     break;
                 case "Trap":
                     TrapsHandler.EnqueueTrap(ID);
@@ -219,7 +222,7 @@ namespace RainWorldRandomizer
 
         public static string IDToString(string item)
         {
-            return readableItemNames.ContainsKey(item) ? readableItemNames[item] : item;
+            return readableItemNames.TryGetValue(item, out string name) ? name : item;
         }
 
         public static Item IDToItem(string id, bool isPearl = false)

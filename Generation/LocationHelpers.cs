@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MoreSlugcats;
+using RWCustom;
 using Watcher;
 
 namespace RainWorldRandomizer.Generation;
@@ -11,7 +13,8 @@ public static class LocationHelpers
     {
         if (slugcat.IsWatcher())
         {
-            return RWCustom.Custom.rainWorld.regionSpinningTopRooms.ContainsKey(regionShort)
+            return Custom.rainWorld.regionSpinningTopRooms.Any(kvp =>
+                kvp.Key.StartsWith(regionShort, StringComparison.InvariantCultureIgnoreCase) && kvp.Value.Any())
                 ? new Location($"SpinningTop-{regionShort}", Location.Type.Echo, AccessRule.Empty())
                 : null;
         }
@@ -171,6 +174,19 @@ public static class LocationHelpers
         }
 
         return (shelt, locs);
+    }
+
+    public static HashSet<Location> MakeWarpLocations(string regionShort)
+    {
+        string regionLower = regionShort.ToLowerInvariant();
+        if (!Custom.rainWorld.regionWarpRooms.TryGetValue(regionLower, out List<string> warps)) return [];
+
+        return warps
+            .Select(warp => 
+                new Location($"Warp-{warp.Split(':')[0].ToUpperInvariant()}", 
+                    Location.Type.Unknown, 
+                    AccessRule.Empty()))
+            .ToHashSet();
     }
 
     /// <summary>

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -52,10 +54,11 @@ public static class Fuzzer
 
         sw.Stop();
 
+        // If we only chose to generate once, log regardless and generate region graph
         if (numGens == 1)
         {
             SaveLogToFile(0, generators[0].generationLog.ToString());
-            PlantUMLVisualizer.MakePlantUML(generators[0].GetState());
+            MakePlantUML(generators[0].GetState());
             return "Gen Completed";
         }
 
@@ -111,5 +114,25 @@ public static class Fuzzer
     {
         string path = $"{Plugin.Mod.basePath}/generationLogs/generation_{index}.txt";
         File.WriteAllText(path, content);
+    }
+
+    private static void MakePlantUML(State state)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine("@startuml");
+        builder.AppendLine("hide circle");
+        // builder.AppendLine("skinparam linetype ortho");
+
+        state.AllRegions
+            .SelectMany(r => r.ToPlantUML())
+            .Distinct()
+            .ToList()
+            .ForEach(str => builder.AppendLine(str));
+
+        builder.AppendLine("hide WRSA");
+        builder.AppendLine("@enduml");
+
+        string path = $"{Plugin.Mod.basePath}/generationLogs/gen.puml";
+        File.WriteAllText(path, builder.ToString());
     }
 }

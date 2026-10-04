@@ -176,6 +176,11 @@ namespace RainWorldRandomizer.Generation
                     regionLocations.UnionWith(LocationHelpers.MakeKarmaFlowerLocations(slugcat, regionShort));
                 }
 
+                if (isWatcher)
+                {
+                    regionLocations.UnionWith(LocationHelpers.MakeWarpLocations(regionShort));
+                }
+
                 // Find shelters
                 (HashSet<string> shelters, HashSet<Location> locs) =
                     LocationHelpers.MakeShelters(timeline, regionShort, options.useShelterChecks);

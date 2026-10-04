@@ -14,7 +14,9 @@ namespace RainWorldRandomizer
         public readonly string internalName;
         public readonly string internalDesc;
         public readonly long archipelagoID = -1;
+
         public readonly string region;
+
         //public readonly string node;
         private bool _collected;
         public bool Collected => _collected;
@@ -22,17 +24,18 @@ namespace RainWorldRandomizer
         public bool InMetaRegion => region.StartsWith("<");
         public bool IsPassage => region == "<P>";
         public bool IsFoodQuest => region == "<FQ>";
+
         public bool IsToken
         {
             get
             {
-                return (new LocationKind[] 
-                { 
-                    LocationKind.BlueToken, 
-                    LocationKind.RedToken, 
-                    LocationKind.GoldToken, 
-                    LocationKind.GreenToken, 
-                    LocationKind.DevToken, 
+                return (new LocationKind[]
+                {
+                    LocationKind.BlueToken,
+                    LocationKind.RedToken,
+                    LocationKind.GoldToken,
+                    LocationKind.GreenToken,
+                    LocationKind.DevToken,
                     LocationKind.Broadcast,
                 }).Contains(kind);
             }
@@ -81,7 +84,9 @@ namespace RainWorldRandomizer
                 displayName = CreateDisplayName();
                 if (findAPID)
                 {
-                    archipelagoID = ArchipelagoConnection.Session?.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME, displayName) 
+                    archipelagoID =
+                        ArchipelagoConnection.Session?.Locations.GetLocationIdFromName(ArchipelagoConnection.GAME_NAME,
+                            displayName)
                         ?? throw new Exception("Cannot find Archipelago ID when there is no Session.");
                 }
             }
@@ -105,9 +110,10 @@ namespace RainWorldRandomizer
         {
             this.archipelagoID = archipelagoID;
 
-            if (ArchipelagoConnection.Session is null) throw new NullReferenceException("Cannot create LocationInfo from ID without an AP connection");
+            if (ArchipelagoConnection.Session is null)
+                throw new NullReferenceException("Cannot create LocationInfo from ID without an AP connection");
             displayName = ArchipelagoConnection.Session.Locations.GetLocationNameFromId(archipelagoID)
-                ?? throw new KeyNotFoundException($"Could not find ID in datapackage ({archipelagoID})");
+                          ?? throw new KeyNotFoundException($"Could not find ID in datapackage ({archipelagoID})");
 
             internalName = CreateInternalName(displayName);
             kind = KindOfLocation(internalName);
@@ -117,7 +123,9 @@ namespace RainWorldRandomizer
             // Plugin.Log.LogDebug($"New AP LocationInfo: {displayName} => {internalName}, {kind}, {region}, {internalDesc}");
         }
 
-        public LocationInfo(KeyValuePair<string, bool> pair, bool findAPID) : this(pair.Key, pair.Value, findAPID) { }
+        public LocationInfo(KeyValuePair<string, bool> pair, bool findAPID) : this(pair.Key, pair.Value, findAPID)
+        {
+        }
 
         public void MarkCollected() => _collected = true;
 
@@ -187,6 +195,7 @@ namespace RainWorldRandomizer
                     return LocationKind.GreenToken;
                 return LocationKind.BlueToken;
             }
+
             if (internalName.StartsWith("DevToken-")) return LocationKind.DevToken;
             if (internalName.StartsWith("Flower-")) return LocationKind.Flower;
             if (internalName.StartsWith("Passage-")) return LocationKind.Passage;
@@ -207,7 +216,7 @@ namespace RainWorldRandomizer
             string desc = kind switch
             {
                 LocationKind.BlueToken
-                or LocationKind.GreenToken => $"Arena Token - {split[1]}",
+                    or LocationKind.GreenToken => $"Arena Token - {split[1]}",
                 LocationKind.GoldToken => $"Level Token - {split[2]}",
                 LocationKind.RedToken => $"Safari Token",
                 LocationKind.Broadcast => $"Broadcast - {split[1]}",
@@ -217,22 +226,25 @@ namespace RainWorldRandomizer
                 LocationKind.Echo => $"Echo",
                 LocationKind.Shelter => $"Shelter - {split[1]}",
                 LocationKind.Passage => $"Passage - {WinState.PassageDisplayName(new WinState.EndgameID(split[1]))}",
-                LocationKind.WandererPip => $"The Wanderer - {split[1]} pip{(int.TryParse(split[1], out int r) && r > 1 ? "s" : "")}",
+                LocationKind.WandererPip =>
+                    $"The Wanderer - {split[1]} pip{(int.TryParse(split[1], out int r) && r > 1 ? "s" : "")}",
                 LocationKind.FoodQuest => GetFoodQuestDisplayName(internalName),
                 LocationKind.FixedWarp => $"Fixed Warp - {split[1]}",
                 LocationKind.SpinningTop => $"Spinning Top",
                 LocationKind.SpreadRot => $"Spread the Rot - Region #{split[1]}",
                 LocationKind.ThroneWarp => $"Create {split[1] switch
-                    {
-                        "10" => "lower east",
-                        "05" => "lower west",
-                        "07" => "upper east",
-                        "09" => "upper west",
-                        _ => ""
-                    }} warp",
+                {
+                    "10" => "lower east",
+                    "05" => "lower west",
+                    "07" => "upper east",
+                    "09" => "upper west",
+                    _ => ""
+                }} warp",
                 // Capitalization correction made in 1.6
-                LocationKind.Prince => ArchipelagoConnection.WorldVersion.CompareTo(new Version("1.6.0")) < 0
-                    ? $"Prince encounter #{split[1]}" : $"Prince Encounter #{split[1]}",
+                LocationKind.Prince =>
+                    ArchipelagoConnection.WorldVersion?.CompareTo(new Version("1.6.0")) < 0
+                        ? $"Prince encounter #{split[1]}"
+                        : $"Prince Encounter #{split[1]}",
                 LocationKind.EncounterWeaver => $"Weaver Encounter #{split[1]}",
                 LocationKind.Other => GetSpecialDescription(internalName),
                 _ => internalName
@@ -247,7 +259,7 @@ namespace RainWorldRandomizer
         {
             string[] split = Regex.Split(displayName, " - ");
             string regionShort = Plugin.RegionNamesMap.FirstOrDefault(kvp => kvp.Value == split[0]).Key;
-            
+
             if (regionShort is null)
             {
                 switch (split[0])
@@ -290,7 +302,7 @@ namespace RainWorldRandomizer
                 "Arena Token" => $"Token-{split[2]}-{regionShort}",
                 "Level Token" => $"Token-L-{split[2]}",
                 "Safari Token" => $"Token-S-{regionShort}",
-                "Broadcast"  => $"Broadcast-{split[2]}-{regionShort}",
+                "Broadcast" => $"Broadcast-{split[2]}-{regionShort}",
                 "Dev Token" => $"DevToken-{split[2]}",
                 "Karma Flower" => $"Flower-{split[2]}",
                 "Pearl" => $"Pearl-{split[2]}-{regionShort}",
@@ -321,7 +333,7 @@ namespace RainWorldRandomizer
             return kind switch
             {
                 LocationKind.GoldToken
-                or LocationKind.RedToken => split[2],
+                    or LocationKind.RedToken => split[2],
                 LocationKind.Other => internalName,
                 _ => split[1]
             };
@@ -337,7 +349,9 @@ namespace RainWorldRandomizer
                 "DaddyLongLegs" => "Rot",
                 "Salamander" => "Eel Lizard or Salamander",
                 "RedCentipede" => "Aquapede or Red Centipede",
-                _ => Constants.WikiNames.TryGetValue(internalName.Split('-')[1], out string v) ? v : internalName.Split('-')[1]
+                _ => Constants.WikiNames.TryGetValue(internalName.Split('-')[1], out string v)
+                    ? v
+                    : internalName.Split('-')[1]
             };
             return $"Food Quest - {translatedItem}";
         }
@@ -372,10 +386,14 @@ namespace RainWorldRandomizer
                     spriteName = internalDesc + "A";
                     if (internalDesc == "Gourmand")
                     {
-                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
+                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat,
+                            AbstractPhysicalObject.AbstractObjectType.Creature, 0);
                         spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
-                        spriteColor = PlayerGraphics.DefaultSlugcatColor(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
+                        spriteColor =
+                            PlayerGraphics.DefaultSlugcatColor(MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName
+                                .Gourmand);
                     }
+
                     break;
                 case LocationKind.Echo:
                 case LocationKind.SpinningTop:
@@ -390,8 +408,10 @@ namespace RainWorldRandomizer
                     Color? highlight = DataPearl.UniquePearlHighLightColor(pearl);
                     if (highlight != null)
                     {
-                        spriteColor = Custom.Screen(spriteColor, highlight.Value * Custom.QuickSaturation(highlight.Value) * 0.5f);
+                        spriteColor = Custom.Screen(spriteColor,
+                            highlight.Value * Custom.QuickSaturation(highlight.Value) * 0.5f);
                     }
+
                     break;
                 case LocationKind.BlueToken:
                     spriteName = "ctOn";
@@ -426,16 +446,19 @@ namespace RainWorldRandomizer
                 case LocationKind.FoodQuest:
                     if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(internalDesc))
                     {
-                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(internalDesc), 0);
+                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature,
+                            new AbstractPhysicalObject.AbstractObjectType(internalDesc), 0);
                         spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                         spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                     }
                     else if (ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)).Contains(internalDesc))
                     {
-                        iconData = new IconSymbol.IconSymbolData(new CreatureTemplate.Type(internalDesc), AbstractPhysicalObject.AbstractObjectType.Creature, 0);
+                        iconData = new IconSymbol.IconSymbolData(new CreatureTemplate.Type(internalDesc),
+                            AbstractPhysicalObject.AbstractObjectType.Creature, 0);
                         spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
                         spriteColor = CreatureSymbol.ColorOfCreature(iconData);
                     }
+
                     break;
                 case LocationKind.Shelter:
                     spriteName = "ShelterMarker";
@@ -479,8 +502,11 @@ namespace RainWorldRandomizer
                     {
                         case "Eat_Neuron":
                         case "Gift_Neuron":
-                            spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
-                            spriteColor = ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
+                            spriteName =
+                                ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer,
+                                    0);
+                            spriteColor =
+                                ItemSymbol.ColorForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
                             break;
                         case "Kill_FP":
                             spriteName = "GuidanceEnergyCell";
@@ -490,12 +516,14 @@ namespace RainWorldRandomizer
                             spriteName = ModManager.MSC ? "GuidancePebbles" : "GuidanceMoon";
                             break;
                         case "Meet_LttM":
-                        case "Meet_LttM_Spear": 
+                        case "Meet_LttM_Spear":
                         case "Ascend_LttM":
                             spriteName = "GuidanceMoon";
                             break;
                         case "Save_LttM":
-                            spriteName = ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer, 0);
+                            spriteName =
+                                ItemSymbol.SpriteNameForItem(AbstractPhysicalObject.AbstractObjectType.SSOracleSwarmer,
+                                    0);
                             spriteColor = CollectToken.GreenColor.rgb;
                             break;
                         case "Meet_Ripple_Elder":
@@ -507,6 +535,7 @@ namespace RainWorldRandomizer
                             spriteScale = 0.5f;
                             break;
                     }
+
                     break;
                 case LocationKind.WandererPip:
                 default:
