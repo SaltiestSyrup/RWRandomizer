@@ -114,7 +114,7 @@ namespace RainWorldRandomizer
                     }
                     catch (Exception e)
                     {
-                        Plugin.Singleton.notifQueue.Enqueue(new MessageText("Failed to start randomizer game. More details found in BepInEx/LogOutput.log", UnityEngine.Color.red));
+                        Plugin.QueueNotify(new MessageText("Failed to start randomizer game. More details found in BepInEx/LogOutput.log", UnityEngine.Color.red));
                         Plugin.Log.LogError("Encountered exception while starting game session");
                         Plugin.Log.LogError(e);
                     }
@@ -403,21 +403,7 @@ namespace RainWorldRandomizer
             if (self.GamePaused || !self.processActive) return;
 
             // Display any pending notifications
-            if (Plugin.Singleton.notifQueue.Count > 0)
-            {
-                if (RandoOptions.DisableNotificationQueue)
-                {
-                    Plugin.Singleton.notifQueue.Dequeue();
-                }
-                else if (RandoOptions.legacyNotifications.Value)
-                {
-                    Plugin.Singleton.DisplayLegacyNotification();
-                }
-                else if (MenuHooks.CurrentChatLog is not null)
-                {
-                    MenuHooks.CurrentChatLog.AddMessage(Plugin.Singleton.notifQueue.Dequeue());
-                }
-            }
+            Plugin.DisplayNextNotification();
 
             // Active only
             if (!Plugin.RandomizerActive) return;
@@ -525,7 +511,7 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Log.LogError("Failed to write randomizer save to file.");
                     Plugin.Log.LogError(e);
-                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("Randomizer failed to save game information to file.", UnityEngine.Color.red));
+                    Plugin.QueueNotify(new MessageText("Randomizer failed to save game information to file.", UnityEngine.Color.red));
                 }
             }
 

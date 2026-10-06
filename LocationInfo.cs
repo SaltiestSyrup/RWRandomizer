@@ -29,7 +29,7 @@ namespace RainWorldRandomizer
         {
             get
             {
-                return (new LocationKind[]
+                return new[]
                 {
                     LocationKind.BlueToken,
                     LocationKind.RedToken,
@@ -37,7 +37,7 @@ namespace RainWorldRandomizer
                     LocationKind.GreenToken,
                     LocationKind.DevToken,
                     LocationKind.Broadcast,
-                }).Contains(kind);
+                }.Contains(kind);
             }
         }
 
@@ -208,6 +208,11 @@ namespace RainWorldRandomizer
             if (internalName.StartsWith("Prince-")) return LocationKind.Prince;
             if (internalName.StartsWith("Weaver-")) return LocationKind.EncounterWeaver;
             return LocationKind.Other;
+        }
+
+        public static string ClientNameToDisplayName(string internalName)
+        {
+            return new LocationInfo(internalName, false, false).displayName;
         }
 
         private string CreateDisplayName()

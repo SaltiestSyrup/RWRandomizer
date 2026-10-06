@@ -124,7 +124,7 @@ namespace RainWorldRandomizer
                 if (Plugin.RandoManager.customStartDen.Equals(""))
                 {
                     Plugin.Log.LogError("Tried to set starting den while custom den unset");
-                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("ERROR: Failed to set correct starting den", Color.red));
+                    Plugin.QueueNotify(new MessageText("ERROR: Failed to set correct starting den", Color.red));
                     return;
                 }
                 self.denPosition = Plugin.RandoManager.customStartDen;

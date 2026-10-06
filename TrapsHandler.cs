@@ -33,7 +33,7 @@ namespace RainWorldRandomizer
             public void Activate(RainWorldGame game)
             {
                 Plugin.Log.LogInfo($"Trap Triggered! ({id})");
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText($"Trap Triggered! ({id})",
+                Plugin.QueueNotify(new MessageText($"Trap Triggered! ({id})",
                     ArchipelagoConnection.palette[Archipelago.MultiClient.Net.Colors.PaletteColor.Red]));
                 definition.onTrigger(game);
                 timer = definition.duration;
@@ -342,7 +342,7 @@ namespace RainWorldRandomizer
         private static void TrapAlarmDeactivate(this RainWorldGame game)
         {
             _alarmTrapActive = false;
-            Plugin.Singleton.notifQueue.Enqueue(new MessageText("Alarm trap has faded"));
+            Plugin.QueueNotify(new MessageText("Alarm trap has faded"));
         }
 
         /// <summary>

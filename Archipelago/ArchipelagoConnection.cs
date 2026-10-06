@@ -499,7 +499,7 @@ namespace RainWorldRandomizer
                          && !itemMessage.IsRelatedToActivePlayer:
                     return;
                 default:
-                    Plugin.Singleton.notifQueue.Enqueue(messageText);
+                    Plugin.QueueNotify(messageText);
                     break;
             }
         }
@@ -517,7 +517,7 @@ namespace RainWorldRandomizer
             {
                 Disconnect(false);
                 Plugin.Log.LogError("Disconnected Socket due to WebSocketException");
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText("You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
+                Plugin.QueueNotify(new MessageText("You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
             }
         }
 

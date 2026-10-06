@@ -345,7 +345,7 @@ namespace RainWorldRandomizer.Generation
                 ["Echo-SB", "Pearl-SB_ravine", "Broadcast-Chatlog_SB0", "Shelter-SB_S09"],
                 ["GATE_LF_SB"],
                 ["SB_S09"],
-                (new(AccessRule.IMPOSSIBLE_ID), new())));
+                (AccessRule.Impossible(), new())));
 
             // The Exterior is split in half at UW_D06 pre-MSC, as there are no grapple worms for crossing
             // You *could* bring a grapple worm from Chimney but that's too out of the way to be in logic
@@ -356,7 +356,7 @@ namespace RainWorldRandomizer.Generation
                     ],
                     ["GATE_SS_UW", "GATE_CC_UW"],
                     ["UW_S01", "UW_S03", "UW_S04"],
-                    (new(), new(AccessRule.IMPOSSIBLE_ID))),
+                    (new(), AccessRule.Impossible())),
                 SelectionMethod.Whitelist,
                 SlugcatStats.Name.White, SlugcatStats.Name.Yellow);
         }
@@ -372,13 +372,13 @@ namespace RainWorldRandomizer.Generation
 
             // Artificer can't reach underwater GW token
             AddLocationRule("Token-BrotherLongLegs",
-                new RulePatch(new(AccessRule.IMPOSSIBLE_ID)),
+                new RulePatch(AccessRule.Impossible()),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Artificer);
 
             // Waterfront Safari token is in a very silly location for Spearmaster
             AddLocationRule("Token-S-LM",
-                new RulePatch(new(AccessRule.IMPOSSIBLE_ID)),
+                new RulePatch(AccessRule.Impossible()),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Spear);
 
@@ -389,7 +389,7 @@ namespace RainWorldRandomizer.Generation
                 ["Echo-SB", "Pearl-SB_ravine-SB", "Broadcast-Chatlog_SB0-SB", "Shelter-SB_S09"],
                 ["GATE_LF_SB"],
                 ["SB_S09"],
-                (new(AccessRule.IMPOSSIBLE_ID), new())));
+                (AccessRule.Impossible(), AccessRule.Empty())));
 
             // The Exterior is split in half at UW_C02 during Rivulet's time, they have a hard time crossing it
             AddSubregion(new SubregionBlueprint("UW", "UWWall",
@@ -401,14 +401,14 @@ namespace RainWorldRandomizer.Generation
                 ["GATE_SS_UW", "GATE_CC_UW", "GATE_UW_LC"],
                 ["UW_S01", "UW_S03", "UW_S04"],
                 (new TimelineAccessRule(SlugcatStats.Timeline.Yellow, TimelineAccessRule.TimelineOperation.AtOrBefore),
-                    new())));
+                    AccessRule.Empty())));
 
             // Only Saint is considered able to climb up into Outskirts filtration
             AddSubregion(new SubregionBlueprint("SU", "SU_Filt",
                     ["Pearl-SU_filt-SU", "Shelter-SU_S05", "DevToken-SU_CAVE01", "DevToken-SU_PMPSTATION01"],
                     ["GATE_OE_SU"],
                     ["SU_S05"],
-                    (new(AccessRule.IMPOSSIBLE_ID), new())),
+                    (AccessRule.Impossible(), AccessRule.Empty())),
                 SelectionMethod.Blacklist,
                 MoreSlugcatsEnums.SlugcatStatsName.Saint);
 
@@ -417,7 +417,7 @@ namespace RainWorldRandomizer.Generation
                 ["Shelter-SL_S13", "DevToken-SL_BRIDGE01"],
                 ["GATE_UW_SL"],
                 ["SL_S13"],
-                (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID))));
+                (AccessRule.Impossible(), AccessRule.Impossible())));
 
             SubregionBlueprint bitterAerie = new("MS", "MSBitterAerie",
                 [
@@ -426,7 +426,7 @@ namespace RainWorldRandomizer.Generation
                 ],
                 ["GATE_SL_MS"],
                 ["MS_S07", "MS_S10", "MS_BITTERSHELTER"],
-                (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID)));
+                (AccessRule.Impossible(), AccessRule.Impossible()));
 
             // For most, Bitter Aerie is unreachable
             AddSubregion(bitterAerie,
@@ -434,7 +434,7 @@ namespace RainWorldRandomizer.Generation
                 MoreSlugcatsEnums.SlugcatStatsName.Rivulet, MoreSlugcatsEnums.SlugcatStatsName.Saint);
 
             // For Saint, Bitter Aerie is free
-            bitterAerie.rules = (new(), new());
+            bitterAerie.rules = (AccessRule.Empty(), AccessRule.Empty());
             AddSubregion(bitterAerie,
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Saint);
@@ -455,7 +455,7 @@ namespace RainWorldRandomizer.Generation
                         new RegionAccessRule("RM")
                     ], CompoundAccessRule.CompoundOperation.All),
                 ], CompoundAccessRule.CompoundOperation.Any),
-                new(AccessRule.IMPOSSIBLE_ID));
+                AccessRule.Impossible());
             AddSubregion(bitterAerie,
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Rivulet);
@@ -465,7 +465,7 @@ namespace RainWorldRandomizer.Generation
                     ["Echo-SL", "Shelter-SL_STOP", "DevToken-SL_ROOF04", "DevToken-SL_TEMPLE", "DevToken-SL_ROOF03"],
                     ["GATE_SL_MS"],
                     ["SL_STOP"],
-                    (new(AccessRule.IMPOSSIBLE_ID), new())),
+                    (AccessRule.Impossible(), AccessRule.Empty())),
                 SelectionMethod.Blacklist,
                 MoreSlugcatsEnums.SlugcatStatsName.Saint);
 
@@ -474,7 +474,7 @@ namespace RainWorldRandomizer.Generation
                     ["Shelter-VS_S02"],
                     ["GATE_SL_VS"],
                     ["VS_S02"],
-                    (new(AccessRule.IMPOSSIBLE_ID), new(AccessRule.IMPOSSIBLE_ID))),
+                    (AccessRule.Impossible(), AccessRule.Impossible())),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Artificer);
 
@@ -483,14 +483,14 @@ namespace RainWorldRandomizer.Generation
             // Gourmand needs the mark to enter OE
             AddConnectionRule("GATE_SB_OE",
                 new RulePatch(null),
-                new RulePatch(new("The_Mark"), OverlapMethod.AndPrevious),
+                new RulePatch(new AccessRule("The_Mark"), OverlapMethod.AndPrevious),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Gourmand);
 
             // Outskirts filtration gate has no key and is one way
             AddConnectionRule("GATE_OE_SU",
-                new RulePatch(new(), OverlapMethod.Overwrite),
-                new RulePatch(new(AccessRule.IMPOSSIBLE_ID)));
+                new RulePatch(AccessRule.Empty(), OverlapMethod.Overwrite),
+                new RulePatch(AccessRule.Impossible()));
 
             // Metropolis can be accessed if the option is enabled
             AddConnectionRule("GATE_UW_LC",
@@ -505,8 +505,8 @@ namespace RainWorldRandomizer.Generation
                 new RulePatch(null),
                 new RulePatch(new CompoundAccessRule(
                     [
-                        new("The_Mark"),
-                        new("IdDrone")
+                        new AccessRule("The_Mark"),
+                        new AccessRule("IdDrone")
                     ], CompoundAccessRule.CompoundOperation.All),
                     OverlapMethod.AndPrevious),
                 SelectionMethod.Whitelist,
@@ -522,13 +522,13 @@ namespace RainWorldRandomizer.Generation
 
             // Bitter Aerie to above LttM has no key and is one way
             AddConnectionRule("GATE_SL_MS",
-                new RulePatch(new(AccessRule.IMPOSSIBLE_ID)),
-                new RulePatch(new()));
+                new RulePatch(AccessRule.Impossible()),
+                new RulePatch(AccessRule.Empty()));
 
             // Artificer cannot traverse Sump Tunnel
             AddConnectionRule("GATE_SL_VS",
-                new RulePatch(new(AccessRule.IMPOSSIBLE_ID)),
-                new RulePatch(new(AccessRule.IMPOSSIBLE_ID)),
+                new RulePatch(AccessRule.Impossible()),
+                new RulePatch(AccessRule.Impossible()),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Artificer);
 
@@ -537,7 +537,7 @@ namespace RainWorldRandomizer.Generation
             // Create a connection to Rubicon, which has no gate to it
             AddConnection(new ConnectionBlueprint("FALL_SB_HR",
                     ["SB", "HR"],
-                    (new KarmaAccessRule(10), new(AccessRule.IMPOSSIBLE_ID))),
+                    (new KarmaAccessRule(10), AccessRule.Impossible())),
                 SelectionMethod.Whitelist,
                 MoreSlugcatsEnums.SlugcatStatsName.Saint);
 

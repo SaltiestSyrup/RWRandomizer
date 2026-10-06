@@ -10,8 +10,8 @@ namespace RainWorldRandomizer
 {
     public class ManagerArchipelago : ManagerBase
     {
-        public bool locationsLoaded = false;
-        public bool gameCompleted = false;
+        private bool locationsLoaded;
+        public bool gameCompleted;
 
         // Mapping AP item names to the string IDs the mod uses for items
         public static Dictionary<string, string> ClientNameToAPItem = [];
@@ -25,14 +25,13 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Tried to start AP campaign without first connecting to server");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(
+                Plugin.QueueNotify(
                     new MessageText("Archipelago failed to start: Not connected to a server", UnityEngine.Color.red));
             }
 
             base.StartNewGameSession(storyGameCharacter, continueSaved);
             currentSeed = ArchipelagoConnection.generationSeed;
-            // RandoOptions.LoadedOptions = ArchipelagoConnection.ConnectedOptions;
-            LoadAPLocationDicts();
+            LoadAPItemNames();
 
             // Verify slugcat
             if (storyGameCharacter != ArchipelagoConnection.Slugcat)
@@ -41,7 +40,7 @@ namespace RainWorldRandomizer
                                     $"\n Chosen campaign: {storyGameCharacter}" +
                                     $"\n Chosen AP option: {ArchipelagoConnection.Slugcat}");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                Plugin.QueueNotify(new MessageText(
                     "Archipelago failed to start: Selected campaign does not match archipelago options.",
                     UnityEngine.Color.red));
                 return;
@@ -59,7 +58,7 @@ namespace RainWorldRandomizer
             catch (Exception e)
             {
                 Plugin.Log.LogError(e);
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                Plugin.QueueNotify(new MessageText(
                     "Archipelago failed to load or create save game. Some features may not function properly.",
                     UnityEngine.Color.red));
             }
@@ -75,7 +74,7 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogError("Failed to initialize randomizer.");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(
+                Plugin.QueueNotify(
                     new MessageText($"Randomizer failed to initialize. Check logs for details.",
                         UnityEngine.Color.red));
                 return;
@@ -111,7 +110,7 @@ namespace RainWorldRandomizer
             passageTokensStatus.Clear();
         }
 
-        public void LoadSave(int saveSlot)
+        private void LoadSave(int saveSlot)
         {
             if (!SaveManager.TryReadFromFile(saveSlot, out SaveFile file))
             {
@@ -146,7 +145,7 @@ namespace RainWorldRandomizer
             locationsLoaded = true;
         }
 
-        public void CreateNewSave()
+        private void CreateNewSave()
         {
             currentSlugcat = ArchipelagoConnection.Slugcat;
             locations.Clear();
@@ -167,7 +166,7 @@ namespace RainWorldRandomizer
             if (locations.Count == 0)
             {
                 Plugin.Log.LogError("Failed to create Archipelago save, no locations were written");
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                Plugin.QueueNotify(new MessageText(
                     $"Failed to create new Archipelago save", UnityEngine.Color.red));
                 return;
             }
@@ -401,7 +400,7 @@ namespace RainWorldRandomizer
             if (!ArchipelagoConnection.SocketConnected)
             {
                 Plugin.Log.LogInfo($"Found location while offline: {location}");
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                Plugin.QueueNotify(new MessageText(
                     $"Checked \"{loc.displayName}\""));
                 return;
             }
@@ -421,7 +420,7 @@ namespace RainWorldRandomizer
             gameCompleted = true;
             ArchipelagoConnection.SendCompletion();
             Plugin.Log.LogInfo("Game Complete!");
-            Plugin.Singleton.notifQueue.Enqueue(new MessageText("Game Complete!", UnityEngine.Color.green));
+            Plugin.QueueNotify(new MessageText("Game Complete!", UnityEngine.Color.green));
         }
 
         public override void SaveGame(bool saveCurrentState)
@@ -432,10 +431,11 @@ namespace RainWorldRandomizer
             // Set locations the server says we found
             if (ArchipelagoConnection.Session is not null)
             {
-                foreach (LocationInfo loc in locations)
+                foreach (LocationInfo loc in locations
+                             .Where(loc => ArchipelagoConnection.Session.Locations.AllLocationsChecked
+                                 .Contains(loc.archipelagoID)))
                 {
-                    if (ArchipelagoConnection.Session.Locations.AllLocationsChecked.Contains(loc.archipelagoID))
-                        loc.MarkCollected();
+                    loc.MarkCollected();
                 }
             }
 
@@ -448,8 +448,11 @@ namespace RainWorldRandomizer
             public Dictionary<string, string> items = items;
         }
 
-        public static void LoadAPLocationDicts()
+        public static void LoadAPItemNames()
         {
+            // Already loaded, return
+            if (ClientNameToAPItem.Any()) return;
+
             string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath,
                 $"ap_names_map.json");
 
@@ -459,12 +462,10 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            ClientNameToAPItem.Clear();
-            APItemToClientName.Clear();
-
             APReadableNames names = JsonConvert.DeserializeObject<APReadableNames>(File.ReadAllText(path));
             ClientNameToAPItem = names.items;
-            foreach (KeyValuePair<string, string> kvp in ClientNameToAPItem) APItemToClientName.Add(kvp.Value, kvp.Key);
+            foreach (KeyValuePair<string, string> kvp in ClientNameToAPItem)
+                APItemToClientName.Add(kvp.Value, kvp.Key);
         }
     }
 }

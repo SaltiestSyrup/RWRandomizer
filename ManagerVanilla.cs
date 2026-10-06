@@ -1,11 +1,9 @@
 ﻿using RainWorldRandomizer.Generation;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using UnityEngine;
 using RainWorldRandomizer.Menu;
 using RainWorldRandomizer.SaveData;
@@ -21,20 +19,24 @@ namespace RainWorldRandomizer
         // Constant for the minimum amount of gates that should be locked to make a valid seed
         public const int MIN_LOCKED_GATES = 0;
         public const int MIN_PASSAGE_TOKENS = 5;
+        
+        // Use AP item names saved in file as display names
+        private static Dictionary<string, string> _clientNameToAPItem = [];
 
         // Values for completed checks
-        public Dictionary<string, Unlock> randomizerKey = [];
+        private Dictionary<string, Unlock> randomizerKey = [];
 
         // Called when player starts or continues a run
         public override void StartNewGameSession(SlugcatStats.Name storyGameCharacter, bool continueSaved)
         {
             base.StartNewGameSession(storyGameCharacter, continueSaved);
+            ManagerArchipelago.LoadAPItemNames(); // For display names
 
             if (!Constants.CompatibleSlugcats.Contains(storyGameCharacter))
             {
                 Plugin.Log.LogWarning("Selected incompatible save, disabling randomizer");
                 isRandomizerActive = false;
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                Plugin.QueueNotify(new MessageText(
                     $"WARNING: This campaign is not currently supported by Check Randomizer. It will not be active for this session.",
                     Color.red));
                 return;
@@ -76,13 +78,13 @@ namespace RainWorldRandomizer
                 try
                 {
                     Plugin.Log.LogInfo("Continuing randomizer game...");
-                    InitSavedGame(storyGameCharacter, SaveTracker.CurrentRandomizerSlot);
+                    InitSavedGame(SaveTracker.CurrentRandomizerSlot);
                 }
                 catch (Exception e)
                 {
                     Plugin.Log.LogError($"Failed to load saved game. \n{e}");
                     isRandomizerActive = false;
-                    Plugin.Singleton.notifQueue.Enqueue(
+                    Plugin.QueueNotify(
                         new MessageText($"Randomizer failed to find valid save for current file", Color.red));
                     return;
                 }
@@ -110,7 +112,7 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Log.LogError($"Failed to load saved game. \n{e}");
                     isRandomizerActive = false;
-                    Plugin.Singleton.notifQueue.Enqueue(new MessageText("Randomizer failed to load legacy file",
+                    Plugin.QueueNotify(new MessageText("Randomizer failed to load legacy file",
                         Color.red));
                     return;
                 }
@@ -127,7 +129,7 @@ namespace RainWorldRandomizer
 
                 if (!TokenCachePatcher.hasLoadedCache)
                 {
-                    Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                    Plugin.QueueNotify(new MessageText(
                         "Failed to start randomizer, token cache data missing or corrupt. Try reloading mods to update cache",
                         Color.red));
                     return;
@@ -153,10 +155,9 @@ namespace RainWorldRandomizer
                 {
                     // Load gates from generator
                     // Existing gates that didn't have an item placed start open
-                    foreach (string gate in generator.AllGates)
+                    foreach (string gate in generator.AllGates.Where(gate => !gatesStatus.ContainsKey(gate)))
                     {
-                        if (!gatesStatus.ContainsKey(gate))
-                            gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate));
+                        gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate));
                     }
 
                     // Write new save game
@@ -172,15 +173,16 @@ namespace RainWorldRandomizer
 
                     // Log reason for expected generation exceptions
                     if (generator.CurrentStage == VanillaGenerator.GenerationStep.FailedGen
-                        && generationException.InnerException is VanillaGenerator.GenerationFailureException)
+                        && generationException?.InnerException is VanillaGenerator.GenerationFailureException)
                     {
-                        Plugin.Singleton.notifQueue.Enqueue(new MessageText(
-                            $"Randomizer failed to generate with error: {generationException.InnerException.Message}. More details found in BepInEx/LogOutput.log",
+                        Plugin.QueueNotify(new MessageText(
+                            $"Randomizer failed to generate with error: {generationException.InnerException.Message}. " +
+                            $"More details found in BepInEx/LogOutput.log",
                             Color.red));
                     }
                     else
                     {
-                        Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                        Plugin.QueueNotify(new MessageText(
                             $"Randomizer failed to generate. More details found in BepInEx/LogOutput.log", Color.red));
                     }
 
@@ -191,7 +193,7 @@ namespace RainWorldRandomizer
             isRandomizerActive = true;
         }
 
-        public void InitSavedGame(SlugcatStats.Name slugcat, int saveSlot)
+        private void InitSavedGame(int saveSlot)
         {
             if (!SaveManager.TryReadFromFile(saveSlot, out SaveFile file))
             {
@@ -324,15 +326,28 @@ namespace RainWorldRandomizer
 
             randomizerKey[location].GiveUnlock();
             locations.FirstOrDefault(l => l.internalName == location)?.MarkCollected();
-            Plugin.Singleton.notifQueue.Enqueue(new MessageText(randomizerKey[location].UnlockCompleteMessage()));
+            
+            Plugin.QueueNotify(new MessageText(
+                [
+                    "Found ", 
+                    _clientNameToAPItem.TryGetValue(randomizerKey[location].ID, out string name) 
+                        ? name 
+                        : randomizerKey[location].ID,
+                    " from ",
+                    LocationInfo.ClientNameToDisplayName(location)
+                ],
+                [
+                    Color.white,
+                    new Color(1f, 0f, 1f),
+                    Color.white,
+                    new Color(1f, 0f, 1f)
+                ]));
             Plugin.Log.LogInfo($"Completed Check: {location}");
         }
 
         public override Unlock GetUnlockAtLocation(string location)
         {
-            if (!LocationExists(location)) return null;
-
-            return randomizerKey[location];
+            return !LocationExists(location) ? null : randomizerKey[location];
         }
 
         public override void SaveGame(bool saveCurrentState)

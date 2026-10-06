@@ -83,7 +83,7 @@ namespace RainWorldRandomizer
         private OptionsMenu options;
 
         // Queue of pending notifications to be sent to the player in-game
-        public Queue<MessageText> notifQueue = new();
+        private static Queue<MessageText> _notifQueue = new();
 
         public RainWorld rainWorld;
         private WeakReference<RainWorldGame> _game = new(null);
@@ -93,6 +93,8 @@ namespace RainWorldRandomizer
             get { return _game.TryGetTarget(out RainWorldGame g) ? g : null; }
             set { _game = new WeakReference<RainWorldGame>(value); }
         }
+
+        // --- LOADING STEPS ---
 
         public void OnEnable()
         {
@@ -298,6 +300,8 @@ namespace RainWorldRandomizer
                 DevConsoleCompatibility.RegisterCommands();
         }
 
+        // --- HELPERS ---
+
         public static void AddLogicAddon(LogicAddon addon) => _logicAddons.Add(addon);
 
         public static AbstractPhysicalObject ItemToAbstractObject(Unlock.Item item, Room spawnRoom)
@@ -320,35 +324,33 @@ namespace RainWorldRandomizer
                 return null;
             }
 
-            if (item.type is DataPearl.AbstractDataPearl.DataPearlType itemPearlType)
+            switch (item.type)
             {
-                if (itemPearlType == MoreSlugcatsEnums.DataPearlType.Spearmasterpearl)
-                {
+                // Spearmaster Pearl
+                case DataPearl.AbstractDataPearl.DataPearlType itemPearlType 
+                    when itemPearlType == MoreSlugcatsEnums.DataPearlType.Spearmasterpearl:
+                    
                     return new SpearMasterPearl.AbstractSpearMasterPearl(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
-                }
-                else
-                {
+                // Specific Pearl
+                case DataPearl.AbstractDataPearl.DataPearlType itemPearlType:
+                    
                     return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl,
                         null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
                         itemPearlType);
-                }
-            }
-            else if (item.type is AbstractPhysicalObject.AbstractObjectType itemObjectType)
-            {
-                // Normal objects that need special treatment
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DataPearl)
-                {
+                // Generic Pearl
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when itemObjectType == AbstractPhysicalObject.AbstractObjectType.DataPearl:
+                    
                     return new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl,
                         null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null,
                         DataPearl.AbstractDataPearl.DataPearlType.Misc);
-                }
-
                 // Various spear types are all still "Spear"
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.Spear)
-                {
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when itemObjectType == AbstractPhysicalObject.AbstractObjectType.Spear:
+                    
                     return new AbstractSpear(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
                         item.id is "FireSpear" or "ExplosiveSpear", item.id == "ElectricSpear")
@@ -360,89 +362,89 @@ namespace RainWorldRandomizer
                             ? Mathf.Lerp(0.35f, 0.6f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f))
                             : 0f
                     };
-                }
-
-                if (ModManager.DLCShared && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck)
-                {
+                // Lillypuck
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when ModManager.DLCShared && itemObjectType == DLCSharedEnums.AbstractObjectType.LillyPuck:
+                    
                     return new LillyPuck.AbstractLillyPuck(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 3, -1, -1, null);
-                }
-
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.WaterNut)
-                {
+                // Bubble Fruit
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when itemObjectType == AbstractPhysicalObject.AbstractObjectType.WaterNut:
+                    
                     return new WaterNut.AbstractWaterNut(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false);
-                }
-
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.DangleFruit)
-                {
+                // Blue / Rot Fruit
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when itemObjectType == AbstractPhysicalObject.AbstractObjectType.DangleFruit:
+                    
                     return new DangleFruit.AbstractDangleFruit(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1,
                         item.id == "RotFruit", null);
-                }
-
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.SporePlant)
-                {
+                // Beehive
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when itemObjectType == AbstractPhysicalObject.AbstractObjectType.SporePlant:
+                    
                     return new SporePlant.AbstractSporePlant(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null, false,
                         true);
-                }
-
-                if (ModManager.Watcher && itemObjectType == AbstractPhysicalObject.AbstractObjectType.GraffitiBomb)
-                {
+                // Graffiti Bomb
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType when ModManager.Watcher &&
+                    itemObjectType == AbstractPhysicalObject.AbstractObjectType.GraffitiBomb:
+                    
                     return new GraffitiBomb.AbstractGraffitiBomb(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
-                }
-
                 // Handles all generic consumables
-                if (AbstractConsumable.IsTypeConsumable(itemObjectType))
-                {
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when AbstractConsumable.IsTypeConsumable(itemObjectType):
+                    
                     return new AbstractConsumable(world, itemObjectType, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), -1, -1, null);
-                }
-
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.VultureMask)
+                // Vulture Mask
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when itemObjectType == AbstractPhysicalObject.AbstractObjectType.VultureMask:
                 {
                     EntityID newID = world.game.GetNewID();
                     return new VultureMask.AbstractVultureMask(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), newID, newID.RandomSeed, false);
                 }
-
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.BubbleGrass)
-                {
+                // Bubble Weed
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when itemObjectType == AbstractPhysicalObject.AbstractObjectType.BubbleGrass:
+                    
                     return new BubbleGrass.AbstractBubbleGrass(world, null,
                             new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 1f, -1, -1, null)
                         { isConsumed = false };
-                }
-
-                if (itemObjectType == AbstractPhysicalObject.AbstractObjectType.EggBugEgg)
-                {
+                // Eggbug Egg
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType
+                    when itemObjectType == AbstractPhysicalObject.AbstractObjectType.EggBugEgg:
+                    
                     return new EggBugEgg.AbstractBugEgg(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
                         Mathf.Lerp(-0.15f, 0.1f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)));
-                }
-
-                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.FireEgg)
-                {
+                // Fire Egg
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType 
+                    when ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.FireEgg:
+                    
                     return new FireEgg.AbstractBugEgg(world, null,
-                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(), 
                         Mathf.Lerp(0.35f, 0.6f, RWCustom.Custom.ClampedRandomVariation(0.5f, 0.5f, 2f)));
-                }
-
-                if (ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.JokeRifle)
-                {
+                // Joke Rifle
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType 
+                    when ModManager.MSC && itemObjectType == MoreSlugcatsEnums.AbstractObjectType.JokeRifle:
+                    
                     return new JokeRifle.AbstractRifle(world, null,
                         new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID(),
                         JokeRifle.AbstractRifle.AmmoType.Rock);
-                }
-
                 // Default case
-                return new AbstractPhysicalObject(world, itemObjectType, null,
-                    new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID());
+                case AbstractPhysicalObject.AbstractObjectType itemObjectType:
+                    
+                    return new AbstractPhysicalObject(world, itemObjectType, null,
+                        new WorldCoordinate(spawnRoom.index, -1, -1, 0), world.game.GetNewID());
+                default:
+                    Log.LogError($"Item type \"{item.type}\" is not a valid object type");
+                    return null;
             }
-
-            Log.LogError($"Item type \"{item.type}\" is not a valid object type");
-            return null;
         }
 
         /// <summary>
@@ -563,12 +565,36 @@ namespace RainWorldRandomizer
             }
         }
 
+        public static void QueueNotify(MessageText msg)
+        {
+            _notifQueue.Enqueue(msg);
+        }
+
+        public static void DisplayNextNotification()
+        {
+            if (_notifQueue.Count > 0)
+            {
+                if (RandoOptions.DisableNotificationQueue)
+                {
+                    _notifQueue.Dequeue();
+                }
+                else if (RandoOptions.legacyNotifications.Value)
+                {
+                    Singleton.DisplayLegacyNotification();
+                }
+                else if (MenuHooks.CurrentChatLog is not null)
+                {
+                    MenuHooks.CurrentChatLog.AddMessage(_notifQueue.Dequeue());
+                }
+            }
+        }
+
         public void DisplayLegacyNotification()
         {
             if (Game == null) return;
 
             // If there are several messages waiting, move through them quicker
-            bool hurry = notifQueue.Count > 3;
+            bool hurry = _notifQueue.Count > 3;
             // If we have any pending messages and are in the actual game loop
 
             if (Game.session.Players[0]?.realizedCreature?.room != null
@@ -576,7 +602,7 @@ namespace RainWorldRandomizer
                 && Game.manager.currentMainLoop.ID == ProcessManager.ProcessID.Game)
 
             {
-                string message = string.Join("", notifQueue.Dequeue().strings);
+                string message = string.Join("", _notifQueue.Dequeue().strings);
                 if (message.Contains("//"))
                 {
                     string[] split = Regex.Split(message, "//");

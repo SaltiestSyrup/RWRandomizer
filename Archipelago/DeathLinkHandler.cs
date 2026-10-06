@@ -109,7 +109,7 @@ namespace RainWorldRandomizer
                 || Plugin.Singleton.rainWorld.processManager.currentMainLoop is RainWorldGame)
             {
                 string deathMessage = deathLink.Cause ?? $"{deathLink.Source} has died!";
-                Plugin.Singleton.notifQueue.Enqueue(new MessageText(
+                Plugin.QueueNotify(new MessageText(
                     [deathMessage, RandoOptions.archipelagoDLGraceCounter.Value > 0 
                         ? $" ({RandoOptions.archipelagoDLGraceCounter.Value - _graceCounter - 1})" 
                         : ""],
