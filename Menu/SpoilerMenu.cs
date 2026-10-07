@@ -30,6 +30,7 @@ namespace RainWorldRandomizer.Menu
             Given,
             NotGiven,
         }
+
         public string FilterTypeDisplayName(EntryFilterType self)
         {
             return self switch
@@ -48,6 +49,7 @@ namespace RainWorldRandomizer.Menu
             ItemName,
             ItemType,
         }
+
         public string SortTypeDisplayName(EntrySortType self)
         {
             return self switch
@@ -60,24 +62,26 @@ namespace RainWorldRandomizer.Menu
             };
         }
 
-        public SpoilerMenu(RWMenu menu, MenuObject owner, Vector2 pos) 
+        public SpoilerMenu(RWMenu menu, MenuObject owner, Vector2 pos)
             : base(menu, owner, pos, menu.manager.rainWorld.screenSize * new Vector2(0.3f, 0.75f))
         {
             // Filter Menu
             filterSelectRect = new RoundedRect(menu, this, new Vector2(0.01f, -98.01f), new Vector2(size.x, 70f), true)
-            { fillAlpha = 0.9f };
+                { fillAlpha = 0.9f };
             subObjects.Add(filterSelectRect);
 
             const float margin = 10f;
             Vector2 buttonSize = new((filterSelectRect.size.x - (6f * margin)) / 3f, filterSelectRect.size.y - 20f);
 
             // Filter / Sort toggles
-            filterSelectButton = new SimpleButton(menu, this, menu.Translate($"FILTERED BY\n{FilterTypeDisplayName(currentFilter)}"), "FILTER",
+            filterSelectButton = new SimpleButton(menu, this,
+                menu.Translate($"FILTERED BY\n{FilterTypeDisplayName(currentFilter)}"), "FILTER",
                 new(margin, filterSelectRect.pos.y + 10f),
                 buttonSize);
             subObjects.Add(filterSelectButton);
 
-            sortSelectButton = new SimpleButton(menu, this, menu.Translate($"SORTED BY\n{SortTypeDisplayName(currentSorting)}"), "SORT",
+            sortSelectButton = new SimpleButton(menu, this,
+                menu.Translate($"SORTED BY\n{SortTypeDisplayName(currentSorting)}"), "SORT",
                 new((3f * margin) + buttonSize.x + 0.01f, filterSelectRect.pos.y + 10f),
                 buttonSize);
             subObjects.Add(sortSelectButton);
@@ -102,7 +106,7 @@ namespace RainWorldRandomizer.Menu
 
         protected override void PopulateEntries()
         {
-            for(int i = 0; i < Plugin.RandoManager.GetLocations().Count; i++)
+            for (int i = 0; i < Plugin.RandoManager.GetLocations().Count; i++)
             {
                 entries.Add(new SpoilerEntry(menu, this,
                     new Vector2((size.x - entryWidth) / 2f, IdealYPosForItem(i)),
@@ -119,9 +123,9 @@ namespace RainWorldRandomizer.Menu
         {
             Func<SpoilerEntry, bool> predicate = (EntryFilterType)filter switch
             {
-                EntryFilterType.Given => (e) => e.location.Collected,
-                EntryFilterType.NotGiven => (e) => !e.location.Collected,
-                _ => (e) => true
+                EntryFilterType.Given => e => e.location.Collected,
+                EntryFilterType.NotGiven => e => !e.location.Collected,
+                _ => _ => true
             };
             filteredEntries = [.. entries.Cast<SpoilerEntry>().Where(predicate)];
             SortEntries(currentSorting);
@@ -135,33 +139,23 @@ namespace RainWorldRandomizer.Menu
             Comparison<SpoilerEntry> comparison = sortBy switch
             {
                 EntrySortType.LocName => (x, y) =>
-                {
-                    return string.Compare(x.location.internalName, y.location.internalName);
-                }
-                ,
+                    string.CompareOrdinal(x.location.internalName, y.location.internalName),
                 EntrySortType.LocType => (x, y) =>
-                {
-                    return (int)x.location.kind - (int)y.location.kind;
-                }
-                ,
+                    (int)x.location.kind - (int)y.location.kind,
                 EntrySortType.ItemName => (x, y) =>
                 {
                     string xStr = x.ShowItem ? x.item.ToString() : null;
                     string yStr = y.ShowItem ? y.item.ToString() : null;
-                    return string.Compare(xStr, yStr);
-                }
-                ,
+                    return string.CompareOrdinal(xStr, yStr);
+                },
                 EntrySortType.ItemType => (x, y) =>
                 {
                     string xStr = x.ShowItem ? x.item.Type.value : null;
                     string yStr = y.ShowItem ? y.item.Type.value : null;
-                    return string.Compare(xStr, yStr);
-                }
-                ,
+                    return string.CompareOrdinal(xStr, yStr);
+                },
                 _ => (x, y) =>
-                {
-                    return (int)x.location.kind - (int)y.location.kind;
-                }
+                    (int)x.location.kind - (int)y.location.kind
             };
 
             // Is there a better way to do this? Probably.
@@ -189,7 +183,7 @@ namespace RainWorldRandomizer.Menu
                     sortSelectButton.menuLabel.text = $"SORTED BY\n{SortTypeDisplayName(currentSorting)}";
                     SortEntries(currentSorting);
                     return;
-                }
+            }
         }
 
         public override int GetCurrentlySelectedOfSeries(string series)
@@ -198,6 +192,7 @@ namespace RainWorldRandomizer.Menu
             {
                 return 0;
             }
+
             return (int)currentFilter;
         }
 
@@ -210,7 +205,7 @@ namespace RainWorldRandomizer.Menu
             }
         }
 
-        public sealed class SpoilerEntry : Entry
+        private sealed class SpoilerEntry : Entry
         {
             //public readonly string entryKey;
             //public readonly string checkType;
@@ -218,28 +213,29 @@ namespace RainWorldRandomizer.Menu
             public readonly LocationInfo location;
             public readonly Unlock item;
 
-            public FSprite arrow;
-            public FSprite checkSprite;
-            public FSprite unlockSprite;
-            public MenuLabel checkLabel;
-            public MenuLabel unlockLabel;
+            private FSprite arrow;
+            private FSprite checkSprite;
+            private FSprite unlockSprite;
+            private MenuLabel checkLabel;
+            private MenuLabel unlockLabel;
 
-            public MenuTabWrapper tabWrapper;
-            public OpHoldButton revealHoldButton;
-            public UIelementWrapper revealHoldButtonWrapper;
-            public OpHoldButton cheatHoldButton;
-            public UIelementWrapper cheatHoldButtonWrapper;
+            private MenuTabWrapper tabWrapper;
+            private OpHoldButton revealHoldButton;
+            private UIelementWrapper revealHoldButtonWrapper;
+            private OpHoldButton cheatHoldButton;
+            private UIelementWrapper cheatHoldButtonWrapper;
 
             // Render variables
             private bool displayComplete;
-            public bool forceShowItem;
+            private bool forceShowItem;
 
             public bool ShowItem
             {
                 get { return displayComplete || forceShowItem; }
             }
 
-            public SpoilerEntry(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, LocationInfo location) : base(menu, owner, pos, size)
+            public SpoilerEntry(RWMenu menu, MenuObject owner, Vector2 pos, Vector2 size, LocationInfo location) :
+                base(menu, owner, pos, size)
             {
                 this.location = location;
                 item = Plugin.RandoManager.GetUnlockAtLocation(location.internalName);
@@ -250,19 +246,19 @@ namespace RainWorldRandomizer.Menu
                 subObjects.Add(tabWrapper);
 
                 cheatHoldButton = new OpHoldButton(default, size, " ", 40f)
-                { description = "Hold: Cheat collect this location" };
+                    { description = "Hold: Cheat collect this location" };
                 cheatHoldButton.OnPressDone += OnPressDone;
                 cheatHoldButtonWrapper = new UIelementWrapper(tabWrapper, cheatHoldButton);
 
                 revealHoldButton = new OpHoldButton(
-                    new Vector2(size.x / 2 + 7f, 0f),
-                    new Vector2(size.x / 2 - 7f, size.y), "???", 40f)
-                { description = "Hold: Hint this location" };
-                revealHoldButton.OnPressDone += (trigger) => forceShowItem = true;
+                        new Vector2(size.x / 2 + 7f, 0f),
+                        new Vector2(size.x / 2 - 7f, size.y), "???", 40f)
+                    { description = "Hold: Hint this location" };
+                revealHoldButton.OnPressDone += _ => forceShowItem = true;
                 revealHoldButtonWrapper = new UIelementWrapper(tabWrapper, revealHoldButton);
 
                 // Sprites
-                arrow = new FSprite("Big_Menu_Arrow", true)
+                arrow = new FSprite("Big_Menu_Arrow")
                 {
                     scale = 0.5f,
                     rotation = 90f
@@ -278,12 +274,12 @@ namespace RainWorldRandomizer.Menu
                 // Labels
                 checkLabel = new MenuLabel(menu, this, location.internalDesc,
                     new Vector2(0f, 5f),
-                    new Vector2(size.x / 2, 20f), false, null);
+                    new Vector2(size.x / 2, 20f), false);
                 subObjects.Add(checkLabel);
 
                 unlockLabel = new MenuLabel(menu, this, item.ToString(),
                     new Vector2(size.x / 2, 5f),
-                    new Vector2(size.x / 2, 20f), false, null);
+                    new Vector2(size.x / 2, 20f), false);
                 subObjects.Add(unlockLabel);
 
                 // Bounding box
@@ -325,6 +321,19 @@ namespace RainWorldRandomizer.Menu
                 unlockSprite.isVisible = !sleep;
                 if (sleep && !cheatHoldButton.Hidden) cheatHoldButton.Hide();
 
+                float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
+                float alpha = Mathf.Pow(smoothedFade, 2f);
+                arrow.alpha = alpha;
+                checkLabel.label.alpha = alpha;
+                unlockLabel.label.alpha = ShowItem ? alpha : 0f;
+                checkSprite.alpha = alpha;
+                unlockSprite.alpha = ShowItem ? alpha : 0f;
+                
+                for (int j = 0; j < 8; j++)
+                {
+                    cheatHoldButton._rectH.sprites[j].alpha = alpha;
+                }
+
                 if (sleep) return;
 
                 arrow.x = DrawX(timeStacker) + DrawSize(timeStacker).x / 2f;
@@ -333,21 +342,7 @@ namespace RainWorldRandomizer.Menu
                 checkSprite.y = DrawY(timeStacker) + DrawSize(timeStacker).y / 2f;
                 unlockSprite.x = DrawX(timeStacker) + DrawSize(timeStacker).x - 20f;
                 unlockSprite.y = DrawY(timeStacker) + DrawSize(timeStacker).y / 2f;
-
-                float smoothedFade = Custom.SCurve(Mathf.Lerp(lastFade, fade, timeStacker), 0.3f);
-                float alpha = Mathf.Pow(smoothedFade, 2f);
-                arrow.alpha = alpha;
-                checkLabel.label.alpha = alpha;
-                unlockLabel.label.alpha = ShowItem ? alpha : 0f;
-                checkSprite.alpha = alpha;
-                unlockSprite.alpha = ShowItem ? alpha : 0f;
-
-                for (int j = 0; j < 8; j++)
-                {
-                    cheatHoldButton._rectH.sprites[j].alpha = alpha;
-                    //revealHoldButton._rectH.sprites[j].alpha = 0f;
-                }
-
+                
                 if (smoothedFade > 0f)
                 {
                     cheatHoldButton.Show();
@@ -383,15 +378,18 @@ namespace RainWorldRandomizer.Menu
                     case "Item":
                         if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(unlock.ID))
                         {
-                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, new AbstractPhysicalObject.AbstractObjectType(unlock.ID), 0);
+                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature,
+                                new AbstractPhysicalObject.AbstractObjectType(unlock.ID), 0);
                         }
-                        else if (unlock.item.Value.id == "FireSpear")
+                        else if (unlock.item?.id == "FireSpear")
                         {
-                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 1);
+                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature,
+                                AbstractPhysicalObject.AbstractObjectType.Spear, 1);
                         }
-                        else if (unlock.item.Value.id == "ElectricSpear")
+                        else if (unlock.item?.id == "ElectricSpear")
                         {
-                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.Spear, 2);
+                            iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature,
+                                AbstractPhysicalObject.AbstractObjectType.Spear, 2);
                         }
                         else break;
 
@@ -399,7 +397,8 @@ namespace RainWorldRandomizer.Menu
                         spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                         break;
                     case "ItemPearl":
-                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.DataPearl, 0);
+                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature,
+                            AbstractPhysicalObject.AbstractObjectType.DataPearl, 0);
                         spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                         spriteColor = ItemSymbol.ColorForItem(iconData.itemType, iconData.intData);
                         break;
@@ -409,7 +408,8 @@ namespace RainWorldRandomizer.Menu
                         spriteScale = 0.75f;
                         break;
                     case "HunterCycles":
-                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat, AbstractPhysicalObject.AbstractObjectType.Creature, 0);
+                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.Slugcat,
+                            AbstractPhysicalObject.AbstractObjectType.Creature, 0);
                         spriteName = CreatureSymbol.SpriteNameOfCreature(iconData);
                         spriteColor = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.Red);
                         break;
@@ -426,7 +426,8 @@ namespace RainWorldRandomizer.Menu
                     case "Disconnect_Pebbles":
                     case "Longer_Cycles":
                     case "RewriteSpearPearl":
-                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature, AbstractPhysicalObject.AbstractObjectType.NSHSwarmer, 0);
+                        iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature,
+                            AbstractPhysicalObject.AbstractObjectType.NSHSwarmer, 0);
                         spriteName = ItemSymbol.SpriteNameForItem(iconData.itemType, iconData.intData);
                         break;
                     default:
@@ -437,7 +438,7 @@ namespace RainWorldRandomizer.Menu
 
                 try
                 {
-                    return new FSprite(spriteName, true)
+                    return new FSprite(spriteName)
                     {
                         scale = spriteScale,
                         color = spriteColor,
@@ -446,7 +447,7 @@ namespace RainWorldRandomizer.Menu
                 catch
                 {
                     Plugin.Log.LogError($"Failed to load sprite '{spriteName}'");
-                    return new FSprite("Futile_White", true);
+                    return new FSprite("Futile_White");
                 }
             }
         }

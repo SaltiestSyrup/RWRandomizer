@@ -107,6 +107,8 @@ namespace RainWorldRandomizer.Menu;
             floatScrollVel += Mathf.Clamp(ScrollPos - floatScrollPos, -2.5f, 2.5f) / 2.5f * 0.15f; // Add velocity based on difference from fadePos
             floatScrollVel = Mathf.Clamp(floatScrollVel, -1.2f, 1.2f); // Clamp velocity
             floatScrollPos += floatScrollVel; // Move by velocity
+            if (Math.Abs(ScrollPos - floatScrollPos) < 0.05) floatScrollPos = ScrollPos; // Snap if we're close enough
+            
             sliderValueCap = Custom.LerpAndTick(sliderValueCap, LastPossibleScroll, 0.02f, entries.Count / 40f); // Move max slider downwards
 
             // If there's no scrolling, disable slider and return
@@ -252,8 +254,8 @@ namespace RainWorldRandomizer.Menu;
                 //     }
                 // }
 
-                active = myIndex >= statusMenu.floatScrollPos - 1f
-                    && myIndex < statusMenu.floatScrollPos + statusMenu.MaxVisibleItems + 1f;
+                active = myIndex > statusMenu.floatScrollPos - 0.5f
+                    && myIndex < statusMenu.floatScrollPos + statusMenu.MaxVisibleItems;
                 
                 if (sleep)
                 {
@@ -271,21 +273,15 @@ namespace RainWorldRandomizer.Menu;
                 {
                     fadeTowards = Mathf.InverseLerp(statusMenu.floatScrollPos - 1f, statusMenu.floatScrollPos, value);
                     difference = Mathf.Abs(myIndex - statusMenu.floatScrollPos);
-                    //Mathf.Clamp01(value - statusMenu.floatScrollPos - 1f);
-                    //
-                    // 0
                 }
                 else if (myIndex > statusMenu.floatScrollPos + statusMenu.MaxVisibleItems - 1)
                 {
                     float sum = statusMenu.floatScrollPos + statusMenu.MaxVisibleItems;
                     fadeTowards = Mathf.InverseLerp(sum, sum - 1, value);
                     difference = Mathf.Abs(myIndex - sum - 1);
-                    //Mathf.Clamp01(sum - value);
-                    //
                 }
 
                 fade = Mathf.Lerp(fade, fadeTowards, difference > 0.5f ? 1f : 0.5f);
-                // fade = Mathf.Lerp(fade, fadeTowards, Mathf.InverseLerp(0.5f, 0.45f, 0.5f));
 
                 if (fade == 0f && lastFade == 0f)
                 {
@@ -303,12 +299,12 @@ namespace RainWorldRandomizer.Menu;
                 base.GrafUpdate(timeStacker);
                 float smoothedFade = fade;// Mathf.Lerp(lastFade, fade, timeStacker);
 
-                if (smoothedFade > 0f && roundedRect != null)
+                if (roundedRect != null)
                 {
                     foreach (var sprite in roundedRect.sprites)
                     {
-                        sprite.alpha = smoothedFade;
-                        sprite.isVisible = true;
+                        sprite.alpha = fade;
+                        sprite.isVisible = fade >= 0.5;
                     }
                 }
             }
