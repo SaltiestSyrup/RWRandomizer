@@ -19,9 +19,6 @@ namespace RainWorldRandomizer
         // Constant for the minimum amount of gates that should be locked to make a valid seed
         public const int MIN_LOCKED_GATES = 0;
         public const int MIN_PASSAGE_TOKENS = 5;
-        
-        // Use AP item names saved in file as display names
-        private static Dictionary<string, string> _clientNameToAPItem = [];
 
         // Values for completed checks
         private Dictionary<string, Unlock> randomizerKey = [];
@@ -135,7 +132,8 @@ namespace RainWorldRandomizer
                     return;
                 }
 
-                VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat), RandoOptions.LoadedOptions);
+                VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
+                    RandoOptions.LoadedOptions);
 
                 Exception generationException = null;
                 bool timedOut = false;
@@ -326,21 +324,21 @@ namespace RainWorldRandomizer
 
             randomizerKey[location].GiveUnlock();
             locations.FirstOrDefault(l => l.internalName == location)?.MarkCollected();
-            
+
             Plugin.QueueNotify(new MessageText(
                 [
-                    "Found ", 
-                    _clientNameToAPItem.TryGetValue(randomizerKey[location].ID, out string name) 
-                        ? name 
+                    "Found ",
+                    ManagerArchipelago.ClientNameToAPItem.TryGetValue(randomizerKey[location].ID, out string name)
+                        ? name
                         : randomizerKey[location].ID,
                     " from ",
                     LocationInfo.ClientNameToDisplayName(location)
                 ],
                 [
                     Color.white,
-                    new Color(1f, 0f, 1f),
+                    new Color(0.0f, 0.4f, 0.7f),
                     Color.white,
-                    new Color(1f, 0f, 1f)
+                    new Color(0.7f, 0.3f, 0.7f),
                 ]));
             Plugin.Log.LogInfo($"Completed Check: {location}");
         }
