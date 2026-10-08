@@ -338,9 +338,9 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                 options.Add("Port", new TextFieldIntOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
                     ConnectInfoEntry.PortConfig, 55f));
                 options.Add("SlotName", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
-                    ConnectInfoEntry.SlotNameConfig, 180f));
+                    ConnectInfoEntry.SlotNameConfig, 180f, true));
                 options.Add("Password", new TextFieldOption(menu, this, new Vector2(rightRowX, runningY -= 40f),
-                    ConnectInfoEntry.PasswordConfig, 200f));
+                    ConnectInfoEntry.PasswordConfig, 200f, true));
             }
             else // Standalone
             {
