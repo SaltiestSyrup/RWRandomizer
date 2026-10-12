@@ -141,7 +141,7 @@ namespace RainWorldRandomizer.Menu
             {
                 nodes["VS"] = new Node(menu, this, new Vector2(40f, 120f), "VS");
                 if (Scug is "White" or "Yellow" or "Gourmand") nodes["OE"] = new Node(menu, this, new Vector2(70f, 60f), "OE");
-                if (Scug is "Artificer" || RandoOptions.ForceOpenMetropolis) 
+                if (Scug is "Artificer" || (RandoOptions.ForceOpenMetropolis && Scug is not "Saint")) 
                     nodes["LC"] = new Node(menu, this, new Vector2(160f, 200f), "LC");
                 if (Scug is not "Artificer") nodes["MS"] = new Node(menu, this, new Vector2(280f, 160f), Scug is "Spear" ? "DM" : "MS");
                 nodes["<FQ>"] = new Node(menu, this, new Vector2(280f, 80f), "FQ");
@@ -258,7 +258,7 @@ namespace RainWorldRandomizer.Menu
                 connectors["GATE_DS_CC"] = Connector.Wrapping(nodes["DS"].Bottom, new Vector2(0f, -30f), nodes["CC"].Top, new Vector2(0f, 30f));
                 connectors["GATE_SL_VS"] = Connector.Wrapping(nodes["VS"].Left, new Vector2(-30f, 0f), nodes["SL"].Right, new Vector2(30f, 0f));
 
-                if (Scug is "Artificer" || RandoOptions.ForceOpenMetropolis) 
+                if (Scug is "Artificer" || (RandoOptions.ForceOpenMetropolis && Scug is not "Saint")) 
                     connectors["GATE_UW_LC"] = new Connector(nodes["UW"].Top, nodes["LC"].Bottom);
                 if (Scug is "Spear")
                 {
