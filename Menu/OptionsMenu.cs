@@ -131,219 +131,218 @@ namespace RainWorldRandomizer.Menu
                 new ConfigurableInfo("", null, "", ["Slot Name"]));
             ConnectInfoEntry.PasswordConfig = config.Bind<string>("_Password", "",
                 new ConfigurableInfo("", null, "", ["Password"]));
-
-            #region Obsolete Configurables
-
-#pragma warning disable CS0612 // Type or member is obsolete
+            
+            // --- Per-run Randomizer Options ---
+            
             RandoOptions.chosenSlugcat = config.Bind<string>("ChosenSlugcat", "White",
-                new ConfigurableInfo("The slugcat campaign you will be playing", null, "",
+                new ConfigurableInfo("The slugcat campaign you will be playing.", null, "",
                     ["Slugcat"]));
 
-            RandoOptions.useSeed = config.Bind<bool>("useSeed", false,
-                new ConfigurableInfo("Whether the randomizer will use a set seed or a generated one", null, "",
-                    ["Use seed"]));
-
             RandoOptions.seed = config.Bind<string>("seed", "",
-                new ConfigurableInfo("The seed used to generate the randomizer. Will be random seed if empty", null, "",
+                new ConfigurableInfo("The seed used to generate the randomizer. If left empty, the seed will be random.", null, "",
                     ["Seed"]));
 
             RandoOptions.useSandboxTokenChecks = config.Bind<bool>("useSandboxTokenChecks", true,
-                new ConfigurableInfo("Include checks for finding collectible tokens", null, "",
+                new ConfigurableInfo("Include checks for finding collectible tokens.", null, "",
                     ["Sandbox Tokens"]));
 
             RandoOptions.usePearlChecks = config.Bind<bool>("usePearlChecks", true,
-                new ConfigurableInfo("Include checks for bringing colored pearls to a den", null, "",
+                new ConfigurableInfo("Include checks for bringing colored pearls to a den.", null, "",
                     ["Pearls"]));
 
             RandoOptions.useEchoChecks = config.Bind<bool>("useEchoChecks", true,
-                new ConfigurableInfo("Include checks for meeting Echoes", null, "",
+                new ConfigurableInfo("Include checks for meeting Echoes / Spinning Top.", null, "",
                     ["Echoes"]));
 
             RandoOptions.usePassageChecks = config.Bind<bool>("usePassageChecks", true,
-                new ConfigurableInfo("Include checks for completing Passages", null, "",
+                new ConfigurableInfo("Include checks for completing Passages.", null, "",
                     ["Passages"]));
 
             RandoOptions.useSpecialChecks = config.Bind<bool>("useSpecialChecks", true,
-                new ConfigurableInfo("Include checks for story objectives", null, "",
+                new ConfigurableInfo("Include checks for various story objectives.", null, "",
                     ["Unique"]));
 
             RandoOptions.useShelterChecks = config.Bind<bool>("useShelterChecks", false,
-                new ConfigurableInfo("Include checks for entering shelters", null, "",
+                new ConfigurableInfo("Include checks for entering unique shelters.", null, "",
                     ["Shelters"]));
 
             RandoOptions.useDevTokenChecks = config.Bind<bool>("useDevTokenChecks", false,
-                new ConfigurableInfo("Include checks for collecting developer commentary tokens", null, "",
+                new ConfigurableInfo("Include checks for collecting developer commentary tokens.", null, "",
                     ["Dev Tokens"]));
 
             RandoOptions.useKarmaFlowerChecks = config.Bind<bool>("useKarmaFlowerChecks", false,
-                new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations", null, "",
+                new ConfigurableInfo("Include checks for eating karma flowers spawned in fixed locations.", null, "",
                     ["Karma Flowers"]));
 
             RandoOptions.givePassageUnlocks = config.Bind<bool>("givePassageUnlocks", true,
                 new ConfigurableInfo(
-                    "Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages",
+                    "Whether passage tokens will be used as filler items. If enabled, passage tokens will not be granted from passages.",
                     null, "",
                     ["Passage Tokens"]));
 
             RandoOptions.hunterCyclesDensity = config.Bind<float>("hunterCyclesDensity", 0.2f,
                 new ConfigurableInfo(
                     "The percentage amount of filler items that will increase the remaining cycles when playing as Hunter." +
-                    "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix",
+                    "\nThe number of cycles each item gives is determined by 'Hunter Bonus Cycles' in Remix.",
                     new ConfigAcceptableRange<float>(0, 1), "",
                     ["Percent Hunter Cycles"]));
 
             RandoOptions.trapsDensity = config.Bind<float>("trapsDensity", 0.2f,
                 new ConfigurableInfo(
-                    "The percentage amount of filler items that will be trap effects. Set to 0 to disable traps entirely",
+                    "The percentage amount of filler items that will be trap effects. Set to 0 to disable traps entirely.",
                     new ConfigAcceptableRange<float>(0, 1), "",
                     ["Percent Traps"]));
 
             RandoOptions.numDamageIncreases = config.Bind<int>("numDamageIncreases", 6,
                 new ConfigurableInfo(
-                    "The amount of permanent damage upgrade items to add to the pool. Each item collected gives an additive +20% damage to thrown spears",
+                    "The amount of permanent damage upgrade items to add to the pool. " +
+                    "Each item collected gives an additive +20% (additive) damage to thrown spears.",
                     new ConfigAcceptableRange<int>(0, 10), "",
                     ["Damage Upgrades"]));
 
             RandoOptions.randomizeSpawnLocation = config.Bind<bool>("randomizeSpawnLocation", false,
-                new ConfigurableInfo("Enables Expedition-like random starting location", null, "",
+                new ConfigurableInfo("Enables Expedition-like random starting location.", null, "",
                     ["Randomize Starting Region"]));
 
             RandoOptions.startMinKarma = config.Bind<bool>("startMinKarma", false,
                 new ConfigurableInfo(
-                    "Will start the game with the lowest karma possible, requiring you to find more karma increases\n" +
-                    "Gates will have their karma requirements decreased to ensure runs are possible", null, "",
+                    "Will start the game with the lowest karma possible, requiring you to find more karma increases.\n" +
+                    "Gates will have their karma requirements decreased to ensure runs are possible.", null, "",
                     ["Minimum Starting Karma"]));
 
             RandoOptions.extraKarmaIncreases = config.Bind<int>("extraKarmaIncreases", 2,
                 new ConfigurableInfo(
-                    "How many extra karma items above the minimum required will be placed in the world",
+                    "How many extra karma items above the minimum required will be placed in the world.",
                     new ConfigAcceptableRange<int>(0, 10), "",
                     ["Extra Karma Increases"]));
 
             RandoOptions.gateBehavior = config.Bind<string>("GateBehavior", "Only Key",
-                new ConfigurableInfo("What the requirement for travelling through gates should be", null, "",
+                new ConfigurableInfo("What the requirement for travelling through gates should be.", null, "",
                     ["Gate Behavior"]));
 
             RandoOptions.ppwsBehavior = config.Bind<string>("PPwSBehavior", "Bypassed",
                 new ConfigurableInfo(
-                    "Affects which passages can be obtained before Survivor. Disabled and Enabled mirror Remix setting behavior, Bypassed allows all passages to be obtained before Survivor",
+                    "Affects which passages can be obtained before the Survivor Passage.\n" +
+                    "Disabled and Enabled mirror Remix setting behavior, Bypassed allows all passages to be obtained before Survivor.",
                     null, "",
                     ["PPwS Behavior"]));
 
             RandoOptions.echoBehavior = config.Bind<string>("EchoBehavior", "Vanilla",
-                new ConfigurableInfo("Affects the conditions for echo spawning before 5 maximum karma", null, "",
+                new ConfigurableInfo("Affects the conditions for echo spawning before 5 maximum karma.", null, "",
                     ["Echo Behavior"]));
 
             RandoOptions.allowMetroForOthers = config.Bind<bool>("allowMetroForOthers", false,
-                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats (When possible)", null, "",
+                new ConfigurableInfo("Allows access to Metropolis as non-Artificer slugcats.", null, "",
                     ["Open Metropolis"]));
 
             RandoOptions.allowSubmergedForOthers = config.Bind<bool>("allowSubmergedForOthers", false,
                 new ConfigurableInfo(
-                    "Allows access to Submerged Superstructure as non-Rivulet slugcats (When possible)", null, "",
+                    "Allows access to Submerged Superstructure as non-Rivulet slugcats.", null, "",
                     ["Open Submerged"]));
 
             RandoOptions.allowExteriorForInv = config.Bind<bool>("allowExteriorForInv", false,
                 new ConfigurableInfo(
-                    "By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty",
+                    "By default when playing as Inv, The Exterior is removed from logic due to its excessive difficulty." +
+                    "Turn this on to add the region back into logic.",
                     null, "",
                     ["Open Exterior"]));
 
             RandoOptions.useFoodQuestChecks = config.Bind<bool>("useFoodQuestChecks", false,
                 new ConfigurableInfo(
-                    "Include checks for eating every food in Gourmand's food quest. Other slugcats will only have checks for the foods they are able to eat",
+                    "Include checks for eating every food in Gourmand's food quest. " +
+                    "Slugcats will only have checks for the foods they are able to eat.",
                     null, "",
                     ["Food Quest"]));
 
             RandoOptions.useExpandedFoodQuestChecks = config.Bind<bool>("useExpandedFoodQuestChecks", false,
-                new ConfigurableInfo("Extends food quest checks to include almost all edible creatures and objects",
+                new ConfigurableInfo("Extends food quest checks to include almost all edible creatures and objects.",
                     null, "",
                     ["Food Quest Expanded"]));
 
             RandoOptions.useEnergyCell = config.Bind<bool>("useEnergyCell", true,
-                new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized", null, "",
+                new ConfigurableInfo("Rivulet's energy cell and rain timer increase will be randomized.", null, "",
                     ["Use Mass Rarefaction Cell"]));
 
             RandoOptions.useSMTokens = config.Bind<bool>("UseSMTokens", true,
-                new ConfigurableInfo("Include checks for collecting broadcast tokens in Spearmaster's campaign", null,
-                    "",
+                new ConfigurableInfo("Include checks for collecting Spearmaster broadcast tokens.", null, "",
                     ["Spearmaster Broadcasts"]));
 
             RandoOptions.expeditionPerks = new Configurable<bool>[8];
             RandoOptions.expeditionPerks[0] = config.Bind<bool>("IncludeBackSpear", false,
-                new ConfigurableInfo("Add the Back Spear perk to the item pool", null, "",
+                new ConfigurableInfo("Add the Back Spear perk to the item pool.", null, "",
                     ["Back Spear"]));
 
             RandoOptions.expeditionPerks[1] = config.Bind<bool>("IncludeDualWielding", false,
-                new ConfigurableInfo("Add the Dual Wielding perk to the item pool", null, "",
+                new ConfigurableInfo("Add the Dual Wielding perk to the item pool.", null, "",
                     ["Dual Wielding"]));
 
             RandoOptions.expeditionPerks[2] = config.Bind<bool>("IncludeExplosionResistance", false,
-                new ConfigurableInfo("Add the Explosion Resistance perk to the item pool", null, "",
+                new ConfigurableInfo("Add the Explosion Resistance perk to the item pool.", null, "",
                     ["Explosion Resistance"]));
 
             RandoOptions.expeditionPerks[3] = config.Bind<bool>("IncludeExplosiveParry", false,
-                new ConfigurableInfo("Add the Explosive Parry perk to the item pool", null, "",
+                new ConfigurableInfo("Add the Explosive Parry perk to the item pool.", null, "",
                     ["Explosive Parry"]));
 
             RandoOptions.expeditionPerks[4] = config.Bind<bool>("IncludeExplosiveJump", false,
-                new ConfigurableInfo("Add the Explosive Jump perk to the item pool", null, "",
+                new ConfigurableInfo("Add the Explosive Jump perk to the item pool.", null, "",
                     ["Explosive Jump"]));
 
             RandoOptions.expeditionPerks[5] = config.Bind<bool>("IncludeItemCrafting", false,
-                new ConfigurableInfo("Add the Item Crafting perk to the item pool", null, "",
+                new ConfigurableInfo("Add the Item Crafting perk to the item pool.", null, "",
                     ["Item Crafting"]));
 
             RandoOptions.expeditionPerks[6] = config.Bind<bool>("IncludeAquatic", false,
-                new ConfigurableInfo("Add the Aquatic perk to the item pool", null, "",
+                new ConfigurableInfo("Add the Aquatic perk to the item pool.", null, "",
                     ["Aquatic"]));
 
             RandoOptions.expeditionPerks[7] = config.Bind<bool>("IncludeAgility", false,
-                new ConfigurableInfo("Add the Agility perk to the item pool", null, "",
+                new ConfigurableInfo("Add the Agility perk to the item pool.", null, "",
                     ["Agility"]));
 
             RandoOptions.useSpreadRotChecks = config.Bind<bool>("SpreadRotChecks", false,
-                new ConfigurableInfo("Include checks for spreading rot to each region in the Watcher campaign", null,
+                new ConfigurableInfo("Include checks for spreading rot to each region in the Watcher campaign. " +
+                                     "Mutually exclusive with Weaver checks and Weaver ability options.", null,
                     "",
                     ["Spreading Rot"]));
 
             RandoOptions.useWeaverChecks = config.Bind<bool>("WeaverChecks", false,
-                new ConfigurableInfo("Include checks for each of the 4 encounters with the Weaver", null, "",
+                new ConfigurableInfo("Include checks for each of the 4 encounters with the Weaver. " +
+                                     "Mutually exclusive with Spreading Rot check option.", null, "",
                     ["Weaver Encounters"]));
 
             RandoOptions.weaverItems = config.Bind<bool>("WeaverItems", false,
                 new ConfigurableInfo(
-                    "Adds 4 progressive Weaver items to the item pool, instead of incrementing from encounters", null,
+                    "Adds 4 progressive Weaver items to the item pool, instead of incrementing from encounters. " +
+                    "Mutually exclusive with Spreading Rot check option.", null,
                     "",
-                    ["Weaver Encounters"]));
+                    ["Weaver Ability"]));
 
             RandoOptions.spinningTopKeys = config.Bind<bool>("SpinningTopKeys", false,
                 new ConfigurableInfo(
-                    "The warps that Spinning Top opens will require keys to traverse. If this is disabled, you can always travel through these warps",
+                    "Makes the warps that Spinning Top opens require keys to traverse. If this is disabled, you can always travel through these warps.",
                     null, "",
                     ["Spinning Top Keys"]));
 
             RandoOptions.daemonKeys = config.Bind<bool>("DaemonKeys", false,
-                new ConfigurableInfo("The warps to Daemon will require keys to traverse", null, "",
+                new ConfigurableInfo("Makes the warps to Daemon require keys to traverse. " +
+                                     "If this is disabled, you can always travel through these warps at Ripple 9.", null, "",
                     ["Daemon Keys"]));
 
             RandoOptions.rottedRegionTarget = config.Bind<int>("RottedRegionTarget", 21,
-                new ConfigurableInfo("How many rotted regions are required in order to trigger the sentient rot ending",
+                new ConfigurableInfo("How many rotted regions are required in order to trigger the sentient rot ending.",
                     new ConfigAcceptableRange<int>(1, 21), "",
                     ["Regions to Rot"]));
 
             RandoOptions.archipelago = config.Bind<bool>("Archipelago", false,
                 new ConfigurableInfo(
-                    "Enable Archipelago mode. Standalone settings will be ignored in favor of .yaml settings", null, "",
+                    "Enable Archipelago mode. Standalone settings will be ignored in favor of .yaml settings.", null, "",
                     ["Enable Archipelago"]));
 
             RandoOptions.archipelagoDeathLinkOverride = config.Bind<bool>("ArchipelagoDeathLinkOverride", false,
-                new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed here",
+                new ConfigurableInfo("Whether DeathLink is enabled. Automatically set by YAML, but can be changed via this toggle.",
                     null, "",
                     ["Enable DeathLink"]));
-#pragma warning restore CS0612 // Type or member is obsolete
-
-            #endregion
         }
 
         public override void Initialize()

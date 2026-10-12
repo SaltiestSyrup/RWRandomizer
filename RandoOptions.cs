@@ -119,7 +119,7 @@ namespace RainWorldRandomizer
         internal static Configurable<int> rottedRegionTarget;
 
         // Archipelago
-        [Obsolete] internal static Configurable<bool> archipelago;
+        internal static Configurable<bool> archipelago;
         internal static Configurable<bool> archipelagoDeathLinkOverride;
 
         #endregion
@@ -390,8 +390,7 @@ namespace RainWorldRandomizer
         {
             return new OptionStruct
             {
-                useSeed = RandoOptions.useSeed.Value,
-                seed = RandoOptions.seed.Value.ToString(),
+                seed = RandoOptions.seed.Value,
 
                 useSandboxTokenChecks = RandoOptions.useSandboxTokenChecks.Value,
                 usePearlChecks = RandoOptions.usePearlChecks.Value,

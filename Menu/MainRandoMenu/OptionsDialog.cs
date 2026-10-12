@@ -515,6 +515,18 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                     { "Weaver", new CheckBoxOption(menu, this, new Vector2(rightRowX, runningY -= 40),
                             RandoOptions.useWeaverChecks) }
                 });
+
+                // Mutually exclusive options
+                options["SpreadRot"].field.OnValueChanged +=
+                    (_, value, _) =>
+                    {
+                        if (value.Equals("true")) options["Weaver"].ValueBool = false;
+                    };
+                options["Weaver"].field.OnValueChanged +=
+                    (_, value, _) =>
+                    {
+                        if (value.Equals("true")) options["SpreadRot"].ValueBool = false;
+                    };
             }
             
             subObjects.AddRange(options.Values);
@@ -719,7 +731,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         protected UIelementWrapper fieldWrapper;
 
         private MenuLabel label;
-        protected UIconfig field;
+        public UIconfig field;
         
         // Each option class overrides some of these depending on what kind of option it is
         public virtual bool ValueBool { get; set; }
