@@ -134,6 +134,7 @@ namespace RainWorldRandomizer.Generation
                 generationLog.AppendLine($"Removed region {region.Key}");
             }
 
+            List<string> rottableRegions = [];
             foreach (string regionShort in Region.GetFullRegionOrder().Where(slugcatRegions.Contains))
             {
                 HashSet<Location> regionLocations = [];
@@ -194,6 +195,8 @@ namespace RainWorldRandomizer.Generation
                         out List<string> targetRooms)
                         ? targetRooms.Select(r => r.Split(':')[0]).ToHashSet()
                         : [];
+
+                    if (!Region.HasSentientRotResistance(regionShort)) rottableRegions.Add(regionShort);
                 }
 
                 // Create region
@@ -266,6 +269,19 @@ namespace RainWorldRandomizer.Generation
                         generationLog.AppendLine(
                             $"WARNING: Tried to add special location(s) to non-existent region {kvp.Key}");
                     }
+                }
+            }
+
+            // Create Rot spread locations
+            if (isWatcher && options.spreadRotChecks)
+            {
+                List<RegionAccessRule> rottableRules = rottableRegions.Select(r => new RegionAccessRule(r)).ToList();
+                for (int i = 1; i <= rottableRegions.Count; i++)
+                {
+                    allRegions[RandoRegion.SPECIAL_REG].allLocations.Add(
+                        new Location($"SpreadRot-{i}", Location.Type.Unknown, new CompoundAccessRule(
+                            [.. rottableRules],
+                            CompoundAccessRule.CompoundOperation.AtLeast, i)));
                 }
             }
 
