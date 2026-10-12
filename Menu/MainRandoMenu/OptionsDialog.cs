@@ -344,33 +344,36 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             }
             else // Standalone
             {
-                options.Add("StartMinKarma", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.startMinKarma));
+                if (slugcat is not "Watcher")
+                {
+                    options.Add("StartMinKarma", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                        RandoOptions.startMinKarma));
 
-                if (slugcat is not "Rivulet" && slugcat is not "Artificer" && slugcat is not "Spear")
-                {
-                    options.Add("OpenSubmerged", new CheckBoxOption(menu, this,
-                        new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.allowSubmergedForOthers));
-                }
+                    if (slugcat is not "Rivulet" && slugcat is not "Artificer" && slugcat is not "Spear")
+                    {
+                        options.Add("OpenSubmerged", new CheckBoxOption(menu, this,
+                            new Vector2(EDGE_MARGIN, runningY -= 40f),
+                            RandoOptions.allowSubmergedForOthers));
+                    }
 
-                if (slugcat is not "Artificer" && slugcat is not "Saint")
-                {
-                    options.Add("OpenMetro", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.allowMetroForOthers));
-                }
+                    if (slugcat is not "Artificer" && slugcat is not "Saint")
+                    {
+                        options.Add("OpenMetro", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                            RandoOptions.allowMetroForOthers));
+                    }
 
-                if (slugcat is "Inv")
-                {
-                    options.Add("OpenExterior", new CheckBoxOption(menu, this,
-                        new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.allowExteriorForInv));
-                }
-                
-                if (slugcat is "Rivulet")
-                {
-                    options.Add("EnergyCell", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                        RandoOptions.useEnergyCell));
+                    if (slugcat is "Inv")
+                    {
+                        options.Add("OpenExterior", new CheckBoxOption(menu, this,
+                            new Vector2(EDGE_MARGIN, runningY -= 40f),
+                            RandoOptions.allowExteriorForInv));
+                    }
+                    
+                    if (slugcat is "Rivulet")
+                    {
+                        options.Add("EnergyCell", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
+                            RandoOptions.useEnergyCell));
+                    }
                 }
                 
                 options.Add("Seed", new TextFieldOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
@@ -394,7 +397,9 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
 
         public override void PopulateFromSaveFile(SaveFile save)
         {
-            if (randomSpawnLabel is not null) randomSpawnLabel.text = save.startingDen.Split('_')[0];
+            if (randomSpawnLabel is not null) randomSpawnLabel.text = save.startingDen.Equals("") 
+                ? Constants.SlugcatStartingRegion[new SlugcatStats.Name(save.slugcat)] 
+                : save.startingDen.Split('_')[0];
             if (goalLabel is not null) goalLabel.text = save.options.goalCondition.ToString();
             if (options.TryGetValue("DeathLink", out Option opt1)) opt1.ValueBool = save.options.archipelagoDeathLink;
             if (options.TryGetValue("GateBehavior", out Option opt2)) opt2.ValueInt = (int)save.options.gateBehavior;

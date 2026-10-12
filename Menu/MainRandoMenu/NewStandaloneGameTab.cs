@@ -25,9 +25,6 @@ public class NewStandaloneGameTab : PositionedMenuObject
     // Elements
     private PortraitButton[] slugcatButtons;
     
-    // Vars
-    private int currentSelection;
-    
     public NewStandaloneGameTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
     {
         slugcatButtons = new PortraitButton[slugcatInfos.Length];
