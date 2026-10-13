@@ -272,16 +272,17 @@ namespace RainWorldRandomizer.Generation
                 }
             }
 
-            // Create Rot spread locations
-            if (isWatcher && options.spreadRotChecks)
+            // Create Rot / Weaver locations & items
+            if (isWatcher)
             {
-                List<RegionAccessRule> rottableRules = rottableRegions.Select(r => new RegionAccessRule(r)).ToList();
-                for (int i = 1; i <= rottableRegions.Count; i++)
+                if (options.spreadRotChecks)
                 {
-                    allRegions[RandoRegion.SPECIAL_REG].allLocations.Add(
-                        new Location($"SpreadRot-{i}", Location.Type.Unknown, new CompoundAccessRule(
-                            [.. rottableRules],
-                            CompoundAccessRule.CompoundOperation.AtLeast, i)));
+                    allRegions[RandoRegion.SPECIAL_REG].allLocations
+                        .UnionWith(LocationHelpers.MakeRotSpreadLocations(rottableRegions));
+                }
+                else if (options.weaverRandomized)
+                {
+                    itemsToPlace.AddRange(ItemHelpers.MakeWeaverItems());
                 }
             }
 
@@ -468,26 +469,22 @@ namespace RainWorldRandomizer.Generation
             do
             {
                 anyPurged = false;
-                foreach (RandoRegion region in state.AllRegions.ToList())
+                foreach (RandoRegion region in state.AllRegions.ToList()
+                             .Where(region => !region.IsPossibleToReach(state)))
                 {
-                    if (!region.IsPossibleToReach(state))
-                    {
-                        generationLog.AppendLine(
-                            $"Purged locations and connections for impossible subregion {region.ID}");
-                        state.PurgeRegion(region);
-                        anyPurged = true;
-                    }
+                    generationLog.AppendLine(
+                        $"Purged locations and connections for impossible subregion {region.ID}");
+                    state.PurgeRegion(region);
+                    anyPurged = true;
                 }
             } while (anyPurged);
 
             // Purge any impossible individual locations
-            foreach (Location loc in state.AllLocations.ToList())
+            foreach (Location loc in state.AllLocations.ToList()
+                         .Where(loc => !loc.accessRule.IsPossible(state)))
             {
-                if (!loc.accessRule.IsPossible(state))
-                {
-                    state.PurgeLocation(loc);
-                    generationLog.AppendLine($"Removed impossible location: {loc.ID}");
-                }
+                state.PurgeLocation(loc);
+                generationLog.AppendLine($"Removed impossible location: {loc.ID}");
             }
 
             // Log all logic
@@ -553,7 +550,7 @@ namespace RainWorldRandomizer.Generation
                 {
                     if (perksToAdd[i])
                     {
-                        itemsToAdd.Add(new(((ManagerBase.ExpeditionPerks)i).ToString(), Item.Type.ExpPerk,
+                        itemsToAdd.Add(new Item(((ManagerBase.ExpeditionPerks)i).ToString(), Item.Type.ExpPerk,
                             Item.Importance.Filler));
                     }
                 }

@@ -189,6 +189,21 @@ public static class LocationHelpers
             .ToHashSet();
     }
 
+    public static HashSet<Location> MakeRotSpreadLocations(List<string> validRegions)
+    {
+        HashSet<Location> output = [];
+        List<RegionAccessRule> rottableRules = validRegions.Select(r => new RegionAccessRule(r)).ToList();
+        
+        for (int i = 1; i <= validRegions.Count; i++)
+        {
+            output.Add(new Location($"SpreadRot-{i}", Location.Type.Unknown, new CompoundAccessRule(
+                [.. rottableRules],
+                CompoundAccessRule.CompoundOperation.AtLeast, i)));
+        }
+
+        return output;
+    }
+
     /// <summary>
     /// Create locations for all possible food quest items a slugcat can eat
     /// </summary>
@@ -307,7 +322,12 @@ public static class LocationHelpers
                 ];
 
                 AccessRule weaverRule = new CompoundAccessRule(
-                    [..AccessRuleConstants.Regions, AccessRuleConstants.CanDynamicWarp],
+                    [
+                        new OptionAccessRule(nameof(OptionStruct.weaverChecks)),
+                        new CompoundAccessRule(AccessRuleConstants.Regions, 
+                            CompoundAccessRule.CompoundOperation.AtLeast, 2), 
+                        new RippleAccessRule(9)
+                    ],
                     CompoundAccessRule.CompoundOperation.All);
 
                 output["WRSA"] =

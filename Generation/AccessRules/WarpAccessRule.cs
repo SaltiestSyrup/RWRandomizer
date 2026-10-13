@@ -18,6 +18,6 @@ public class WarpAccessRule : AccessRule
 
     public override string ToString()
     {
-        return $"Warp {ReqName} is open";
+        return $"Warp {ReqName} is open{(isRippleWarp ? " and has max Ripple" : "")}";
     }
 }

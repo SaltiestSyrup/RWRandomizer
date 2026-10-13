@@ -488,10 +488,10 @@ namespace RainWorldRandomizer
         /// </summary>
         private static int OnGetNumOfVoidWeaverEncounters(Func<MiscWorldSaveData, int> orig, MiscWorldSaveData self)
         {
-            if (!Plugin.ArchipelagoActive || !RandoOptions.WeaverRandomized) 
+            if (!Plugin.RandomizerActive || !RandoOptions.WeaverRandomized) 
                 return orig(self);
 
-            return Math.Min(Plugin.ArchipelagoManager.WeaverIncrements, 4);
+            return Math.Min(Plugin.RandoManager.WeaverIncrements, 4);
         }
         
         /// <summary>

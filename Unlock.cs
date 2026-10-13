@@ -67,6 +67,7 @@ namespace RainWorldRandomizer
             public static readonly UnlockType DisconnectPebbles = new("Disconnect_Pebbles", true);
             public static readonly UnlockType RewriteSpearPearl = new("RewriteSpearPearl", true);
             public static readonly UnlockType DialWarp = new("Dial_Warp", true);
+            public static readonly UnlockType WeaverIncrement = new("Weaver_Increment", true);
         }
 
         public Unlock(UnlockType type, string ID, bool isGiven = false)
@@ -173,6 +174,15 @@ namespace RainWorldRandomizer
                 case "RewriteSpearPearl":
                     Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.smPearlTagged = true;
                     Plugin.RandoManager.GivenSpearPearlRewrite = true;
+                    break;
+                case "Dial_Warp":
+                    Plugin.RandoManager.GivenRippleEggWarp = true;
+                    if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
+                        Plugin.Singleton.Game.GetStorySession.saveState.miscWorldSaveData.hasRippleEggWarpAbility =
+                            true;
+                    break;
+                case "Weaver_Increment":
+                    Plugin.RandoManager.WeaverIncrements++;
                     break;
             }
         }

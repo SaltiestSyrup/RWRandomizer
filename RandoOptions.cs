@@ -79,7 +79,6 @@ namespace RainWorldRandomizer
         #region Run Configurables
 
         internal static Configurable<string> chosenSlugcat;
-        internal static Configurable<bool> useSeed;
         internal static Configurable<string> seed;
         internal static Configurable<bool> useSandboxTokenChecks;
         internal static Configurable<bool> usePearlChecks;

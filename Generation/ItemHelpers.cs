@@ -197,6 +197,18 @@ public static class ItemHelpers
         return (warpNames, warpItems);
     }
 
+    public static List<Item> MakeWeaverItems()
+    {
+        List<Item> output = [];
+
+        for (int i = 1; i <= 4; i++)
+        {
+            output.Add(new Item("Weaver_Increment", Item.Type.Other, Item.Importance.Progression));
+        }
+
+        return output;
+    }
+    
     private static string DetermineNullWarpDest(string startReg, bool ripple)
     {
         return startReg switch
