@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using Newtonsoft.Json;
+using RainWorldRandomizer.Generation;
 using UnityEngine;
 
 namespace RainWorldRandomizer.SaveData;
@@ -17,16 +16,13 @@ public class SaveTracker
     /// Negative if no legacy slot active
     /// </summary>
     public static int ActiveLegacySlot = -1;
+    /// <summary>
+    /// Last generator used for a new standalone game.
+    /// Stored here so the manager can find and load the data.
+    /// </summary>
+    public static VanillaGenerator ActiveGenerator;
 
-    private Dictionary<int, SaveFile> saveSlots;
-
-    public Dictionary<int, SaveFile> SaveSlots
-    {
-        get
-        {
-            return saveSlots;
-        }
-    }
+    public Dictionary<int, SaveFile> SaveSlots { get; }
 
     public static int CurrentRandomizerSlot
     {
@@ -53,7 +49,7 @@ public class SaveTracker
 
     public SaveTracker()
     {
-        saveSlots = [];
+        SaveSlots = [];
         LoadSlotsFromFile();
         LoadLegacySlotsFromFile();
     }
@@ -98,7 +94,7 @@ public class SaveTracker
             if (int.TryParse(Path.GetFileNameWithoutExtension(fileName).Substring(4), out int slot)
                 && SaveManager.TryReadFromFile(slot, out SaveFile save))
             {
-                saveSlots[slot] = save;
+                SaveSlots[slot] = save;
             }
         }
     }
@@ -118,22 +114,5 @@ public class SaveTracker
                                     $"{new System.Diagnostics.StackTrace()}");
             }
         }
-    } 
-
-    private record struct SaveSlotIdentifier(int slotNumber, string slugcatName)
-    {
-        public readonly int slotNumber = slotNumber;
-        public readonly string slugcatName = slugcatName;
-    }
-
-    public struct SaveSlotInfo(int slotNumber, string slugcatName)
-    {
-        public readonly int slotNumber = slotNumber;
-        public readonly string slugcatName = slugcatName;
-        // Check count
-        // Completion
-        // is Archipelago
-        // options
-        // 
     }
 }

@@ -77,8 +77,14 @@ namespace RainWorldRandomizer.Generation
         {
             generationLog.AppendLine("Begin Generation");
             generationLog.AppendLine($"Playing as {slugcat}");
-            Stopwatch sw = Stopwatch.StartNew();
 
+            lock (Plugin.ProperRegionMap)
+            {
+                Plugin.SetupProperRegionMap(slugcat);
+            }
+            
+            Stopwatch sw = Stopwatch.StartNew();
+            
             InitializeState();
             ApplyRuleOverrides();
             DefineStartConditions();

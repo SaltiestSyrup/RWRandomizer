@@ -53,13 +53,11 @@ namespace RainWorldRandomizer
             _givenSpearPearlRewrite = false;
             customStartDen = "";
 
-            Plugin.SetupProperRegionMap(storyGameCharacter);
-
             // Init passage list
             foreach (string passage in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
             {
                 if (passage == "Gourmand") continue;
-                passageTokensStatus.Add(new(passage), false);
+                passageTokensStatus.Add(new WinState.EndgameID(passage), false);
             }
 
             // Continue existing game
@@ -125,68 +123,31 @@ namespace RainWorldRandomizer
             {
                 Plugin.Log.LogInfo("Starting new randomizer game...");
 
-                if (!TokenCachePatcher.hasLoadedCache)
+                VanillaGenerator generator = SaveTracker.ActiveGenerator;
+                SaveTracker.ActiveGenerator = null;
+
+                if (generator?.CurrentStage != VanillaGenerator.GenerationStep.Complete)
                 {
+                    Plugin.Log.LogError("Tried to start standalone save with missing or incomplete generation!");
                     Plugin.QueueNotify(new MessageText(
-                        "Failed to start randomizer, token cache data missing or corrupt. Try reloading mods to update cache",
+                        "The randomizer failed to start due to an invalid state. Please exit and retry.",
                         Color.red));
                     return;
                 }
-
-                VanillaGenerator generator = new(currentSlugcat, SlugcatStats.SlugcatToTimeline(currentSlugcat),
-                    RandoOptions.LoadedOptions);
-
-                Exception generationException = null;
-                bool timedOut = false;
-                try
+                
+                // Load gates from generator
+                // Existing gates that didn't have an item placed start open
+                foreach (string gate in generator.AllGates.Where(gate => !gatesStatus.ContainsKey(gate)))
                 {
-                    timedOut = !generator.BeginGeneration().Wait(10000);
-                }
-                catch (Exception e)
-                {
-                    Plugin.Log.LogError(e);
-                    generationException = e;
+                    gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate));
                 }
 
-                Plugin.Log.LogDebug(generator.generationLog);
-
-                if (generator.CurrentStage == VanillaGenerator.GenerationStep.Complete)
-                {
-                    // Load gates from generator
-                    // Existing gates that didn't have an item placed start open
-                    foreach (string gate in generator.AllGates.Where(gate => !gatesStatus.ContainsKey(gate)))
-                    {
-                        gatesStatus.Add(gate, generator.UnplacedGates.Contains(gate));
-                    }
-
-                    // Write new save game
-                    randomizerKey = generator.GetCompletedSeed();
-                    locations = [..randomizerKey.Select(kvp => new LocationInfo(kvp.Key, false, false))];
-                    customStartDen = generator.customStartDen;
-                    currentSeed = generator.generationSeed;
-                    SaveManager.WriteToFile(Plugin.Singleton.rainWorld, this);
-                }
-                else
-                {
-                    if (timedOut) Plugin.Log.LogDebug("Generation timed out.");
-
-                    // Log reason for expected generation exceptions
-                    if (generator.CurrentStage == VanillaGenerator.GenerationStep.FailedGen
-                        && generationException?.InnerException is VanillaGenerator.GenerationFailureException)
-                    {
-                        Plugin.QueueNotify(new MessageText(
-                            $"Randomizer failed to generate with error: {generationException.InnerException.Message}. " +
-                            $"More details found in BepInEx/LogOutput.log",
-                            Color.red));
-                    }
-                    else
-                    {
-                        Plugin.QueueNotify(new MessageText(
-                            $"Randomizer failed to generate. More details found in BepInEx/LogOutput.log", Color.red));
-                    }
-
-                    return;
-                }
+                // Write new save game
+                randomizerKey = generator.GetCompletedSeed();
+                locations = [..randomizerKey.Select(kvp => new LocationInfo(kvp.Key, false, false))];
+                customStartDen = generator.customStartDen;
+                currentSeed = generator.generationSeed;
+                SaveManager.WriteToFile(Plugin.Singleton.rainWorld, this);
             }
 
             isRandomizerActive = true;

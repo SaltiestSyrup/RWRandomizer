@@ -1,5 +1,7 @@
-using System;
+using System.Threading.Tasks;
 using Menu;
+using RainWorldRandomizer.Generation;
+using RainWorldRandomizer.SaveData;
 using UnityEngine;
 using RWMenu = Menu.Menu;
 
@@ -24,6 +26,12 @@ public class NewStandaloneGameTab : PositionedMenuObject
     
     // Elements
     private PortraitButton[] slugcatButtons;
+    private DialogBoxAsyncWait generationWaitDialog;
+    private DialogNotify generateResultDialog;
+    
+    
+    // Vars
+    private Task generateTask;
     
     public NewStandaloneGameTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
     {
@@ -86,9 +94,6 @@ public class NewStandaloneGameTab : PositionedMenuObject
                 slugcatButtons[i - 1].nextSelectable[2] = slugcatButtons[i];
             }
         }
-
-        // Watcher disabled until implemented
-        // slugcatButtons[8].GetButtonBehavior.greyedOut = true;
     }
 
     public override void Singal(MenuObject sender, string message)
@@ -111,12 +116,78 @@ public class NewStandaloneGameTab : PositionedMenuObject
                 {
                     ((RandomizerMenu)menu).optionsDialog.OutputToSaveFile(ref file);
                     RandoOptions.LoadedOptions = file.options;
-                    try { Singal(this, "START_NEW_GAME"); }
-                    catch (Exception e) { Plugin.Log.LogError(e); }
+                    Generate((SlugcatStats.Name)slugcat, file.options);
                 });
             menu.PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
             menu.manager.ShowDialog(((RandomizerMenu)menu).optionsDialog);
         }
+    }
+
+    public override void Update()
+    {
+        base.Update();
+        if (generateTask?.IsCompleted ?? false)
+        {
+            page.subObjects.Remove(generationWaitDialog);
+            generationWaitDialog.RemoveSprites();
+            generationWaitDialog = null;
+
+            if (SaveTracker.ActiveGenerator.CurrentStage == VanillaGenerator.GenerationStep.Complete)
+            {
+                Singal(this, "START_NEW_GAME");
+                Plugin.Log.LogDebug(SaveTracker.ActiveGenerator.generationLog);
+            }
+            else
+            {
+                string message;
+                if (generateTask.IsFaulted && generateTask.Exception is not null)
+                {
+                    message = $"Failed to generate with exception:\n\n" +
+                              $"{generateTask.Exception.InnerException?.Message ?? generateTask.Exception.Message}\n\n" +
+                              $"See BepInEx/LogOutput.log for more details.";
+                }
+                else
+                {
+                    message = "Failed to generate due to an unknown error.\n\n" +
+                              "See BepInEx/LogOutput.log for more details.";
+                }
+                
+                Plugin.Log.LogDebug(SaveTracker.ActiveGenerator.generationLog);
+                Plugin.Log.LogError("Failed to generate with exception:\n" + 
+                                    $"{generateTask.Exception?.InnerException?.Message 
+                                       ?? generateTask.Exception?.Message 
+                                       ?? "UNKNOWN??"}");
+                
+                generateResultDialog = new DialogNotify(
+                    message,
+                    new Vector2(350f, 200f),
+                    menu.manager, () => { });
+                menu.manager.ShowDialog(generateResultDialog);
+            }
+
+            generateTask = null;
+        }
+    }
+
+    private void Generate(SlugcatStats.Name slugcat, OptionStruct options)
+    {
+        if (!TokenCachePatcher.hasLoadedCache)
+        {
+            generateResultDialog = new DialogNotify(
+                "Failed to start randomizer, token cache data missing or corrupt. Try reloading mods to update cache",
+                menu.manager, () => { });
+            menu.manager.dialogStack.Add(generateResultDialog);
+            return;
+        }
+        
+        generationWaitDialog = new DialogBoxAsyncWait(menu, page, "Generating...", 
+                new Vector2(menu.manager.rainWorld.screenSize.x / 2 - 125f, menu.manager.rainWorld.screenSize.y / 2 - 75f), 
+                new Vector2(250f, 150f))
+            { loadingSpinner = { animSpeed = 0.5f } };
+        page.subObjects.Add(generationWaitDialog);
+        
+        SaveTracker.ActiveGenerator = new VanillaGenerator(slugcat, SlugcatStats.SlugcatToTimeline(slugcat), options);
+        generateTask = SaveTracker.ActiveGenerator.BeginGeneration();
     }
 
     private class PortraitButton : SimpleButton
