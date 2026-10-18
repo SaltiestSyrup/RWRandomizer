@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using Archipelago.MultiClient.Net.Colors;
+using UnityEngine;
 
 namespace RainWorldRandomizer
 {
@@ -25,7 +27,15 @@ namespace RainWorldRandomizer
             }
         }
 
-        public static Dictionary<string, string> readableItemNames = new()
+        public enum Importance
+        {
+            Progression,
+            Useful,
+            Filler,
+            Trap
+        }
+
+        public static Dictionary<string, string> ReadableItemNames = new()
         {
             { "NHSSwarmer", "Slag Keys" },
             { "Red_stomach", "Hunter's Pearl" },
@@ -44,15 +54,17 @@ namespace RainWorldRandomizer
         };
 
         public string ID { get; set; }
-        public Item? item = null;
+        public Item? item;
         public UnlockType Type { get; private set; }
-        public bool IsGiven { get; private set; } = false;
+        public Importance importance = Importance.Filler;
+        public bool IsGiven { get; private set; }
 
         public class UnlockType(string value, bool register = false) : ExtEnum<UnlockType>(value, register)
         {
             public static readonly UnlockType Gate = new("Gate", true);
             public static readonly UnlockType Token = new("Token", true);
             public static readonly UnlockType Karma = new("Karma", true);
+            public static readonly UnlockType Ripple = new("Ripple", true);
             public static readonly UnlockType Glow = new("Neuron_Glow", true);
             public static readonly UnlockType Mark = new("The_Mark", true);
             public static readonly UnlockType Item = new("Item", true);
@@ -70,11 +82,12 @@ namespace RainWorldRandomizer
             public static readonly UnlockType WeaverIncrement = new("Weaver_Increment", true);
         }
 
-        public Unlock(UnlockType type, string ID, bool isGiven = false)
+        public Unlock(UnlockType type, string ID, bool isGiven = false, Importance importance = Importance.Filler)
         {
             this.ID = ID;
             Type = type;
             IsGiven = isGiven;
+            this.importance = importance;
 
             if (type == UnlockType.Item || type == UnlockType.ItemPearl)
             {
@@ -82,12 +95,13 @@ namespace RainWorldRandomizer
             }
         }
 
-        public Unlock(UnlockType type, Item item, bool isGiven = false)
+        public Unlock(UnlockType type, Item item, bool isGiven = false, Importance importance = Importance.Filler)
         {
             this.ID = item.id;
             this.item = item;
             this.Type = type;
             IsGiven = isGiven;
+            this.importance = importance;
         }
 
         public void GiveUnlock()
@@ -106,6 +120,9 @@ namespace RainWorldRandomizer
                     break;
                 case "Karma":
                     Plugin.RandoManager.IncreaseKarma();
+                    break;
+                case "Ripple":
+                    Plugin.RandoManager.IncreaseRipple();
                     break;
                 case "Neuron_Glow":
                     Plugin.Singleton.Game.GetStorySession.saveState.theGlow = true;
@@ -187,25 +204,13 @@ namespace RainWorldRandomizer
             }
         }
 
-        public string UnlockCompleteMessage()
+        public string InternalID()
         {
             return Type.value switch
             {
-                "Gate" => $"Unlocked Gate: {Plugin.GateToString(ID, Plugin.RandoManager.currentSlugcat)}",
-                "Token" => $"Unlocked Passage Token: {ID}",
-                "Karma" => "Unlocked Karma Increase",
-                "Neuron_Glow" => "Unlocked Neuron Glow",
-                "The_Mark" => "Unlocked The Mark",
-                "Item" => $"Found {ItemToEncodedIcon((Item)item)}",
-                "Trap" => $"Found a trap!",
-                "HunterCycles" => "Increased Lifespan",
-                "ExpeditionPerk" => $"Found {(readableItemNames.TryGetValue(ID, out string val) ? val : ID)} Perk",
-                "DamageUpgrade" => "Increased Spear Damage",
-                "IdDrone" => "Found Citizen ID Drone",
-                "DisconnectFP" or "Disconnect_Pebbles" => "Found Five Pebbles Disconnect",
-                "Longer_Cycles" => "Unlocked Longer Cycles",
-                "RewriteSpearPearl" => "Unlocked Broadcast Encoding",
-                _ => $"Unlocked {ID}",
+                "Item" => $"Object-{ID}",
+                "ItemPearl" => $"PearlObject-{ID}",
+                _ => ID
             };
         }
 
@@ -221,7 +226,7 @@ namespace RainWorldRandomizer
                 "Item" => item.Value.name,
                 "Trap" => ID.Substring(5),
                 "HunterCycles" => $"+{(ModManager.MMF ? MoreSlugcats.MMF.cfgHunterBonusCycles.Value : "5")} Cycles",
-                "ExpeditionPerk" => readableItemNames.TryGetValue(ID, out string val) ? val : ID,
+                "ExpeditionPerk" => ReadableItemNames.TryGetValue(ID, out string val) ? val : ID,
                 "DamageUpgrade" => "+10% Damage",
                 "IdDrone" => "Citizen ID Drone",
                 "DisconnectFP" or "Disconnect_Pebbles" => "Disconnect Pebbles",
@@ -230,9 +235,21 @@ namespace RainWorldRandomizer
             };
         }
 
+        public Color Color()
+        {
+            return importance switch
+            {
+                Importance.Progression => ArchipelagoConnection.palette[PaletteColor.Magenta],
+                Importance.Useful => ArchipelagoConnection.palette[PaletteColor.Blue],
+                Importance.Filler => ArchipelagoConnection.palette[PaletteColor.Cyan],
+                Importance.Trap => ArchipelagoConnection.palette[PaletteColor.Red],
+                _ => UnityEngine.Color.white
+            };
+        }
+
         public static string IDToString(string item)
         {
-            return readableItemNames.TryGetValue(item, out string name) ? name : item;
+            return ReadableItemNames.TryGetValue(item, out string name) ? name : item;
         }
 
         public static Item IDToItem(string id, bool isPearl = false)
@@ -254,12 +271,9 @@ namespace RainWorldRandomizer
 
         public static string ItemToEncodedIcon(Item item)
         {
-            if (ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), item.id, true, out _))
-            {
-                return $"Icon{{{item.id}}}";
-            }
-
-            return IDToString(item.name);
+            return ExtEnumBase.TryParse(typeof(MultiplayerUnlocks.SandboxUnlockID), item.id, true, out _)
+                ? $"Icon{{{item.id}}}"
+                : IDToString(item.name);
         }
     }
 }

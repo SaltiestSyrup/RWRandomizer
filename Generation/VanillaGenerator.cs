@@ -209,7 +209,7 @@ namespace RainWorldRandomizer.Generation
             // Create Gate items
             (HashSet<string>, List<Item>) gatesTuple =
                 isWatcher
-                    ? ItemHelpers.MakeWarpConnections(allRegions)
+                    ? ItemHelpers.MakeWarpConnections(allRegions, options)
                     : ItemHelpers.MakeGateConnections(slugcat, allRegions);
             AllGates.UnionWith(gatesTuple.Item1);
             itemsToPlace.AddRange(gatesTuple.Item2);
@@ -219,7 +219,7 @@ namespace RainWorldRandomizer.Generation
             if (options.givePassageUnlocks)
             {
                 itemsToPlace.AddRange([
-                    .. passageRules.Select(kv => new Item(kv.Key, Item.Type.Passage, Item.Importance.Filler))
+                    .. passageRules.Select(kv => new Item(kv.Key, Item.Type.Passage, Item.Importance.Useful))
                 ]);
             }
 
@@ -239,9 +239,9 @@ namespace RainWorldRandomizer.Generation
             karmaInPool += options.extraKarmaIncreases;
             for (int i = 0; i < karmaInPool; i++)
             {
-                itemsToPlace.Add(new Item(
-                    isWatcher ? "Ripple" : "Karma",
-                    Item.Type.Karma, Item.Importance.Progression));
+                itemsToPlace.Add(isWatcher
+                    ? new Item("Ripple", Item.Type.Ripple, Item.Importance.Progression)
+                    : new Item("Karma", Item.Type.Karma, Item.Importance.Progression));
             }
 
             // Create Food Quest locations
@@ -551,7 +551,7 @@ namespace RainWorldRandomizer.Generation
                     if (perksToAdd[i])
                     {
                         itemsToAdd.Add(new Item(((ManagerBase.ExpeditionPerks)i).ToString(), Item.Type.ExpPerk,
-                            Item.Importance.Filler));
+                            Item.Importance.Useful));
                     }
                 }
             }
@@ -563,14 +563,14 @@ namespace RainWorldRandomizer.Generation
             {
                 if (damageUpsAdded < options.numDamageIncreases)
                 {
-                    itemsToAdd.Add(new Item("DamageUpgrade", Item.Type.Other, Item.Importance.Filler));
+                    itemsToAdd.Add(new Item("Upgrade-DamageIncrease", Item.Type.DmgUp, Item.Importance.Useful));
                     damageUpsAdded++;
                 }
                 else if (slugcat == SlugcatStats.Name.Red
                          && hunterCyclesAdded < state.AllLocations.Count * options.hunterCyclesDensity)
                 {
                     // Add cycle increases for Hunter
-                    itemsToAdd.Add(new Item("HunterCycles", Item.Type.Other, Item.Importance.Filler));
+                    itemsToAdd.Add(new Item("HunterCycles", Item.Type.Other, Item.Importance.Useful));
                     hunterCyclesAdded++;
                 }
                 else if (trapsAdded < state.AllLocations.Count * options.trapsDensity)
@@ -779,54 +779,37 @@ namespace RainWorldRandomizer.Generation
 
         public static Unlock ItemToUnlock(Item item)
         {
-            Unlock.UnlockType outputType = null;
-            switch (item.type)
+            Unlock.UnlockType outputType = item.type switch
             {
-                case Item.Type.Gate:
-                    outputType = Unlock.UnlockType.Gate;
-                    break;
-                case Item.Type.Passage:
-                    outputType = Unlock.UnlockType.Token;
-                    break;
-                case Item.Type.Karma:
-                    outputType = Unlock.UnlockType.Karma;
-                    break;
-                case Item.Type.Object:
-                    outputType = item.id.StartsWith("PearlObject-")
-                        ? Unlock.UnlockType.ItemPearl
-                        : Unlock.UnlockType.Item;
-                    break;
-                case Item.Type.Trap:
-                    outputType = Unlock.UnlockType.Trap;
-                    break;
-                case Item.Type.ExpPerk:
-                    outputType = Unlock.UnlockType.ExpeditionPerk;
-                    break;
-                case Item.Type.Other:
-                    if (ExtEnumBase.TryParse(typeof(Unlock.UnlockType), item.id, false, out ExtEnumBase type))
-                    {
-                        outputType = (Unlock.UnlockType)type;
-                    }
-                    else
-                    {
-                        Plugin.Log.LogError($"ItemToUnlock could not find matching UnlockType for {item.id}");
-                        return null;
-                    }
+                Item.Type.Gate => Unlock.UnlockType.Gate,
+                Item.Type.Passage => Unlock.UnlockType.Token,
+                Item.Type.Karma => Unlock.UnlockType.Karma,
+                Item.Type.Ripple => Unlock.UnlockType.Ripple,
+                Item.Type.Object => item.id.StartsWith("PearlObject-")
+                    ? Unlock.UnlockType.ItemPearl
+                    : Unlock.UnlockType.Item,
+                Item.Type.Trap => Unlock.UnlockType.Trap,
+                Item.Type.ExpPerk => Unlock.UnlockType.ExpeditionPerk,
+                Item.Type.DmgUp => Unlock.UnlockType.DamageUpgrade,
+                Item.Type.Other when ExtEnumBase.TryParse(typeof(Unlock.UnlockType), item.id, false,
+                    out ExtEnumBase type) => (Unlock.UnlockType)type,
+                _ => null
+            };
 
-                    break;
+            if (outputType is null)
+            {
+                Plugin.Log.LogError($"ItemToUnlock could not find matching UnlockType for {item.id}");
+                return null;
             }
 
-            if (outputType == Unlock.UnlockType.Item)
+            return outputType.value switch
             {
-                return new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id.Substring(7)));
-            }
-
-            if (outputType == Unlock.UnlockType.ItemPearl)
-            {
-                return new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id.Substring(12), true));
-            }
-
-            return new Unlock(outputType, item.id);
+                "Item" => new Unlock(Unlock.UnlockType.Item, Unlock.IDToItem(item.id.Substring(7)),
+                    importance: (Unlock.Importance)item.importance),
+                "ItemPearl" => new Unlock(Unlock.UnlockType.ItemPearl, Unlock.IDToItem(item.id.Substring(12), true),
+                    importance: (Unlock.Importance)item.importance),
+                _ => new Unlock(outputType, item.id, importance: (Unlock.Importance)item.importance)
+            };
         }
 
         public class GenerationFailureException : Exception

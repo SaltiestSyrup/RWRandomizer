@@ -104,7 +104,8 @@ public static class ItemHelpers
         return items;
     }
 
-    public static (HashSet<string>, List<Item>) MakeWarpConnections(Dictionary<string, RandoRegion> regions)
+    public static (HashSet<string>, List<Item>) MakeWarpConnections(Dictionary<string, RandoRegion> regions,
+        OptionStruct options)
     {
         HashSet<string> warpNames = [];
         List<Item> warpItems = [];
@@ -121,7 +122,8 @@ public static class ItemHelpers
 
             string warpID = string.Join("-", new[] { data.startReg, data.destReg }.OrderBy(x => x));
             string itemName = $"Warp-{warpID}";
-            bool forceOpen = Constants.UnkeyableWarps.Contains(warpID);
+            bool forceOpen = Constants.UnkeyableWarps.Contains(warpID)
+                             || (data.destReg.Equals("WRSA") && !options.daemonKeys);
             Connection connection;
 
             // This is a one-way warp, create the connection
@@ -132,7 +134,11 @@ public static class ItemHelpers
                         regions[data.startReg],
                         regions[data.destReg]
                     ],
-                    (forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, data.ripple),
+                    (forceOpen
+                            ? data.ripple
+                                ? new RippleAccessRule(9)
+                                : AccessRule.Empty()
+                            : new WarpAccessRule(itemName, data.ripple),
                         AccessRule.Impossible()));
             }
             // We found the second half of a two-way warp pair, create it
@@ -142,9 +148,19 @@ public static class ItemHelpers
                     [
                         regions[data.startReg],
                         regions[data.destReg]
-                    ],
-                    (forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, data.ripple),
-                        forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, other.ripple)));
+                    ], (
+                        forceOpen
+                            ? data.ripple
+                                ? new RippleAccessRule(9)
+                                : AccessRule.Empty()
+                            : new WarpAccessRule(itemName, data.ripple),
+                        forceOpen
+                            ? other.ripple
+                                ? new RippleAccessRule(9)
+                                : AccessRule.Empty()
+                            : new WarpAccessRule(itemName, other.ripple)
+                    )
+                );
                 hangingConnections.Remove(other);
             }
             // This is a two-way, but we don't have the other half so save it for now and continue
@@ -174,15 +190,18 @@ public static class ItemHelpers
 
             string warpID = string.Join("-", new[] { data.startReg, data.destReg }.OrderBy(x => x));
             string itemName = $"Warp-{warpID}";
-            bool forceOpen = Constants.UnkeyableWarps.Contains(warpID);
+            bool forceOpen = Constants.UnkeyableWarps.Contains(warpID) || !options.spinningTopKeys;
 
             Connection connection = new(
                 itemName,
                 [
                     regions[data.startReg],
                     regions[data.destReg]
-                ],
-                (forceOpen ? AccessRule.Empty() : new WarpAccessRule(itemName, data.ripple),
+                ], (forceOpen
+                        ? data.ripple
+                            ? new RippleAccessRule(9)
+                            : AccessRule.Empty()
+                        : new WarpAccessRule(itemName, data.ripple),
                     AccessRule.Impossible()));
 
             // Finalize the connection
@@ -208,7 +227,7 @@ public static class ItemHelpers
 
         return output;
     }
-    
+
     private static string DetermineNullWarpDest(string startReg, bool ripple)
     {
         return startReg switch
@@ -254,7 +273,7 @@ public static class ItemHelpers
                 oneWay = true,
                 destReg = split[2].Split('_')[0].ToUpperInvariant()
             };
-            
+
             warp.ripple = warp.startReg.Equals("WARA");
 
             if (warp.destReg.Equals("NULL")) warp.destReg = DetermineNullWarpDest(warp.startReg, warp.ripple);

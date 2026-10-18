@@ -19,13 +19,16 @@ namespace RainWorldRandomizer
         /// Gate strings match pattern "GATE_[Region1]_[Region2]"
         /// </summary>
         protected Dictionary<string, bool> gatesStatus = [];
+
         protected List<string> collectedStaticKeys = [];
+
         public List<string> CollectedStaticKeys
         {
             get { return collectedStaticKeys; }
         }
 
         protected Dictionary<WinState.EndgameID, bool> passageTokensStatus = [];
+
         // Queue of items that the player has recieved and not claimed
         public Queue<Unlock.Item> itemDeliveryQueue = new();
         public Queue<Unlock.Item> lastItemDeliveryQueue = new();
@@ -39,6 +42,7 @@ namespace RainWorldRandomizer
             get { return _currentMaxKarma; }
             set { _currentMaxKarma = value; }
         }
+
         /// <summary>What the minimum and maximum Ripple should be, based on <see cref="_rippleIncrements"/>.</summary>
         public Vector2 Ripple
         {
@@ -54,59 +58,71 @@ namespace RainWorldRandomizer
             get { return _weaverIncrements; }
             set { _weaverIncrements = value; }
         }
+
         public virtual int HunterBonusCyclesGiven
         {
             get { return _hunterBonusCyclesGiven; }
             set { _hunterBonusCyclesGiven = value; }
         }
+
         public virtual int NumDamageUpgrades
         {
             get { return _numDamageUpgrades; }
             set { _numDamageUpgrades = value; }
         }
+
         public virtual float SpearDamageMultiplier
         {
             get { return 1 + (_numDamageUpgrades * 0.1f); }
         }
+
         public virtual bool GivenNeuronGlow
         {
             get { return _givenNeuronGlow; }
             set { _givenNeuronGlow = value; }
         }
+
         public virtual bool GivenMark
         {
             get { return _givenMark; }
             set { _givenMark = value; }
         }
+
         public virtual bool GivenRobo
         {
             get { return _givenRobo; }
             set { _givenRobo = value; }
         }
+
         public virtual bool GivenLongerCycles
         {
             get { return _givenLongerCycles; }
             set { _givenLongerCycles = value; }
         }
+
         public virtual bool GivenPebblesOff
         {
             get { return _givenPebblesOff; }
             set { _givenPebblesOff = value; }
         }
+
         public virtual bool GivenSpearPearlRewrite
         {
             get { return _givenSpearPearlRewrite; }
             set { _givenSpearPearlRewrite = value; }
         }
+
         public virtual bool GivenRippleEggWarp
         {
             get { return _givenRippleEggWarp; }
-            set { _givenRippleEggWarp = value;}
+            set { _givenRippleEggWarp = value; }
         }
 
         protected int _currentMaxKarma;
+
         /// <summary>The number of Ripple items collected.</summary>
         protected int _rippleIncrements;
+
         protected int _weaverIncrements;
         protected int _hunterBonusCyclesGiven;
         protected int _numDamageUpgrades;
@@ -212,14 +228,20 @@ namespace RainWorldRandomizer
         /// Used to find all gates in the current seed and their status
         /// </summary>
         /// <returns>A Dictionary matching gate strings to whether they have been opened</returns>
-        public virtual Dictionary<string, bool> GetGatesStatus() { return gatesStatus; }
+        public virtual Dictionary<string, bool> GetGatesStatus()
+        {
+            return gatesStatus;
+        }
 
         /// <summary>
         /// Check whether a gate exists in the current seed
         /// </summary>
         /// <param name="gate">Gate string matching pattern "GATE_[Region1]_[Region2]"</param>
         /// <returns>True if the gate exists</returns>
-        public virtual bool GateExists(string gate) { return gatesStatus.ContainsKey(gate); }
+        public virtual bool GateExists(string gate)
+        {
+            return gatesStatus.ContainsKey(gate);
+        }
 
         /// <summary>
         /// Check whether a gate has been opened by an item
@@ -244,7 +266,7 @@ namespace RainWorldRandomizer
             gatesStatus[gate] = true;
             return true;
         }
-        
+
         public HashSet<string> GetAllOpenWarps()
         {
             HashSet<string> ret = [.. CollectedStaticKeys, .. Constants.UnkeyableWarps];
@@ -256,14 +278,20 @@ namespace RainWorldRandomizer
         /// Used to find all passage tokens in the current seed and their status
         /// </summary>
         /// <returns>A Dictionary matching passage IDs to whether they have been awarded</returns>
-        public virtual Dictionary<WinState.EndgameID, bool> GetPassageTokensStatus() { return passageTokensStatus; }
+        public virtual Dictionary<WinState.EndgameID, bool> GetPassageTokensStatus()
+        {
+            return passageTokensStatus;
+        }
 
         /// <summary>
         /// Check whether a passage token exists in the current seed
         /// </summary>
         /// <param name="passageToken">EndgameID for the token to check</param>
         /// <returns>True if the passage token exists</returns>
-        public virtual bool PassageTokenExists(WinState.EndgameID passageToken) { return passageTokensStatus.ContainsKey(passageToken); }
+        public virtual bool PassageTokenExists(WinState.EndgameID passageToken)
+        {
+            return passageTokensStatus.ContainsKey(passageToken);
+        }
 
         /// <summary>
         /// Check whether a passage token has been given by an item
@@ -309,14 +337,22 @@ namespace RainWorldRandomizer
                 CurrentMaxKarma++;
             }
 
-            if (Plugin.Singleton.Game?.GetStorySession?.saveState.deathPersistentSaveData is DeathPersistentSaveData dpsd)
+            if (Plugin.Singleton.Game?.GetStorySession?.saveState.deathPersistentSaveData 
+                is DeathPersistentSaveData dpsd)
                 dpsd.karmaCap = CurrentMaxKarma;
         }
-        
+
+        public void IncreaseRipple()
+        {
+            _rippleIncrements++;
+            UpdateRipple();
+        }
+
         /// <summary>Updates the Ripple levels of the currently loaded <see cref="DeathPersistentSaveData"/>.</summary>
         public void UpdateRipple()
         {
-            if (Plugin.Singleton.Game?.GetStorySession?.saveState.deathPersistentSaveData is DeathPersistentSaveData dpsd)
+            if (Plugin.Singleton.Game?.GetStorySession?.saveState.deathPersistentSaveData 
+                is DeathPersistentSaveData dpsd)
             {
                 dpsd.minimumRippleLevel = Ripple.x;
                 dpsd.maximumRippleLevel = Ripple.y;
@@ -343,7 +379,7 @@ namespace RainWorldRandomizer
         }
 
         public bool HasAnyExpeditionPerks() => ModManager.MSC && _givenExpeditionPerks.Any(p => p);
-        
+
         public bool CanDynamicWarp()
         {
             return Ripple.y >= 2 || Plugin.RandoManager.GivenRippleEggWarp;

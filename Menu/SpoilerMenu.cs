@@ -328,7 +328,7 @@ namespace RainWorldRandomizer.Menu
                 unlockLabel.label.alpha = ShowItem ? alpha : 0f;
                 checkSprite.alpha = alpha;
                 unlockSprite.alpha = ShowItem ? alpha : 0f;
-                
+
                 for (int j = 0; j < 8; j++)
                 {
                     cheatHoldButton._rectH.sprites[j].alpha = alpha;
@@ -342,7 +342,7 @@ namespace RainWorldRandomizer.Menu
                 checkSprite.y = DrawY(timeStacker) + DrawSize(timeStacker).y / 2f;
                 unlockSprite.x = DrawX(timeStacker) + DrawSize(timeStacker).x - 20f;
                 unlockSprite.y = DrawY(timeStacker) + DrawSize(timeStacker).y / 2f;
-                
+
                 if (smoothedFade > 0f)
                 {
                     cheatHoldButton.Show();
@@ -375,13 +375,18 @@ namespace RainWorldRandomizer.Menu
                         spriteName = "smallKarma9-9";
                         spriteScale = 0.5f;
                         break;
+                    case "Ripple":
+                        spriteName = "smallRipple5.0";
+                        spriteScale = 0.5f;
+                        spriteColor = RainWorld.SaturatedGold;
+                        break;
                     case "Item":
                         if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType)).Contains(unlock.ID))
                         {
                             iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature,
                                 new AbstractPhysicalObject.AbstractObjectType(unlock.ID), 0);
                         }
-                        else if (unlock.item?.id == "FireSpear")
+                        else if (unlock.item?.id == "ExplosiveSpear")
                         {
                             iconData = new IconSymbol.IconSymbolData(CreatureTemplate.Type.StandardGroundCreature,
                                 AbstractPhysicalObject.AbstractObjectType.Spear, 1);

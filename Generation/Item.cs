@@ -11,15 +11,20 @@ namespace RainWorldRandomizer.Generation
             Gate,
             Passage,
             Karma,
+            Ripple,
             Object,
             Trap,
             ExpPerk,
+            DmgUp,
             Other
         }
+
         public enum Importance
         {
             Progression,
-            Filler
+            Useful,
+            Filler,
+            Trap
         }
 
         public string id;
@@ -46,7 +51,7 @@ namespace RainWorldRandomizer.Generation
         public static readonly Dictionary<string, int> junkItemWeights = new()
         {
             { "Object-Spear", 20 },
-            { "Object-FireSpear", 12 },
+            { "Object-ExplosiveSpear", 12 },
             { "Object-ScavengerBomb", 15 },
             { "Object-PuffBall", 7 },
             { "Object-Mushroom", 7 },
@@ -56,11 +61,13 @@ namespace RainWorldRandomizer.Generation
             { "Object-KarmaFlower", 5 },
             { "Object-VultureMask", 3 },
         };
+
         public static readonly Dictionary<string, int> dlcSharedJunkItemWeights = new()
         {
             { "Object-ElectricSpear", 3 },
             { "Object-SingularityBomb", 1 },
         };
+
         public static readonly Dictionary<string, int> trapWeights = new()
         {
             { "Trap-Stun", 6 },
@@ -74,12 +81,13 @@ namespace RainWorldRandomizer.Generation
             { "Trap-BrotherLongLegs", 3 },
             { "Trap-DaddyLongLegs", 1 },
             { "Trap-Gravity", 1 },
-            
         };
+
         public static readonly Dictionary<string, int> mscTrapWeights = new()
         {
             { "Trap-Responsibility", 2 },
         };
+
         public static readonly Dictionary<string, int> watcherTrapWeights = new()
         {
             { "Trap-RippleSpawn", 2 },
@@ -117,12 +125,13 @@ namespace RainWorldRandomizer.Generation
         {
             List<string> items = [.. trapWeights.Keys];
             List<int> weights = [.. trapWeights.Values];
-            
+
             if (ModManager.MSC)
             {
                 items.AddRange(mscTrapWeights.Keys);
                 weights.AddRange(mscTrapWeights.Values);
             }
+
             if (ModManager.Watcher)
             {
                 items.AddRange(watcherTrapWeights.Keys);
@@ -138,12 +147,11 @@ namespace RainWorldRandomizer.Generation
                 cursor += weights[i];
                 if (cursor >= randomValue)
                 {
-                    return new Item(items[i], Type.Trap, Importance.Filler);
+                    return new Item(items[i], Type.Trap, Importance.Trap);
                 }
             }
 
-            return new Item("Trap-Stun", Type.Trap, Importance.Filler);
-
+            return new Item("Trap-Stun", Type.Trap, Importance.Trap);
         }
     }
 }

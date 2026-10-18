@@ -32,7 +32,7 @@ namespace RainWorldRandomizer.Menu
             {
                 ManagerBase.ExpeditionPerks perk = (ManagerBase.ExpeditionPerks)p;
                 if (Plugin.RandoManager.HasExpeditionPerk(perk))
-                    obtainedBuffs.Add(Unlock.readableItemNames.TryGetValue(perk.ToString(), out string val) ? val : perk.ToString());
+                    obtainedBuffs.Add(Unlock.ReadableItemNames.TryGetValue(perk.ToString(), out string val) ? val : perk.ToString());
             }
             menuLabels = new MenuLabel[obtainedBuffs.Count + 1];
             size = new Vector2(150f, (menuLabels.Length * 15f) + 20f);

@@ -501,6 +501,7 @@ namespace RainWorldRandomizer
                     break;
                 case LocationKind.SpreadRot:
                     spriteName = "Kill_Daddy";
+                    spriteColor = RainWorld.RippleColor;
                     break;
                 case LocationKind.Other:
                     switch (internalDesc)
@@ -551,7 +552,7 @@ namespace RainWorldRandomizer
 
             try
             {
-                return new FSprite(spriteName, true)
+                return new FSprite(spriteName)
                 {
                     scale = spriteScale,
                     color = spriteColor,

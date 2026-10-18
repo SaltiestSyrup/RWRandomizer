@@ -100,8 +100,7 @@ namespace RainWorldRandomizer.Menu
             
             Vector2 screenSize = manager.rainWorld.screenSize;
 
-            // Extra offset if using Warp Menu
-            float xOffset = 120f; //BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("LeeMoriya.Warp") ? 190f : 20f;
+            float xOffset = 120f;
             xOffset += (1366f - screenSize.x) / 2f;
             
             // AP Menus

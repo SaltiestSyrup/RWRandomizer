@@ -46,6 +46,9 @@ public sealed class TextClientMenu : ScrollingMenu
         tabWrapper = new MenuTabWrapper(menu, this);
 
         // Text box
+        // If the menu threw an exception last time it was opened,
+        // making a new textbox causes an exception unless we manually unbind the stale one
+        RandoOptions.textClientCosmeticConfig.BoundUIconfig = null;
         textBox = new OpTextBox(RandoOptions.textClientCosmeticConfig,
             new Vector2(0.01f, -30f),
             size.x)

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Archipelago.MultiClient.Net.Colors;
 using UnityEngine;
 using RainWorldRandomizer.Menu;
 using RainWorldRandomizer.SaveData;
@@ -328,7 +329,8 @@ namespace RainWorldRandomizer
             Plugin.QueueNotify(new MessageText(
                 [
                     "Found ",
-                    ManagerArchipelago.ClientNameToAPItem.TryGetValue(randomizerKey[location].ID, out string name)
+                    ManagerArchipelago.ClientNameToAPItem.TryGetValue(randomizerKey[location].InternalID(),
+                        out string name)
                         ? name
                         : randomizerKey[location].ID,
                     " from ",
@@ -336,9 +338,9 @@ namespace RainWorldRandomizer
                 ],
                 [
                     Color.white,
-                    new Color(0.0f, 0.4f, 0.7f),
+                    randomizerKey[location].Color(),
                     Color.white,
-                    new Color(0.7f, 0.3f, 0.7f),
+                    ArchipelagoConnection.palette[PaletteColor.SlateBlue],
                 ]));
             Plugin.Log.LogInfo($"Completed Check: {location}");
         }

@@ -619,6 +619,7 @@ namespace RainWorldRandomizer
                         {
                             info.type = unl.Type.value;
                             info.id = unl.ID;
+                            info.importance = (int) unl.importance;
                         }
 
                         return info;
@@ -650,6 +651,7 @@ namespace RainWorldRandomizer
             public bool collected = false;
             public string type = null;
             public string id = null;
+            public int importance = 2;
         }
 
         public struct FillerItem()
