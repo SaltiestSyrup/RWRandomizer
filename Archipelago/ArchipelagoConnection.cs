@@ -19,6 +19,7 @@ namespace RainWorldRandomizer
     {
         private const string AP_VERSION = "0.6.6";
         public const string GAME_NAME = "Rain World";
+
         private static readonly string[] REQUIRED_SLOT_DATA =
         [
             "which_campaign",
@@ -35,7 +36,9 @@ namespace RainWorldRandomizer
         public static bool HasConnected;
         public static bool CurrentlyConnecting;
         public static bool ReceivedSlotData;
+
         public static bool SocketConnected => Session?.Socket.Connected is true;
+
         // Stores the last info used to connect. Stays set after disconnection.
         public static string ConnectedHostName;
         public static int ConnectedPort;
@@ -47,6 +50,7 @@ namespace RainWorldRandomizer
         public static Version WorldVersion;
         public static SlugcatStats.Name Slugcat;
         public static string desiredStartDen = "";
+
         /// <summary> A bitflag indicating the accessibility of each item in <see cref="MiscHooks.expanded"/>. </summary>
         public static long foodQuestAccessibility;
 
@@ -80,17 +84,20 @@ namespace RainWorldRandomizer
             );
 
         /// <summary>Get a primitive key from a JObject.</summary>
-        internal static T GetSimple<T>(this Dictionary<string, object> self, string key, T defaultValue = default) 
+        internal static T GetSimple<T>(this Dictionary<string, object> self, string key, T defaultValue = default)
             => self.TryGetValue(key, out object value) ? (T)value : defaultValue;
 
         /// <summary>Get an array from a JObject.</summary>
-        internal static IEnumerable<T> GetArray<T>(this Dictionary<string, object> self, string key, IEnumerable<T> defaultValue = default)
+        internal static IEnumerable<T> GetArray<T>(this Dictionary<string, object> self, string key,
+            IEnumerable<T> defaultValue = default)
             => self.TryGetValue(key, out object value) ? ((JArray)value).Values<T>() : defaultValue;
 
         /// <summary>Get a mapping from a JObject.</summary>
         internal static Dictionary<string, JToken> GetDict(this Dictionary<string, object> self, string key)
-            => self.TryGetValue(key, out object value) ? ((JObject)value).Properties().ToDictionary(x => x.Name, x => x.Value) : null;
-        
+            => self.TryGetValue(key, out object value)
+                ? ((JObject)value).Properties().ToDictionary(x => x.Name, x => x.Value)
+                : null;
+
         private static void CreateSession(string hostName, int port)
         {
             Session = ArchipelagoSessionFactory.CreateSession(hostName, port);
@@ -143,6 +150,7 @@ namespace RainWorldRandomizer
                 {
                     errorMessage += $"\n\t{error}";
                 }
+
                 foreach (ConnectionRefusedError error in failure.ErrorCodes)
                 {
                     errorMessage += $"\n\t{error}";
@@ -172,10 +180,12 @@ namespace RainWorldRandomizer
                         ReceivedSlotData = true;
                         break;
                     case SlotDataResult.MissingData:
-                        errLog = "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
+                        errLog =
+                            "Received incomplete or empty slot data. Ensure you have a version compatible with the current AP world version and try again.";
                         break;
                     case SlotDataResult.InvalidDLC:
-                        errLog = "Currently enabled DLC mods do not match those specified in your YAML.\n\nPlease have ONLY the following DLC enabled:\n";
+                        errLog =
+                            "Currently enabled DLC mods do not match those specified in your YAML.\n\nPlease have ONLY the following DLC enabled:\n";
                         bool wantsMSC = (long)loginSuccess.SlotData["is_msc_enabled"] > 0;
                         bool wantsWatcher = (long)loginSuccess.SlotData["is_watcher_enabled"] > 0;
                         if (!wantsMSC && !wantsWatcher) errLog += "No DLC";
@@ -184,10 +194,12 @@ namespace RainWorldRandomizer
                             if (wantsMSC) errLog += "More Slugcats Expansion\n";
                             if (wantsWatcher) errLog += "The Watcher";
                         }
+
                         break;
                     // Currently don't need to ever return this error, as both possible versions are identical (logic-wise)
                     case SlotDataResult.InvalidGameVersion:
-                        errLog = "The current game version you are running does not match the one specified in your YAML. Check your game version and try again.";
+                        errLog =
+                            "The current game version you are running does not match the one specified in your YAML. Check your game version and try again.";
                         break;
                 }
 
@@ -310,11 +322,19 @@ namespace RainWorldRandomizer
             }
         }
 
-        private enum SlotDataResult { Success, MissingData, InvalidDLC, InvalidGameVersion }
+        private enum SlotDataResult
+        {
+            Success,
+            MissingData,
+            InvalidDLC,
+            InvalidGameVersion
+        }
+
         private static SlotDataResult ParseSlotData(Dictionary<string, object> slotData)
         {
-            Plugin.Log.LogInfo($"Slot Data:\n\t{string.Join("\n\t", slotData.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}");
-            
+            Plugin.Log.LogInfo(
+                $"Slot Data:\n\t{string.Join("\n\t", slotData.Select(kvp => $"{kvp.Key}: {kvp.Value}"))}");
+
             // If any required slot data is missing, connection is invalid
             if (REQUIRED_SLOT_DATA.Any(key => !slotData.ContainsKey(key)))
             {
@@ -329,12 +349,13 @@ namespace RainWorldRandomizer
 
             if (!Version.TryParse(slotData.GetSimple<string>("apworld_version"), out WorldVersion))
             {
-                Plugin.Log.LogWarning("Could not determine APWorld version from slot data. The world may be of version 1.4 or older.");
+                Plugin.Log.LogWarning(
+                    "Could not determine APWorld version from slot data. The world may be of version 1.4 or older.");
                 WorldVersion = new Version();
             }
-            
+
             // Check DLC state
-            if (ModManager.MSC != slotData.GetSimple<long>("is_msc_enabled") > 0 
+            if (ModManager.MSC != slotData.GetSimple<long>("is_msc_enabled") > 0
                 || ModManager.Watcher != slotData.GetSimple<long>("is_watcher_enabled") > 0)
             {
                 return SlotDataResult.InvalidDLC;
@@ -344,7 +365,7 @@ namespace RainWorldRandomizer
             string campaignString = slotData.GetSimple<string>("which_campaign");
             long completionType = slotData.GetSimple<long>("which_victory_condition");
             Slugcat = new SlugcatStats.Name(campaignString);
-            
+
             if (completionType == 3) ConnectedOptions.goalCondition = RandoOptions.CompletionCondition.FoodQuest;
             else if (campaignString == "Watcher")
             {
@@ -400,11 +421,21 @@ namespace RainWorldRandomizer
             // Set gate behavior
             ConnectedOptions.gateBehavior = (RandoOptions.GateBehavior)slotData.GetSimple<long>("which_gate_behavior");
 
-            ConnectedOptions.PPwSBehavior = (RandoOptions.PPwSBehavior)slotData.GetSimple("passage_progress_without_survivor", 2L);
+            ConnectedOptions.usePassageChecks = slotData.GetSimple("checks_passages", 1L) == 1L;
+            ConnectedOptions.givePassageUnlocks = slotData.GetSimple("randomize_passage_tokens", 1L) == 1L;
+            ConnectedOptions.PPwSBehavior =
+                (RandoOptions.PPwSBehavior)slotData.GetSimple("passage_progress_without_survivor", 3L);
+            // This is offset by one in 1.7 with new "None" option
+            if (WorldVersion.CompareTo(new Version("1.7.0")) < 0)
+            {
+                ConnectedOptions.PPwSBehavior++;
+            }
+            
             ConnectedOptions.useShelterChecks = slotData.GetSimple("checks_sheltersanity", 1L) == 1L;
             ConnectedOptions.useKarmaFlowerChecks = slotData.GetSimple("checks_flowersanity", 1L) == 1L;
             ConnectedOptions.useDevTokenChecks = slotData.GetSimple("checks_devtokens", 1L) == 1L;
-            ConnectedOptions.echoDifficulty = (RandoOptions.EchoLowKarmaDifficulty)slotData.GetSimple("difficulty_echo_low_karma", 3L);
+            ConnectedOptions.echoDifficulty =
+                (RandoOptions.EchoLowKarmaDifficulty)slotData.GetSimple("difficulty_echo_low_karma", 3L);
 
             List<string> perks = slotData.GetArray<string>("expedition_perks", new List<string>()).ToList();
             ConnectedOptions.expeditionPerks =
@@ -423,7 +454,8 @@ namespace RainWorldRandomizer
 
             foodQuestAccessibility = slotData.GetSimple("checks_foodquest_accessibility", 0L);
             ConnectedOptions.foodQuestBehavior = ModManager.MSC &&
-                (Slugcat.value == "Gourmand" || slotData.GetSimple("checks_foodquest", 0L) == 2)
+                                                 (Slugcat.value == "Gourmand" ||
+                                                  slotData.GetSimple("checks_foodquest", 0L) == 2)
                 ? (foodQuestAccessibility > 0
                     ? RandoOptions.FoodQuestBehavior.Expanded
                     : RandoOptions.FoodQuestBehavior.Enabled)
@@ -434,16 +466,19 @@ namespace RainWorldRandomizer
             ConnectedOptions.spinningTopKeys = slotData.GetSimple("spinning_top_keys", 1L) == 1L;
             ConnectedOptions.daemonKeys = slotData.GetSimple("daemon_keys", 0L) == 1L;
             ConnectedOptions.rottedRegionTarget = (int)slotData.GetSimple("rotted_region_target", 21L);
-            
+
             long randomWeaver = slotData.GetSimple("randomize_weaver", 0L);
-            ConnectedOptions.weaverRandomized = ConnectedOptions.goalCondition != RandoOptions.CompletionCondition.SentientRot 
-                                                && (RandoOptions.WeaverRequired() ? randomWeaver >= 1 : randomWeaver == 2);
-            
+            ConnectedOptions.weaverRandomized =
+                ConnectedOptions.goalCondition != RandoOptions.CompletionCondition.SentientRot
+                && (RandoOptions.WeaverRequired() ? randomWeaver >= 1 : randomWeaver == 2);
+
             long spreadRot = slotData.GetSimple("checks_spread_rot", 0L);
-            ConnectedOptions.spreadRotChecks = !RandoOptions.WeaverRequired() 
-                                               && (ConnectedOptions.goalCondition == RandoOptions.CompletionCondition.SentientRot 
-                                                   ? spreadRot >= 1 : spreadRot == 2);
-            
+            ConnectedOptions.spreadRotChecks = !RandoOptions.WeaverRequired()
+                                               && (ConnectedOptions.goalCondition ==
+                                                   RandoOptions.CompletionCondition.SentientRot
+                                                   ? spreadRot >= 1
+                                                   : spreadRot == 2);
+
             long encounterWeaver = slotData.GetSimple("checks_weaver_encounters", 0L);
             ConnectedOptions.weaverChecks = RandoOptions.WeaverRequired() ? encounterWeaver >= 1 : encounterWeaver == 2;
 
@@ -486,13 +521,13 @@ namespace RainWorldRandomizer
                 // Filter out join logs
                 case JoinLogMessage:
                 // Filter out leave logs
-                case LeaveLogMessage: 
+                case LeaveLogMessage:
                 // Filter out tag change logs
                 case TagsChangedLogMessage:
                 // Filter out chats if option chosen, and always filter chat commands
                 case ChatLogMessage chatMessage
-                    when chatMessage.Message.StartsWith("!") 
-                          || RandoOptions.filterPlayerChatLogs.Value:
+                    when chatMessage.Message.StartsWith("!")
+                         || RandoOptions.filterPlayerChatLogs.Value:
                 // If option chosen, filter out logs not related to this slot
                 case ItemSendLogMessage itemMessage
                     when RandoOptions.filterRelevantItemLogs.Value
@@ -506,7 +541,7 @@ namespace RainWorldRandomizer
 
         public static void SendChatMessage(string message)
         {
-            Session?.Socket.SendPacketAsync(new SayPacket() {Text = message});
+            Session?.Socket.SendPacketAsync(new SayPacket() { Text = message });
         }
 
         private static void ErrorReceived(Exception e, string msg)
@@ -517,7 +552,8 @@ namespace RainWorldRandomizer
             {
                 Disconnect(false);
                 Plugin.Log.LogError("Disconnected Socket due to WebSocketException");
-                Plugin.QueueNotify(new MessageText("You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
+                Plugin.QueueNotify(new MessageText(
+                    "You have been disconnected due to an exception. Please attempt to reconnect.", Color.red));
             }
         }
 

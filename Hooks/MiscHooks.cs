@@ -20,6 +20,7 @@ namespace RainWorldRandomizer
             On.PlayerProgression.ReloadLocksList += OnReloadLocksList;
             On.SaveState.setDenPosition += OnSetDenPosition;
             On.SaveState.GhostEncounter += EchoEncounter;
+            On.WinState.TrackerAllowedOnSlugcat += WinStateOnTrackerAllowedOnSlugcat;
             On.ItemSymbol.SpriteNameForItem += ItemSymbol_SpriteNameForItem;
             On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
             On.ScavengerAI.CollectScore_PhysicalObject_bool += OnScavengerAICollectScore;
@@ -27,27 +28,27 @@ namespace RainWorldRandomizer
             try
             {
                 // In order for used passages to always save, they need to consider their consumed status
-                Func<Func<WinState.EndgameTracker, bool>, WinState.EndgameTracker, bool> progressHook = 
+                Func<Func<WinState.EndgameTracker, bool>, WinState.EndgameTracker, bool> progressHook =
                     (orig, tracker) => orig(tracker) || tracker.consumed;
 
                 _ = new Hook(typeof(WinState.BoolArrayTracker)
-                    .GetProperty(nameof(WinState.BoolArrayTracker.AnyProgressToSave))
-                    .GetGetMethod(),
+                        .GetProperty(nameof(WinState.BoolArrayTracker.AnyProgressToSave))
+                        .GetGetMethod(),
                     progressHook);
 
                 _ = new Hook(typeof(WinState.ListTracker)
-                    .GetProperty(nameof(WinState.ListTracker.AnyProgressToSave))
-                    .GetGetMethod(),
+                        .GetProperty(nameof(WinState.ListTracker.AnyProgressToSave))
+                        .GetGetMethod(),
                     progressHook);
 
                 _ = new Hook(typeof(WinState.FloatTracker)
-                    .GetProperty(nameof(WinState.FloatTracker.AnyProgressToSave))
-                    .GetGetMethod(),
+                        .GetProperty(nameof(WinState.FloatTracker.AnyProgressToSave))
+                        .GetGetMethod(),
                     progressHook);
 
                 _ = new Hook(typeof(WinState.IntegerTracker)
-                    .GetProperty(nameof(WinState.IntegerTracker.AnyProgressToSave))
-                    .GetGetMethod(),
+                        .GetProperty(nameof(WinState.IntegerTracker.AnyProgressToSave))
+                        .GetGetMethod(),
                     progressHook);
 
                 IL.MoreSlugcats.MSCRoomSpecificScript.AddRoomSpecificScript += AddMSCRoomSpecificScriptIL;
@@ -58,6 +59,7 @@ namespace RainWorldRandomizer
                 IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem += ILFoodQuestUpdateNextPredictedItem;
                 IL.DeathPersistentSaveData.CanUseUnlockedGates += CanUseUnlockedGatesIL;
                 IL.World.SpawnGhost += ILSpawnGhost;
+                IL.WinState.CycleCompleted += ILCycleCompleted;
                 IL.ScavengerAI.CheckForScavangeItems += CheckForScavengeItemsIL;
             }
             catch (Exception e)
@@ -74,10 +76,10 @@ namespace RainWorldRandomizer
             On.SaveState.setDenPosition -= OnSetDenPosition;
             On.SaveState.GhostEncounter -= EchoEncounter;
             On.ItemSymbol.SpriteNameForItem -= ItemSymbol_SpriteNameForItem;
-            On.ItemSymbol.ColorForItem += ItemSymbol_ColorForItem;
+            On.ItemSymbol.ColorForItem -= ItemSymbol_ColorForItem;
             On.ScavengerAI.CollectScore_PhysicalObject_bool -= OnScavengerAICollectScore;
 
-            IL.MoreSlugcats.MSCRoomSpecificScript.AddRoomSpecificScript += AddMSCRoomSpecificScriptIL;
+            IL.MoreSlugcats.MSCRoomSpecificScript.AddRoomSpecificScript -= AddMSCRoomSpecificScriptIL;
             IL.MoreSlugcats.CutsceneArtificer.Update -= CutsceneArtificerUpdateIL;
             IL.PlayerSessionRecord.AddEat -= PlayerSessionRecord_AddEat;
             IL.HUD.HUD.InitSinglePlayerHud -= HUD_InitSinglePlayerHud;
@@ -85,7 +87,8 @@ namespace RainWorldRandomizer
             IL.MoreSlugcats.GourmandMeter.UpdatePredictedNextItem -= ILFoodQuestUpdateNextPredictedItem;
             IL.DeathPersistentSaveData.CanUseUnlockedGates -= CanUseUnlockedGatesIL;
             IL.World.SpawnGhost -= ILSpawnGhost;
-            IL.ScavengerAI.CheckForScavangeItems += CheckForScavengeItemsIL;
+            IL.WinState.CycleCompleted -= ILCycleCompleted;
+            IL.ScavengerAI.CheckForScavangeItems -= CheckForScavengeItemsIL;
         }
 
         /// <summary>
@@ -119,7 +122,8 @@ namespace RainWorldRandomizer
             if (RandoOptions.RandomizeSpawnLocation && Plugin.RandoManager is not null)
             {
                 // Randomized spawn is done a different way for Watcher (see WatcherIntegration.RoomSpecificScript)
-                if (ModManager.Watcher && Plugin.RandoManager.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher) return;
+                if (ModManager.Watcher &&
+                    Plugin.RandoManager.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher) return;
 
                 if (Plugin.RandoManager.customStartDen.Equals(""))
                 {
@@ -127,6 +131,7 @@ namespace RainWorldRandomizer
                     Plugin.QueueNotify(new MessageText("ERROR: Failed to set correct starting den", Color.red));
                     return;
                 }
+
                 self.denPosition = Plugin.RandoManager.customStartDen;
             }
         }
@@ -179,7 +184,7 @@ namespace RainWorldRandomizer
                 x => x.MatchLdsfld(typeof(SlugcatStats.Name).GetField(nameof(SlugcatStats.Name.Yellow))),
                 x => x.MatchCallOrCallvirt(out _),
                 x => x.MatchBrtrue(out jump)
-                );
+            );
 
             c.EmitDelegate(() =>
             {
@@ -187,6 +192,7 @@ namespace RainWorldRandomizer
                 {
                     return RandoOptions.CurGateBehavior != RandoOptions.GateBehavior.OnlyKey;
                 }
+
                 return false;
             });
             c.Emit(OpCodes.Brtrue, jump);
@@ -201,14 +207,14 @@ namespace RainWorldRandomizer
 
             // Jump towards end of function
             c.GotoNext(x => x.MatchLdstr("Ghost in region"));
-            
+
             // Right after spawning logic, before checking safari
             c.GotoPrev(
                 MoveType.Before,
                 x => x.MatchCallOrCallvirt(typeof(World).GetProperty(nameof(World.game)).GetGetMethod()),
                 x => x.MatchLdfld(typeof(RainWorldGame).GetField(nameof(RainWorldGame.rainWorld))),
                 x => x.MatchLdfld(typeof(RainWorld).GetField(nameof(RainWorld.safariMode)))
-                );
+            );
 
             // Modify echo spawning conditions based on settings
             c.Emit(OpCodes.Ldloc_0); // ghostID
@@ -227,17 +233,19 @@ namespace RainWorldRandomizer
                 {
                     return spawnEcho;
                 }
+
                 // Use default logic if in Expedition
                 if (ModManager.Expedition && self.game.rainWorld.ExpeditionMode)
                 {
                     return spawnEcho;
                 }
+
                 // Echoes that don't require karma should use default logic
                 if (ghostID == GhostWorldPresence.GhostID.UW
                     || ghostID == GhostWorldPresence.GhostID.SB
                     || ModManager.MSC
                     && (ghostID == MoreSlugcatsEnums.GhostID.LC
-                    || ghostID == MoreSlugcatsEnums.GhostID.MS))
+                        || ghostID == MoreSlugcatsEnums.GhostID.MS))
                 {
                     return spawnEcho;
                 }
@@ -246,8 +254,13 @@ namespace RainWorldRandomizer
                 int karma = self.game.GetStorySession.saveState.deathPersistentSaveData.karma;
                 int cap = self.game.GetStorySession.saveState.deathPersistentSaveData.karmaCap;
                 bool reinforced = self.game.GetStorySession.saveState.deathPersistentSaveData.reinforcedKarma;
-                int encounterIndex = self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo.TryGetValue(ghostID, out var v) ? v : 0;
-                bool isArtificer = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer;
+                int encounterIndex =
+                    self.game.GetStorySession.saveState.deathPersistentSaveData.ghostsTalkedTo.TryGetValue(ghostID,
+                        out var v)
+                        ? v
+                        : 0;
+                bool isArtificer = ModManager.MSC &&
+                                   self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Artificer;
                 bool isSaint = ModManager.MSC && self.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Saint;
 
                 // How should we treat echoes when below 5 max karma?
@@ -263,11 +276,13 @@ namespace RainWorldRandomizer
                             // This IS default logic for Artificer
                             return spawnEcho;
                         }
+
                         if (isSaint)
                         {
                             // Saint will have overwritten logic, so we need to add it again
                             return encounterIndex < 2 && karma == cap && reinforced;
                         }
+
                         return spawnEcho && reinforced;
                     case RandoOptions.EchoLowKarmaDifficulty.MaxKarma:
                         // Just require karma cap
@@ -276,11 +291,13 @@ namespace RainWorldRandomizer
                             // Artificer will have set to false, logic must be redone
                             return encounterIndex == 1 && karma == cap;
                         }
+
                         if (isSaint)
                         {
                             // Saint will have overwritten logic, so we need to add it again
                             return encounterIndex < 2 && karma == cap;
                         }
+
                         // This is default logic for most slugcats, so just return orig
                         return spawnEcho;
                     case RandoOptions.EchoLowKarmaDifficulty.Vanilla:
@@ -294,7 +311,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Reset karma increase from Echo encounter and give location
         /// </summary>
-        private static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
+        private static void EchoEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self,
+            GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
         {
             orig(self, ghost, rainWorld);
             if (!Plugin.RandomizerActive) return;
@@ -305,6 +323,71 @@ namespace RainWorldRandomizer
             Plugin.RandoManager.GiveLocation("Echo-" + ghost.value);
 
             Plugin.Singleton.rainWorld.progression.SaveProgressionAndDeathPersistentDataOfCurrentState(false, false);
+        }
+
+        /// <summary>
+        /// Hacking for passage progress changes under certain settings
+        /// </summary>
+        private static void ILCycleCompleted(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            // Fake the "Passage Progress without Survivor" option if needed
+            c.GotoNext(
+                MoveType.After,
+                x => x.MatchLdsfld(typeof(MMF).GetField(nameof(MMF.cfgSurvivorPassageNotRequired))),
+                x => x.MatchCallOrCallvirt(out _)
+            );
+
+            c.EmitDelegate<Func<bool, bool>>(OverridePPwS);
+
+            // Get local index of "integerTracker" (tracking Survivor passage)
+            int survLoc = -1;
+            c.GotoNext(
+                x => x.MatchLdloc(out survLoc),
+                x => x.MatchCallOrCallvirt(typeof(WinState.EndgameTracker)
+                    .GetProperty(nameof(WinState.EndgameTracker.GoalAlreadyFullfilled)).GetGetMethod()));
+
+            // Conditionally remove the hardcoded Survivor checks on other passages
+            c.GotoNext(x => x.MatchRet());
+            while (c.TryGotoNext(MoveType.After,
+                       x => x.MatchLdloc(survLoc),
+                       x => x.MatchCallOrCallvirt(typeof(WinState.EndgameTracker)
+                           .GetProperty(nameof(WinState.EndgameTracker.GoalAlreadyFullfilled)).GetGetMethod())))
+            {
+                c.EmitDelegate(OverridePPwS);
+            }
+
+            return;
+
+            static bool OverridePPwS(bool origVal)
+            {
+                return Plugin.RandomizerActive || origVal;
+            }
+        }
+
+        private static bool WinStateOnTrackerAllowedOnSlugcat(On.WinState.orig_TrackerAllowedOnSlugcat orig,
+            WinState.EndgameID trackerId, SlugcatStats.Name slugcat)
+        {
+            bool origVal = orig(trackerId, slugcat);
+            if (!Plugin.RandomizerActive) return origVal;
+
+            int PPwS = (int)RandoOptions.CurPPwSBehavior;
+
+            bool PPwSVal = trackerId.value switch
+            {
+                // Always
+                "Survivor" or "Pilgrim" or "Gourmand" => origVal,
+                // If >= Disabled
+                "Martyr" or "Mother" => PPwS >= 1 && origVal,
+                // If >= Enabled
+                "DragonSlayer" or "Friend" or "Traveller" or "Nomad" => PPwS >= 2 && origVal,
+                // If == Bypassed
+                "Hunter" or "Saint" or "Chieftain" or "Monk" or "Outlaw" or "Scholar" => PPwS >= 3 && origVal,
+                _ => origVal
+            };
+
+            return PPwSVal;
         }
 
         /// <summary>
@@ -322,7 +405,7 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
-                );
+            );
             // Tell check that we always have robo
             c.EmitDelegate(SkipArtificerRobo);
 
@@ -334,7 +417,7 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.cycleNumber)))
-                );
+            );
             // Tell game this isn't cycle 0 if randomizer using random starting location
             c.EmitDelegate(SkipSaintIntro);
             return;
@@ -343,7 +426,7 @@ namespace RainWorldRandomizer
             {
                 return Plugin.RandomizerActive || origVal;
             }
-            
+
             static int SkipSaintIntro(int cycleNumber)
             {
                 return Plugin.RandomizerActive && RandoOptions.RandomizeSpawnLocation ? 1 : cycleNumber;
@@ -351,6 +434,7 @@ namespace RainWorldRandomizer
         }
 
         private static bool _hasSeenArtyStart;
+
         /// <summary>
         /// Skip Artificer intro cutscene if player has already seen it
         /// </summary>
@@ -361,18 +445,20 @@ namespace RainWorldRandomizer
             c.GotoNext(
                 MoveType.After,
                 x => x.MatchLdfld(typeof(SaveState).GetField(nameof(SaveState.hasRobo)))
-                );
+            );
             // Skip cutscene if we saw it instead of if robo is present
             c.EmitDelegate(SkipCutscene);
 
             // Jump further into method to dodge last call to Destroy()
-            c.GotoNext(x => x.MatchLdsfld(typeof(CutsceneArtificer.Phase).GetField(nameof(CutsceneArtificer.Phase.End))));
+            c.GotoNext(x =>
+                x.MatchLdsfld(typeof(CutsceneArtificer.Phase).GetField(nameof(CutsceneArtificer.Phase.End))));
             // Before call to Destroy at 043A
             c.GotoNext(
                 MoveType.Before,
                 x => x.MatchLdarg(0),
-                x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy)))
-                );
+                x => x.MatchCallOrCallvirt(
+                    typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy)))
+            );
             c.MoveAfterLabels();
             // Mark cutscene as seen
             c.Emit(OpCodes.Ldarg_0);
@@ -402,9 +488,11 @@ namespace RainWorldRandomizer
             ILCursor c = new(il);
             c.GotoNext(
                 MoveType.After,
-                x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
+                x => x.MatchLdsfld(
+                    typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName
+                        .Gourmand))),
                 x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
-                );
+            );
             c.MoveAfterLabels();
             c.EmitDelegate(YesItIsMeGourmand);
         }
@@ -419,30 +507,39 @@ namespace RainWorldRandomizer
             {
                 c.GotoNext(
                     MoveType.After,
-                    x => x.MatchLdsfld(typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName.Gourmand))),
+                    x => x.MatchLdsfld(
+                        typeof(MoreSlugcatsEnums.SlugcatStatsName).GetField(nameof(MoreSlugcatsEnums.SlugcatStatsName
+                            .Gourmand))),
                     x => x.MatchCallOrCallvirt(typeof(ExtEnum<SlugcatStats.Name>).GetMethod("op_Equality"))
-                    );
+                );
                 c.MoveAfterLabels();
                 c.EmitDelegate(YesItIsMeGourmand);
             }
 
             // Allow popcorn seeds to count as popcorn plants (argument interception at 0231).
-            c.GotoNext(x => x.MatchCallOrCallvirt(typeof(WinState).GetMethod(nameof(WinState.GourmandPassageRequirementAtIndex))));  // 0221
-            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(AbstractPhysicalObject).GetField(nameof(AbstractPhysicalObject.type))));  // 022c
+            c.GotoNext(x =>
+                x.MatchCallOrCallvirt(
+                    typeof(WinState).GetMethod(nameof(WinState.GourmandPassageRequirementAtIndex)))); // 0221
+            c.GotoNext(MoveType.After,
+                x => x.MatchLdfld(
+                    typeof(AbstractPhysicalObject).GetField(nameof(AbstractPhysicalObject.type)))); // 022c
 
             c.EmitDelegate(TreatSeedsAsCobs);
             return;
 
-            static AbstractPhysicalObject.AbstractObjectType TreatSeedsAsCobs(AbstractPhysicalObject.AbstractObjectType prev)
+            static AbstractPhysicalObject.AbstractObjectType TreatSeedsAsCobs(
+                AbstractPhysicalObject.AbstractObjectType prev)
             {
-                return Plugin.RandomizerActive 
-                       && ModManager.DLCShared 
-                       && prev == DLCSharedEnums.AbstractObjectType.Seed 
-                    ? AbstractPhysicalObject.AbstractObjectType.SeedCob : prev;
+                return Plugin.RandomizerActive
+                       && ModManager.DLCShared
+                       && prev == DLCSharedEnums.AbstractObjectType.Seed
+                    ? AbstractPhysicalObject.AbstractObjectType.SeedCob
+                    : prev;
             }
         }
 
-        private static bool YesItIsMeGourmand(bool prev) => (Plugin.RandomizerActive && RandoOptions.UseFoodQuest) || prev;
+        private static bool YesItIsMeGourmand(bool prev) =>
+            (Plugin.RandomizerActive && RandoOptions.UseFoodQuest) || prev;
 
         /// <summary>
         /// Allow Spearmaster to eat mushrooms for the food quest, and detect spearing a neuron for Eat Neuron check
@@ -452,7 +549,9 @@ namespace RainWorldRandomizer
             ILCursor c = new(il);
 
             c.GotoNext(x => x.MatchIsinst<Mushroom>());
-            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
+            c.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(
+                    typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
 
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldarg_1);
@@ -460,13 +559,12 @@ namespace RainWorldRandomizer
 
             // Detect spearing neuron for Eat_Neuron check
             c.GotoNext(x => x.MatchIsinst<OracleSwarmer>());
-            c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
+            c.GotoNext(MoveType.After,
+                x => x.MatchCallOrCallvirt(
+                    typeof(UpdatableAndDeletable).GetMethod(nameof(UpdatableAndDeletable.Destroy))));
 
             c.Emit(OpCodes.Ldarg_0);
-            c.EmitDelegate<Action<Spear>>(self =>
-            {
-                IteratorHooks.EatenNeuron(self.thrownBy as Player);
-            });
+            c.EmitDelegate<Action<Spear>>(self => { IteratorHooks.EatenNeuron(self.thrownBy as Player); });
             return;
 
             static void Delegate(Spear self, PhysicalObject obj)
@@ -494,7 +592,7 @@ namespace RainWorldRandomizer
                 x => x.MatchCallOrCallvirt(out _),
                 x => x.MatchLdcI4(0),
                 x => x.MatchBgt(out jump)
-                );
+            );
 
             c.Emit(OpCodes.Ldloc_2); // i
             c.EmitDelegate<Func<int, bool>>((i) =>
@@ -503,6 +601,7 @@ namespace RainWorldRandomizer
                 {
                     return (ArchipelagoConnection.foodQuestAccessibility & (1L << i)) != 0;
                 }
+
                 // Returns whether the current slugcat can eat this food
                 return Constants.SlugcatFoodQuestAccessibility[Plugin.RandoManager.currentSlugcat][i];
             });
@@ -512,7 +611,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Add sprite name definitions for custom icon symbols
         /// </summary>
-        private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intData)
+        private static string ItemSymbol_SpriteNameForItem(On.ItemSymbol.orig_SpriteNameForItem orig,
+            AbstractPhysicalObject.AbstractObjectType itemType, int intData)
         {
             return itemType.value switch
             {
@@ -525,7 +625,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Add color definitions for symbols that need them
         /// </summary>
-        private static Color ItemSymbol_ColorForItem(On.ItemSymbol.orig_ColorForItem orig, AbstractPhysicalObject.AbstractObjectType itemType, int intdata)
+        private static Color ItemSymbol_ColorForItem(On.ItemSymbol.orig_ColorForItem orig,
+            AbstractPhysicalObject.AbstractObjectType itemType, int intdata)
         {
             return itemType.value switch
             {
@@ -540,7 +641,8 @@ namespace RainWorldRandomizer
         /// Restrict scavengers from taking certain objects from the ground on their own
         /// to avoid needed items for checks disappearing.
         /// </summary>
-        private static int OnScavengerAICollectScore(On.ScavengerAI.orig_CollectScore_PhysicalObject_bool orig, ScavengerAI self, PhysicalObject obj, bool weaponFiltered)
+        private static int OnScavengerAICollectScore(On.ScavengerAI.orig_CollectScore_PhysicalObject_bool orig,
+            ScavengerAI self, PhysicalObject obj, bool weaponFiltered)
         {
             int origValue = orig(self, obj, weaponFiltered);
 
@@ -551,13 +653,13 @@ namespace RainWorldRandomizer
             bool setNoValue = false;
             // Do not take unpicked flowers
             setNoValue |= RandoOptions.UseKarmaFlowerChecks
-                && obj is KarmaFlower flower
-                && flower.growPos is not null;
+                          && obj is KarmaFlower flower
+                          && flower.growPos is not null;
             // Do not take unique data pearls
             setNoValue |= RandoOptions.UsePearlChecks
-                && obj is DataPearl pearl
-                && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType)
-                && pearl.grabbedBy.Count == 0; // Allowed to value already carried pearls
+                          && obj is DataPearl pearl
+                          && DataPearl.PearlIsNotMisc(pearl.AbstractPearl.dataPearlType)
+                          && pearl.grabbedBy.Count == 0; // Allowed to value already carried pearls
 
             return setNoValue ? 0 : origValue;
         }
@@ -574,22 +676,24 @@ namespace RainWorldRandomizer
 
             // Find for loop iteration at 0102
             c.GotoNext(
-                x => x.MatchCallOrCallvirt(typeof(ItemTracker).GetProperty(nameof(ItemTracker.ItemCount)).GetGetMethod()),
+                x => x.MatchCallOrCallvirt(
+                    typeof(ItemTracker).GetProperty(nameof(ItemTracker.ItemCount)).GetGetMethod()),
                 x => x.MatchBlt(out _)
-                );
+            );
             c.GotoPrev(MoveType.Before,
                 x => x.MatchLdloc(out localForIterationVar),
                 x => x.MatchLdcI4(1),
                 x => x.MatchAdd(),
                 x => x.MatchStloc(localForIterationVar)
-                );
+            );
             ILLabel continueJump = c.MarkLabel();
 
             // After assigning PickUpItemScore to a local at 0072
             c.GotoPrev(MoveType.After,
-                x => x.MatchCallOrCallvirt(typeof(ScavengerAI).GetMethod(nameof(ScavengerAI.PickUpItemScore), BindingFlags.Instance | BindingFlags.NonPublic)),
+                x => x.MatchCallOrCallvirt(typeof(ScavengerAI).GetMethod(nameof(ScavengerAI.PickUpItemScore),
+                    BindingFlags.Instance | BindingFlags.NonPublic)),
                 x => x.MatchStloc(out _)
-                );
+            );
 
             // Emit a conditional jump to the next loop iteration if the current item should not be scavenged
             c.Emit(OpCodes.Ldarg_0);
@@ -601,7 +705,7 @@ namespace RainWorldRandomizer
             static bool ShouldNotScavengeItem(ScavengerAI self, int j)
             {
                 if (!Plugin.RandomizerActive) return false;
-                
+
                 PhysicalObject obj = self.itemTracker.GetRep(j).representedItem.realizedObject;
                 // Do not take unpicked flowers
                 if (RandoOptions.UseKarmaFlowerChecks
@@ -610,6 +714,7 @@ namespace RainWorldRandomizer
                 {
                     return true;
                 }
+
                 // Do not take unique data pearls
                 if (RandoOptions.UsePearlChecks
                     && obj is DataPearl pearl
@@ -617,6 +722,7 @@ namespace RainWorldRandomizer
                 {
                     return true;
                 }
+
                 return false;
             }
         }

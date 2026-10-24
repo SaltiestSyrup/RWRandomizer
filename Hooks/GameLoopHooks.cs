@@ -37,11 +37,10 @@ namespace RainWorldRandomizer
             try
             {
                 _ = new Hook(typeof(MiscWorldSaveData)
-                    .GetProperty(nameof(MiscWorldSaveData.numberOfVoidWeaverEncounters)).GetGetMethod(), 
+                        .GetProperty(nameof(MiscWorldSaveData.numberOfVoidWeaverEncounters)).GetGetMethod(),
                     OnGetNumOfVoidWeaverEncounters);
-                
+
                 IL.RainWorldGame.ctor += RainWorldGameCtorIL;
-                IL.WinState.CycleCompleted += ILCycleCompleted;
                 IL.RainCycle.ctor += ReplacePebblesOffCheck;
                 IL.RainCycle.GetDesiredCycleLength += ReplacePebblesOffCheck;
             }
@@ -66,9 +65,8 @@ namespace RainWorldRandomizer
             On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.Update -= OnLCEndingScriptUpdate;
             On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.Update -= OnSpearEndingUpdate;
             On.MoreSlugcats.Love.Reboot -= OnLoveReboot;
-            
+
             IL.RainWorldGame.ctor -= RainWorldGameCtorIL;
-            IL.WinState.CycleCompleted -= ILCycleCompleted;
             IL.RainCycle.ctor -= ReplacePebblesOffCheck;
             IL.RainCycle.GetDesiredCycleLength -= ReplacePebblesOffCheck;
         }
@@ -76,7 +74,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Handle various events triggered by game process changing
         /// </summary>
-        private static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
+        private static void OnPostSwitchMainProcess(On.ProcessManager.orig_PostSwitchMainProcess orig,
+            ProcessManager self, ProcessManager.ProcessID ID)
         {
             if (ID == RandomizerEnums.ProcessID.RandomizerMenu)
             {
@@ -84,7 +83,7 @@ namespace RainWorldRandomizer
                 orig(self, ID);
                 return;
             }
-            
+
             if (ID == ProcessManager.ProcessID.Game
                 && SaveData.SaveTracker.CustomSlotActive
                 && !Plugin.RandomizerActive)
@@ -102,11 +101,14 @@ namespace RainWorldRandomizer
                 else
                 {
                     // Assign contents of Gourmand's tracker data
-                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest ? Constants.GourmandPassageTrackerExpanded : Constants.GourmandPassageTrackerOrig;
+                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest
+                        ? Constants.GourmandPassageTrackerExpanded
+                        : Constants.GourmandPassageTrackerOrig;
 
                     try
                     {
-                        Plugin.RandoManager.StartNewGameSession(self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat,
+                        Plugin.RandoManager.StartNewGameSession(
+                            self.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat,
                             SaveManager.HasSaveFileForSlot(SaveTracker.CurrentRandomizerSlot));
 
                         // Have AP manager grab the first item packet (the one with the full inventory) right away
@@ -114,7 +116,9 @@ namespace RainWorldRandomizer
                     }
                     catch (Exception e)
                     {
-                        Plugin.QueueNotify(new MessageText("Failed to start randomizer game. More details found in BepInEx/LogOutput.log", UnityEngine.Color.red));
+                        Plugin.QueueNotify(new MessageText(
+                            "Failed to start randomizer game. More details found in BepInEx/LogOutput.log",
+                            UnityEngine.Color.red));
                         Plugin.Log.LogError("Encountered exception while starting game session");
                         Plugin.Log.LogError(e);
                     }
@@ -137,49 +141,57 @@ namespace RainWorldRandomizer
             }
 
             bool anySleepScreen = ID == ProcessManager.ProcessID.SleepScreen
-                || ID == ProcessManager.ProcessID.Dream
-                || ID == ProcessManager.ProcessID.GhostScreen
-                || ID == ProcessManager.ProcessID.KarmaToMaxScreen
-                || (ModManager.MSC && ID == MoreSlugcatsEnums.ProcessID.VengeanceGhostScreen);
+                                  || ID == ProcessManager.ProcessID.Dream
+                                  || ID == ProcessManager.ProcessID.GhostScreen
+                                  || ID == ProcessManager.ProcessID.KarmaToMaxScreen
+                                  || (ModManager.MSC && ID == MoreSlugcatsEnums.ProcessID.VengeanceGhostScreen);
             if (anySleepScreen)
             {
                 // Check for any new passages
-                SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
-                
+                SaveState saveState = self.rainWorld.progression.currentSaveState ??
+                                      self.rainWorld.progression.starvedSaveState;
+
                 // Safety return
                 if (saveState is null)
                 {
                     orig(self, ID);
                     return;
                 }
-                
+
                 foreach (string check in ExtEnumBase.GetNames(typeof(WinState.EndgameID)))
                 {
                     WinState.EndgameID id = new(check, false);
 
                     // Gourmand passage needs to be fetched with addIfMissing = true for non-Gourmand slugcats
                     if (ModManager.MSC && id == MoreSlugcatsEnums.EndgameID.Gourmand
-                        && RandoOptions.UseFoodQuest)
+                                       && RandoOptions.UseFoodQuest)
                     {
-                        WinState.GourFeastTracker gourTracker = saveState.deathPersistentSaveData.winState.GetTracker(id, true) as WinState.GourFeastTracker;
+                        WinState.GourFeastTracker gourTracker =
+                            saveState.deathPersistentSaveData.winState
+                                .GetTracker(id, true) as WinState.GourFeastTracker;
 
                         bool fullCompletion = true;
                         for (int i = 0; i < gourTracker.progress.Length; i++)
                         {
-                            string type = WinState.GourmandPassageTracker[i].type == AbstractPhysicalObject.AbstractObjectType.Creature
-                                ? WinState.GourmandPassageTracker[i].crits[0].value : WinState.GourmandPassageTracker[i].type.value;
+                            string type = WinState.GourmandPassageTracker[i].type ==
+                                          AbstractPhysicalObject.AbstractObjectType.Creature
+                                ? WinState.GourmandPassageTracker[i].crits[0].value
+                                : WinState.GourmandPassageTracker[i].type.value;
 
                             if (gourTracker.progress[i] > 0) Plugin.RandoManager.GiveLocation($"FoodQuest-{type}");
                             else if (Plugin.RandoManager.LocationExists($"FoodQuest-{type}")) fullCompletion = false;
                         }
 
                         // Check for Food Quest goal
-                        if (fullCompletion) Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.FoodQuest);
+                        if (fullCompletion)
+                            Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition
+                                .FoodQuest);
 
                         continue;
                     }
 
-                    if (saveState.deathPersistentSaveData.winState.GetTracker(id, false) is WinState.EndgameTracker tracker)
+                    if (saveState.deathPersistentSaveData.winState.GetTracker(id, false) is WinState.EndgameTracker
+                        tracker)
                     {
                         // Normal Passages
                         if (tracker.GoalFullfilled)
@@ -205,7 +217,8 @@ namespace RainWorldRandomizer
                     }
                 }
 
-                if (ModManager.Watcher) WatcherIntegration.CheckDetection.Hooks.DetectFixedWarpPointAndRotSpread(saveState);
+                if (ModManager.Watcher)
+                    WatcherIntegration.CheckDetection.Hooks.DetectFixedWarpPointAndRotSpread(saveState);
             }
 
             orig(self, ID);
@@ -215,10 +228,13 @@ namespace RainWorldRandomizer
             // This checks for any echoes, so Saint can sub in the MS echo if they choose.
             if (anySleepScreen)
             {
-                SaveState saveState = self.rainWorld.progression.currentSaveState ?? self.rainWorld.progression.starvedSaveState;
+                SaveState saveState = self.rainWorld.progression.currentSaveState ??
+                                      self.rainWorld.progression.starvedSaveState;
                 // Saint and Artificer have one more echo to get
-                int echoesNeeded = Plugin.RandoManager.currentSlugcat.value == "Saint"
-                    || Plugin.RandoManager.currentSlugcat.value == "Artificer" ? 7 : 6;
+                int echoesNeeded = Plugin.RandoManager.currentSlugcat.value == "Saint" 
+                                   || Plugin.RandoManager.currentSlugcat.value == "Artificer" 
+                    ? 7
+                    : 6;
                 if (saveState.deathPersistentSaveData.ghostsTalkedTo.Count(kvp => kvp.Value >= 2) >= echoesNeeded)
                     Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.Pilgrim);
             }
@@ -227,7 +243,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Set story state flags at the start of each session
         /// </summary>
-        private static void OnRainWorldGameCtor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
+        private static void OnRainWorldGameCtor(On.RainWorldGame.orig_ctor orig, RainWorldGame self,
+            ProcessManager manager)
         {
             Plugin.Singleton.Game = self;
             orig(self, manager);
@@ -236,7 +253,7 @@ namespace RainWorldRandomizer
 
             SaveState saveState = self.GetStorySession.saveState;
             DeathPersistentSaveData dpsd = saveState.deathPersistentSaveData;
-            
+
             Plugin.UpdateKarmaLocks();
             dpsd.karmaCap = Plugin.RandoManager.CurrentMaxKarma;
             if (Plugin.RandoManager.currentSlugcat == Watcher.WatcherEnums.SlugcatStatsName.Watcher)
@@ -278,7 +295,7 @@ namespace RainWorldRandomizer
                 MoveType.After,
                 x => x.MatchLdnull(),
                 x => x.MatchStloc(6)
-                );
+            );
             c.MoveAfterLabels();
 
             c.Emit(OpCodes.Ldarg_0);
@@ -295,7 +312,9 @@ namespace RainWorldRandomizer
                 {
                     if (Plugin.RandoManager.itemDeliveryQueue.Count == 0) break;
 
-                    AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.world, self.world.GetAbstractRoom(roomIndex));
+                    AbstractPhysicalObject obj = Plugin.ItemToAbstractObject(
+                        Plugin.RandoManager.itemDeliveryQueue.Dequeue(), self.world,
+                        self.world.GetAbstractRoom(roomIndex));
                     try
                     {
                         self.world.GetAbstractRoom(roomIndex).AddEntity(obj);
@@ -312,7 +331,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Remove Hunter's starting macguffins
         /// </summary>
-        public static void OnHardmodeStart(On.HardmodeStart.orig_Update orig, HardmodeStart self, bool eu)
+        private static void OnHardmodeStart(On.HardmodeStart.orig_Update orig, HardmodeStart self, bool eu)
         {
             if (!Plugin.RandomizerActive
                 || self.room.game.manager.fadeToBlack >= 1f
@@ -343,7 +362,8 @@ namespace RainWorldRandomizer
 
             foreach (Creature.Grasp grasp in player.grasps)
             {
-                if (grasp?.grabbed?.abstractPhysicalObject?.type == AbstractPhysicalObject.AbstractObjectType.NSHSwarmer)
+                if (grasp?.grabbed?.abstractPhysicalObject?.type ==
+                    AbstractPhysicalObject.AbstractObjectType.NSHSwarmer)
                 {
                     grasp.grabbed.AllGraspsLetGoOfThisObject(true);
                     self.room.game.GetStorySession.RemovePersistentTracker(grasp.grabbed.abstractPhysicalObject);
@@ -352,22 +372,22 @@ namespace RainWorldRandomizer
             }
         }
 
-        private static void OnWorldLoader_ctor(On.WorldLoader.orig_ctor_RainWorldGame_Name_Timeline_bool_string_Region_SetupValues orig,
-            WorldLoader self, RainWorldGame game, SlugcatStats.Name playerCharacter, SlugcatStats.Timeline timelinePosition, bool singleRoomWorld,
+        private static void OnWorldLoader_ctor(
+            On.WorldLoader.orig_ctor_RainWorldGame_Name_Timeline_bool_string_Region_SetupValues orig,
+            WorldLoader self, RainWorldGame game, SlugcatStats.Name playerCharacter,
+            SlugcatStats.Timeline timelinePosition, bool singleRoomWorld,
             string worldName, Region region, RainWorldGame.SetupValues setupValues)
         {
             orig(self, game, playerCharacter, timelinePosition, singleRoomWorld, worldName, region, setupValues);
-            worldName = worldName.ToUpperInvariant(); // Why are rotted regions in lowercase this game is evil
 
             if (!Plugin.RandomizerActive || !RandoOptions.ColorPickupsWithHints) return;
+            worldName = worldName.ToUpperInvariant(); // Why are rotted regions in lowercase this game is evil
 
-            // Get all preview-able locations in the new region
-            static bool IsColorable(LocationInfo l) => l.IsToken
-                || l.kind == LocationInfo.LocationKind.Pearl
-                || l.kind == LocationInfo.LocationKind.Shelter
-                || l.kind == LocationInfo.LocationKind.Flower;
             LocationInfo[] locations =
-            [.. Plugin.RandoManager.GetLocations().Where(l => (IsColorable(l) && l.region == worldName) || l.IsPassage)];
+            [
+                .. Plugin.RandoManager.GetLocations()
+                    .Where(l => (IsColorable(l) && l.region == worldName) || l.IsPassage)
+            ];
 
             // If these locations have been fetched already, no need to ask server for them
             if (locations.Select(l => l.internalName).All(SaveManager.ScoutedLocations.ContainsKey)) return;
@@ -375,7 +395,8 @@ namespace RainWorldRandomizer
 
             // Ask server for all the items at these locations
             Task<Dictionary<long, Archipelago.MultiClient.Net.Models.ScoutedItemInfo>> scoutingTask =
-                ArchipelagoConnection.Session.Locations.ScoutLocationsAsync(false, [.. locations.Select(l => l.archipelagoID)]);
+                ArchipelagoConnection.Session.Locations.ScoutLocationsAsync(false,
+                    [.. locations.Select(l => l.archipelagoID)]);
 
             // Define callback for when we get the scouted items
             Task.Factory.StartNew(() =>
@@ -384,7 +405,8 @@ namespace RainWorldRandomizer
                 {
                     SaveManager.AddScoutedLocations(locations.ToDictionary(l => l.internalName,
                         l => scoutingTask.Result.TryGetValue(l.archipelagoID, out var value)
-                            ? value.Flags : Archipelago.MultiClient.Net.Enums.ItemFlags.None));
+                            ? value.Flags
+                            : Archipelago.MultiClient.Net.Enums.ItemFlags.None));
                     Plugin.Log.LogInfo($"Scouting complete");
                 }
                 catch (Exception e)
@@ -392,6 +414,13 @@ namespace RainWorldRandomizer
                     Plugin.Log.LogError($"Exception while scouting locations: {e}");
                 }
             });
+            return;
+
+            // Get all preview-able locations in the new region
+            static bool IsColorable(LocationInfo l) => l.IsToken
+                                                       || l.kind == LocationInfo.LocationKind.Pearl
+                                                       || l.kind == LocationInfo.LocationKind.Shelter
+                                                       || l.kind == LocationInfo.LocationKind.Flower;
         }
 
         /// <summary>
@@ -439,17 +468,20 @@ namespace RainWorldRandomizer
                         string locName = $"Pearl-{pearl.AbstractPearl.dataPearlType.value}";
 
                         // Check if this pearl matching the current region is valid
-                        if (Plugin.RandoManager.LocationExists(locName + $"-{currentRoom.abstractRoom.name.Substring(0, 2)}"))
+                        if (Plugin.RandoManager.LocationExists(locName +
+                                                               $"-{currentRoom.abstractRoom.name.Substring(0, 2)}"))
                         {
                             locName += $"-{currentRoom.abstractRoom.name.Substring(0, 2)}";
                         }
                         else
                         {
                             // More costly lookup to find where this pearl comes from
-                            foreach (KeyValuePair<string, List<DataPearl.AbstractDataPearl.DataPearlType>> region in self.rainWorld.regionDataPearls)
+                            foreach (KeyValuePair<string, List<DataPearl.AbstractDataPearl.DataPearlType>> region in
+                                     self.rainWorld.regionDataPearls)
                             {
                                 if (region.Value.Contains(pearl.AbstractPearl.dataPearlType)
-                                    && Plugin.RandoManager.LocationExists(locName + $"-{region.Key.ToUpperInvariant()}"))
+                                    && Plugin.RandoManager.LocationExists(locName +
+                                                                          $"-{region.Key.ToUpperInvariant()}"))
                                 {
                                     locName += $"-{region.Key.ToUpperInvariant()}";
                                     break;
@@ -479,6 +511,7 @@ namespace RainWorldRandomizer
                     // Try to spawn the item, and remove from queue if successful
                     if (self.TryGivePlayerItem(items[index])) items.RemoveAt(index);
                 }
+
                 Plugin.RandoManager.itemDeliveryQueue = new Queue<Unlock.Item>(items);
             }
         }
@@ -488,19 +521,20 @@ namespace RainWorldRandomizer
         /// </summary>
         private static int OnGetNumOfVoidWeaverEncounters(Func<MiscWorldSaveData, int> orig, MiscWorldSaveData self)
         {
-            if (!Plugin.RandomizerActive || !RandoOptions.WeaverRandomized) 
+            if (!Plugin.RandomizerActive || !RandoOptions.WeaverRandomized)
                 return orig(self);
 
             return Math.Min(Plugin.RandoManager.WeaverIncrements, 4);
         }
-        
+
         /// <summary>
         /// Save randomizer state when game is saved
         /// </summary>
-        private static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self, bool saveCurrentState, bool saveMaps, bool saveMiscProg)
+        private static bool OnSaveGame(On.PlayerProgression.orig_SaveToDisk orig, PlayerProgression self,
+            bool saveCurrentState, bool saveMaps, bool saveMiscProg)
         {
             bool origSuccess = orig(self, saveCurrentState, saveMaps, saveMiscProg);
-            
+
             if (Plugin.RandomizerActive && origSuccess)
             {
                 try
@@ -511,7 +545,8 @@ namespace RainWorldRandomizer
                 {
                     Plugin.Log.LogError("Failed to write randomizer save to file.");
                     Plugin.Log.LogError(e);
-                    Plugin.QueueNotify(new MessageText("Randomizer failed to save game information to file.", UnityEngine.Color.red));
+                    Plugin.QueueNotify(new MessageText("Randomizer failed to save game information to file.",
+                        UnityEngine.Color.red));
                 }
             }
 
@@ -521,7 +556,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Update item delivery queue on session end
         /// </summary>
-        private static void OnSessionEnded(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game, bool survived, bool newMalnourished)
+        private static void OnSessionEnded(On.SaveState.orig_SessionEnded orig, SaveState self, RainWorldGame game,
+            bool survived, bool newMalnourished)
         {
             orig(self, game, survived, newMalnourished);
             SaveDiskUpdateItemQueue(survived, self.malnourished);
@@ -530,7 +566,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Update item delivery queue on quit to menu
         /// </summary>
-        private static void OnExitGame(On.RainWorldGame.orig_ExitGame orig, RainWorldGame self, bool asDeath, bool asQuit)
+        private static void OnExitGame(On.RainWorldGame.orig_ExitGame orig, RainWorldGame self, bool asDeath,
+            bool asQuit)
         {
             orig(self, asDeath, asQuit);
             SaveDiskUpdateItemQueue(false, false);
@@ -539,7 +576,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Update item delivery queue on Echo encounter
         /// </summary>
-        private static void OnGhostEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self, GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
+        private static void OnGhostEncounter(On.SaveState.orig_GhostEncounter orig, SaveState self,
+            GhostWorldPresence.GhostID ghost, RainWorld rainWorld)
         {
             orig(self, ghost, rainWorld);
             SaveDiskUpdateItemQueue(false, false);
@@ -548,60 +586,20 @@ namespace RainWorldRandomizer
         private static void SaveDiskUpdateItemQueue(bool completeCycle, bool malnourished)
         {
             if (!Plugin.RandomizerActive) return;
-            
+
             // If we did not finish the cycle (death, quit out, etc.), restore current queue from saved backup
             if (!completeCycle)
             {
-                Plugin.RandoManager.itemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.lastItemDeliveryQueue);
+                Plugin.RandoManager.itemDeliveryQueue =
+                    new Queue<Unlock.Item>(Plugin.RandoManager.lastItemDeliveryQueue);
                 return;
             }
 
             // If we survived without starving this cycle, paste current queue to saved backup
             if (!malnourished)
             {
-                Plugin.RandoManager.lastItemDeliveryQueue = new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
-            }
-        }
-
-        /// <summary>
-        /// Hacking for passage progress changes under certain settings
-        /// </summary>
-        private static void ILCycleCompleted(ILContext il)
-        {
-            ILCursor c = new(il);
-
-            // Fake the "Passage Progress without Survivor" option if needed
-            c.GotoNext(
-                MoveType.After,
-                x => x.MatchLdsfld(typeof(MMF).GetField(nameof(MMF.cfgSurvivorPassageNotRequired))),
-                x => x.MatchCallOrCallvirt(typeof(Configurable<bool>).GetProperty(nameof(Configurable<bool>.Value)).GetGetMethod())
-                );
-
-            c.EmitDelegate<Func<bool, bool>>((config) =>
-            {
-                if (Plugin.ArchipelagoActive)
-                {
-                    return RandoOptions.CurPPwSBehavior != RandoOptions.PPwSBehavior.Disabled;
-                }
-                return true;
-            });
-
-            // Conditionally remove the hardcoded Survivor checks on other passages
-            // (branch interception at 049f, 04ed, 0570, 0599, 05ea, 06e8, 07bb).
-            c.GotoNext(x => x.MatchRet());  // 0480
-            for (int i = 0; i < 7; i++)
-            {
-                c.GotoNext(
-                    MoveType.After,
-                    x => x.MatchLdloc(12),
-                    x => x.MatchCallOrCallvirt(typeof(WinState.EndgameTracker)
-                        .GetProperty(nameof(WinState.EndgameTracker.GoalAlreadyFullfilled)).GetGetMethod())
-                    );
-                c.EmitDelegate(BypassHardcodedSurvivorRequirement);
-                continue;
-
-                static bool BypassHardcodedSurvivorRequirement(bool prev) =>
-                    prev || (Plugin.ArchipelagoActive && RandoOptions.CurPPwSBehavior == RandoOptions.PPwSBehavior.Bypassed);
+                Plugin.RandoManager.lastItemDeliveryQueue =
+                    new Queue<Unlock.Item>(Plugin.RandoManager.itemDeliveryQueue);
             }
         }
 
@@ -616,7 +614,9 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Detect Outer Expanse ending trigger
         /// </summary>
-        private static void OnOEEndingScriptUpdate(On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.orig_Update orig, MSCRoomSpecificScript.OE_GourmandEnding self, bool eu)
+        private static void OnOEEndingScriptUpdate(
+            On.MoreSlugcats.MSCRoomSpecificScript.OE_GourmandEnding.orig_Update orig,
+            MSCRoomSpecificScript.OE_GourmandEnding self, bool eu)
         {
             orig(self, eu);
 
@@ -630,7 +630,8 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Detect Artificer Metropolis ending trigger
         /// </summary>
-        private static void OnLCEndingScriptUpdate(On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.orig_Update orig, MSCRoomSpecificScript.LC_FINAL self, bool eu)
+        private static void OnLCEndingScriptUpdate(On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.orig_Update orig,
+            MSCRoomSpecificScript.LC_FINAL self, bool eu)
         {
             orig(self, eu);
 
@@ -644,7 +645,9 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Detect Spearmaster Sky Islands ending trigger
         /// </summary>
-        private static void OnSpearEndingUpdate(On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.orig_Update orig, MSCRoomSpecificScript.SpearmasterEnding self, bool eu)
+        private static void OnSpearEndingUpdate(
+            On.MoreSlugcats.MSCRoomSpecificScript.SpearmasterEnding.orig_Update orig,
+            MSCRoomSpecificScript.SpearmasterEnding self, bool eu)
         {
             orig(self, eu);
 
@@ -654,7 +657,7 @@ namespace RainWorldRandomizer
                 Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.Messenger);
             }
         }
-        
+
         /// <summary>
         /// Replace <see cref="MiscWorldSaveData.pebblesEnergyTaken"/> flag with check for longer cycles item
         /// in cases concerning the cycle length.
@@ -666,7 +669,7 @@ namespace RainWorldRandomizer
             c.GotoNext(MoveType.After,
                 x => x.MatchLdfld(typeof(MiscWorldSaveData).GetField(nameof(MiscWorldSaveData.pebblesEnergyTaken))));
             c.EmitDelegate(ShouldCycleBeLong);
-            
+
             return;
 
             static bool ShouldCycleBeLong(bool origVal)
@@ -674,7 +677,7 @@ namespace RainWorldRandomizer
                 return Plugin.RandoManager?.GivenLongerCycles ?? origVal;
             }
         }
-        
+
         /// <summary>
         /// Detect Saint secret FEZ ending trigger. Acts as a failsafe to make sure player still goals if they get fancy with it
         /// </summary>
@@ -682,7 +685,7 @@ namespace RainWorldRandomizer
         {
             orig(self);
             if (self.animator is null) return;
-            
+
             Plugin.ArchipelagoManager?.GiveCompletionCondition(RandoOptions.CompletionCondition.Rubicon);
         }
 
@@ -731,7 +734,8 @@ namespace RainWorldRandomizer
         /// <returns>True if a dynamic warp target was found, otherwise False.</returns>
         private static bool TryMovePlayersToDynamicWarpTarget(this RainWorldGame game)
         {
-            if (game.FirstAlivePlayer?.Room?.realizedRoom?.roomSettings?.placedObjects is not List<PlacedObject> placedObjects) return false;
+            if (game.FirstAlivePlayer?.Room?.realizedRoom?.roomSettings?.placedObjects is not List<PlacedObject>
+                placedObjects) return false;
 
             if (placedObjects.FirstOrDefault(po => po.type == PlacedObject.Type.DynamicWarpTarget) is PlacedObject obj)
             {
@@ -740,6 +744,7 @@ namespace RainWorldRandomizer
                     player.pos.Tile = new RWCustom.IntVector2((int)(obj.pos.x / 20f), (int)(obj.pos.y / 20f));
                     player.realizedCreature?.firstChunk.HardSetPosition(obj.pos);
                 }
+
                 return true;
             }
 

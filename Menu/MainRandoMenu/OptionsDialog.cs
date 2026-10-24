@@ -323,7 +323,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
                 options.Add("GateBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.gateBehavior, ["Only Key", "Key and Karma", "Key or Karma", "Only Karma"]));
                 options.Add("PPwSBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
-                    RandoOptions.ppwsBehavior, ["Disabled", "Enabled", "Bypassed"]));
+                    RandoOptions.ppwsBehavior, ["None", "Disabled", "Enabled", "Bypassed"]));
                 options.Add("EchoBehavior", new DropdownOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                     RandoOptions.echoBehavior, ["Impossible", "With Flower", "Max Karma", "Vanilla"]));
 
@@ -604,14 +604,14 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
             float runningY = menu.size.y - 80f;
             float rightRowX = menu.size.x / 2f + CENTER_MARGIN / 2f;
 
-            options = new Dictionary<string, Option>();
+            options = new Dictionary<string, Option>
+            { { "Passage", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY), 
+                RandoOptions.givePassageUnlocks) } };
 
             if (menu.myMode <= Mode.StandaloneView)
             {
                 options.AddRange(new Dictionary<string, Option>
                 {
-                    { "Passage", new CheckBoxOption(menu, this, new Vector2(EDGE_MARGIN, runningY), 
-                        RandoOptions.givePassageUnlocks) },
                     { "DamageUp", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),
                         RandoOptions.numDamageIncreases) },
                     { "ExtraKarma", new UpDownIntOption(menu, this, new Vector2(EDGE_MARGIN, runningY -= 40f),

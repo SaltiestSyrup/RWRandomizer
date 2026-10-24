@@ -15,9 +15,10 @@ namespace RainWorldRandomizer
 
         public enum PPwSBehavior
         {
-            Disabled,
-            Enabled,
-            Bypassed
+            None = 0,
+            Disabled = 1,
+            Enabled = 2,
+            Bypassed = 3
         }
 
         public enum EchoLowKarmaDifficulty
@@ -448,7 +449,7 @@ namespace RainWorldRandomizer
                 numDamageIncreases = Random.Range(0, 11),
                 extraKarmaIncreases = Random.Range(0, 11),
                 gateBehavior = (RandoOptions.GateBehavior)Random.Range(0, 4),
-                PPwSBehavior = (RandoOptions.PPwSBehavior)Random.Range(0, 3),
+                PPwSBehavior = (RandoOptions.PPwSBehavior)Random.Range(0, 4),
                 echoDifficulty = (RandoOptions.EchoLowKarmaDifficulty)Random.Range(0, 4),
                 foodQuestBehavior = (RandoOptions.FoodQuestBehavior)Random.Range(0, 3),
                 randomizeSpawnLocation = RandomBool(),
