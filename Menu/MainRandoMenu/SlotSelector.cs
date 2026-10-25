@@ -356,7 +356,12 @@ public sealed class SlotSelector : ScrollingMenu
 
             hud.Draw(timeStacker);
 
-            if (slugcatPortrait is not null) slugcatPortrait.alpha = alpha;
+            if (slugcatPortrait is not null)
+            {
+                slugcatPortrait.alpha = alpha;
+                slugcatPortrait.visible = !sleep;
+            }
+
             cycleText.label.alpha = alpha;
             completionText.label.alpha = alpha;
 

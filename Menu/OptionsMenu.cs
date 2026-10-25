@@ -1,8 +1,6 @@
-using BepInEx;
 using Menu;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
-using Menu.Remix.MixedUI.ValueTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,24 +38,24 @@ namespace RainWorldRandomizer.Menu
                 new ConfigurableInfo(
                     "Additional options for object retrieval. They can be stored in slugcats stomach, or automatically spawned in shelters",
                     null, "",
-                    ["Item delivery method"]));
+                    ["Item Delivery Method"]));
 
             RandoOptions.disableNotificationQueue = config.Bind<bool>("DisableNotificationQueue", false,
                 new ConfigurableInfo("Disable in-game notification pop-ups", null, "",
-                    ["Disable notifications"]));
+                    ["Disable Notifications"]));
 
             RandoOptions.disableTokenText = config.Bind<bool>("DisableTokenText", true,
                 new ConfigurableInfo("Prevent pop-up text and chatlogs from appearing when collecting tokens", null, "",
-                    ["Disable token text"]));
+                    ["Disable Token Text"]));
 
             RandoOptions.legacyNotifications = config.Bind<bool>("LegacyNotifications", false,
                 new ConfigurableInfo("Use bottom of screen 'tutorial' text for notifications instead of chat feature",
                     null, "",
-                    ["Enable legacy notifications"]));
+                    ["Enable Legacy Notifications"]));
 
             RandoOptions.useGateMap = config.Bind<bool>("UseGateMap", true,
                 new ConfigurableInfo("Use a gate map instead of the gate key list on the pause screen", null, "",
-                    ["Use gate map"]));
+                    ["Use Gate Map"]));
 
             // ----- Archipelago -----
 
