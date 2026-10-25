@@ -13,7 +13,7 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
     
     // Vars
     private readonly Vector2 screenCenter;
-    private int currentMode = 0;
+    private int currentMode;
     public SlugcatStats.Name chosenSlugcat;
     
     public CreateNewGamePage(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
@@ -21,21 +21,21 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
         screenCenter = new Vector2(menu.manager.rainWorld.screenSize.x / 2f, menu.manager.rainWorld.screenSize.y / 2);
         
         modeButtons = new SelectOneButton[2];
-        modeButtons[0] = new SelectOneButton(menu, this, "STANDALONE", "MODE-STANDALONE",
+        modeButtons[0] = new SelectOneButton(menu, this, "ARCHIPELAGO", "MODE-ARCHIPELAGO",
             new Vector2(screenCenter.x - 150f, menu.manager.rainWorld.screenSize.y - 80f),
             new Vector2(100f, 30f), modeButtons, 0);
         subObjects.Add(modeButtons[0]);
-        modeButtons[1] = new SelectOneButton(menu, this, "ARCHIPELAGO", "MODE-ARCHIPELAGO",
+        modeButtons[1] = new SelectOneButton(menu, this, "STANDALONE", "MODE-STANDALONE",
             new Vector2(screenCenter.x + 50f, menu.manager.rainWorld.screenSize.y - 80f),
             new Vector2(100f, 30f), modeButtons, 1);
         subObjects.Add(modeButtons[1]);
 
-        stTab = new NewStandaloneGameTab(menu, this, screenCenter);
+        apTab = new NewArchipelagoGameTab(menu, this, screenCenter);
+        subObjects.Add(apTab);
+        
+        stTab = new NewStandaloneGameTab(menu, this, screenCenter - new Vector2(0f, 1500f));
         subObjects.Add(stTab);
         
-        apTab = new NewArchipelagoGameTab(menu, this, screenCenter - new Vector2(0f, 1500f));
-        subObjects.Add(apTab);
-
         modeButtons[0].nextSelectable[1] = modeButtons[0];
         modeButtons[1].nextSelectable[1] = modeButtons[1];
     }
@@ -67,14 +67,14 @@ public class CreateNewGamePage : PositionedMenuObject, SelectOneButton.SelectOne
         switch (newMode)
         {
             case 0:
-                stTab.pos.y = screenCenter.y;
-                apTab.pos.y = screenCenter.y - 1500f;
-                apTab.Disable();
-                break;
-            case 1:
                 stTab.pos.y = screenCenter.y - 1500f;
                 apTab.pos.y = screenCenter.y;
                 apTab.Enable();
+                break;
+            case 1:
+                stTab.pos.y = screenCenter.y;
+                apTab.pos.y = screenCenter.y - 1500f;
+                apTab.Disable();
                 break;
         }
     }
