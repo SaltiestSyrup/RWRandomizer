@@ -176,7 +176,11 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Returns all locations in the specified region
         /// </summary>
-        public List<LocationInfo> GetLocationsInRegion(string region) => [.. locations.Where(l => l.region == region)];
+        public List<LocationInfo> GetLocationsInRegion(string region)
+        {
+            return [.. locations.Where(l => l.region == region 
+                                            || LocationInfo.FoodQuestIsInRegion(l, region, currentSlugcat))];
+        } 
 
         /// <summary>
         /// Returns a float in range 0-1 representing the percentage of checks in the region that have been collected

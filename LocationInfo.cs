@@ -180,6 +180,47 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Determine if a food quest location can be found in the current region
+        /// </summary>
+        /// <param name="loc">The location to test</param>
+        /// <param name="region">The region to search</param>
+        /// <param name="slugcat">The current player slugcat</param>
+        /// <returns></returns>
+        public static bool FoodQuestIsInRegion(LocationInfo loc, string region, SlugcatStats.Name slugcat)
+        {
+            if (!loc.IsFoodQuest) return false;
+            region = region.ToLowerInvariant();
+            
+            if (ExtEnumBase.GetNames(typeof(CreatureTemplate.Type)).Contains(loc.internalDesc))
+            {
+                int i = TokenCachePatcher.regionCreatures
+                    .TryGetValue(region.ToLowerInvariant(), out List<CreatureTemplate.Type> c) 
+                    ? c.IndexOf(new CreatureTemplate.Type(loc.internalDesc))
+                    : -1;
+                if (i > -1)
+                {
+                    return TokenCachePatcher.regionCreaturesAccessibility[region.ToLowerInvariant()][i]
+                        .Contains(slugcat);
+                }
+            }
+            else if (ExtEnumBase.GetNames(typeof(AbstractPhysicalObject.AbstractObjectType))
+                     .Contains(loc.internalDesc))
+            {
+                int i = TokenCachePatcher.regionObjects
+                    .TryGetValue(region.ToLowerInvariant(), out List<AbstractPhysicalObject.AbstractObjectType> o)
+                    ? o.IndexOf(new AbstractPhysicalObject.AbstractObjectType(loc.internalDesc))
+                    : -1;
+                if (i > -1)
+                {
+                    return TokenCachePatcher.regionObjectsAccessibility[region.ToLowerInvariant()][i]
+                        .Contains(slugcat);
+                }
+            }
+
+            return false;
+        }
+
         public static LocationKind KindOfLocation(string internalName)
         {
             if (internalName.StartsWith("Pearl-")) return LocationKind.Pearl;
