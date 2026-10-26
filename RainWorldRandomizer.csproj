@@ -165,6 +165,7 @@
         <Compile Include="Generation\State.cs" />
         <Compile Include="Generation\VanillaGenerator.cs" />
         <Compile Include="Hooks\SleepScreenHooks.cs" />
+        <Compile Include="MiscClasses\GCConditionalWeakTable.cs" />
         <Compile Include="ModCompat\CustomRegionCompatability.cs" />
         <Compile Include="Archipelago\DeathLinkHandler.cs" />
         <Compile Include="ModCompat\DevConsoleCompatibility.cs" />

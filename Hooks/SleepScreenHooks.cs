@@ -6,7 +6,6 @@ using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using Watcher;
@@ -24,6 +23,8 @@ namespace RainWorldRandomizer
             On.Menu.EndgameTokens.ctor += OnEndgameTokensCtor;
             On.Menu.SleepAndDeathScreen.Singal += OnSleepAndDeathScreenSingal;
             On.Menu.EndgameTokens.Passage += DoPassage;
+            On.Menu.SleepAndDeathScreen.CommunicateWithUpcomingProcess += 
+                SleepAndDeathScreenOnCommunicateWithUpcomingProcess;
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool += OnKarmaLadderCtor;
 
             try
@@ -46,6 +47,8 @@ namespace RainWorldRandomizer
             On.Menu.EndgameTokens.ctor -= OnEndgameTokensCtor;
             On.Menu.SleepAndDeathScreen.Singal -= OnSleepAndDeathScreenSingal;
             On.Menu.EndgameTokens.Passage -= DoPassage;
+            On.Menu.SleepAndDeathScreen.CommunicateWithUpcomingProcess -= 
+                SleepAndDeathScreenOnCommunicateWithUpcomingProcess;
             On.Menu.KarmaLadder.ctor_Menu_MenuObject_Vector2_HUD_IntVector2_bool -= OnKarmaLadderCtor;
 
             IL.MoreSlugcats.CollectiblesTracker.ctor -= CreateCollectiblesTrackerIL;
@@ -206,18 +209,13 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Stores fake passage token UI elements
         /// </summary>
-        private static ConditionalWeakTable<EndgameTokens, List<FakeEndgameToken>> _passageTokensUI = new();
-
-        // Add a button to SleepAndDeathScreen allowing free passage to the starting shelter
-        private static ConditionalWeakTable<SleepAndDeathScreen, PassageHomeButton> _passageHomeButton = new();
+        private static List<FakeEndgameToken> _passageTokensUI = [];
 
         private static void CreatePassageHomeButton(this SleepAndDeathScreen self)
         {
             if (!Plugin.RandomizerActive) return;
             
-            PassageHomeButton button =
-                new PassageHomeButton(self, self.pages[0], new Vector2(self.LeftHandButtonsPosXAdd, 60f));
-            _passageHomeButton.Add(self, button);
+            PassageHomeButton button = new(self, self.pages[0], new Vector2(self.LeftHandButtonsPosXAdd, 60f));
             self.pages[0].subObjects.Add(button);
             button.lastPos = button.pos;
         }
@@ -252,7 +250,7 @@ namespace RainWorldRandomizer
                     index++;
                 }
             }
-            _passageTokensUI.Add(self, fakePassageTokens);
+            _passageTokensUI = fakePassageTokens;
         }
 
         /// <summary>
@@ -383,7 +381,7 @@ namespace RainWorldRandomizer
                 token.glowSprite.RemoveFromContainer();
             }
 
-            _passageTokensUI.GetOrCreateValue(self).FirstOrDefault(t => t.id == ID)?.Activate();
+            _passageTokensUI.FirstOrDefault(t => t.id == ID)?.Activate();
         }
 
         /// <summary>
@@ -429,6 +427,17 @@ namespace RainWorldRandomizer
                 .Select(p => p.Key)
                 .FirstOrDefault();
             if (id is not null) self.GetTracker(id, true).consumed = true;
+        }
+        
+        /// <summary>
+        /// Clear stored passage token UI references when we leave the screen
+        /// </summary>
+        private static void SleepAndDeathScreenOnCommunicateWithUpcomingProcess(
+            On.Menu.SleepAndDeathScreen.orig_CommunicateWithUpcomingProcess orig, 
+            SleepAndDeathScreen self, MainLoopProcess nextProcess)
+        {
+            _passageTokensUI.Clear();
+            orig(self, nextProcess);
         }
 
         // ----- KARMA LADDER -----

@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using System.Runtime.CompilerServices;
+using RainWorldRandomizer.MiscClasses;
 
 namespace RainWorldRandomizer
 {
@@ -24,7 +24,7 @@ namespace RainWorldRandomizer
         /// <summary>
         /// Tracks Karma flowers placed in rooms via room settings. Flowers from other sources are not added to this table. 
         /// </summary>
-        public static ConditionalWeakTable<AbstractPhysicalObject, LocationInfo> TrackedFlowers = new();
+        public static GCConditionalWeakTable<AbstractPhysicalObject, LocationInfo> TrackedFlowers = new();
 
         /// <summary>
         /// Register any flowers to the CWT when a room is loaded

@@ -4,8 +4,8 @@ using RWCustom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using RainWorldRandomizer.MiscClasses;
 using UnityEngine;
 using Watcher;
 using Random = UnityEngine.Random;
@@ -69,7 +69,7 @@ namespace RainWorldRandomizer.WatcherIntegration
         /// <summary>
         /// Keeps track of warp tear graphics that should be displaying as locked
         /// </summary>
-        private static ConditionalWeakTable<WarpTear, LockedWarpData> ActiveLockedWarps = new();
+        private static GCConditionalWeakTable<WarpTear, LockedWarpData> _activeLockedWarps = new();
         private class LockedWarpData(WarpPoint self)
         {
             public WarpPoint self = self;
@@ -182,8 +182,8 @@ namespace RainWorldRandomizer.WatcherIntegration
                 {
                     if (self.currentState != WarpPoint.State.Sealed)
                         self.Rando_LockWarp(false);
-                    if (self.warpTear is not null && !ActiveLockedWarps.TryGetValue(self.warpTear, out _))
-                        ActiveLockedWarps.Add(self.warpTear, new LockedWarpData(self));
+                    if (self.warpTear is not null && !_activeLockedWarps.TryGetValue(self.warpTear, out _))
+                        _activeLockedWarps.Add(self.warpTear, new LockedWarpData(self));
                     
                     SaveState saveState = self.room?.game.GetStorySession?.saveState;
                     if (self.room?.updateList.Any(u => u is Player) is true
@@ -203,7 +203,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             {
                 orig(self, sLeaser, rCam, timeStacker, camPos);
 
-                if (ActiveLockedWarps.TryGetValue(self, out LockedWarpData data))
+                if (_activeLockedWarps.TryGetValue(self, out LockedWarpData data))
                 {
                     sLeaser.sprites[0].shader = data.cancelLockedStatus
                         ? Custom.rainWorld.Shaders[self.shaderOverride ?? (self.isRippleSide ? "WarpTearRippleSide" : "WarpTear")]
@@ -216,7 +216,7 @@ namespace RainWorldRandomizer.WatcherIntegration
             /// </summary>
             private static void SpinningTopOnWarpAnimationUpdate(On.Watcher.SpinningTop.orig_WarpAnimationUpdate orig, SpinningTop self)
             {
-                if (ActiveLockedWarps.TryGetValue(self.spawnedWarp.warpTear, out _))
+                if (_activeLockedWarps.TryGetValue(self.spawnedWarp.warpTear, out _))
                 {
                     self.lastWarpAnim = self.warpAnim;
                     self.warpAnim++;
@@ -346,7 +346,7 @@ namespace RainWorldRandomizer.WatcherIntegration
                     foreach (WarpPoint warp in player.room.warpPoints)
                     {
                         // We only care about warps locked by the randomizer
-                        if (!ActiveLockedWarps.TryGetValue(warp.warpTear, out LockedWarpData data)) continue;
+                        if (!_activeLockedWarps.TryGetValue(warp.warpTear, out LockedWarpData data)) continue;
                         // If we just sealed this, don't do it again
                         if (data.cancelLockedStatus) continue;
 

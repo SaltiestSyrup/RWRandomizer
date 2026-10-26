@@ -5,9 +5,9 @@ using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using Menu;
+using RainWorldRandomizer.MiscClasses;
 
 namespace RainWorldRandomizer
 {
@@ -17,8 +17,8 @@ namespace RainWorldRandomizer
         /// Dummy class to make CWT take a <see cref="Color"/>
         /// </summary>
         private class ColorAsClass(Color color) { public Color color = color; }
-        private static ConditionalWeakTable<CollectToken, ColorAsClass> tokenColors = new();
-        private static ConditionalWeakTable<FSprite, ColorAsClass> shortcutColors = new();
+        private static GCConditionalWeakTable<CollectToken, ColorAsClass> _tokenColors = new();
+        private static GCConditionalWeakTable<FSprite, ColorAsClass> _shortcutColors = new();
 
         public static void ApplyHooks()
         {
@@ -57,7 +57,7 @@ namespace RainWorldRandomizer
             if (!Plugin.RandomizerActive || !RandoOptions.ColorPickupsWithHints) return orig(self);
 
             // If color already found, continue to use it
-            if (tokenColors.TryGetValue(self, out ColorAsClass c)) return c.color;
+            if (_tokenColors.TryGetValue(self, out ColorAsClass c)) return c.color;
 
             string tokenString = CollectTokenHandler.TokenToLocationName(self.placedObj?.data as CollectToken.CollectTokenData, self.room?.abstractRoom?.name);
             ColorAsClass color;
@@ -66,12 +66,12 @@ namespace RainWorldRandomizer
             if (tokenString is null || !SaveManager.ScoutedLocations.TryGetValue(tokenString, out ItemFlags flags))
             {
                 color = new ColorAsClass(Color.white);
-                tokenColors.Add(self, color);
+                _tokenColors.Add(self, color);
                 return color.color;
             }
 
             color = new ColorAsClass(ItemFlagsToColor(flags));
-            tokenColors.Add(self, color);
+            _tokenColors.Add(self, color);
             return color.color;
         }
 
@@ -138,7 +138,7 @@ namespace RainWorldRandomizer
 
                 if (shelterString is null || !SaveManager.ScoutedLocations.TryGetValue(shelterString, out ItemFlags flags)) continue;
 
-                shortcutColors.Add(self.entranceSprites[i, 0], new ColorAsClass(ItemFlagsToColor(flags)));
+                _shortcutColors.Add(self.entranceSprites[i, 0], new ColorAsClass(ItemFlagsToColor(flags)));
             }
         }
 
@@ -165,7 +165,7 @@ namespace RainWorldRandomizer
 
             static Color ReplaceWithCustomColor(Color origColor, ShortcutGraphics self, int index)
             {
-                return shortcutColors.TryGetValue(self.entranceSprites[index, 0], out ColorAsClass color) ? color.color : origColor;
+                return _shortcutColors.TryGetValue(self.entranceSprites[index, 0], out ColorAsClass color) ? color.color : origColor;
             }
         }
 
