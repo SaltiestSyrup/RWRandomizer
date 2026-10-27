@@ -145,11 +145,14 @@ namespace RainWorldRandomizer.Generation
             HashSet<Connection> connections, HashSet<string> shelters, (AccessRule, AccessRule) rules)
         {
             if (!locations.IsSubsetOf(baseRegion.allLocations))
-                throw new ArgumentException("Locations must be a subset of region locations", nameof(locations));
+                throw new ArgumentException($"({newID}) Locations must be a subset of base region locations", 
+                    nameof(locations));
             if (!connections.IsSubsetOf(baseRegion.connections))
-                throw new ArgumentException("Connections must be a subset of region connections", nameof(connections));
+                throw new ArgumentException($"({newID}) Connections must be a subset of base region connections", 
+                    nameof(connections));
             if (!shelters.IsSubsetOf(baseRegion.shelters))
-                throw new ArgumentException("Shelters must be a subset of region shelters", nameof(shelters));
+                throw new ArgumentException($"({newID}) Shelters must be a subset of base region shelters", 
+                    nameof(shelters));
 
             // Remove elements of orig region
             baseRegion.allLocations.ExceptWith(locations);
