@@ -23,7 +23,8 @@ namespace RainWorldRandomizer.Generation
                 true, true, true,
                 true, true, true,
                 true, true, true, true, true, true, true,
-                false, false, false, false,
+                false, false, false, false, false,
+                false, false, false, false, false, false, false
             ];
 
             // Define a default starting shelter and region, for when start is not randomized

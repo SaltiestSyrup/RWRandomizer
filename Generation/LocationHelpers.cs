@@ -208,18 +208,21 @@ public static class LocationHelpers
     /// Create locations for all possible food quest items a slugcat can eat
     /// </summary>
     /// <param name="slugcat"></param>
-    /// <param name="includePassage">Whether to include the Gourmand passage as a location</param>
+    /// <param name="options"></param>
     /// <returns></returns>
-    public static HashSet<Location> MakeFoodQuest(SlugcatStats.Name slugcat, bool includePassage)
+    public static HashSet<Location> MakeFoodQuest(SlugcatStats.Name slugcat, OptionStruct options)
     {
         List<AccessRule> allGourmRules = [];
         HashSet<Location> foodQuestLocs = [];
-        for (int i = 0; i < WinState.GourmandPassageTracker.Length; i++)
+        WinState.GourmandTrackerData[] gourmTracker = options.foodQuestBehavior == RandoOptions.FoodQuestBehavior.Expanded
+            ? Constants.GourmandPassageTrackerExpanded
+            : Constants.GourmandPassageTrackerOrig;
+        for (int i = 0; i < gourmTracker.Length; i++)
         {
             // Skip if slugcat cannot consume this
             if (!Constants.SlugcatFoodQuestAccessibility[slugcat][i]) continue;
 
-            WinState.GourmandTrackerData data = WinState.GourmandPassageTracker[i];
+            WinState.GourmandTrackerData data = gourmTracker[i];
             // Creature food
             if (data.type == AbstractPhysicalObject.AbstractObjectType.Creature)
             {
@@ -244,7 +247,7 @@ public static class LocationHelpers
             }
         }
 
-        if (includePassage)
+        if (options.usePassageChecks && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)
         {
             Location gourmPassage = new("Passage-Gourmand", Location.Type.Passage,
                 new CompoundAccessRule([.. allGourmRules], CompoundAccessRule.CompoundOperation.All));

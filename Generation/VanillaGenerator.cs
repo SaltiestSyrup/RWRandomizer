@@ -255,8 +255,7 @@ namespace RainWorldRandomizer.Generation
             {
                 allRegions.Add(RandoRegion.FOODQUEST_REG,
                     new RandoRegion(RandoRegion.FOODQUEST_REG,
-                        LocationHelpers.MakeFoodQuest(slugcat,
-                            options.usePassageChecks && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand)));
+                        LocationHelpers.MakeFoodQuest(slugcat, options)));
             }
 
             // Create Special locations
