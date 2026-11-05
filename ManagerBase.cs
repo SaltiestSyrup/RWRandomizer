@@ -94,6 +94,12 @@ namespace RainWorldRandomizer
             set { _givenRobo = value; }
         }
 
+        public virtual int ScavKarma
+        {
+            get { return _scavKarma; }
+            set { _scavKarma = value; }
+        }
+
         public virtual bool GivenLongerCycles
         {
             get { return _givenLongerCycles; }
@@ -129,6 +135,7 @@ namespace RainWorldRandomizer
         protected bool _givenNeuronGlow;
         protected bool _givenMark;
         protected bool _givenRobo;
+        protected int _scavKarma;
         protected bool _givenLongerCycles;
         protected bool _givenPebblesOff;
         protected bool _givenSpearPearlRewrite;

@@ -450,6 +450,8 @@ namespace RainWorldRandomizer
                 perks.Contains("Agility Perk"),
             ];
 
+            ConnectedOptions.useScavengerKarma = slotData.GetSimple("artificer_scavenger_karma", 0L) == 1L;
+
             ConnectedOptions.archipelagoDeathLink = slotData.GetSimple("death_link", 0L) > 0L;
 
             foodQuestAccessibility = slotData.GetSimple("checks_foodquest_accessibility", 0L);

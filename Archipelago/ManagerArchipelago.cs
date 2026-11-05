@@ -331,6 +331,9 @@ namespace RainWorldRandomizer
                         if (Plugin.Singleton.Game?.GetStorySession?.saveState is not null)
                             Plugin.Singleton.Game.GetStorySession.saveState.hasRobo = true;
                         break;
+                    case "Scavenger_Karma":
+                        _scavKarma++;
+                        break;
                     case "Disconnect_FP": // Backwards compat 1.5
                         _givenLongerCycles = true;
                         _givenPebblesOff = true;

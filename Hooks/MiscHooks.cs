@@ -51,6 +51,11 @@ namespace RainWorldRandomizer
                         .GetGetMethod(),
                     progressHook);
 
+                _ = new Hook(typeof(AbstractCreature)
+                        .GetProperty(nameof(AbstractCreature.karmicPotential))
+                        .GetGetMethod(),
+                    AbstractCreatureOnGetKarmicPotential);
+
                 IL.MoreSlugcats.MSCRoomSpecificScript.AddRoomSpecificScript += AddMSCRoomSpecificScriptIL;
                 IL.MoreSlugcats.CutsceneArtificer.Update += CutsceneArtificerUpdateIL;
                 IL.PlayerSessionRecord.AddEat += PlayerSessionRecord_AddEat;
@@ -725,6 +730,13 @@ namespace RainWorldRandomizer
 
                 return false;
             }
+        }
+
+        private static int AbstractCreatureOnGetKarmicPotential(Func<AbstractCreature, int> orig, AbstractCreature self)
+        {
+            return Plugin.RandomizerActive && RandoOptions.LoadedOptions.useScavengerKarma
+                ? Mathf.Clamp(Plugin.RandoManager.ScavKarma - self.RemovedKarma, 0, 5) 
+                : orig(self);
         }
     }
 }

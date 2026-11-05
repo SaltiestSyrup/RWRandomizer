@@ -371,6 +371,7 @@ namespace RainWorldRandomizer
         public bool useEnergyCell = false;
         public bool useSMTokens = true;
         public bool[] expeditionPerks = new bool[8];
+        public bool useScavengerKarma = false;
 
         // Watcher
         public bool spinningTopKeys = true;
@@ -463,6 +464,7 @@ namespace RainWorldRandomizer
                     RandomBool(), RandomBool(), RandomBool(), RandomBool(),
                     RandomBool(), RandomBool(), RandomBool(), RandomBool()
                 ],
+                useScavengerKarma = RandomBool(),
                 spinningTopKeys = RandomBool(),
                 daemonKeys = RandomBool(),
                 rottedRegionTarget = Random.Range(1, 22),
