@@ -15,6 +15,20 @@ public class RandomizerMenu : RWMenu
     public readonly Vector2 buttonSize = new Vector2(100f, 30f);
     private readonly Vector2 exitButtonPos;
 
+    // Pages
+    private CreateNewGamePage createNewGamePage;
+    private CampaignSelectPage campaignSelectPage;
+
+    // Elements
+    public OptionsDialog optionsDialog;
+    private FSprite shade;
+
+    private SimpleButton exitButton;
+
+    // Vars
+    public SaveTracker saveTracker = new();
+    private TaskCompletionSource<bool> progressionIsLoading = null;
+
     /// <summary>
     /// Anchors on left and right side of screen
     /// </summary>
@@ -24,21 +38,6 @@ public class RandomizerMenu : RWMenu
     private Vector2 newPagePos;
     private Vector2[] oldPagePos;
     private float movementCounter;
-
-    // Pages
-    private CreateNewGamePage createNewGamePage;
-    private CampaignSelectPage campaignSelectPage;
-
-    // Elements
-    public OptionsDialog optionsDialog;
-
-    private SimpleButton exitButton;
-    // private DialogBoxNotify failedStartGameDialog;
-    // public DialogNotify connectResultDialog;
-
-    // Vars
-    public SaveTracker saveTracker = new();
-    private TaskCompletionSource<bool> progressionIsLoading = null;
 
     internal bool _freezeMenuFunctions;
 
@@ -64,6 +63,17 @@ public class RandomizerMenu : RWMenu
             blurMin = 150f,
         };
         pages[0].subObjects.Add(scene);
+
+        shade = new FSprite("Futile_White")
+        {
+            scaleX = 1000f,
+            scaleY = 1000f,
+            x = 0f,
+            y = 0f,
+            color = Color.black,
+            alpha = 0.9f
+        };
+        pages[0].Container.AddChild(shade);
 
         // Exit button
         exitButtonPos = new Vector2(anchors.x + 50f, manager.rainWorld.options.ScreenSize.y - TOP_MARGIN);

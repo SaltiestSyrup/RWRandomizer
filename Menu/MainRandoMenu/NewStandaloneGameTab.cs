@@ -23,16 +23,16 @@ public class NewStandaloneGameTab : PositionedMenuObject
         ("Watcher", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Watcher"))),
         ("Inv", "illustrations", MenuHelpers.GetSlugcatPortrait(new SlugcatStats.Name("Inv"))),
     ];
-    
+
     // Elements
     private PortraitButton[] slugcatButtons;
     private DialogBoxAsyncWait generationWaitDialog;
     private DialogNotify generateResultDialog;
-    
-    
+
     // Vars
+    private const float PORTRAIT_START_HEIGHT = 90f;
     private Task generateTask;
-    
+
     public NewStandaloneGameTab(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos)
     {
         slugcatButtons = new PortraitButton[slugcatInfos.Length];
@@ -44,11 +44,11 @@ public class NewStandaloneGameTab : PositionedMenuObject
             {
                 // X = (Portrait & Margin Width * Index Within Row) - ((Portrait & Margin Width / 2) * (Num in row - 1)) - (Portrait Width / 2)
                 // Y = Static Offset - (Portrait & Margin Width * Row)
-                < 3 => new Vector2(110f * i - 55f * 2 - 47f, 120f),
-                < 8 => new Vector2(110f * (i - 3) - 55f * 4 - 47f, 120f - 115f),
-                _ => new Vector2(110f * (i - 8) - 55f - 47f, 120f - 115f * 2f)
+                < 3 => new Vector2(110f * i - 55f * 2 - 47f, PORTRAIT_START_HEIGHT),
+                < 8 => new Vector2(110f * (i - 3) - 55f * 4 - 47f, PORTRAIT_START_HEIGHT - 115f),
+                _ => new Vector2(110f * (i - 8) - 55f - 47f, PORTRAIT_START_HEIGHT - 115f * 2f)
             };
-            slugcatButtons[i] = new PortraitButton(menu, this, $"SLUG-{slugcatInfos[i].Item1}", buttonPos, 
+            slugcatButtons[i] = new PortraitButton(menu, this, $"SLUG-{slugcatInfos[i].Item1}", buttonPos,
                 slugcatInfos[i].Item2, slugcatInfos[i].Item3);
             subObjects.Add(slugcatButtons[i]);
 
@@ -151,13 +151,13 @@ public class NewStandaloneGameTab : PositionedMenuObject
                     message = "Failed to generate due to an unknown error.\n\n" +
                               "See BepInEx/LogOutput.log for more details.";
                 }
-                
+
                 Plugin.Log.LogDebug(SaveTracker.ActiveGenerator.generationLog);
-                Plugin.Log.LogError("Failed to generate with exception:\n" + 
-                                    $"{generateTask.Exception?.InnerException?.Message 
-                                       ?? generateTask.Exception?.Message 
+                Plugin.Log.LogError("Failed to generate with exception:\n" +
+                                    $"{generateTask.Exception?.InnerException?.Message
+                                       ?? generateTask.Exception?.Message
                                        ?? "UNKNOWN??"}");
-                
+
                 generateResultDialog = new DialogNotify(
                     message,
                     new Vector2(350f, 200f),
@@ -179,13 +179,14 @@ public class NewStandaloneGameTab : PositionedMenuObject
             menu.manager.dialogStack.Add(generateResultDialog);
             return;
         }
-        
-        generationWaitDialog = new DialogBoxAsyncWait(menu, page, "Generating...", 
-                new Vector2(menu.manager.rainWorld.screenSize.x / 2 - 125f, menu.manager.rainWorld.screenSize.y / 2 - 75f), 
+
+        generationWaitDialog = new DialogBoxAsyncWait(menu, page, "Generating...",
+                new Vector2(menu.manager.rainWorld.screenSize.x / 2 - 125f,
+                    menu.manager.rainWorld.screenSize.y / 2 - 75f),
                 new Vector2(250f, 150f))
             { loadingSpinner = { animSpeed = 0.5f } };
         page.subObjects.Add(generationWaitDialog);
-        
+
         SaveTracker.ActiveGenerator = new VanillaGenerator(slugcat, SlugcatStats.SlugcatToTimeline(slugcat), options);
         generateTask = SaveTracker.ActiveGenerator.BeginGeneration();
     }
@@ -193,9 +194,9 @@ public class NewStandaloneGameTab : PositionedMenuObject
     private class PortraitButton : SimpleButton
     {
         private MenuIllustration portrait;
-        
-        public PortraitButton(RWMenu menu, MenuObject owner, string signalText, Vector2 pos, 
-            string folderName, string fileName) 
+
+        public PortraitButton(RWMenu menu, MenuObject owner, string signalText, Vector2 pos,
+            string folderName, string fileName)
             : base(menu, owner, "", signalText, pos, new Vector2(94f, 94f))
         {
             portrait = new MenuIllustration(menu, this, folderName, fileName, new Vector2(5f, 5f), true, false);
