@@ -14,11 +14,12 @@ public class RandomizerMenu : RWMenu
     public const float TOP_MARGIN = 50f;
     public readonly Vector2 buttonSize = new Vector2(100f, 30f);
     private readonly Vector2 exitButtonPos;
-    
+
     /// <summary>
     /// Anchors on left and right side of screen
     /// </summary>
     private Vector2 anchors;
+
     private bool pagesMoving;
     private Vector2 newPagePos;
     private Vector2[] oldPagePos;
@@ -30,6 +31,7 @@ public class RandomizerMenu : RWMenu
 
     // Elements
     public OptionsDialog optionsDialog;
+
     private SimpleButton exitButton;
     // private DialogBoxNotify failedStartGameDialog;
     // public DialogNotify connectResultDialog;
@@ -39,6 +41,7 @@ public class RandomizerMenu : RWMenu
     private TaskCompletionSource<bool> progressionIsLoading = null;
 
     internal bool _freezeMenuFunctions;
+
     public override bool FreezeMenuFunctions
     {
         get { return base.FreezeMenuFunctions || _freezeMenuFunctions; }
@@ -48,7 +51,8 @@ public class RandomizerMenu : RWMenu
     {
         anchors = new Vector2(Custom.GetScreenOffsets()[0], Custom.GetScreenOffsets()[1]);
 
-        pages = [
+        pages =
+        [
             new Page(this, null, "SCENE", 0),
             new Page(this, null, "SELECT", 1),
             new Page(this, null, "CREATE", 2),
@@ -71,7 +75,7 @@ public class RandomizerMenu : RWMenu
         // Load existing game page
         campaignSelectPage = new CampaignSelectPage(this, pages[1], default);
         pages[1].subObjects.Add(campaignSelectPage);
-        
+
         exitButton.nextSelectable[0] = exitButton;
         exitButton.nextSelectable[1] = exitButton;
         exitButton.nextSelectable[2] = campaignSelectPage.GetFirstSelectable();
@@ -82,7 +86,7 @@ public class RandomizerMenu : RWMenu
         pages[2].subObjects.Add(createNewGamePage);
         pages[2].pos.x += 1500f;
         pages[2].lastPos = pages[2].pos;
-        
+
         currentPage = 1;
     }
 
@@ -105,6 +109,7 @@ public class RandomizerMenu : RWMenu
                         UpdatePage(1);
                         break;
                 }
+
                 break;
             // Called from our new game button
             case "NEW_GAME":
@@ -116,12 +121,14 @@ public class RandomizerMenu : RWMenu
                 SlotSelector.Slot slot = sender as SlotSelector.Slot ?? sender.owner as SlotSelector.Slot;
                 if (slot is not null)
                 {
-                    ContinueGame(slot.saveSlot, new SlugcatStats.Name(slot.saveFile.slugcat), slot.saveFile.legacySaveSlot >= 0);
+                    ContinueGame(slot.saveSlot, new SlugcatStats.Name(slot.saveFile.slugcat),
+                        slot.saveFile.legacySaveSlot >= 0);
                 }
                 else
                 {
                     Plugin.Log.LogError("Failed to determine slot to begin game with");
                 }
+
                 break;
             // Called from either standalone or AP menus to trigger starting the game
             case "START_NEW_GAME":
@@ -131,7 +138,8 @@ public class RandomizerMenu : RWMenu
             // or a standalone slot if it was detected as a not yet loaded legacy slot
             case "CONTINUE_FROM_LEGACY":
                 SlugcatStats.Name slugcat = (sender.owner as CreateNewGamePage)?.chosenSlugcat
-                                            ?? new SlugcatStats.Name((sender.owner as SlotSelector.Slot)?.saveFile.slugcat);
+                                            ?? new SlugcatStats.Name((sender.owner as SlotSelector.Slot)?.saveFile
+                                                .slugcat);
                 CreateNewGame(slugcat, true);
                 break;
         }
@@ -146,7 +154,7 @@ public class RandomizerMenu : RWMenu
         {
             progressionIsLoading.TrySetResult(manager.rainWorld.progression.progressionLoaded);
         }
-        
+
         // Page switching animation
         if (!pagesMoving) return;
 
@@ -162,6 +170,7 @@ public class RandomizerMenu : RWMenu
             pages[i].pos = Custom.MoveTowards(pages[i].pos, target, scurveVal * speed);
             if (pages[i].pos == target) pagesMoving = false;
         }
+
         if (!pagesMoving) PlaySound(SoundID.MENU_Checkbox_Check);
         exitButton.pos = exitButtonPos - exitButton.page.pos;
         exitButton.lastPos = exitButtonPos - exitButton.page.lastPos;
@@ -212,7 +221,7 @@ public class RandomizerMenu : RWMenu
             1 => campaignSelectPage.GetFirstSelectable(),
             _ => null
         };
-        
+
         currentPage = newPage;
     }
 
@@ -237,7 +246,7 @@ public class RandomizerMenu : RWMenu
             manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
             manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
         }
-        
+
         StartGame(slugcat);
     }
 
@@ -257,10 +266,10 @@ public class RandomizerMenu : RWMenu
             manager.rainWorld.progression.Destroy(SaveTracker.OrigSaveSlot);
             manager.rainWorld.progression = new PlayerProgression(manager.rainWorld, true, false);
         }
-        
+
         StartGame(slugcat);
     }
-    
+
     private async void StartGame(SlugcatStats.Name slugcat)
     {
         try
@@ -272,7 +281,7 @@ public class RandomizerMenu : RWMenu
             if (!progressionIsLoading.Task.Result) throw new LoadDataException();
 
             progressionIsLoading = null;
-        
+
             // Jolly Co-op stuff
             if (ModManager.CoopAvailable)
             {
@@ -281,12 +290,13 @@ public class RandomizerMenu : RWMenu
                 {
                     manager.rainWorld.ActivatePlayer(i);
                 }
+
                 for (int j = manager.rainWorld.options.JollyPlayerCount; j < 4; j++)
                 {
                     manager.rainWorld.DeactivatePlayer(j);
                 }
             }
-        
+
             manager.rainWorld.inGameSlugCat = slugcat;
             manager.arenaSitting = null;
             manager.rainWorld.progression.currentSaveState = null;
@@ -302,12 +312,13 @@ public class RandomizerMenu : RWMenu
                 manager.menuSetup.startGameCondition = ProcessManager.MenuSetup.StoryGameInitCondition.New;
                 PlaySound(SoundID.MENU_Start_New_Game);
             }
-        
+
             manager.RequestMainProcessSwitch(ProcessManager.ProcessID.Game);
         }
         catch (Exception e)
         {
-            manager.ShowDialog(new DialogNotify($"Encountered exception while attempting to start game:\n{e}", manager, () => { }));
+            manager.ShowDialog(new DialogNotify($"Encountered exception while attempting to start game:\n{e}", manager,
+                () => { }));
             Plugin.Log.LogError($"Encountered exception while attempting to start game:\n{e}");
         }
     }
