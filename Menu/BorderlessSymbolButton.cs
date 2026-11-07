@@ -6,25 +6,27 @@ namespace RainWorldRandomizer.Menu;
 
 public class BorderlessSymbolButton : ButtonTemplate
 {
-    public string signalText;
-    public FSprite symbolSprite;
-    private readonly Color baseColor;
-    private readonly Color greyColor;
-    private readonly float baseScale;
+    public Color baseColor;
+    public Color greyColor;
+    public float baseScale;
+    private string signalText;
+    private FSprite symbolSprite;
     private bool disabled;
 
-    public BorderlessSymbolButton(RWMenu menu, MenuObject owner, string symbolName, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
+    public BorderlessSymbolButton(RWMenu menu, MenuObject owner, string symbolName, string signalText, Vector2 pos)
+        : base(menu, owner, pos, new Vector2(24f, 24f))
     {
         this.signalText = signalText;
 
-        symbolSprite = new FSprite(symbolName, true);
+        symbolSprite = new FSprite(symbolName);
         baseColor = RWMenu.MenuRGB(RWMenu.MenuColors.MediumGrey);
         greyColor = RWMenu.MenuRGB(RWMenu.MenuColors.VeryDarkGrey);
         baseScale = 1f;
         Container.AddChild(symbolSprite);
     }
 
-    public BorderlessSymbolButton(RWMenu menu, MenuObject owner, FSprite sprite, string signalText, Vector2 pos) : base(menu, owner, pos, new(24f, 24f))
+    public BorderlessSymbolButton(RWMenu menu, MenuObject owner, FSprite sprite, string signalText, Vector2 pos) :
+        base(menu, owner, pos, new Vector2(24f, 24f))
     {
         this.signalText = signalText;
 
@@ -32,6 +34,8 @@ public class BorderlessSymbolButton : ButtonTemplate
         baseColor = sprite.color;
         greyColor = RWMenu.MenuRGB(RWMenu.MenuColors.VeryDarkGrey);
         baseScale = sprite.scale;
+        symbolSprite.x = ScreenPos.x + size.x / 2;
+        symbolSprite.y = ScreenPos.y + size.y / 2;
         Container.AddChild(symbolSprite);
     }
 
@@ -63,7 +67,8 @@ public class BorderlessSymbolButton : ButtonTemplate
     {
         base.GrafUpdate(timeStacker);
 
-        float cycle = 0.5f - 0.5f * Mathf.Sin(Mathf.Lerp(buttonBehav.lastSin, buttonBehav.sin, timeStacker) / 30f * Mathf.PI * 2f);
+        float cycle = 0.5f - 0.5f *
+            Mathf.Sin(Mathf.Lerp(buttonBehav.lastSin, buttonBehav.sin, timeStacker) / 30f * Mathf.PI * 2f);
         cycle *= buttonBehav.sizeBump;
 
         symbolSprite.color = buttonBehav.greyedOut ? greyColor : Color.Lerp(baseColor, greyColor, cycle);

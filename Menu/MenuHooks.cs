@@ -132,7 +132,7 @@ namespace RainWorldRandomizer.Menu
             {
                 // Gate Map
                 gateDisplay = new GateMapDisplay(self, self.pages[0],
-                    new Vector2(xOffset, screenSize.y - (GateMapDisplay.Scug is "Watcher" ? 390f : 320f) - 60f));
+                    new Vector2(xOffset, screenSize.y - (GateMapDisplay.Scug is "Watcher" ? 310f : 230f) - 60f));
             }
             else
             {

@@ -100,7 +100,6 @@ public sealed class CampaignSelectPage : PositionedMenuObject
         {
             RefreshJollySummary();
             lastDialogOpen = false;
-            Plugin.Log.LogDebug("refresh jolly");
         }
     }
 
