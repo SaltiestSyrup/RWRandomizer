@@ -9,6 +9,7 @@ namespace RainWorldRandomizer.Generation
         public enum Type
         {
             Gate,
+            Warp,
             Passage,
             Karma,
             Ripple,

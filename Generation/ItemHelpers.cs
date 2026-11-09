@@ -121,7 +121,6 @@ public static class ItemHelpers
             }
 
             string warpID = string.Join("-", new[] { data.startReg, data.destReg }.OrderBy(x => x));
-            string itemName = $"Warp-{warpID}";
             bool forceOpen = Constants.UnkeyableWarps.Contains(warpID)
                              || (data.destReg.Equals("WRSA") && !options.daemonKeys);
             Connection connection;
@@ -129,7 +128,7 @@ public static class ItemHelpers
             // This is a one-way warp, create the connection
             if (data.oneWay)
             {
-                connection = new Connection(itemName,
+                connection = new Connection(warpID,
                     [
                         regions[data.startReg],
                         regions[data.destReg]
@@ -138,13 +137,13 @@ public static class ItemHelpers
                             ? data.ripple
                                 ? new RippleAccessRule(9)
                                 : AccessRule.Empty()
-                            : new WarpAccessRule(itemName, data.ripple),
+                            : new WarpAccessRule(warpID, data.ripple),
                         AccessRule.Impossible()));
             }
             // We found the second half of a two-way warp pair, create it
             else if (hangingConnections.FirstOrDefault(con => con.MatchPair(data)) is WarpConnection other)
             {
-                connection = new Connection(itemName,
+                connection = new Connection(warpID,
                     [
                         regions[data.startReg],
                         regions[data.destReg]
@@ -153,12 +152,12 @@ public static class ItemHelpers
                             ? data.ripple
                                 ? new RippleAccessRule(9)
                                 : AccessRule.Empty()
-                            : new WarpAccessRule(itemName, data.ripple),
+                            : new WarpAccessRule(warpID, data.ripple),
                         forceOpen
                             ? other.ripple
                                 ? new RippleAccessRule(9)
                                 : AccessRule.Empty()
-                            : new WarpAccessRule(itemName, other.ripple)
+                            : new WarpAccessRule(warpID, other.ripple)
                     )
                 );
                 hangingConnections.Remove(other);
@@ -172,10 +171,10 @@ public static class ItemHelpers
 
             // Finalize the connection if we made one
             connection.Create();
-            warpNames.Add(itemName);
+            warpNames.Add(warpID);
             if (!forceOpen)
             {
-                warpItems.Add(new Item(itemName, Item.Type.Gate, Item.Importance.Progression));
+                warpItems.Add(new Item(warpID, Item.Type.Warp, Item.Importance.Progression));
             }
         }
 
@@ -189,11 +188,10 @@ public static class ItemHelpers
             }
 
             string warpID = string.Join("-", new[] { data.startReg, data.destReg }.OrderBy(x => x));
-            string itemName = $"Warp-{warpID}";
             bool forceOpen = Constants.UnkeyableWarps.Contains(warpID) || !options.spinningTopKeys;
 
             Connection connection = new(
-                itemName,
+                warpID,
                 [
                     regions[data.startReg],
                     regions[data.destReg]
@@ -201,15 +199,15 @@ public static class ItemHelpers
                         ? data.ripple
                             ? new RippleAccessRule(9)
                             : AccessRule.Empty()
-                        : new WarpAccessRule(itemName, data.ripple),
+                        : new WarpAccessRule(warpID, data.ripple),
                     AccessRule.Impossible()));
 
             // Finalize the connection
             connection.Create();
-            warpNames.Add(itemName);
+            warpNames.Add(warpID);
             if (!forceOpen)
             {
-                warpItems.Add(new Item(itemName, Item.Type.Gate, Item.Importance.Progression));
+                warpItems.Add(new Item(warpID, Item.Type.Warp, Item.Importance.Progression));
             }
         }
 

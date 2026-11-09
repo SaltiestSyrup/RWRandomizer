@@ -37,7 +37,6 @@ namespace RainWorldRandomizer.Menu
         private List<LocationInfo> locationInfos;
         private Node highlightedNode;
         private bool highlightLocked;
-        private string displayedRegion;
 
         public static string Scug
         {
@@ -51,7 +50,7 @@ namespace RainWorldRandomizer.Menu
 
         private static string ActualStartRegion
         {
-            get { return Plugin.RandoManager.customStartDen.Split('_')[0]; }
+            get { return Plugin.RandoManager.customStartDen.Split('_')[0].ToUpperInvariant(); }
         }
 
         public GateMapDisplay(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
@@ -513,14 +512,13 @@ namespace RainWorldRandomizer.Menu
             if (node is null)
             {
                 highlightedNode = null;
-                displayedRegion = "";
+                regionLabel.text = "";
                 return;
             }
 
             highlightedNode = node;
             highlightedNode.current = true;
             highlightedNode.lockedCurrent = highlightLocked;
-            displayedRegion = node.ReadableName;
             regionLabel.text = node.ReadableName;
             UpdateTrackerForRegion(GetActualRegion(node.realRegionShort));
         }

@@ -528,7 +528,7 @@ namespace RainWorldRandomizer.Generation
                 }
 
                 // Cannot remove more passages, unlock gates
-                List<Item> gateItems = itemsToPlace.Where(i => i.type == Item.Type.Gate).ToList();
+                List<Item> gateItems = itemsToPlace.Where(i => i.type is Item.Type.Gate or Item.Type.Warp).ToList();
                 if (gateItems.Any())
                 {
                     Item item = gateItems.ElementAt(randomState.Next(gateItems.Count));
@@ -627,7 +627,7 @@ namespace RainWorldRandomizer.Generation
                 List<Item> placeableOtherProg = [];
                 foreach (Item i in itemsToPlace.Where(i => i.importance == Item.Importance.Progression))
                 {
-                    if (i.type == Item.Type.Gate)
+                    if (i.type is Item.Type.Gate or Item.Type.Warp)
                     {
                         if (state.Gates.Contains(i.id)) continue;
 
@@ -680,7 +680,7 @@ namespace RainWorldRandomizer.Generation
                 RandomizedGame.Add(chosenLocation, chosenItem);
 
                 // Update state with the new prog we added
-                if (chosenItem.type == Item.Type.Gate) state.AddGate(chosenItem.id);
+                if (chosenItem.type is Item.Type.Gate or Item.Type.Warp) state.AddGate(chosenItem.id);
                 else state.AddOtherProgItem(chosenItem.id);
 
                 itemsToPlace.Remove(chosenItem);
@@ -718,7 +718,7 @@ namespace RainWorldRandomizer.Generation
 
                 // Update state with the new prog we added
                 // Gates won't give any new locations by this point
-                if (chosenItem.type == Item.Type.Gate) state.AddGate(chosenItem.id);
+                if (chosenItem.type is Item.Type.Gate or Item.Type.Warp) state.AddGate(chosenItem.id);
                 else state.AddOtherProgItem(chosenItem.id);
 
                 itemsToPlace.Remove(chosenItem);
@@ -787,6 +787,7 @@ namespace RainWorldRandomizer.Generation
             Unlock.UnlockType outputType = item.type switch
             {
                 Item.Type.Gate => Unlock.UnlockType.Gate,
+                Item.Type.Warp => Unlock.UnlockType.Warp,
                 Item.Type.Passage => Unlock.UnlockType.Token,
                 Item.Type.Karma => Unlock.UnlockType.Karma,
                 Item.Type.Ripple => Unlock.UnlockType.Ripple,

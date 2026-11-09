@@ -176,6 +176,7 @@ public static class LocationHelpers
         return (shelt, locs);
     }
 
+    // TODO Make this also add Spinning Top warps
     public static HashSet<Location> MakeWarpLocations(string regionShort)
     {
         string regionLower = regionShort.ToLowerInvariant();

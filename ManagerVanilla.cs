@@ -166,8 +166,9 @@ namespace RainWorldRandomizer
                 new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true, out ExtEnumBase t)
                         ? (Unlock.UnlockType)t
                         : Unlock.UnlockType.Item,
-                    kvp.Value.id, kvp.Value.collected));
+                    kvp.Value.id, kvp.Value.collected, (Unlock.Importance)kvp.Value.importance));
             locations = [.. randomizerKey.Select(kvp => new LocationInfo(kvp.Key, kvp.Value.IsGiven, false))];
+            customStartDen = file.startingDen;
 
             // Set unlocked gates and passage tokens
             foreach (Unlock item in randomizerKey.Values)
@@ -182,6 +183,9 @@ namespace RainWorldRandomizer
                                 item.IsGiven; // If the gate was already opened by an identical unlock, keep it open
                         }
 
+                        break;
+                    case "Warp":
+                        if (item.IsGiven) CollectedStaticKeys.Add(item.ID);
                         break;
                     case "Token":
                         if (passageTokensStatus.ContainsKey(new WinState.EndgameID(item.ID)))

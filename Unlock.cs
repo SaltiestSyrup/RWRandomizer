@@ -62,6 +62,7 @@ namespace RainWorldRandomizer
         public class UnlockType(string value, bool register = false) : ExtEnum<UnlockType>(value, register)
         {
             public static readonly UnlockType Gate = new("Gate", true);
+            public static readonly UnlockType Warp = new("Warp", true);
             public static readonly UnlockType Token = new("Token", true);
             public static readonly UnlockType Karma = new("Karma", true);
             public static readonly UnlockType Ripple = new("Ripple", true);
@@ -114,6 +115,9 @@ namespace RainWorldRandomizer
             {
                 case "Gate":
                     Plugin.RandoManager.OpenGate(ID);
+                    break;
+                case "Warp":
+                    Plugin.RandoManager.CollectedStaticKeys.Add(ID);
                     break;
                 case "Token":
                     Plugin.RandoManager.AwardPassageToken(new WinState.EndgameID(ID));
