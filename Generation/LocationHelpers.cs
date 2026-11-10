@@ -176,18 +176,45 @@ public static class LocationHelpers
         return (shelt, locs);
     }
 
-    // TODO Make this also add Spinning Top warps
     public static HashSet<Location> MakeWarpLocations(string regionShort)
     {
         string regionLower = regionShort.ToLowerInvariant();
-        if (!Custom.rainWorld.regionWarpRooms.TryGetValue(regionLower, out List<string> warps)) return [];
+        Custom.rainWorld.regionWarpRooms.TryGetValue(regionLower, out List<string> warps);
+        Custom.rainWorld.regionSpinningTopRooms.TryGetValue(regionLower, out List<string> stWarps);
+        // Ancient Urban has only "fake" Spinning Top warps
+        if ((warps is null && stWarps is null) || regionLower == "waua")
+        {
+            return [];
+        }
 
-        return warps
-            .Select(warp => 
-                new Location($"Warp-{warp.Split(':')[0].ToUpperInvariant()}", 
-                    Location.Type.Unknown, 
-                    AccessRule.Empty()))
+        warps ??= [];
+        stWarps ??= [];
+
+        HashSet<Location> locs = warps.Select(warp => 
+            new Location($"Warp-{warp.Split(':')[0].ToUpperInvariant()}", 
+                Location.Type.Unknown, 
+                AccessRule.Empty()))
             .ToHashSet();
+        
+        foreach (string stWarp in stWarps)
+        {
+            string[] split = stWarp.Split(':');
+            if (!split[0].Equals("NULL", StringComparison.InvariantCultureIgnoreCase))
+            {
+                locs.Add(new Location($"Warp-{split[0].ToUpperInvariant()}", 
+                    Location.Type.Unknown,
+                    AccessRule.Empty()));
+            }
+
+            if (!split[2].Equals("NULL", StringComparison.InvariantCultureIgnoreCase))
+            {
+                locs.Add(new Location($"Warp-{split[2].ToUpperInvariant()}", 
+                    Location.Type.Unknown,
+                    AccessRule.Empty()));
+            }
+        }
+
+        return locs;
     }
 
     public static HashSet<Location> MakeRotSpreadLocations(List<string> validRegions)

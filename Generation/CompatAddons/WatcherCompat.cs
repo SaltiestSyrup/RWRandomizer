@@ -32,16 +32,32 @@ public class WatcherCompat : LogicAddon
     public override void DefineLogic()
     {
         // Purge tutorial
-        new List<string> { "SU", "HI", "CC", "SH" }.ForEach(reg =>
-            AddBlacklistedRegion(reg, new RulePatch(null),
-                SelectionMethod.Whitelist, WatcherSlugcats.Watcher));
+        foreach (string reg in new[] { "SU", "HI", "CC", "SH" })
+        {
+            AddBlacklistedRegion(reg, 
+                new RulePatch(AccessRule.Empty()), 
+                SelectionMethod.Whitelist, 
+                WatcherSlugcats.Watcher);
+        }
+        
+        // Remove impossible karma flowers
+        foreach (string room in new[] 
+                     {"WORA_CITY2X", "WORA_CITY10X", "WORA_DESERT4X", "WORA_DESERT8", "WORA_EGG02X", "WTDA_B12"})
+        {
+            AddLocationRule($"Flower-{room}", 
+                new RulePatch(AccessRule.Impossible()), 
+                SelectionMethod.Whitelist,
+                WatcherSlugcats.Watcher);
+        }
 
         // Set bad warps
-        new List<string> { "WSUR", "WDSR", "WHIR", "WGWR" }.ForEach(reg =>
+        foreach (string reg in new [] { "WSUR", "WDSR", "WHIR", "WGWR" })
+        {
             AddConnection(new ConnectionBlueprint($"BADWARP_{reg}",
                     [VanillaGenerator.START_REG, reg],
                     (AccessRuleConstants.CanDynamicWarp, AccessRule.Impossible())),
-                SelectionMethod.Whitelist, WatcherSlugcats.Watcher));
+                SelectionMethod.Whitelist, WatcherSlugcats.Watcher);
+        }
 
         // WARA_P20 is the chasm room that needs float to cross rightwards
         AddSubregion(new SubregionBlueprint("WARA", "WARAWest",

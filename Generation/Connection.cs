@@ -128,7 +128,7 @@ namespace RainWorldRandomizer.Generation
 
         public bool Equals(Connection other)
         {
-            return ID.Equals(other.ID);
+            return ID.Equals(other?.ID);
         }
     }
 

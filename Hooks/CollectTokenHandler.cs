@@ -176,7 +176,6 @@ namespace RainWorldRandomizer
             InjectHasTokenCheck();
 
             // developer
-            ILLabel devJumpTrue = null;
             ILLabel devJumpFalse = null;
             // After last if check at 2C9E
             c.GotoNext(
@@ -184,7 +183,7 @@ namespace RainWorldRandomizer
                 x => x.MatchCallOrCallvirt(typeof(Options).GetMethod(nameof(Options.DeveloperCommentaryLocalized))),
                 x => x.MatchBrfalse(out devJumpFalse)
             );
-            devJumpTrue = c.MarkLabel();
+            ILLabel devJumpTrue = c.MarkLabel();
 
             // After checking if object is dev token at 2C70
             c.GotoPrev(
@@ -293,7 +292,9 @@ namespace RainWorldRandomizer
 
             static bool HiddenOrUnplayableAndNotInv(bool isHiddenOrUnplayable, SlugcatStats.Name slugcat)
             {
-                if (!Plugin.RandomizerActive) return isHiddenOrUnplayable;
+                // This overrides regardless of if rando is enabled, because it's called outside of gameplay.
+                // Tokens are filtered out by unplayable like 3 different ways so this should have no effect
+                // outside of randomizer context.
                 return isHiddenOrUnplayable &&
                        (!ModManager.MSC || slugcat != MoreSlugcatsEnums.SlugcatStatsName.Sofanthiel);
             }

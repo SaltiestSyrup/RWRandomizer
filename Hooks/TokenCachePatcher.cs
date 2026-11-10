@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Menu;
+using Watcher;
 
 namespace RainWorldRandomizer
 {
@@ -380,9 +381,14 @@ namespace RainWorldRandomizer
                     CacheObject(self, region, room, list3, (AbstractPhysicalObject.AbstractObjectType)t);
                 }
 
-                // Hardcode checks for placed creatures
                 switch (placedObject.type.value)
                 {
+                    case "KarmaFlower":
+                        CacheKarmaFlower(self, region, room, list3);
+                        break;
+                    case "DevToken" when ModManager.MSC:
+                        CacheDevToken(self, region, room, list3, placedObject);
+                        break;
                     case "Hazer":
                     case "DeadHazer":
                         // All hazers in SL are out of reach
@@ -393,16 +399,15 @@ namespace RainWorldRandomizer
                     case "DeadVultureGrub":
                         CacheCreature(self, region, room, list3, CreatureTemplate.Type.VultureGrub);
                         break;
-                }
-
-                if (ModManager.MSC && placedObject.type == MoreSlugcatsEnums.PlacedObjectType.DevToken)
-                {
-                    CacheDevToken(self, region, room, list3, placedObject);
-                }
-
-                if (placedObject.type == PlacedObject.Type.KarmaFlower)
-                {
-                    CacheKarmaFlower(self, region, room, list3);
+                    case "PlacedRats" when ModManager.Watcher:
+                        CacheCreature(self, region, room, list3, WatcherEnums.CreatureTemplateType.Rat);
+                        break;
+                    case "SandGrubNetwork" when ModManager.Watcher:
+                        CacheCreature(self, region, room, list3, WatcherEnums.CreatureTemplateType.SandGrub);
+                        break;
+                    case "PlacedBoxWorm" when ModManager.Watcher:
+                        CacheObject(self, region, room, list3, WatcherEnums.AbstractObjectType.FireSpriteLarva);
+                        break;
                 }
             }
 
