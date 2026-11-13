@@ -243,7 +243,7 @@ namespace RainWorldRandomizer.Menu
             nodes["SL"] = new Node(menu, this, new Vector2(220f, 120f), Scug is "Artificer" or "Spear" ? "LM" : "SL");
             nodes["SI"] = new Node(menu, this, new Vector2(40f, 160f), "SI");
             nodes["CC"] = new Node(menu, this, new Vector2(100f, 160f), "CC");
-            nodes["<P>"] = new Node(menu, this, new Vector2(280f, 40f), "P");
+            nodes["<P>"] = new Node(menu, this, new Vector2(280f, 40f), "<P>", "P");
 
             if (ModManager.MSC)
             {
@@ -254,7 +254,7 @@ namespace RainWorldRandomizer.Menu
                     nodes["LC"] = new Node(menu, this, new Vector2(160f, 200f), "LC");
                 if (Scug is not "Artificer")
                     nodes["MS"] = new Node(menu, this, new Vector2(280f, 160f), Scug is "Spear" ? "DM" : "MS");
-                nodes["<FQ>"] = new Node(menu, this, new Vector2(280f, 80f), "FQ");
+                nodes["<FQ>"] = new Node(menu, this, new Vector2(280f, 80f), "<FQ>", "FQ");
             }
 
             if (Scug is not "Saint")
