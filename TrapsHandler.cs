@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RainWorldRandomizer.Menu;
+using RWCustom;
 using UnityEngine;
 
 namespace RainWorldRandomizer
@@ -93,7 +94,7 @@ namespace RainWorldRandomizer
         private static readonly Dictionary<string, TrapDefinition> TrapDefinitions = new()
         {
             { "Stun", new TrapDefinition(TrapStun) },
-            { "Timer", new TrapDefinition(game => { TrapCycleTimer(game); }) },
+            { "Timer", new TrapDefinition(game => { game.TrapCycleTimer(); }) },
             { "Zoomies", new TrapDefinition(TrapZoomiesPlayer, TrapDisableZoomies, null, TrapZoomiesPlayer, 1200) },
             //{ "Flood", game => { throw new NotImplementedException("Trap not implemented yet"); } },
             { "Rain", new TrapDefinition(TrapRainActivate, TrapRainDeactivate, null, null, 600) },
@@ -104,38 +105,38 @@ namespace RainWorldRandomizer
             { "RippleSpawn", new TrapDefinition(TrapRippleSpawnActivate) },
 
             { "RedLizard", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedLizard); },
-                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.RedLizard); },
+                game => { game.TrapSpawnCreatureNearby(CreatureTemplate.Type.RedLizard); },
+                game => { game.TrapSpawnCreatureNearbyDeactivate(CreatureTemplate.Type.RedLizard); },
                 null, null, 1200)
             },
             { "RedCentipede", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.RedCentipede); },
-                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.RedCentipede); },
+                game => { game.TrapSpawnCreatureNearby(CreatureTemplate.Type.RedCentipede); },
+                game => { game.TrapSpawnCreatureNearbyDeactivate(CreatureTemplate.Type.RedCentipede); },
                 null, null, 1200)
             },
             { "SpitterSpider", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.SpitterSpider, 2); },
-                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.SpitterSpider); },
+                game => { game.TrapSpawnCreatureNearby(CreatureTemplate.Type.SpitterSpider); },
+                game => { game.TrapSpawnCreatureNearbyDeactivate(CreatureTemplate.Type.SpitterSpider); },
                 null, null, 1200)
             },
             { "BrotherLongLegs", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.BrotherLongLegs, 2); },
-                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.BrotherLongLegs); },
+                game => { game.TrapSpawnCreatureNearby(CreatureTemplate.Type.BrotherLongLegs); },
+                game => { game.TrapSpawnCreatureNearbyDeactivate(CreatureTemplate.Type.BrotherLongLegs); },
                 null, null, 1200)
             },
             { "DaddyLongLegs", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, CreatureTemplate.Type.DaddyLongLegs); },
-                game => { TrapSpawnCreatureNearbyDeactivate(game, CreatureTemplate.Type.DaddyLongLegs); },
+                game => { game.TrapSpawnCreatureNearby(CreatureTemplate.Type.DaddyLongLegs); },
+                game => { game.TrapSpawnCreatureNearbyDeactivate(CreatureTemplate.Type.DaddyLongLegs); },
                 null, null, 1200)
             },
             { "Responsibility", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, MoreSlugcats.MoreSlugcatsEnums.CreatureTemplateType.SlugNPC); },
-                game => { TrapSpawnCreatureNearbyDeactivate(game, MoreSlugcats.MoreSlugcatsEnums.CreatureTemplateType.SlugNPC); },
+                game => { game.TrapSpawnCreatureNearby(MoreSlugcats.MoreSlugcatsEnums.CreatureTemplateType.SlugNPC); },
+                game => { game.TrapSpawnCreatureNearbyDeactivate(MoreSlugcats.MoreSlugcatsEnums.CreatureTemplateType.SlugNPC); },
                 null, null, 1200)
             },
             { "BlizzardLizard", new TrapDefinition(
-                game => { TrapSpawnCreatureNearby(game, Watcher.WatcherEnums.CreatureTemplateType.BlizzardLizard); },
-                game => { TrapSpawnCreatureNearbyDeactivate(game, Watcher.WatcherEnums.CreatureTemplateType.BlizzardLizard); },
+                game => { game.TrapSpawnCreatureNearby(Watcher.WatcherEnums.CreatureTemplateType.BlizzardLizard); },
+                game => { game.TrapSpawnCreatureNearbyDeactivate(Watcher.WatcherEnums.CreatureTemplateType.BlizzardLizard); },
                 null, null, 1200)
             },
         };
@@ -282,34 +283,44 @@ namespace RainWorldRandomizer
         private static List<WeakReference<AbstractCreature>> huntingCreatures = [];
 
         /// <summary>Spawns the desired creature in an adjacent room</summary>
+        /// <param name="game"></param>
         /// <param name="template">The type of creature to spawn</param>
         /// <param name="count">How many of the creature to spawn</param>
         private static void TrapSpawnCreatureNearby(this RainWorldGame game, CreatureTemplate.Type template, int count = 1)
         {
-            Player player = game.FirstAlivePlayer?.realizedCreature as Player;
+            if (game.FirstAlivePlayer?.realizedCreature is not Player player)
+            {
+                Plugin.Log.LogError("Creature trap failed to activate, no realized player found.");
+                return;
+            }
 
-            int[] connectedRooms = player.room.abstractRoom.connections;
+            if (player.room is not Room room || !room.shortCutsReady)
+            {
+                Plugin.Log.LogError("Creature trap failed to activate, current room invalid.");
+                return;
+            }
 
             for (int i = 0; i < count; i++)
             {
-                AbstractRoom chosenRoom = game.world.GetAbstractRoom(connectedRooms[UnityEngine.Random.Range(0, connectedRooms.Length)]);
+                AbstractCreature crit = new(game.world, StaticWorld.GetCreatureTemplate(template), null, 
+                    new WorldCoordinate(), game.GetNewID());
 
-                if (chosenRoom == null)
+                room.abstractRoom.AddEntity(crit);
+                huntingCreatures.Add(new WeakReference<AbstractCreature>(crit));
+                
+                crit.Realize();
+                ShortcutHandler.ShortCutVessel vessel = new(new IntVector2(-1, -1), 
+                    crit.realizedCreature, room.abstractRoom, 40)
                 {
-                    Plugin.Log.LogError("Trap failed to find a valid room to spawn creature in");
-                    continue;
-                }
+                    entranceNode = UnityEngine.Random.Range(0, room.abstractRoom.exits),
+                    room = room.abstractRoom,
+                };
+                crit.pos.room = game.world.offScreenDen.index;
+                
+                game.shortcuts.betweenRoomsWaitingLobby.Add(vessel);
 
-                AbstractCreature crit = new(game.world, StaticWorld.GetCreatureTemplate(template), null, chosenRoom.RandomNodeInRoom(), game.GetNewID());
-
-                chosenRoom.AddEntity(crit);
-                huntingCreatures.Add(new(crit));
-
-                if (chosenRoom.realizedRoom != null)
-                {
-                    crit.RealizeInRoom();
-                    crit.abstractAI.RealAI.tracker.SeeCreature(player.abstractCreature);
-                }
+                crit.abstractAI.RealAI.tracker.SeeCreature(player.abstractCreature);
+                crit.abstractAI.RealAI.SetDestination(player.coord);
             }
         }
 
