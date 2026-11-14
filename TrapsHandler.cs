@@ -303,24 +303,20 @@ namespace RainWorldRandomizer
             for (int i = 0; i < count; i++)
             {
                 AbstractCreature crit = new(game.world, StaticWorld.GetCreatureTemplate(template), null, 
-                    new WorldCoordinate(), game.GetNewID());
+                    new WorldCoordinate(game.world.offScreenDen.index, -1, -1, -1), game.GetNewID());
 
-                room.abstractRoom.AddEntity(crit);
                 huntingCreatures.Add(new WeakReference<AbstractCreature>(crit));
-                
+
                 crit.Realize();
+                
                 ShortcutHandler.ShortCutVessel vessel = new(new IntVector2(-1, -1), 
                     crit.realizedCreature, room.abstractRoom, 40)
                 {
                     entranceNode = UnityEngine.Random.Range(0, room.abstractRoom.exits),
                     room = room.abstractRoom,
                 };
-                crit.pos.room = game.world.offScreenDen.index;
                 
                 game.shortcuts.betweenRoomsWaitingLobby.Add(vessel);
-
-                crit.abstractAI.RealAI.tracker.SeeCreature(player.abstractCreature);
-                crit.abstractAI.RealAI.SetDestination(player.coord);
             }
         }
 
