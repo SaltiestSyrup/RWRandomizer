@@ -241,7 +241,9 @@ namespace RainWorldRandomizer
             {
                 return [.. list3.Where(slugcat =>
                 {
-                    IEnumerable<string> regions = SlugcatStats.SlugcatStoryRegions(slugcat).Union(SlugcatStats.SlugcatOptionalRegions(slugcat));
+                    IEnumerable<string> regions = SlugcatStats.SlugcatStoryRegions(slugcat)
+                        .Union(SlugcatStats.SlugcatOptionalRegions(slugcat))
+                        .Union(["LC"]); // Force set Metro pearl accessibility
                     return regions.Any(r => r.Equals(region, StringComparison.InvariantCultureIgnoreCase));
                 })];
             }
