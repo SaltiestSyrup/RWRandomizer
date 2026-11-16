@@ -461,9 +461,10 @@ namespace RainWorldRandomizer
             RegionGate.GateRequirement[] origRequirements = (RegionGate.GateRequirement[])newRequirements.Clone();
 
             // Change default Metropolis gate karma
-            if (gateName.Equals("GATE_UW_LC") && RandoOptions.ForceOpenMetropolis
-                                              && RandoManager.currentSlugcat !=
-                                              MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+            if (gateName.Equals("GATE_UW_LC") 
+                && RandoManager is not ManagerArchipelago
+                && RandoOptions.ForceOpenMetropolis
+                && RandoManager.currentSlugcat != MoreSlugcatsEnums.SlugcatStatsName.Artificer)
             {
                 origRequirements[0] = RegionGate.GateRequirement.FiveKarma;
                 newRequirements[0] = RegionGate.GateRequirement.FiveKarma;
@@ -518,6 +519,7 @@ namespace RainWorldRandomizer
                     break;
                 case RandoOptions.GateBehavior.OnlyKarma:
                     // Nothing to be done here, use vanilla mechanics
+                    hasKeyForGate = true;
                     break;
             }
 
@@ -531,9 +533,9 @@ namespace RainWorldRandomizer
             // Ensure proper Metro gate behavior for Arty
             if (ModManager.MSC)
             {
-                if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock)
+                if (origRequirements[0] == MoreSlugcatsEnums.GateRequirement.RoboLock && hasKeyForGate)
                     newRequirements[0] = origRequirements[0];
-                if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock)
+                if (origRequirements[1] == MoreSlugcatsEnums.GateRequirement.RoboLock && hasKeyForGate)
                     newRequirements[1] = origRequirements[1];
                 if (gateName == "GATE_SB_OE"
                     && RandoManager.currentSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Gourmand

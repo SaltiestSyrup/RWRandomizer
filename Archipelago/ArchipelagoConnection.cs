@@ -450,6 +450,9 @@ namespace RainWorldRandomizer
                 perks.Contains("Agility Perk"),
             ];
 
+            ConnectedOptions.allowSubmergedForOthers = slotData.GetSimple("submerged_populated", 1L) == 1L;
+            ConnectedOptions.allowMetroForOthers = slotData.GetSimple("metropolis_populated", 0L) == 1L;
+
             ConnectedOptions.useScavengerKarma = slotData.GetSimple("artificer_scavenger_karma", 0L) == 1L;
 
             ConnectedOptions.archipelagoDeathLink = slotData.GetSimple("death_link", 0L) > 0L;

@@ -56,7 +56,7 @@ namespace RainWorldRandomizer.Menu
         public GateMapDisplay(RWMenu menu, MenuObject owner, Vector2 pos) : base(menu, owner, pos, default, true)
         {
             bool warpMenu = BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey("LeeMoriya.Warp");
-            size = Scug is "Watcher" ? new Vector2(540f, 300f) : new Vector2(320f, 220f);
+            size = Scug is "Watcher" ? new Vector2(540f, 300f) : new Vector2(320f, 240f);
             fillAlpha = 1f;
 
             // --- Node Graph ---

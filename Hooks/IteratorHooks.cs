@@ -28,6 +28,7 @@ namespace RainWorldRandomizer
                 IL.SSOracleBehavior.SSOracleMeetGourmand.Update += PebblesMeetYellowOrGourmandUpdateIL;
                 IL.SSOracleBehavior.SSOracleMeetArty.Update += PebblesMeetArtyUpdateIL;
                 IL.SSOracleBehavior.ThrowOutBehavior.Update += IteratorThrowOutBehaviorIL;
+                IL.SSOracleBehavior.NewAction += SSOracleBehaviorOnNewAction;
                 IL.SLOracleWakeUpProcedure.Update += ILMoonWakeUpUpdate;
                 IL.MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.Update += RotCoreRoomUpdateIL;
                 IL.Oracle.ctor += OracleCtorIL;
@@ -56,6 +57,7 @@ namespace RainWorldRandomizer
             IL.SSOracleBehavior.SSOracleMeetGourmand.Update -= PebblesMeetYellowOrGourmandUpdateIL;
             IL.SSOracleBehavior.SSOracleMeetArty.Update -= PebblesMeetArtyUpdateIL;
             IL.SSOracleBehavior.ThrowOutBehavior.Update -= IteratorThrowOutBehaviorIL;
+            IL.SSOracleBehavior.NewAction -= SSOracleBehaviorOnNewAction;
             IL.SLOracleWakeUpProcedure.Update -= ILMoonWakeUpUpdate;
             IL.MoreSlugcats.MSCRoomSpecificScript.RM_CORE_EnergyCell.Update -= RotCoreRoomUpdateIL;
             IL.Oracle.ctor -= OracleCtorIL;
@@ -477,6 +479,33 @@ namespace RainWorldRandomizer
                     Plugin.RandoManager?.GiveLocation("Meet_FP");
                 }
             });
+        }
+        
+        /// <summary>
+        /// Prevent Pebbles from killing any slugcat with a Citizen ID Drone
+        /// </summary>
+        private static void SSOracleBehaviorOnNewAction(ILContext il)
+        {
+            ILCursor c = new(il);
+            
+            // Expedition does exactly what we're trying to do, jump to inside that if statement and mark a label
+            c.GotoNext(x => x.MatchLdsfld(typeof(SSOracleBehavior.Action)
+                .GetField(nameof(SSOracleBehavior.Action.ThrowOut_KillOnSight))));
+            c.GotoNext(MoveType.After, x => x.MatchBrfalse(out _));
+            ILLabel resetActionLabel = c.MarkLabel();
+
+            // Go back to before it checks ModManager.Expedition, and add our own condition
+            c.GotoPrev(MoveType.AfterLabel, x => x.MatchLdsfld(typeof(ModManager).GetField(nameof(ModManager.Expedition))));
+            c.Emit(OpCodes.Ldarg_1);
+            c.EmitDelegate(ResetKillOnSight);
+            c.Emit(OpCodes.Brtrue, resetActionLabel);
+            return;
+
+            static bool ResetKillOnSight(SSOracleBehavior.Action nextAction)
+            {
+                return nextAction == SSOracleBehavior.Action.ThrowOut_KillOnSight 
+                       && Plugin.RandomizerActive && Plugin.RandoManager.GivenRobo;
+            }
         }
 
         /// <summary>
