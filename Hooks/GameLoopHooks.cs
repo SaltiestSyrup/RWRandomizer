@@ -100,11 +100,6 @@ namespace RainWorldRandomizer
                 }
                 else
                 {
-                    // Assign contents of Gourmand's tracker data
-                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest
-                        ? Constants.GourmandPassageTrackerExpanded
-                        : Constants.GourmandPassageTrackerOrig;
-
                     try
                     {
                         Plugin.RandoManager.StartNewGameSession(
@@ -122,6 +117,11 @@ namespace RainWorldRandomizer
                         Plugin.Log.LogError("Encountered exception while starting game session");
                         Plugin.Log.LogError(e);
                     }
+                    
+                    // Assign contents of Gourmand's tracker data
+                    WinState.GourmandPassageTracker = RandoOptions.UseExpandedFoodQuest
+                        ? Constants.GourmandPassageTrackerExpanded
+                        : Constants.GourmandPassageTrackerOrig;
                 }
             }
 

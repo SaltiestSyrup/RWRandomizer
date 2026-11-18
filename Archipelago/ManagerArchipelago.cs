@@ -32,7 +32,7 @@ namespace RainWorldRandomizer
             base.StartNewGameSession(storyGameCharacter, continueSaved);
             currentSeed = ArchipelagoConnection.generationSeed;
             LoadAPItemNames();
-
+            
             // Verify slugcat
             if (storyGameCharacter != ArchipelagoConnection.Slugcat)
             {
