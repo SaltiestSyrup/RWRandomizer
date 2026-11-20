@@ -371,6 +371,9 @@ namespace RainWorldRandomizer
             }
         }
 
+        /// <summary>
+        /// Custom PPwS implementation that acts when the game checks if a passage is allowed to exist on the slugcat.
+        /// </summary>
         private static bool WinStateOnTrackerAllowedOnSlugcat(On.WinState.orig_TrackerAllowedOnSlugcat orig,
             WinState.EndgameID trackerId, SlugcatStats.Name slugcat)
         {
@@ -378,17 +381,21 @@ namespace RainWorldRandomizer
             if (!Plugin.RandomizerActive) return origVal;
 
             int PPwS = (int)RandoOptions.CurPPwSBehavior;
+            bool hasSurvivor = Plugin.Singleton.Game?.GetStorySession?.saveState.deathPersistentSaveData.winState
+                .GetTracker(WinState.EndgameID.Survivor, true).GoalFullfilled 
+                               ?? true;
 
             bool PPwSVal = trackerId.value switch
             {
                 // Always
                 "Survivor" or "Pilgrim" or "Gourmand" => origVal,
                 // If >= Disabled
-                "Martyr" or "Mother" => PPwS >= 1 && origVal,
+                "Martyr" or "Mother" => (PPwS >= 1 || hasSurvivor) && origVal,
                 // If >= Enabled
-                "DragonSlayer" or "Friend" or "Traveller" or "Nomad" => PPwS >= 2 && origVal,
+                "DragonSlayer" or "Friend" or "Traveller" or "Nomad" => (PPwS >= 2 || hasSurvivor) && origVal,
                 // If == Bypassed
-                "Hunter" or "Saint" or "Chieftain" or "Monk" or "Outlaw" or "Scholar" => PPwS >= 3 && origVal,
+                "Hunter" or "Saint" or "Chieftain" or "Monk" or "Outlaw" or "Scholar" => 
+                    (PPwS >= 3 || hasSurvivor) && origVal,
                 _ => origVal
             };
 
