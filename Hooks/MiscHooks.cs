@@ -66,6 +66,7 @@ namespace RainWorldRandomizer
                 IL.World.SpawnGhost += ILSpawnGhost;
                 IL.WinState.CycleCompleted += ILCycleCompleted;
                 IL.ScavengerAI.CheckForScavangeItems += CheckForScavengeItemsIL;
+                IL.World.SpawnPupNPCs += WorldOnSpawnPupNPCs;
             }
             catch (Exception e)
             {
@@ -94,6 +95,7 @@ namespace RainWorldRandomizer
             IL.World.SpawnGhost -= ILSpawnGhost;
             IL.WinState.CycleCompleted -= ILCycleCompleted;
             IL.ScavengerAI.CheckForScavangeItems -= CheckForScavengeItemsIL;
+            IL.World.SpawnPupNPCs -= WorldOnSpawnPupNPCs;
         }
 
         /// <summary>
@@ -744,6 +746,35 @@ namespace RainWorldRandomizer
             return Plugin.RandomizerActive && RandoOptions.LoadedOptions.useScavengerKarma
                 ? Mathf.Clamp(Plugin.RandoManager.ScavKarma - self.RemovedKarma, 0, 5) 
                 : orig(self);
+        }
+        
+        /// <summary>
+        /// Greatly increase the chance of a pup spawning while the passage is still needed.
+        /// </summary>
+        private static void WorldOnSpawnPupNPCs(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            c.GotoNext(MoveType.After, x => x.MatchLdfld(typeof(Region.RegionParams)
+                .GetField(nameof(Region.RegionParams.slugPupSpawnChance))));
+
+            c.Emit(OpCodes.Ldarg_0); // this
+            c.Emit(OpCodes.Ldloc_0); // num (# of pups in room)
+            c.EmitDelegate(ModifyPupChances);
+            
+            return;
+            
+            static float ModifyPupChances(float origVal, World self, int curPupCount)
+            {
+                bool hasMother = ModManager.MSC && (self.game.GetStorySession.saveState.deathPersistentSaveData.winState
+                    .GetTracker(MoreSlugcatsEnums.EndgameID.Mother, false)?.GoalFullfilled ?? false);
+                if (Plugin.RandomizerActive && !hasMother && curPupCount == 0)
+                {
+                    return origVal + 0.7f;
+                }
+
+                return origVal;
+            }
         }
     }
 }
