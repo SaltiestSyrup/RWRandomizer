@@ -7,15 +7,17 @@ namespace RainWorldRandomizer.SaveData;
 
 public class SaveTracker
 {
-    public const int SLOT_OFFSET = 100000;
-    
+    public const int SLOT_OFFSET = 1000;
+
     public static int OrigSaveSlot = 0;
     public static bool CustomSlotActive;
+
     /// <summary>
     /// Refers to the save slot the randomizer file is stored under, not the campaign slot the game is loading.
     /// Negative if no legacy slot active
     /// </summary>
     public static int ActiveLegacySlot = -1;
+
     /// <summary>
     /// Last generator used for a new standalone game.
     /// Stored here so the manager can find and load the data.
@@ -95,6 +97,13 @@ public class SaveTracker
                 && SaveManager.TryReadFromFile(slot, out SaveFile save))
             {
                 SaveSlots[slot] = save;
+                
+                // TODO: Remove this temp back compat for beta
+                if (File.Exists($"{Application.persistentDataPath}{Path.DirectorySeparatorChar}sav{slot + 1}"))
+                {
+                    File.Move($"{Application.persistentDataPath}{Path.DirectorySeparatorChar}sav{slot + 1}", 
+                        $"{Application.persistentDataPath}{Path.DirectorySeparatorChar}ran{slot + 1}");
+                }
             }
         }
     }

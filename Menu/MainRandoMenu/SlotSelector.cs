@@ -86,7 +86,7 @@ public sealed class SlotSelector : ScrollingMenu
                         slot.RemoveSprites();
                         RemoveSubObject(slot);
                         entries.Remove(slot);
-                        SaveManager.DeleteFile(menu.manager.rainWorld, slot.saveSlot);
+                        SaveManager.DeleteFile(menu.manager.rainWorld, slot.saveFile, slot.saveSlot);
                         SetNavigation();
                         // Update the new game button so it's not looking for ghost objects
                         menu.selectedObject = nextSelectable[2];

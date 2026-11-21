@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Kittehface.Framework20;
 using MoreSlugcats;
-using RainWorldRandomizer.Menu;
 using RainWorldRandomizer.SaveData;
 using RWCustom;
 using UnityEngine;
@@ -30,25 +30,6 @@ namespace RainWorldRandomizer
             return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath,
                 $"saved_game_{slugcat.value}_{saveSlot}.txt"));
         }
-
-        // Meant for vanilla saves only
-        // public static void WriteSavedGameToFile(Dictionary<string, Unlock> game, SlugcatStats.Name slugcat, int saveSlot)
-        // {
-        //     StreamWriter file = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"saved_game_{slugcat.value}_{saveSlot}.txt"));
-        //
-        //     file.WriteLine($"StartingDen->{Plugin.RandoManager.customStartDen}");
-        //     file.WriteLine(Plugin.RandoManager.currentSeed);
-        //     foreach (var item in game)
-        //     {
-        //         // TODO: Rewrite saves to use new ExtEnum
-        //         string serializedUnlock = $"{{{item.Value.Type.value},{item.Value.ID},{item.Value.IsGiven}}}";
-        //
-        //         file.Write($"{item.Key}->{serializedUnlock}");
-        //         file.WriteLine();
-        //     }
-        //
-        //     file.Close();
-        // }
 
         public static List<SaveFile> LoadAllLegacyStandaloneSaves()
         {
@@ -150,48 +131,6 @@ namespace RainWorldRandomizer
             };
         }
 
-        // public static void WriteItemQueueToFile(IEnumerable<Unlock.Item> items, IEnumerable<TrapsHandler.Trap> traps, SlugcatStats.Name slugcat, int saveSlot)
-        // {
-        //     string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"item_delivery_{slugcat.value}_{saveSlot}.txt");
-        //
-        //     // If there is nothing to store, delete any stored data
-        //     if (items.Count() + traps.Count() == 0)
-        //     {
-        //         if (File.Exists(path))
-        //         {
-        //             File.Delete(path);
-        //         }
-        //         return;
-        //     }
-        //
-        //     StreamWriter file = File.CreateText(path);
-        //
-        //     foreach (TrapsHandler.Trap trap in traps)
-        //     {
-        //         file.WriteLine($"Trap,{trap.id}");
-        //     }
-        //     foreach (Unlock.Item item in items)
-        //     {
-        //         file.WriteLine($"{item.type.enumType.Name},{item.id}");
-        //     }
-        //
-        //     file.Close();
-        // }
-
-
-        // [Obsolete("Unsafe when RandoManager is null, which is the only case where it is useful")]
-        // public static int CountRedsCycles(int saveSlot)
-        // {
-        //     if (!IsThereASavedGame(SlugcatStats.Name.Red, saveSlot))
-        //     {
-        //         return -1;
-        //     }
-        //
-        //     Dictionary<string, Unlock> game = LoadSavedGame(SlugcatStats.Name.Red, saveSlot);
-        //     return game.Values.Where(u => u.Type == Unlock.UnlockType.HunterCycles && u.IsGiven).Count();
-        // }
-
-
         private const string SCOUTED_LOCS_KEY = "RANDOMIZER_SCOUTED_LOCS";
         private static Dictionary<string, ItemFlags> _scoutedLocations;
 
@@ -250,39 +189,6 @@ namespace RainWorldRandomizer
             public long lastIndex = lastIndex;
             public Dictionary<string, bool> locationsStatus = locationsStatus;
         }
-
-        // AP saves store the found locations under a save ID, which is a string of pattern "[Generation Seed]_[Player Name]"
-        // public static bool IsThereAnAPSave(string saveId)
-        // {
-        //     return File.Exists(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
-        // }
-
-        // public static void WriteAPSaveToFile(string saveId, long lastIndex, List<LocationInfo> locations)
-        // {
-        //     if (locations == null || locations.Count == 0) return;
-        //
-        //     APSave save = new(lastIndex, locations.ToDictionary(l => l.internalName, l => l.Collected));
-        //
-        //     StreamWriter saveFile = File.CreateText(Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json"));
-        //
-        //     string jsonSave = JsonConvert.SerializeObject(save, Formatting.Indented);
-        //     saveFile.Write(jsonSave);
-        //
-        //     saveFile.Close();
-        // }
-
-        // public static APSave LoadAPSave(string saveId)
-        // {
-        //     string path = Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath, $"ap_save_{saveId}.json");
-        //
-        //     if (!File.Exists(path))
-        //     {
-        //         Plugin.Log.LogError($"Failed to load save from file: ap_save_{saveId}.json");
-        //         return new APSave();
-        //     }
-        //
-        //     return JsonConvert.DeserializeObject<APSave>(File.ReadAllText(path));
-        // }
 
         /// <summary>
         /// Deletes every AP save file in the "newest" folder
@@ -528,7 +434,7 @@ namespace RainWorldRandomizer
             return true;
         }
 
-        public static void DeleteFile(RainWorld rainWorld, int saveSlot)
+        public static void DeleteFile(RainWorld rainWorld, SaveFile saveFile, int saveSlot)
         {
             if (SaveTracker.CustomSlotActive
                 && (rainWorld.progression?.progressionLoaded ?? false))
@@ -537,18 +443,27 @@ namespace RainWorldRandomizer
                 return;
             }
 
-            if (saveSlot < SaveTracker.SLOT_OFFSET)
+            if (saveFile.legacySaveSlot >= 0)
             {
-                Plugin.Log.LogError(
-                    $"Cannot delete save slot {saveSlot}, as it does not map to a valid randomizer slot number");
-                return;
+                string filePath1 = Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json");
+                if (File.Exists(filePath1)) File.Delete(filePath1);
+                if (saveFile.isArchipelago)
+                {
+                    DestroyLegacySave(saveFile.seed, saveFile.connectionInfo.slotName,
+                        saveFile.slugcat, saveFile.legacySaveSlot);
+                }
+                else
+                {
+                    DestroyLegacySave(new SlugcatStats.Name(saveFile.slugcat), saveFile.legacySaveSlot);
+                }
             }
-
-            string filePath1 = Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json");
-            string filePath2 = Path.Combine(Application.persistentDataPath, $"sav{saveSlot + 1}");
-
-            if (File.Exists(filePath1)) File.Delete(filePath1);
-            if (File.Exists(filePath2)) File.Delete(filePath2);
+            else
+            {
+                string filePath1 = Path.Combine(SaveTracker.PersistentDataDir, $"rand{saveSlot}.json");
+                string filePath2 = Path.Combine(Application.persistentDataPath, $"ran{saveSlot + 1}");
+                if (File.Exists(filePath1)) File.Delete(filePath1);
+                if (File.Exists(filePath2)) File.Delete(filePath2);
+            }
         }
     }
 
@@ -565,7 +480,7 @@ namespace RainWorldRandomizer
         public string slugcat = null;
         public int karma = 0;
         public int maxKarma = 0;
-        public float ripple = 1;
+        public float ripple = 0;
         public bool karmaReinforced = false;
         public int food = 0;
         public IntVector2 maxFood = new(7, 4);

@@ -90,10 +90,18 @@ namespace RainWorldRandomizer
             {
                 try
                 {
+                    // TODO DELETE SECOND PART AFTER BETA
+                    string path = File.Exists(Path.Combine(
+                        ModManager.InstalledMods.FirstOrDefault(m => m.id == "salty_syrup.check_randomizer")?.NewestPath ?? "",
+                        $"saved_game_{currentSlugcat.value}_{SaveTracker.OrigSaveSlot}.txt"))
+                        ? Path.Combine(
+                            ModManager.InstalledMods.First(m => m.id == "salty_syrup.check_randomizer").NewestPath,
+                            $"saved_game_{currentSlugcat.value}_{SaveTracker.OrigSaveSlot}.txt") 
+                        : Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath,
+                            $"saved_game_{currentSlugcat.value}_{SaveTracker.OrigSaveSlot}.txt");
+                    
                     SaveFile file = SaveManager
-                        .LoadLegacyStandaloneSavedGame(
-                            Path.Combine(ModManager.ActiveMods.First(m => m.id == Plugin.PLUGIN_GUID).NewestPath,
-                                $"saved_game_{currentSlugcat.value}_{SaveTracker.OrigSaveSlot}.txt"));
+                        .LoadLegacyStandaloneSavedGame(path);
                     randomizerKey = file.locationMap.ToDictionary(kvp => kvp.Key, kvp =>
                         new Unlock(ExtEnumBase.TryParse(typeof(Unlock.UnlockType), kvp.Value.type, true,
                                 out ExtEnumBase t)
