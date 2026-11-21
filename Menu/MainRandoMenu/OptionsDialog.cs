@@ -399,7 +399,7 @@ public class OptionsDialog : Dialog, SelectOneButton.SelectOneButtonOwner
         {
             if (randomSpawnLabel is not null) randomSpawnLabel.text = save.startingDen.Equals("") 
                 ? Constants.SlugcatStartingRegion[new SlugcatStats.Name(save.slugcat)] 
-                : save.startingDen.Split('_')[0];
+                : save.startingDen.Split('_')[0].ToUpperInvariant();
             if (goalLabel is not null) goalLabel.text = save.options.goalCondition.ToString();
             if (options.TryGetValue("DeathLink", out Option opt1)) opt1.ValueBool = save.options.archipelagoDeathLink;
             if (options.TryGetValue("GateBehavior", out Option opt2)) opt2.ValueInt = (int)save.options.gateBehavior;

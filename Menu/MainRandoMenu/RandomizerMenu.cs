@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using JollyCoop;
+using JollyCoop.JollyMenu;
 using Menu;
 using Menu.Remix;
 using RainWorldRandomizer.SaveData;
@@ -24,10 +27,15 @@ public class RandomizerMenu : RWMenu
     private FSprite shade;
 
     private SimpleButton exitButton;
+    
+    private SimpleButton toggleJollyButton;
+    private MenuLabel jollyMainLabel;
+    private List<MenuLabel> jollyPlayerSummaries;
 
     // Vars
     public SaveTracker saveTracker = new();
     private TaskCompletionSource<bool> progressionIsLoading = null;
+    private bool lastDialogOpen;
 
     /// <summary>
     /// Anchors on left and right side of screen
@@ -81,6 +89,21 @@ public class RandomizerMenu : RWMenu
             exitButtonPos, buttonSize);
         pages[1].subObjects.Add(exitButton);
         backObject = exitButton;
+        
+        // Jolly Menu
+        if (ModManager.JollyCoop)
+        {
+            toggleJollyButton = new SimpleButton(this, pages[1], Translate("SHOW"), "JOLLY_CONFIG",
+                new Vector2( manager.rainWorld.options.ScreenSize.x - 160f,  manager.rainWorld.options.ScreenSize.y - 100f),
+                new Vector2(110f, 30f));
+            pages[1].subObjects.Add(toggleJollyButton);
+            jollyMainLabel = new MenuLabel(this, pages[1], Translate("JOLLY COOP"),
+                toggleJollyButton.pos + new Vector2(-75f, toggleJollyButton.size.y / 2f),
+                Vector2.zero, true);
+            jollyMainLabel.pos.x = toggleJollyButton.pos.x - jollyMainLabel.label.textRect.width / 2f - 20f;
+            pages[1].subObjects.Add(jollyMainLabel);
+            RefreshJollySummary(currentPage);
+        }
 
         // Load existing game page
         campaignSelectPage = new CampaignSelectPage(this, pages[1], default);
@@ -120,6 +143,14 @@ public class RandomizerMenu : RWMenu
                         break;
                 }
 
+                break;
+            case "JOLLY_CONFIG":
+                JollySetupDialog dialog = new(SlugcatStats.Name.White, manager, toggleJollyButton.pos);
+                manager.ShowDialog(dialog);
+                manager.rainWorld.options.playersBeforeEnterJollyMenu =
+                    manager.rainWorld.options.JollyPlayerCount;
+                manager.rainWorld.options.ResetJollyProfileRequest();
+                PlaySound(SoundID.MENU_Switch_Page_In);
                 break;
             // Called from our new game button
             case "NEW_GAME":
@@ -164,6 +195,17 @@ public class RandomizerMenu : RWMenu
         {
             progressionIsLoading.TrySetResult(manager.rainWorld.progression.progressionLoaded);
         }
+        
+        // Refresh Jolly Co-op slugcats whenever a dialog closes (mainly the Jolly one)
+        if (manager.IsRunningAnyDialog)
+        {
+            lastDialogOpen = true;
+        }
+        else if (lastDialogOpen)
+        {
+            RefreshJollySummary(currentPage);
+            lastDialogOpen = false;
+        }
 
         // Page switching animation
         if (!pagesMoving) return;
@@ -184,11 +226,6 @@ public class RandomizerMenu : RWMenu
         if (!pagesMoving) PlaySound(SoundID.MENU_Checkbox_Check);
         exitButton.pos = exitButtonPos - exitButton.page.pos;
         exitButton.lastPos = exitButtonPos - exitButton.page.lastPos;
-    }
-
-    public override void GrafUpdate(float timeStacker)
-    {
-        base.GrafUpdate(timeStacker);
     }
 
     private void MovePage(bool moveLeft)
@@ -217,6 +254,21 @@ public class RandomizerMenu : RWMenu
         exitButton.nextSelectable[2] = newPage == 1 ? campaignSelectPage.GetFirstSelectable() : null;
         exitButton.nextSelectable[3] = newPage == 1 ? campaignSelectPage.GetFirstSelectable() : null;
 
+        if (ModManager.JollyCoop)
+        {
+            toggleJollyButton.RemoveSprites();
+            pages[currentPage].RemoveSubObject(toggleJollyButton);
+            toggleJollyButton = new SimpleButton(this, pages[newPage], toggleJollyButton.menuLabel.text,
+                toggleJollyButton.signalText, toggleJollyButton.pos, toggleJollyButton.size);
+            pages[newPage].subObjects.Add(toggleJollyButton);
+            jollyMainLabel.RemoveSprites();
+            pages[currentPage].RemoveSubObject(jollyMainLabel);
+            jollyMainLabel = new MenuLabel(this, pages[newPage], jollyMainLabel.text, jollyMainLabel.pos,
+                jollyMainLabel.size, true);
+            pages[newPage].subObjects.Add(jollyMainLabel);
+            RefreshJollySummary(newPage);
+        }
+
         if (newPage == 2) // New game page
         {
             createNewGamePage.Enable();
@@ -233,6 +285,41 @@ public class RandomizerMenu : RWMenu
         };
 
         currentPage = newPage;
+    }
+    
+    private void RefreshJollySummary(int newPage)
+    {
+        if (!ModManager.JollyCoop) return;
+
+        jollyPlayerSummaries ??= [];
+        if (jollyPlayerSummaries is null)
+        {
+            jollyPlayerSummaries = [];
+        }
+        else
+        {
+            foreach (MenuLabel label in jollyPlayerSummaries)
+            {
+                label.RemoveSprites();
+                pages[currentPage].RemoveSubObject(label);
+            }
+
+            jollyPlayerSummaries.Clear();
+        }
+
+        for (int i = 0; i < Custom.rainWorld.options.JollyPlayerCount; i++)
+        {
+            SlugcatStats.Name slugcat = JollyCustom.SlugClassMenu(i, null);
+            string text = slugcat is null
+                ? Translate("DEFAULT")
+                : Translate($"The {SlugcatStats.getSlugcatName(slugcat)}");
+            
+            MenuLabel label = new MenuLabel(this, pages[newPage], text,
+                toggleJollyButton.pos - new Vector2(0f, 30f + 25f * i),
+                new Vector2(110f, 30f), false);
+            jollyPlayerSummaries.Add(label);
+            pages[newPage].subObjects.Add(label);
+        }
     }
 
     private void CreateNewGame(SlugcatStats.Name slugcat, bool fromLegacy)
